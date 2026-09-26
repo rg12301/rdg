@@ -11,9 +11,10 @@
 
 use anyhow::Result;
 use quick_xml::{
-    events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event},
     Writer,
+    events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event},
 };
+use std::collections::HashMap;
 use std::io::Cursor;
 
 use crate::graph::CompiledGraph;
@@ -25,42 +26,73 @@ use crate::layout::LayoutResult;
 
 /// Map a semantic node type and theme to a draw.io style string.
 ///
-/// The `theme` parameter is reserved for future expansion (e.g. dark mode).
-pub fn style_for_type(node_type: &str, _theme: &str) -> String {
-    match node_type {
-        "proxy" | "gateway" | "api" => {
-            "rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;".to_owned()
-        }
+/// Supports `"dark"` theme as well as semantic node type styling using the
+/// white-card paradigm (white fill, drop shadow, absolute 8px arc, colored border).
+#[allow(clippy::useless_format)]
+pub fn style_for_type(node_type: &str, theme: &str) -> String {
+    // Base shared by every node
+    let base = "rounded=1;absoluteArcSize=1;arcSize=8;\
+                whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                strokeWidth=1.5;\
+                fontFamily=Inter,Helvetica,sans-serif;\
+                fontSize=12;fontStyle=1;fontColor=#0f172a;\
+                spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;";
+
+    if theme == "dark" {
+        return format!("{base}fillColor=#1e293b;fontColor=#f1f5f9;strokeColor=#475569;");
+    }
+
+    match node_type.to_ascii_lowercase().as_str() {
+        "proxy" | "gateway" | "api" => format!("{base}strokeColor=#818cf8;"),
+        "server" | "service" | "backend" => format!("{base}strokeColor=#34d399;"),
         "database" | "db" | "storage" => {
-            "shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;\
-             fillColor=#dae8fc;strokeColor=#6c8ebf;"
-                .to_owned()
-        }
-        "server" | "service" | "backend" => {
-            "rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;".to_owned()
+            format!(
+                "shape=cylinder3;boundedLbl=1;backgroundOutline=1;\
+                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                     strokeWidth=1.5;strokeColor=#38bdf8;\
+                     fontFamily=Inter,Helvetica,sans-serif;\
+                     fontSize=12;fontStyle=1;fontColor=#0f172a;\
+                     spacingTop=6;spacingBottom=6;"
+            )
         }
         "queue" | "broker" | "bus" => {
-            "shape=mxgraph.flowchart.queue;whiteSpace=wrap;html=1;\
-             fillColor=#fff2cc;strokeColor=#d6b656;"
-                .to_owned()
+            format!(
+                "shape=mxgraph.flowchart.start_2;\
+                     perimeter=mxPerimeter.ellipsePerimeter;\
+                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                     strokeWidth=1.5;strokeColor=#fbbf24;\
+                     fontFamily=Inter,Helvetica,sans-serif;\
+                     fontSize=12;fontStyle=1;fontColor=#0f172a;"
+            )
         }
-        "cache" | "redis" | "memcache" => {
-            "rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;".to_owned()
-        }
+        "cache" | "redis" | "memcache" => format!("{base}strokeColor=#f87171;"),
         "function" | "lambda" | "faas" => {
-            "shape=mxgraph.aws4.lambda;whiteSpace=wrap;html=1;\
-             fillColor=#FF9900;strokeColor=#d6b656;"
-                .to_owned()
-        }
-        "client" | "user" | "browser" => {
-            "shape=mxgraph.general.person_2;whiteSpace=wrap;html=1;\
-             fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;"
-                .to_owned()
+            format!(
+                "shape=mxgraph.aws4.lambda;\
+                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                     strokeWidth=1.5;strokeColor=#fb923c;\
+                     fontFamily=Inter,Helvetica,sans-serif;\
+                     fontSize=12;fontStyle=1;fontColor=#0f172a;"
+            )
         }
         "decision" | "condition" => {
-            "rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;".to_owned()
+            format!(
+                "rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                     strokeWidth=2;strokeColor=#a78bfa;\
+                     fontFamily=Inter,Helvetica,sans-serif;\
+                     fontSize=11;fontStyle=2;fontColor=#0f172a;"
+            )
         }
-        _ => "rounded=1;whiteSpace=wrap;html=1;".to_owned(),
+        "client" | "user" | "browser" => {
+            format!(
+                "shape=mxgraph.general.person_2;\
+                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
+                     strokeWidth=1.5;strokeColor=#94a3b8;\
+                     fontFamily=Inter,Helvetica,sans-serif;\
+                     fontSize=12;fontStyle=1;fontColor=#0f172a;"
+            )
+        }
+        _ => format!("{base}strokeColor=#cbd5e1;"),
     }
 }
 
@@ -125,10 +157,9 @@ pub fn render_drawio(
     model.push_attribute(("connect", "1"));
     model.push_attribute(("arrows", "1"));
     model.push_attribute(("fold", "1"));
-    model.push_attribute(("page", "1"));
+    model.push_attribute(("page", "0"));
     model.push_attribute(("pageScale", "1"));
-    model.push_attribute(("pageWidth", "1169"));
-    model.push_attribute(("pageHeight", "827"));
+    model.push_attribute(("background", "#f8fafc"));
     model.push_attribute(("math", "0"));
     model.push_attribute(("shadow", "0"));
     w.write_event(Event::Start(model))?;
@@ -158,9 +189,23 @@ pub fn render_drawio(
         let style = style_for_type(&node_data.node_type, theme);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
 
+        // Build HTML label: bold title + optional muted sub-label
+        let html_value = {
+            let mut parts = node_data.label.splitn(2, '\n');
+            let title = parts.next().unwrap_or(&node_data.label);
+            let subtitle = parts.next();
+            match subtitle {
+                Some(sub) => format!(
+                    "<b>{}</b><br/><font style='font-size:10px;color:#64748b'>{}</font>",
+                    title, sub
+                ),
+                None => format!("<b>{}</b>", title),
+            }
+        };
+
         let mut cell = BytesStart::new("mxCell");
         cell.push_attribute(("id", node_data.id.as_str()));
-        cell.push_attribute(("value", node_data.label.as_str()));
+        cell.push_attribute(("value", html_value.as_str()));
         cell.push_attribute(("style", style.as_str()));
         cell.push_attribute(("vertex", "1"));
         cell.push_attribute(("parent", "1"));
@@ -182,6 +227,49 @@ pub fn render_drawio(
     }
 
     // --- Edge cells ---------------------------------------------------------
+    // Group outgoing edges by their rendered source node to compute distributed exit ports.
+    let mut outgoing_by_src: HashMap<
+        petgraph::graph::NodeIndex,
+        Vec<(petgraph::graph::EdgeIndex, f64)>,
+    > = HashMap::new();
+
+    for edge_idx in compiled.graph.edge_indices() {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (render_src, render_dst) = if edge_data.reversed {
+            (dst, src)
+        } else {
+            (src, dst)
+        };
+        let target_x = layout
+            .positions
+            .get(&render_dst)
+            .map(|p| p.x)
+            .unwrap_or(0.0);
+        outgoing_by_src
+            .entry(render_src)
+            .or_default()
+            .push((edge_idx, target_x));
+    }
+
+    let mut exit_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in outgoing_by_src {
+        edges.sort_by(|a, b| {
+            a.1.partial_cmp(&b.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.1 + (0.8 / (count - 1) as f64) * (i as f64)
+            };
+            exit_ports.insert(edge_idx, port);
+        }
+    }
+
     for edge_idx in compiled.graph.edge_indices() {
         let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
         let edge_data = &compiled.graph[edge_idx];
@@ -197,21 +285,47 @@ pub fn render_drawio(
             (src_id.as_str(), dst_id.as_str())
         };
 
+        let exit_x = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let entry_x = 0.5_f64;
+
+        let edge_style = format!(
+            "edgeStyle=orthogonalEdgeStyle;\
+             rounded=1;orthogonalLoop=1;jettySize=auto;html=1;\
+             exitX={exit_x:.1};exitY=1.0;exitDx=0;exitDy=0;\
+             entryX={entry_x:.1};entryY=0.0;entryDx=0;entryDy=0;\
+             strokeColor=#64748b;strokeWidth=1.5;\
+             endArrow=blockThin;endFill=1;endSize=6;\
+             jumpStyle=arc;jumpSize=6;\
+             labelBackgroundColor=#ffffff;labelBorderColor=none;\
+             fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;"
+        );
+
         let mut cell = BytesStart::new("mxCell");
         cell.push_attribute(("id", edge_id.as_str()));
         cell.push_attribute(("value", label));
-        cell.push_attribute(("style", "edgeStyle=orthogonalEdgeStyle;html=1;"));
+        cell.push_attribute(("style", edge_style.as_str()));
         cell.push_attribute(("edge", "1"));
         cell.push_attribute(("source", render_src));
         cell.push_attribute(("target", render_dst));
         cell.push_attribute(("parent", "1"));
         w.write_event(Event::Start(cell))?;
 
-        // <mxGeometry relative="1" as="geometry" />
+        // <mxGeometry relative="1" as="geometry">
+        //   <mxPoint y="-10" as="offset" />
+        // </mxGeometry>
         let mut geo = BytesStart::new("mxGeometry");
         geo.push_attribute(("relative", "1"));
         geo.push_attribute(("as", "geometry"));
-        w.write_event(Event::Empty(geo))?;
+        if !label.is_empty() {
+            w.write_event(Event::Start(geo))?;
+            let mut pt = BytesStart::new("mxPoint");
+            pt.push_attribute(("y", "-10"));
+            pt.push_attribute(("as", "offset"));
+            w.write_event(Event::Empty(pt))?;
+            w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+        } else {
+            w.write_event(Event::Empty(geo))?;
+        }
 
         w.write_event(Event::End(BytesEnd::new("mxCell")))?;
     }
@@ -236,11 +350,7 @@ pub fn render_drawio(
 /// # Errors
 ///
 /// Returns an error if the underlying XML writer fails.
-pub fn render_svg(
-    compiled: &CompiledGraph,
-    layout: &LayoutResult,
-    _theme: &str,
-) -> Result<String> {
+pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str) -> Result<String> {
     // Compute canvas bounds.
     let margin = 40.0_f64;
     let (max_x, max_y) = layout
@@ -263,10 +373,7 @@ pub fn render_svg(
     svg.push_attribute(("version", "1.1"));
     svg.push_attribute(("width", canvas_w.to_string().as_str()));
     svg.push_attribute(("height", canvas_h.to_string().as_str()));
-    svg.push_attribute((
-        "viewBox",
-        format!("0 0 {canvas_w} {canvas_h}").as_str(),
-    ));
+    svg.push_attribute(("viewBox", format!("0 0 {canvas_w} {canvas_h}").as_str()));
     w.write_event(Event::Start(svg))?;
 
     // Background
@@ -373,7 +480,7 @@ pub fn render_svg(
 mod tests {
     use super::*;
     use crate::graph::build_graph;
-    use crate::layout::{compute_layout, LayoutConfig};
+    use crate::layout::{LayoutConfig, compute_layout};
     use crate::schema::{DiagramPayload, EdgeDef, NodeDef};
 
     fn one_node_payload() -> DiagramPayload {
@@ -436,7 +543,10 @@ mod tests {
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
         let xml = render_drawio(&compiled, &layout, "standard").unwrap();
-        assert!(xml.contains("vertex=\"1\""), "nodes must carry vertex=\"1\"");
+        assert!(
+            xml.contains("vertex=\"1\""),
+            "nodes must carry vertex=\"1\""
+        );
     }
 
     #[test]
@@ -459,10 +569,7 @@ mod tests {
         // A simple heuristic: count occurrences.
         let edge_count = xml.matches("edge=\"1\"").count();
         let vertex_count = xml.matches("vertex=\"1\"").count();
-        assert_eq!(
-            edge_count, 1,
-            "expected exactly 1 edge cell"
-        );
+        assert_eq!(edge_count, 1, "expected exactly 1 edge cell");
         assert_eq!(
             vertex_count, 2,
             "expected exactly 2 vertex cells (mandatory + node)"
@@ -473,8 +580,8 @@ mod tests {
     fn test_style_mapping_database() {
         let style = style_for_type("database", "standard");
         assert!(
-            style.contains("database"),
-            "database style must reference 'database'"
+            style.contains("cylinder3"),
+            "database style must reference 'cylinder3'"
         );
     }
 
@@ -482,7 +589,10 @@ mod tests {
     fn test_style_mapping_default() {
         let style = style_for_type("unknown_widget", "standard");
         assert!(!style.is_empty(), "default style must not be empty");
-        assert!(style.contains("rounded"), "default style should use rounded");
+        assert!(
+            style.contains("rounded"),
+            "default style should use rounded"
+        );
     }
 
     #[test]
@@ -491,8 +601,132 @@ mod tests {
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
         let svg = render_svg(&compiled, &layout, "standard").unwrap();
-        assert!(svg.starts_with("<?xml"), "SVG must start with XML declaration");
+        assert!(
+            svg.starts_with("<?xml"),
+            "SVG must start with XML declaration"
+        );
         assert!(svg.contains("<svg"), "must contain svg element");
         assert!(svg.contains("</svg>"), "must close svg element");
+    }
+
+    #[test]
+    fn test_style_mapping_dark_mode() {
+        let style = style_for_type("proxy", "dark");
+        assert!(
+            style.contains("fillColor=#1e293b"),
+            "dark mode must use slate-800 fill"
+        );
+        assert!(
+            style.contains("fontColor=#f1f5f9"),
+            "dark mode must use light font color"
+        );
+        assert!(
+            style.contains("strokeColor=#475569"),
+            "dark mode must use slate-600 stroke"
+        );
+    }
+
+    #[test]
+    fn test_drawio_html_two_line_label() {
+        let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
+            theme: None,
+            nodes: vec![NodeDef {
+                id: "n1".to_owned(),
+                label: "API Gateway\nKong Ingress".to_owned(),
+                node_type: "proxy".to_owned(),
+                metadata: None,
+            }],
+            edges: vec![],
+        };
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(
+            xml.contains("&lt;b&gt;API Gateway&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;Kong Ingress&lt;/font&gt;"),
+            "node cell must contain two-line formatted HTML label"
+        );
+    }
+
+    #[test]
+    fn test_drawio_edge_style_and_offset() {
+        let payload = two_node_payload();
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+
+        assert!(xml.contains("page=\"0\""), "page should be 0");
+        assert!(
+            xml.contains("background=\"#f8fafc\""),
+            "background should be #f8fafc"
+        );
+        assert!(
+            xml.contains("jumpStyle=arc"),
+            "edge style must have jumpStyle=arc"
+        );
+        assert!(
+            xml.contains("endArrow=blockThin"),
+            "edge style must have endArrow=blockThin"
+        );
+        assert!(
+            xml.contains("labelBackgroundColor=#ffffff"),
+            "edge style must have labelBackgroundColor=#ffffff"
+        );
+        assert!(
+            xml.contains("<mxPoint y=\"-10\" as=\"offset\""),
+            "labeled edge geometry must include offset mxPoint"
+        );
+    }
+
+    #[test]
+    fn test_drawio_sibling_exit_ports() {
+        let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
+            theme: None,
+            nodes: vec![
+                NodeDef {
+                    id: "src".to_owned(),
+                    label: "Source".to_owned(),
+                    node_type: "proxy".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "dst1".to_owned(),
+                    label: "Target 1".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "dst2".to_owned(),
+                    label: "Target 2".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+            ],
+            edges: vec![
+                EdgeDef {
+                    from: "src".to_owned(),
+                    to: "dst1".to_owned(),
+                    label: None,
+                },
+                EdgeDef {
+                    from: "src".to_owned(),
+                    to: "dst2".to_owned(),
+                    label: None,
+                },
+            ],
+        };
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+
+        assert!(
+            xml.contains("exitX=0.1;"),
+            "first sibling exit port should be 0.1"
+        );
+        assert!(
+            xml.contains("exitX=0.9;"),
+            "second sibling exit port should be 0.9"
+        );
     }
 }
