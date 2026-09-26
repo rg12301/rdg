@@ -224,51 +224,211 @@ NOTES FOR AGENTIC PIPELINES
     after_help = "Tip: run `rdg --help` to see the full LLM usage guide including YAML schema and node types."
 )]
 struct Cli {
-    /// Path to the YAML diagram payload. Omit (or pass -) to read from stdin.
-    ///
-    /// The YAML must follow the rdg schema:
-    ///   diagram_type, theme (optional), nodes[], edges[]
-    /// See `rdg --help` for the full schema reference.
-    #[arg(short, long, value_name = "FILE")]
+    /// Path to input YAML file (reads stdin if omitted or '-').
+    #[arg(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Path to input YAML file (reads stdin if omitted or '-')",
+        long_help = "Path to the input YAML diagram payload.\n\
+                     \n\
+                     If omitted or set to '-', rdg reads from standard input (stdin),\n\
+                     enabling clean Unix piping in scripts and LLM generation pipelines:\n\
+                       cat diagram.yaml | rdg -o diagram.svg\n\
+                       llm-agent-command | rdg -o arch.drawio\n\
+                     \n\
+                     The YAML payload must conform to the rdg schema (nodes, edges, groups).\n\
+                     Run `rdg --example` to see a full reference template, or `rdg --schema`\n\
+                     for the JSON Schema definition."
+    )]
     input: Option<String>,
 
-    /// Output file path. Extension selects the format:
-    ///   .drawio → uncompressed mxfile XML (for draw.io / diagrams.net)
-    ///   .svg    → Scalable Vector Graphics
-    #[arg(short, long, default_value = "output.drawio", value_name = "FILE")]
+    /// Output diagram file path (.drawio or .svg).
+    #[arg(
+        short,
+        long,
+        default_value = "output.drawio",
+        value_name = "FILE",
+        help = "Output diagram file path (.drawio or .svg)",
+        long_help = "Path where the finished diagram will be written.\n\
+                     \n\
+                     The file extension selects the output serialization format:\n\
+                     \n\
+                       .drawio  Uncompressed XML in the standard mxfile format.\n\
+                                • 100% native draw.io / diagrams.net compatibility\n\
+                                • Full editability: drag, resize, and modify in draw.io\n\
+                                • Container grouping: moving a group moves all member nodes\n\
+                                • MathJax support (math=\"1\"): renders LaTeX equations\n\
+                                • Rich HTML labels with code monospace and bold titles\n\
+                                • Rounded orthogonal edges with line jump arcs (jumpStyle=arc)\n\
+                     \n\
+                       .svg     Standalone Scalable Vector Graphics.\n\
+                                • Crisp vector rendering for web, Markdown, and docs\n\
+                                • Modern elevated card styling with drop shadows\n\
+                                • Orthogonal rounded fillet connector paths (no line collisions)\n\
+                                • Styled <tspan> elements with Unicode mathematical glyphs\n\
+                                • Embed directly in GitHub READMEs, Notion, and HTML"
+    )]
     output: String,
 
-    /// Spatial layout algorithm.
-    ///
-    /// sugiyama  — hierarchical top-to-bottom DAG layout (default, recommended)
-    /// orthogonal — right-angled grid routing (reserved, falls back to sugiyama)
-    /// organic    — force-directed placement   (reserved, falls back to sugiyama)
-    #[arg(short, long, value_enum, default_value_t = LayoutEngine::Sugiyama)]
+    /// Spatial layout algorithm (sugiyama, orthogonal, organic).
+    #[arg(
+        short,
+        long,
+        value_enum,
+        default_value_t = LayoutEngine::Sugiyama,
+        help = "Spatial layout algorithm (sugiyama, orthogonal, organic)",
+        long_help = "Spatial layout algorithm used to compute coordinates.\n\
+                     \n\
+                     Available engines:\n\
+                     \n\
+                       sugiyama   (Default, Recommended)\n\
+                                  Layered hierarchical DAG layout implementing:\n\
+                                  1. Cycle breaking: Greedy Feedback Arc Set (FAS)\n\
+                                     reverses back-edges to guarantee a valid DAG.\n\
+                                  2. Layer assignment: Longest-path topological ranking.\n\
+                                  3. Crossing minimization: 3-pass alternating barycentric\n\
+                                     median heuristics with adjacent transpositions.\n\
+                                  4. 2D Compound Quotient Layout: Resolves inter-group\n\
+                                     dependencies using grid search to optimize canvas\n\
+                                     aspect ratio close to 1.0 (squarish canvas).\n\
+                                  5. Compact whitespace normalization: Eliminates dead\n\
+                                     canvas margins and centers ranks.\n\
+                     \n\
+                       orthogonal Right-angled orthogonal grid routing. Ideal for UML\n\
+                                  class diagrams and ER schemas. (Reserved for v2.0;\n\
+                                  currently falls back to Sugiyama.)\n\
+                     \n\
+                       organic    Force-directed spring electrical embedder for unstructured\n\
+                                  graphs and social networks. (Reserved for v2.0;\n\
+                                  currently falls back to Sugiyama.)"
+    )]
     layout: LayoutEngine,
 
-    /// Visual theme for node colours and styles.
-    ///
-    /// Supported: standard (default), aws, azure.
-    /// Can also be set per-diagram via the 'theme' key in the YAML payload.
-    #[arg(short, long, default_value = "standard", value_name = "THEME")]
+    /// Visual theme (standard, dark).
+    #[arg(
+        short,
+        long,
+        default_value = "standard",
+        value_name = "THEME",
+        help = "Visual theme (standard, dark)",
+        long_help = "Visual color palette and card styling.\n\
+                     \n\
+                     Themes:\n\
+                     \n\
+                       standard  (Default)\n\
+                                 Modern elevated white-card design system on a clean\n\
+                                 light slate background (#f8fafc). Each node renders\n\
+                                 as a #ffffff card with a subtle drop shadow, 8px\n\
+                                 rounded corners, and semantic border color accents.\n\
+                     \n\
+                       dark      High-contrast dark mode on a deep Slate-900 canvas\n\
+                                 (#0f172a). Nodes render with Slate-800 card bodies\n\
+                                 (#1e293b), Slate-600 borders (#475569), and bright\n\
+                                 typography (#f1f5f9).\n\
+                     \n\
+                     Note: Can also be set inside the YAML payload via `theme: dark`.\n\
+                     YAML setting overrides this CLI flag."
+    )]
     theme: String,
 
-    /// Vertical gap in pixels between successive ranks (layers) of nodes.
-    /// Increase for more breathing room between layers. Default: 44.
-    #[arg(long, default_value_t = 44)]
+    /// Vertical gap between successive ranks in pixels (default: 44).
+    #[arg(
+        long,
+        default_value_t = 44,
+        value_name = "PIXELS",
+        help = "Vertical gap between successive ranks in pixels (default: 44)",
+        long_help = "Gap in pixels between successive layers (ranks) of nodes.\n\
+                     \n\
+                     • In top-to-bottom (tb) mode, this controls vertical distance between ranks.\n\
+                     • In left-to-right (lr) mode, this controls horizontal distance between columns.\n\
+                     \n\
+                     Guidelines:\n\
+                       28–36 px  Compact layout (dashboards, dense architectures)\n\
+                       44 px     Default balanced layout (expert hand-drawn feel)\n\
+                       60–80 px  Roomy layout (multi-line edge labels, long routing spans)\n\
+                     \n\
+                     Note: Can also be specified in YAML via `rank_spacing: 60`."
+    )]
     rank_spacing: u32,
 
-    /// Horizontal gap in pixels between nodes on the same rank.
-    /// Increase to prevent label overlap. Default: 28.
-    #[arg(long, default_value_t = 28)]
+    /// Horizontal gap between sibling nodes on the same rank (default: 28).
+    #[arg(
+        long,
+        default_value_t = 28,
+        value_name = "PIXELS",
+        help = "Horizontal gap between sibling nodes on the same rank (default: 28)",
+        long_help = "Clearance in pixels between sibling nodes sharing the same rank.\n\
+                     \n\
+                     Guidelines:\n\
+                       18–24 px  Tight clustering for compact diagrams\n\
+                       28 px     Default balanced clearance\n\
+                       40–50 px  Wide spacing to prevent edge routing congestion\n\
+                     \n\
+                     Note: Can also be specified in YAML via `node_spacing: 36`."
+    )]
     node_spacing: u32,
 
-    /// Flow direction of the diagram.
-    ///
-    /// tb — top-to-bottom (default, recommended for DAGs & hierarchies)
-    /// lr — left-to-right (recommended for pipelines & sequence flows)
-    #[arg(long, value_enum, default_value_t = CliDirection::Tb)]
+    /// Diagram flow direction (tb, lr).
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = CliDirection::Tb,
+        help = "Diagram flow direction (tb, lr)",
+        long_help = "Overall flow direction of the diagram hierarchy.\n\
+                     \n\
+                     Options:\n\
+                     \n\
+                       tb   Top-to-Bottom (Default)\n\
+                            Hierarchical downward flow. Best for:\n\
+                            • Microservice architectures and cloud topology\n\
+                            • Call graphs and dependency trees\n\
+                            • Decision trees and state transition diagrams\n\
+                     \n\
+                       lr   Left-to-Right\n\
+                            Horizontal sequential flow. Best for:\n\
+                            • CI/CD and build/release pipelines\n\
+                            • Event streaming architectures (Kafka / Flink / ETL)\n\
+                            • Request/response lifecycles and sequence pipelines\n\
+                     \n\
+                     Note: Can also be specified inside YAML via `direction: lr` or `direction: tb`.\n\
+                     YAML setting overrides this CLI flag."
+    )]
     direction: CliDirection,
+
+    /// Print a complete reference YAML template to stdout and exit.
+    #[arg(
+        long,
+        help = "Print a complete reference YAML template to stdout and exit",
+        long_help = "Print a production-ready, fully commented YAML diagram template to stdout.\n\
+                     \n\
+                     Demonstrates every feature:\n\
+                       • Top-level diagram metadata (title, description, direction, theme)\n\
+                       • Visual group containers (swimlanes)\n\
+                       • All semantic node types (proxy, database, queue, server, decision, etc.)\n\
+                       • All edge styles (flow, async, error, data, bidirectional)\n\
+                       • Inline typography (monospace `code`, **bold**, *italic*, $LaTeX math$)\n\
+                     \n\
+                     Usage for LLMs:\n\
+                       rdg --example > template.yaml"
+    )]
+    example: bool,
+
+    /// Print JSON Schema specification for the YAML payload and exit.
+    #[arg(
+        long,
+        help = "Print JSON Schema specification for the YAML payload and exit",
+        long_help = "Print the JSON Schema (draft-07) for the YAML diagram payload to stdout.\n\
+                     \n\
+                     Enables:\n\
+                       • Schema-guided decoding in LLM tool calling (structured output)\n\
+                       • Automated validation of generated YAML files in CI/CD\n\
+                       • IDE autocompletion and hover documentation in VS Code / IntelliJ\n\
+                     \n\
+                     Usage:\n\
+                       rdg --schema > schema.json"
+    )]
+    schema: bool,
 }
 
 /// Diagram flow direction.
@@ -301,6 +461,16 @@ enum LayoutEngine {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
+    // --- Special flags: --example and --schema -------------------------------
+    if cli.example {
+        print!("{}", DiagramPayload::example_yaml());
+        return Ok(());
+    }
+    if cli.schema {
+        print!("{}", DiagramPayload::json_schema());
+        return Ok(());
+    }
+
     // --- 1. Read YAML input -------------------------------------------------
     let yaml = match cli.input.as_deref() {
         None | Some("-") => {
@@ -316,20 +486,18 @@ fn main() -> Result<()> {
 
     // --- 2. Deserialise payload ---------------------------------------------
     let payload = DiagramPayload::from_yaml(&yaml)
-        .context("YAML payload does not match the rdg schema — run `rdg --help` for schema reference")?;
+        .context("YAML payload does not match the rdg schema — run `rdg --help` or `rdg --example`")?;
 
-    // YAML 'theme' key overrides CLI --theme flag.
+    // Priority: YAML payload > CLI flag
     let theme = payload.theme.as_deref().unwrap_or(&cli.theme);
 
-    // Flow direction priority: YAML payload > CLI flag
-    let direction = match payload.direction.as_deref() {
-        Some("lr") | Some("LR") | Some("left_to_right") => rdg::layout::LayoutDirection::LeftToRight,
-        Some("tb") | Some("TB") | Some("top_to_bottom") => rdg::layout::LayoutDirection::TopToBottom,
-        _ => match cli.direction {
-            CliDirection::Tb => rdg::layout::LayoutDirection::TopToBottom,
-            CliDirection::Lr => rdg::layout::LayoutDirection::LeftToRight,
-        },
-    };
+    let direction = payload.resolved_direction().unwrap_or(match cli.direction {
+        CliDirection::Tb => rdg::layout::LayoutDirection::TopToBottom,
+        CliDirection::Lr => rdg::layout::LayoutDirection::LeftToRight,
+    });
+
+    let rank_spacing = payload.rank_spacing.unwrap_or(cli.rank_spacing);
+    let node_spacing = payload.node_spacing.unwrap_or(cli.node_spacing);
 
     // --- 3. Build petgraph --------------------------------------------------
     let compiled = build_graph(&payload)?;
@@ -341,8 +509,8 @@ fn main() -> Result<()> {
 
     // --- 4. Layout ----------------------------------------------------------
     let layout_config = LayoutConfig {
-        rank_spacing: cli.rank_spacing,
-        node_spacing: cli.node_spacing,
+        rank_spacing,
+        node_spacing,
         direction,
         ..LayoutConfig::default()
     };

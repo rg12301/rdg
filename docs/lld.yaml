@@ -1,5 +1,7 @@
 diagram_type: flowchart
 theme: standard
+title: "Low-Level Design Architecture"
+description: "Deterministic Compilation Pipeline (Ingestion → Schema → IR → Layout → Render)"
 groups:
   - id: grp_cli
     label: "CLI & Ingestion"

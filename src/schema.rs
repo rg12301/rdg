@@ -32,18 +32,36 @@ use serde::{Deserialize, Serialize};
 ///     label: "queries"
 /// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct DiagramPayload {
-    /// Logical diagram category (e.g. `flowchart`, `sequence`, `uml`).
+    /// Optional human-readable title for the entire diagram.
+    /// Rendered as a prominent title banner at the top of the canvas.
+    #[serde(default, alias = "name")]
+    pub title: Option<String>,
+
+    /// Optional diagram description or subtitle.
+    #[serde(default, alias = "subtitle", alias = "desc")]
+    pub description: Option<String>,
+
+    /// Logical diagram category (e.g. `flowchart`, `architecture`, `sequence`, `graph`).
+    #[serde(default = "default_diagram_type", alias = "type", alias = "kind")]
     pub diagram_type: String,
 
-    /// Optional theme override. When absent the CLI `--theme` flag takes precedence.
+    /// Optional visual theme: `standard` (elevated white cards) or `dark` (slate-900).
     #[serde(default)]
     pub theme: Option<String>,
 
     /// Optional flow direction override: `tb` (top-to-bottom) or `lr` (left-to-right).
-    #[serde(default)]
+    /// Accepts aliases: `TB`, `LR`, `horizontal`, `vertical`.
+    #[serde(default, alias = "flow", alias = "layout_direction")]
     pub direction: Option<String>,
+
+    /// Optional vertical spacing between ranks in pixels.
+    #[serde(default)]
+    pub rank_spacing: Option<u32>,
+
+    /// Optional horizontal spacing between sibling nodes in pixels.
+    #[serde(default)]
+    pub node_spacing: Option<u32>,
 
     /// Ordered list of node definitions.
     #[serde(default)]
@@ -54,8 +72,16 @@ pub struct DiagramPayload {
     pub edges: Vec<EdgeDef>,
 
     /// Optional list of visual group / swimlane containers.
-    #[serde(default)]
+    #[serde(default, alias = "containers", alias = "swimlanes")]
     pub groups: Vec<GroupDef>,
+}
+
+fn default_diagram_type() -> String {
+    "flowchart".to_owned()
+}
+
+fn default_node_type() -> String {
+    "default".to_owned()
 }
 
 impl DiagramPayload {
@@ -63,9 +89,44 @@ impl DiagramPayload {
     ///
     /// # Errors
     ///
-    /// Returns an error if the YAML is malformed or does not match the schema.
+    /// Returns an error if the YAML is malformed or cannot be parsed.
     pub fn from_yaml(input: &str) -> Result<Self> {
         serde_yaml::from_str(input).context("failed to deserialize YAML diagram payload")
+    }
+
+    /// Resolves the optional direction string into [`crate::layout::LayoutDirection`].
+    pub fn resolved_direction(&self) -> Option<crate::layout::LayoutDirection> {
+        self.direction.as_deref().map(|d| match d.trim().to_ascii_lowercase().as_str() {
+            "lr" | "left_to_right" | "horizontal" | "h" => crate::layout::LayoutDirection::LeftToRight,
+            _ => crate::layout::LayoutDirection::TopToBottom,
+        })
+    }
+
+    /// Returns a complete, production-ready reference YAML template.
+    pub fn example_yaml() -> &'static str {
+        EXAMPLE_YAML
+    }
+
+    /// Returns the JSON Schema (draft-07) specification for [`DiagramPayload`].
+    pub fn json_schema() -> &'static str {
+        JSON_SCHEMA
+    }
+}
+
+impl Default for DiagramPayload {
+    fn default() -> Self {
+        Self {
+            title: None,
+            description: None,
+            diagram_type: default_diagram_type(),
+            theme: None,
+            direction: None,
+            rank_spacing: None,
+            node_spacing: None,
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            groups: Vec::new(),
+        }
     }
 }
 
@@ -74,20 +135,21 @@ impl DiagramPayload {
 // ---------------------------------------------------------------------------
 
 /// Visual container grouping a set of related nodes.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct GroupDef {
     /// Unique identifier for the group container.
     pub id: String,
 
     /// Label displayed in the group header.
+    #[serde(alias = "title", alias = "name")]
     pub label: String,
 
-    /// Optional accent color for container background/border (e.g. `#eff6ff`).
-    #[serde(default)]
+    /// Optional accent color for container background/border (e.g. `#0284c7`).
+    #[serde(default, alias = "border", alias = "fill", alias = "accent")]
     pub color: Option<String>,
 
     /// List of node IDs contained in this group.
-    #[serde(default)]
+    #[serde(default, alias = "members", alias = "node_ids")]
     pub nodes: Vec<String>,
 }
 
@@ -102,19 +164,65 @@ pub struct NodeDef {
     pub id: String,
 
     /// Human-readable label rendered inside the shape.
+    #[serde(default)]
     pub label: String,
 
+    /// Alternative to `label`: primary title line.
+    #[serde(default, alias = "name")]
+    pub title: Option<String>,
+
+    /// Optional subtitle line (rendered as muted text below the title).
+    #[serde(default, alias = "sub_label", alias = "detail")]
+    pub subtitle: Option<String>,
+
     /// Semantic type used to select the draw.io style (e.g. `proxy`, `database`).
-    #[serde(rename = "type", default = "default_node_type")]
+    #[serde(
+        rename = "type",
+        alias = "node_type",
+        alias = "kind",
+        alias = "shape",
+        default = "default_node_type"
+    )]
     pub node_type: String,
 
     /// Optional free-text metadata (e.g. tooltip, annotation).
-    #[serde(default)]
+    #[serde(default, alias = "description", alias = "desc", alias = "tooltip")]
     pub metadata: Option<String>,
 }
 
-fn default_node_type() -> String {
-    "default".to_owned()
+impl Default for NodeDef {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            label: String::new(),
+            title: None,
+            subtitle: None,
+            node_type: default_node_type(),
+            metadata: None,
+        }
+    }
+}
+
+impl NodeDef {
+    /// Resolves the effective label for rendering.
+    ///
+    /// If `label` is non-empty, returns it.
+    /// If `title` is supplied, combines `title` and optional `subtitle`.
+    /// Otherwise falls back to `id`.
+    pub fn resolved_label(&self) -> String {
+        if !self.label.trim().is_empty() {
+            return self.label.clone();
+        }
+        if let Some(t) = &self.title {
+            if let Some(sub) = &self.subtitle {
+                if !sub.trim().is_empty() {
+                    return format!("{t}\n({sub})");
+                }
+            }
+            return t.clone();
+        }
+        self.id.clone()
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -122,22 +230,222 @@ fn default_node_type() -> String {
 // ---------------------------------------------------------------------------
 
 /// A directed edge between two nodes.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct EdgeDef {
     /// Source node ID.
+    #[serde(alias = "source", alias = "src")]
     pub from: String,
 
     /// Target node ID.
+    #[serde(alias = "target", alias = "dst")]
     pub to: String,
 
     /// Optional label rendered along the connector.
-    #[serde(default)]
+    #[serde(default, alias = "name", alias = "text")]
     pub label: Option<String>,
 
     /// Optional semantic edge style: `flow`, `async`, `error`, `data`, `bidirectional`.
-    #[serde(default)]
+    #[serde(default, alias = "style", alias = "type")]
     pub edge_style: Option<String>,
+
+    /// Optional flag to render bidirectional arrows.
+    #[serde(default, alias = "bidir")]
+    pub bidirectional: Option<bool>,
 }
+
+impl EdgeDef {
+    /// Resolves the effective semantic edge style.
+    pub fn resolved_style(&self) -> Option<String> {
+        if self.bidirectional == Some(true) {
+            return Some("bidirectional".to_string());
+        }
+        self.edge_style.clone()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Reference YAML Template & JSON Schema
+// ---------------------------------------------------------------------------
+
+const EXAMPLE_YAML: &str = r##"# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# rdg  ·  Render Diagram Reference YAML Template
+# Compile with: rdg --input diagram.yaml --output diagram.svg
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+diagram_type: flowchart            # flowchart | architecture | sequence | graph
+theme: standard                    # standard (elevated white cards) | dark (slate-900)
+direction: tb                      # tb (top-to-bottom) | lr (left-to-right)
+title: "Microservices Architecture"
+description: "Distributed Order & Event Processing Pipeline"
+
+groups:
+  - id: grp_ingress
+    label: "Ingress Layer"
+    color: "#64748b"
+    nodes: ["client", "api_gw"]
+
+  - id: grp_core
+    label: "Core Services"
+    color: "#0284c7"
+    nodes: ["auth_svc", "order_svc", "order_queue", "inventory_db"]
+
+nodes:
+  - id: client
+    label: "Web / Mobile Client"
+    type: client
+    metadata: "End-user client applications"
+
+  - id: api_gw
+    label: "`api-gateway`\n(Reverse Proxy)"
+    type: proxy
+    metadata: "TLS termination, auth, and rate-limiting"
+
+  - id: auth_svc
+    label: "`auth-service`\n(OAuth2 / JWT)"
+    type: server
+
+  - id: order_svc
+    label: "`order-service`\n(Business Logic)"
+    type: server
+
+  - id: order_queue
+    label: "`order.events`\n(Kafka Topic)"
+    type: queue
+
+  - id: inventory_db
+    label: "`inventory-db`\n(PostgreSQL)"
+    type: database
+
+edges:
+  - from: client
+    to: api_gw
+    label: "HTTPS / REST"
+    edge_style: flow
+
+  - from: api_gw
+    to: auth_svc
+    label: "verify token"
+    edge_style: flow
+
+  - from: api_gw
+    to: order_svc
+    label: "POST /orders"
+    edge_style: flow
+
+  - from: order_svc
+    to: order_queue
+    label: "publish event"
+    edge_style: async
+
+  - from: order_svc
+    to: inventory_db
+    label: "SQL UPDATE"
+    edge_style: data
+"##;
+
+const JSON_SCHEMA: &str = r#"{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DiagramPayload",
+  "description": "Token-optimized YAML/JSON schema for rdg (Render Diagram)",
+  "type": "object",
+  "properties": {
+    "diagram_type": {
+      "type": "string",
+      "default": "flowchart",
+      "description": "Logical diagram category: flowchart, architecture, sequence, graph"
+    },
+    "title": {
+      "type": "string",
+      "description": "Optional diagram title rendered as a header banner"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional diagram subtitle / description"
+    },
+    "theme": {
+      "type": "string",
+      "enum": ["standard", "dark"],
+      "default": "standard",
+      "description": "Visual palette: standard (elevated white cards) or dark (slate-900)"
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["tb", "lr", "TB", "LR", "horizontal", "vertical"],
+      "default": "tb",
+      "description": "Flow direction: tb (top-to-bottom) or lr (left-to-right)"
+    },
+    "rank_spacing": {
+      "type": "integer",
+      "minimum": 10,
+      "description": "Vertical gap between successive layers in pixels (default: 44)"
+    },
+    "node_spacing": {
+      "type": "integer",
+      "minimum": 10,
+      "description": "Horizontal gap between sibling nodes in pixels (default: 28)"
+    },
+    "groups": {
+      "type": "array",
+      "description": "Visual container groups / swimlanes",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique container ID" },
+          "label": { "type": "string", "description": "Group title banner" },
+          "color": { "type": "string", "description": "Border / accent hex color" },
+          "nodes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of node IDs enclosed inside this group"
+          }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Ordered list of graph components / nodes",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique node identifier" },
+          "label": { "type": "string", "description": "Label text with optional \\n and inline markdown" },
+          "title": { "type": "string", "description": "Alternative to label: primary title line" },
+          "subtitle": { "type": "string", "description": "Alternative to label: secondary muted line" },
+          "type": {
+            "type": "string",
+            "default": "default",
+            "description": "Semantic node type: proxy, server, database, queue, cache, function, client, decision, default"
+          },
+          "metadata": { "type": "string", "description": "Optional tooltip / annotation" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Directed connections between nodes",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string", "description": "Source node ID (alias: source, src)" },
+          "to": { "type": "string", "description": "Target node ID (alias: target, dst)" },
+          "label": { "type": "string", "description": "Text rendered along connector" },
+          "edge_style": {
+            "type": "string",
+            "enum": ["flow", "async", "error", "data", "bidirectional"],
+            "default": "flow",
+            "description": "Visual connector style"
+          },
+          "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" }
+        }
+      }
+    }
+  },
+  "required": ["nodes", "edges"]
+}
+"#;
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -223,5 +531,66 @@ edges:
         assert_eq!(payload.groups.len(), 1);
         assert_eq!(payload.groups[0].nodes, vec!["s1", "s2"]);
         assert_eq!(payload.edges[0].edge_style.as_deref(), Some("async"));
+    }
+
+    #[test]
+    fn test_aliases_and_flexible_schema() {
+        let yaml = r##"
+title: "Flexible Architecture"
+description: "LLM-friendly aliases test"
+direction: LR
+rank_spacing: 50
+node_spacing: 35
+groups:
+  - id: g1
+    title: "Cluster A"
+    accent: "#38bdf8"
+    members: ["n1", "n2"]
+nodes:
+  - id: n1
+    title: "API Proxy"
+    subtitle: "Kong"
+    shape: proxy
+    description: "Routes external traffic"
+  - id: n2
+    label: "Main Database"
+    kind: database
+edges:
+  - source: n1
+    target: n2
+    label: "sync call"
+    style: flow
+  - src: n2
+    dst: n1
+    bidirectional: true
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).expect("should parse flexible aliases");
+        assert_eq!(payload.title.as_deref(), Some("Flexible Architecture"));
+        assert_eq!(payload.description.as_deref(), Some("LLM-friendly aliases test"));
+        assert_eq!(payload.resolved_direction(), Some(crate::layout::LayoutDirection::LeftToRight));
+        assert_eq!(payload.rank_spacing, Some(50));
+        assert_eq!(payload.node_spacing, Some(35));
+        assert_eq!(payload.groups[0].label, "Cluster A");
+        assert_eq!(payload.groups[0].color.as_deref(), Some("#38bdf8"));
+        assert_eq!(payload.groups[0].nodes, vec!["n1", "n2"]);
+        assert_eq!(payload.nodes[0].node_type, "proxy");
+        assert_eq!(payload.nodes[0].resolved_label(), "API Proxy\n(Kong)");
+        assert_eq!(payload.nodes[0].metadata.as_deref(), Some("Routes external traffic"));
+        assert_eq!(payload.nodes[1].node_type, "database");
+        assert_eq!(payload.edges[0].from, "n1");
+        assert_eq!(payload.edges[0].to, "n2");
+        assert_eq!(payload.edges[0].resolved_style().as_deref(), Some("flow"));
+        assert_eq!(payload.edges[1].from, "n2");
+        assert_eq!(payload.edges[1].to, "n1");
+        assert_eq!(payload.edges[1].resolved_style().as_deref(), Some("bidirectional"));
+    }
+
+    #[test]
+    fn test_example_yaml_is_valid() {
+        let payload = DiagramPayload::from_yaml(DiagramPayload::example_yaml())
+            .expect("reference example_yaml must deserialize cleanly");
+        assert_eq!(payload.nodes.len(), 6);
+        assert_eq!(payload.edges.len(), 5);
+        assert_eq!(payload.groups.len(), 2);
     }
 }

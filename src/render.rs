@@ -823,6 +823,37 @@ pub fn render_drawio(
     cell1.push_attribute(("parent", "0"));
     w.write_event(Event::Empty(cell1))?;
 
+    // --- Optional Diagram Title Header --------------------------------------
+    if let Some(title) = &compiled.title {
+        let title_color = if theme == "dark" { "#f1f5f9" } else { "#0f172a" };
+        let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
+        let title_html = if let Some(desc) = &compiled.description {
+            format!(
+                "<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b><br/><font style=\"font-size:11px;color:{sub_color};\">{desc}</font>"
+            )
+        } else {
+            format!("<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b>")
+        };
+        let title_style = "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontFamily=Inter,Helvetica,sans-serif;";
+        let mut t_cell = BytesStart::new("mxCell");
+        t_cell.push_attribute(("id", "diagram_title_header"));
+        t_cell.push_attribute(("value", title_html.as_str()));
+        t_cell.push_attribute(("style", title_style));
+        t_cell.push_attribute(("vertex", "1"));
+        t_cell.push_attribute(("parent", "1"));
+        w.write_event(Event::Start(t_cell))?;
+
+        let mut t_geo = BytesStart::new("mxGeometry");
+        t_geo.push_attribute(("x", "24"));
+        t_geo.push_attribute(("y", "12"));
+        t_geo.push_attribute(("width", "500"));
+        t_geo.push_attribute(("height", "40"));
+        t_geo.push_attribute(("as", "geometry"));
+        w.write_event(Event::Empty(t_geo))?;
+
+        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    }
+
     // --- Group / Swimlane container cells -----------------------------------
     let mut node_to_group_id: HashMap<String, String> = HashMap::new();
     let mut group_origins: HashMap<String, (f64, f64)> = HashMap::new();
@@ -1252,6 +1283,35 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
     }
 
     w.write_event(Event::End(BytesEnd::new("defs")))?;
+
+    // --- Optional Diagram Title Header --------------------------------------
+    if let Some(title) = &compiled.title {
+        let title_color = if is_dark { "#f1f5f9" } else { "#0f172a" };
+        let sub_color = if is_dark { "#94a3b8" } else { "#64748b" };
+
+        let mut t_elem = BytesStart::new("text");
+        t_elem.push_attribute(("x", "24"));
+        t_elem.push_attribute(("y", "28"));
+        t_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+        t_elem.push_attribute(("font-size", "15"));
+        t_elem.push_attribute(("font-weight", "bold"));
+        t_elem.push_attribute(("fill", title_color));
+        w.write_event(Event::Start(t_elem))?;
+        w.write_event(Event::Text(BytesText::new(title)))?;
+        w.write_event(Event::End(BytesEnd::new("text")))?;
+
+        if let Some(desc) = &compiled.description {
+            let mut d_elem = BytesStart::new("text");
+            d_elem.push_attribute(("x", "24"));
+            d_elem.push_attribute(("y", "44"));
+            d_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+            d_elem.push_attribute(("font-size", "11"));
+            d_elem.push_attribute(("fill", sub_color));
+            w.write_event(Event::Start(d_elem))?;
+            w.write_event(Event::Text(BytesText::new(desc)))?;
+            w.write_event(Event::End(BytesEnd::new("text")))?;
+        }
+    }
 
     // --- Draw group containers ----------------------------------------------
     for group in &compiled.groups {
@@ -1718,45 +1778,41 @@ mod tests {
     fn one_node_payload() -> DiagramPayload {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "API Gateway".to_owned(),
                 node_type: "proxy".to_owned(),
                 metadata: Some("Routes all traffic".to_owned()),
+                ..Default::default()
             }],
-            edges: vec![],
-            groups: vec![],
+            ..Default::default()
         }
     }
 
     fn two_node_payload() -> DiagramPayload {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "n1".to_owned(),
                     label: "API Gateway".to_owned(),
                     node_type: "proxy".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "n2".to_owned(),
                     label: "User DB".to_owned(),
                     node_type: "database".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
             ],
             edges: vec![EdgeDef {
                 from: "n1".to_owned(),
                 to: "n2".to_owned(),
                 label: Some("queries".to_owned()),
-                edge_style: None,
+                ..Default::default()
             }],
-            groups: vec![],
+            ..Default::default()
         }
     }
 
@@ -1867,16 +1923,13 @@ mod tests {
     fn test_drawio_html_two_line_label() {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "API Gateway\n(Kong Ingress)".to_owned(),
                 node_type: "proxy".to_owned(),
-                metadata: None,
+                ..Default::default()
             }],
-            edges: vec![],
-            groups: vec![],
+            ..Default::default()
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -1891,16 +1944,13 @@ mod tests {
     fn test_drawio_html_multiline_title() {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "petgraph::\nStableDiGraph".to_owned(),
                 node_type: "database".to_owned(),
-                metadata: None,
+                ..Default::default()
             }],
-            edges: vec![],
-            groups: vec![],
+            ..Default::default()
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -1959,43 +2009,39 @@ mod tests {
     fn test_drawio_sibling_exit_ports() {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "src".to_owned(),
                     label: "Source".to_owned(),
                     node_type: "proxy".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "dst1".to_owned(),
                     label: "Target 1".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "dst2".to_owned(),
                     label: "Target 2".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
             ],
             edges: vec![
                 EdgeDef {
                     from: "src".to_owned(),
                     to: "dst1".to_owned(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 },
                 EdgeDef {
                     from: "src".to_owned(),
                     to: "dst2".to_owned(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 },
             ],
-            groups: vec![],
+            ..Default::default()
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -2017,8 +2063,6 @@ mod tests {
 
         let payload = DiagramPayload {
             diagram_type: "architecture".to_owned(),
-            theme: None,
-            direction: None,
             groups: vec![GroupDef {
                 id: "grp_core".to_owned(),
                 label: "Core Services".to_owned(),
@@ -2030,13 +2074,13 @@ mod tests {
                     id: "s1".to_owned(),
                     label: "Producer".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "s2".to_owned(),
                     label: "Consumer".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
             ],
             edges: vec![EdgeDef {
@@ -2044,7 +2088,9 @@ mod tests {
                 to: "s2".to_owned(),
                 label: Some("events".to_owned()),
                 edge_style: Some("async".to_owned()),
+                ..Default::default()
             }],
+            ..Default::default()
         };
 
         let compiled = build_graph(&payload).unwrap();
@@ -2111,16 +2157,13 @@ mod tests {
     fn test_svg_wrapped_multiline_labels() {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "Distributed Architecture Data Pipeline Coordinator".to_owned(),
                 node_type: "server".to_owned(),
-                metadata: None,
+                ..Default::default()
             }],
-            edges: vec![],
-            groups: vec![],
+            ..Default::default()
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();

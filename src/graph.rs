@@ -58,6 +58,10 @@ pub struct CompiledGraph {
     pub had_cycles: bool,
     /// Optional visual groups / swimlanes.
     pub groups: Vec<GroupDef>,
+    /// Optional diagram title banner.
+    pub title: Option<String>,
+    /// Optional diagram description / subtitle.
+    pub description: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +87,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
     for node_def in &payload.nodes {
         let data = NodeData {
             id: node_def.id.clone(),
-            label: node_def.label.clone(),
+            label: node_def.resolved_label(),
             node_type: node_def.node_type.clone(),
             metadata: node_def.metadata.clone(),
         };
@@ -110,7 +114,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             dst,
             EdgeData {
                 label: edge_def.label.clone(),
-                edge_style: edge_def.edge_style.clone(),
+                edge_style: edge_def.resolved_style(),
                 reversed: false,
             },
         );
@@ -129,6 +133,8 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         node_map,
         had_cycles,
         groups: payload.groups.clone(),
+        title: payload.title.clone(),
+        description: payload.description.clone(),
     })
 }
 
@@ -270,15 +276,12 @@ mod tests {
     fn make_payload(nodes: &[(&str, &str)], edges: &[(&str, &str)]) -> DiagramPayload {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: nodes
                 .iter()
                 .map(|(id, label)| NodeDef {
                     id: id.to_string(),
                     label: label.to_string(),
-                    node_type: "default".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 })
                 .collect(),
             edges: edges
@@ -286,11 +289,10 @@ mod tests {
                 .map(|(from, to)| EdgeDef {
                     from: from.to_string(),
                     to: to.to_string(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 })
                 .collect(),
-            groups: vec![],
+            ..Default::default()
         }
     }
 

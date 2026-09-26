@@ -141,10 +141,11 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         } else {
             MARGIN_X
         };
+        let title_offset_y = if compiled.title.is_some() { 36.0 } else { 0.0 };
         let target_min_y = if !compiled.groups.is_empty() {
-            MARGIN_Y + GROUP_PAD_TOP
+            MARGIN_Y + GROUP_PAD_TOP + title_offset_y
         } else {
-            MARGIN_Y
+            MARGIN_Y + title_offset_y
         };
 
         let dx = target_min_x - min_x;
@@ -1055,29 +1056,25 @@ mod tests {
     fn two_node_payload() -> DiagramPayload {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "n1".to_owned(),
                     label: "Source".to_owned(),
-                    node_type: "default".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "n2".to_owned(),
                     label: "Sink".to_owned(),
-                    node_type: "default".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
             ],
             edges: vec![EdgeDef {
                 from: "n1".to_owned(),
                 to: "n2".to_owned(),
                 label: Some("connects".to_owned()),
-                edge_style: None,
+                ..Default::default()
             }],
-            groups: vec![],
+            ..Default::default()
         }
     }
 
@@ -1096,14 +1093,7 @@ mod tests {
 
     #[test]
     fn test_empty_graph_layout() {
-        let payload = DiagramPayload {
-            diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
-            nodes: vec![],
-            edges: vec![],
-            groups: vec![],
-        };
+        let payload = DiagramPayload::default();
         let compiled = build_graph(&payload).unwrap();
         let result = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
         assert!(result.positions.is_empty());
@@ -1155,8 +1145,6 @@ mod tests {
 
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
-            theme: None,
-            direction: None,
             groups: vec![
                 GroupDef {
                     id: "g1".to_owned(),
@@ -1182,47 +1170,45 @@ mod tests {
                     id: "n1".to_owned(),
                     label: "Node 1".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "n2".to_owned(),
                     label: "Node 2".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "n3".to_owned(),
                     label: "Node 3".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
                 NodeDef {
                     id: "n4".to_owned(),
                     label: "Node 4".to_owned(),
                     node_type: "server".to_owned(),
-                    metadata: None,
+                    ..Default::default()
                 },
             ],
             edges: vec![
                 EdgeDef {
                     from: "n1".to_owned(),
                     to: "n2".to_owned(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 },
                 EdgeDef {
                     from: "n2".to_owned(),
                     to: "n3".to_owned(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 },
                 EdgeDef {
                     from: "n3".to_owned(),
                     to: "n4".to_owned(),
-                    label: None,
-                    edge_style: None,
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         };
 
         let compiled = build_graph(&payload).unwrap();

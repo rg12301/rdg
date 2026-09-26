@@ -1,5 +1,7 @@
 diagram_type: flowchart
 theme: standard
+title: "High-Level System Design"
+description: "AI Semantic Generation to Deterministic Graph Compilation"
 groups:
   - id: grp_client
     label: "Client / Prompt Layer"
