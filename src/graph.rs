@@ -12,12 +12,12 @@ use anyhow::Result;
 use petgraph::{
     algo::is_cyclic_directed,
     stable_graph::{EdgeIndex, NodeIndex, StableDiGraph},
-    visit::EdgeRef,
+    visit::{EdgeRef, IntoEdgeReferences},
     Direction,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use crate::schema::DiagramPayload;
+use crate::schema::{DiagramPayload, GroupDef};
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -41,6 +41,8 @@ pub struct NodeData {
 pub struct EdgeData {
     /// Optional edge label.
     pub label: Option<String>,
+    /// Optional semantic edge style (e.g. `async`, `error`, `data`, `bidirectional`).
+    pub edge_style: Option<String>,
     /// `true` when this edge was reversed to break a cycle.
     /// The renderer uses this flag to flip arrow direction.
     pub reversed: bool,
@@ -54,6 +56,8 @@ pub struct CompiledGraph {
     pub node_map: HashMap<String, NodeIndex>,
     /// `true` when at least one cycle was detected and broken.
     pub had_cycles: bool,
+    /// Optional visual groups / swimlanes.
+    pub groups: Vec<GroupDef>,
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +69,7 @@ pub struct CompiledGraph {
 /// Steps:
 /// 1. Add all nodes, populating `node_map`.
 /// 2. Add all edges, validating that source and target IDs exist.
-/// 3. Detect cycles; if any exist, run a greedy DFS-based FAS to reverse
+/// 3. Detect cycles; if any exist, run Eades-Lin-Smyth FAS to reverse
 ///    back-edges until the graph is acyclic.
 ///
 /// # Errors
@@ -106,6 +110,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             dst,
             EdgeData {
                 label: edge_def.label.clone(),
+                edge_style: edge_def.edge_style.clone(),
                 reversed: false,
             },
         );
@@ -123,71 +128,134 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         graph,
         node_map,
         had_cycles,
+        groups: payload.groups.clone(),
     })
 }
 
 // ---------------------------------------------------------------------------
-// Greedy DFS Feedback Arc Set
+// Eades-Lin-Smyth (Greedy FAS) Cycle Breaking
 // ---------------------------------------------------------------------------
 
-/// Reverse back-edges found during DFS until the graph is a DAG.
+/// Reverse back-edges using the Eades-Lin-Smyth heuristic (1993) to make the graph a DAG.
 ///
-/// This is a greedy approximation; it does not minimize the FAS size but
-/// guarantees acyclicity in O(V + E) time.
+/// ELS guarantees an O(V + E) runtime and preserves the primary flow of the graph
+/// much better than arbitrary DFS back-edge reversal.
 fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
-    // Colour map: 0 = white (unvisited), 1 = grey (on stack), 2 = black (done)
-    let mut color: HashMap<NodeIndex, u8> = HashMap::new();
-    let nodes: Vec<NodeIndex> = graph.node_indices().collect();
+    let all_nodes: Vec<NodeIndex> = graph.node_indices().collect();
+    if all_nodes.is_empty() {
+        return;
+    }
 
-    let mut back_edges: Vec<EdgeIndex> = Vec::new();
+    let mut remaining: HashSet<NodeIndex> = all_nodes.into_iter().collect();
 
-    for start in nodes {
-        if color.get(&start).copied().unwrap_or(0) == 0 {
-            dfs_collect_back_edges(graph, start, &mut color, &mut back_edges);
+    // Sequences s1 (left, sources) and s2 (right, sinks)
+    let mut s1: Vec<NodeIndex> = Vec::new();
+    let mut s2: Vec<NodeIndex> = Vec::new();
+
+    while !remaining.is_empty() {
+        // 1. Sink elimination: nodes with out-degree 0 among remaining
+        let mut sink_found = true;
+        while sink_found {
+            sink_found = false;
+            let sinks: Vec<NodeIndex> = remaining
+                .iter()
+                .copied()
+                .filter(|&u| {
+                    graph
+                        .edges_directed(u, Direction::Outgoing)
+                        .filter(|e| remaining.contains(&e.target()))
+                        .count()
+                        == 0
+                })
+                .collect();
+
+            for u in sinks {
+                remaining.remove(&u);
+                s2.push(u);
+                sink_found = true;
+            }
+        }
+
+        if remaining.is_empty() {
+            break;
+        }
+
+        // 2. Source elimination: nodes with in-degree 0 among remaining
+        let mut source_found = true;
+        while source_found {
+            source_found = false;
+            let sources: Vec<NodeIndex> = remaining
+                .iter()
+                .copied()
+                .filter(|&u| {
+                    graph
+                        .edges_directed(u, Direction::Incoming)
+                        .filter(|e| remaining.contains(&e.source()))
+                        .count()
+                        == 0
+                })
+                .collect();
+
+            for u in sources {
+                remaining.remove(&u);
+                s1.push(u);
+                source_found = true;
+            }
+        }
+
+        if remaining.is_empty() {
+            break;
+        }
+
+        // 3. Net-source selection: pick node maximizing out_deg - in_deg
+        if let Some(&best) = remaining.iter().max_by_key(|&&u| {
+            let out_deg = graph
+                .edges_directed(u, Direction::Outgoing)
+                .filter(|e| remaining.contains(&e.target()))
+                .count() as i64;
+            let in_deg = graph
+                .edges_directed(u, Direction::Incoming)
+                .filter(|e| remaining.contains(&e.source()))
+                .count() as i64;
+            out_deg - in_deg
+        }) {
+            remaining.remove(&best);
+            s1.push(best);
         }
     }
 
-    // Reverse all back-edges in-place.
-    for eid in back_edges {
-        if let Some((src, dst)) = graph.edge_endpoints(eid) {
-            if let Some(data) = graph.remove_edge(eid) {
-                graph.add_edge(
-                    dst,
-                    src,
-                    EdgeData {
-                        label: data.label,
-                        reversed: true,
-                    },
-                );
+    // Linear sequence: s1 ++ reverse(s2)
+    s2.reverse();
+    s1.extend(s2);
+
+    let pos: HashMap<NodeIndex, usize> = s1.iter().enumerate().map(|(i, &n)| (n, i)).collect();
+
+    // Identify edges pointing backwards in the sequence
+    let mut back_edges: Vec<(EdgeIndex, NodeIndex, NodeIndex)> = Vec::new();
+    for edge in graph.edge_references() {
+        let src = edge.source();
+        let dst = edge.target();
+        if let (Some(&src_pos), Some(&dst_pos)) = (pos.get(&src), pos.get(&dst)) {
+            if src_pos > dst_pos {
+                back_edges.push((edge.id(), src, dst));
             }
         }
     }
-}
 
-fn dfs_collect_back_edges(
-    graph: &StableDiGraph<NodeData, EdgeData>,
-    node: NodeIndex,
-    color: &mut HashMap<NodeIndex, u8>,
-    back_edges: &mut Vec<EdgeIndex>,
-) {
-    color.insert(node, 1); // grey: on stack
-
-    for edge in graph.edges_directed(node, Direction::Outgoing) {
-        let neighbour = edge.target();
-        match color.get(&neighbour).copied().unwrap_or(0) {
-            0 => {
-                // Unvisited — recurse
-                dfs_collect_back_edges(graph, neighbour, color, back_edges);
-            }
-            1 => {
-                // Grey — back-edge found (cycle)
-                back_edges.push(edge.id());
-            }
-            _ => {} // Black — cross/forward edge, safe
+    // Reverse all back-edges in-place
+    for (eid, src, dst) in back_edges {
+        if let Some(data) = graph.remove_edge(eid) {
+            graph.add_edge(
+                dst,
+                src,
+                EdgeData {
+                    label: data.label,
+                    edge_style: data.edge_style,
+                    reversed: true,
+                },
+            );
         }
     }
-
-    color.insert(node, 2); // black: done
 }
 
 // ---------------------------------------------------------------------------
@@ -218,8 +286,10 @@ mod tests {
                     from: from.to_string(),
                     to: to.to_string(),
                     label: None,
+                    edge_style: None,
                 })
                 .collect(),
+            groups: vec![],
         }
     }
 

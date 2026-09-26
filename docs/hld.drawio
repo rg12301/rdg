@@ -5,6 +5,15 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
+        <mxCell id="grp_client" value="Client / Prompt Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#64748b;fillOpacity=15;strokeColor=#64748b;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#64748b;" vertex="1" parent="1">
+          <mxGeometry x="116" y="10" width="208" height="269" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_compiler" value="rdg Compilation Pipeline" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#2563eb;fillOpacity=15;strokeColor=#2563eb;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#2563eb;" vertex="1" parent="1">
+          <mxGeometry x="116" y="306" width="208" height="734" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_output" value="Artifacts" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#059669;fillOpacity=15;strokeColor=#059669;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#059669;" vertex="1" parent="1">
+          <mxGeometry x="10" y="1081" width="428" height="124" as="geometry"/>
+        </mxCell>
         <mxCell id="llm" value="&lt;b&gt;LLM / AI Agent&lt;/b&gt;" style="shape=mxgraph.general.person_2;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#94a3b8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Generates the semantic graph as token-efficient YAML. Never computes coordinates.">
           <mxGeometry x="140" y="30" width="160" height="60" as="geometry"/>
         </mxCell>
@@ -17,22 +26,22 @@
         <mxCell id="schema" value="&lt;b&gt;Schema Parser&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="serde_yaml → DiagramPayload struct">
           <mxGeometry x="140" y="495" width="160" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="graph" value="&lt;b&gt;Graph Builder&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="petgraph StableDiGraph + Feedback Arc Set cycle breaker">
+        <mxCell id="graph" value="&lt;b&gt;Graph Builder&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="petgraph StableDiGraph + ELS FAS cycle breaker">
           <mxGeometry x="140" y="650" width="160" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="layout" value="&lt;b&gt;Layout Engine&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="layout-rs Sugiyama framework → Cartesian coordinates">
+        <mxCell id="layout" value="&lt;b&gt;Layout Engine&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Sugiyama framework + Crossing Minimisation">
           <mxGeometry x="140" y="805" width="160" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="renderer" value="&lt;b&gt;Renderer&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="quick-xml mxfile writer or SVG writer">
           <mxGeometry x="140" y="960" width="160" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="drawio" value="&lt;b&gt;draw.io XML&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(.drawio)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Strict uncompressed mxfile format. Open in draw.io / diagrams.net">
-          <mxGeometry x="30" y="1115" width="160" height="60" as="geometry"/>
+          <mxGeometry x="30" y="1115" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="svg" value="&lt;b&gt;SVG File&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(.svg)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Embeddable in Markdown, HTML, docs">
-          <mxGeometry x="250" y="1115" width="160" height="60" as="geometry"/>
+          <mxGeometry x="250" y="1115" width="160" height="70" as="geometry"/>
         </mxCell>
-        <mxCell id="e_llm_yaml" value="emits" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="llm" target="yaml" parent="1">
+        <mxCell id="e_llm_yaml" value="emits" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="llm" target="yaml" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -47,17 +56,17 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_schema_graph" value="DiagramPayload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="schema" target="graph" parent="1">
+        <mxCell id="e_schema_graph" value="DiagramPayload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="schema" target="graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_graph_layout" value="CompiledGraph" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="graph" target="layout" parent="1">
+        <mxCell id="e_graph_layout" value="CompiledGraph" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="graph" target="layout" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_layout_renderer" value="LayoutResult" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout" target="renderer" parent="1">
+        <mxCell id="e_layout_renderer" value="LayoutResult" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout" target="renderer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>

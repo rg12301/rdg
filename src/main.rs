@@ -47,37 +47,55 @@ INPUT SCHEMA (YAML) — emit exactly this structure
 ─────────────────────────────────────────────────────────────────────────────
 
   diagram_type: flowchart          # required — logical category (string)
-  theme: standard                  # optional — overrides --theme flag
+  theme: standard                  # optional — standard (white-card) or dark
+  groups:                          # optional — visual swimlane containers
+    - id: g1
+      label: \"Core Cluster\"        # container title
+      color: \"#0284c7\"             # optional accent hex color
+      nodes: [n1, n2]              # node ids enclosed in container
   nodes:
     - id: n1                       # required — unique, short, no spaces
-      label: \"Display Name\"        # required — text shown inside the shape
-      type: server                 # optional — semantic type (see NODE TYPES)
+      label: \"API Gateway\\nv2\"     # required — title, newline adds subtitle
+      type: proxy                  # optional — semantic type (see NODE TYPES)
       metadata: \"tooltip text\"     # optional — free annotation / tooltip
   edges:
     - from: n1                     # required — source node id
       to:   n2                     # required — target node id
       label: \"edge label\"          # optional — text along the connector
+      edge_style: async            # optional: flow | async | error | data | bidirectional
 
 Rules:
-  • ids must be unique across all nodes.
+  • ids must be unique across all nodes and groups.
   • Edge from/to values must reference existing node ids.
-  • Cycles are allowed — rdg breaks them automatically via Feedback Arc Set.
-  • Unknown node types fall back to the default rounded-box style.
+  • Cycles are allowed — rdg breaks them automatically via ELS Feedback Arc Set.
+  • Unknown node types fall back to the default rounded-card style.
   • The 'theme' key in YAML takes precedence over --theme flag.
 
 ─────────────────────────────────────────────────────────────────────────────
-NODE TYPES — use the 'type' field to select draw.io shape + colour
+NODE TYPES (WHITE-CARD DESIGN SYSTEM)
 ─────────────────────────────────────────────────────────────────────────────
 
-  proxy / gateway / api    → Blue rounded box  (API gateways, load balancers)
-  server / service / backend → Green box        (microservices, backends)
-  database / db / storage  → Blue database cylinder
-  queue / broker / bus     → Yellow queue shape (Kafka, RabbitMQ, SQS)
-  cache / redis / memcache → Red diamond        (Redis, Memcached, CDN edge)
-  function / lambda / faas → Orange AWS Lambda icon
-  client / user / browser  → Grey person icon   (end-users, browsers)
-  decision / condition     → Yellow diamond     (if/else, branching logic)
-  (anything else)          → White rounded box  (generic node)
+  All nodes render as clean elevated white cards with semantic border accents:
+
+  proxy / gateway / api      → Indigo accent card  (API gateways, load balancers)
+  server / service / backend → Emerald accent card (microservices, backends)
+  database / db / storage    → Sky 3D cylinder     (databases, object stores)
+  queue / broker / bus       → Amber queue pill    (Kafka, RabbitMQ, SQS)
+  cache / redis / memcache   → Rose diamond        (Redis, Memcached, CDN edge)
+  function / lambda / faas   → Orange Lambda card  (serverless handlers)
+  client / user / browser    → Slate person icon   (end-users, web clients)
+  decision / condition       → Purple diamond      (branching logic)
+  (anything else)            → Neutral slate card  (generic component)
+
+─────────────────────────────────────────────────────────────────────────────
+EDGE STYLES (edge_style)
+─────────────────────────────────────────────────────────────────────────────
+
+  flow (default)   → Solid slate line, filled block arrow
+  async            → Dashed amber line, open arrow (events, queues)
+  error / fallback → Dashed red line, hollow arrow (dead-letter, circuit breaker)
+  data / stream    → 2px Indigo line, filled block arrow (data replication)
+  bidirectional    → Solid slate line, dual arrows (WebSocket, full-duplex)
 
 ─────────────────────────────────────────────────────────────────────────────
 OUTPUT FORMATS — extension controls format

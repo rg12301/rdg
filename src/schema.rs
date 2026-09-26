@@ -48,6 +48,10 @@ pub struct DiagramPayload {
     /// Ordered list of directed edge definitions.
     #[serde(default)]
     pub edges: Vec<EdgeDef>,
+
+    /// Optional list of visual group / swimlane containers.
+    #[serde(default)]
+    pub groups: Vec<GroupDef>,
 }
 
 impl DiagramPayload {
@@ -59,6 +63,28 @@ impl DiagramPayload {
     pub fn from_yaml(input: &str) -> Result<Self> {
         serde_yaml::from_str(input).context("failed to deserialize YAML diagram payload")
     }
+}
+
+// ---------------------------------------------------------------------------
+// Group / Swimlane definition
+// ---------------------------------------------------------------------------
+
+/// Visual container grouping a set of related nodes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GroupDef {
+    /// Unique identifier for the group container.
+    pub id: String,
+
+    /// Label displayed in the group header.
+    pub label: String,
+
+    /// Optional accent color for container background/border (e.g. `#eff6ff`).
+    #[serde(default)]
+    pub color: Option<String>,
+
+    /// List of node IDs contained in this group.
+    #[serde(default)]
+    pub nodes: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +129,10 @@ pub struct EdgeDef {
     /// Optional label rendered along the connector.
     #[serde(default)]
     pub label: Option<String>,
+
+    /// Optional semantic edge style: `flow`, `async`, `error`, `data`, `bidirectional`.
+    #[serde(default)]
+    pub edge_style: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -163,5 +193,31 @@ edges: []
     fn test_invalid_yaml_returns_error() {
         let result = DiagramPayload::from_yaml("not: valid: yaml: {{");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_groups_and_edge_style_deserialization() {
+        let yaml = r##"
+diagram_type: architecture
+groups:
+  - id: g1
+    label: "Backend Cluster"
+    color: "#eff6ff"
+    nodes: ["s1", "s2"]
+nodes:
+  - id: s1
+    label: "Service A"
+  - id: s2
+    label: "Service B"
+edges:
+  - from: s1
+    to: s2
+    label: "async publish"
+    edge_style: async
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).expect("should parse");
+        assert_eq!(payload.groups.len(), 1);
+        assert_eq!(payload.groups[0].nodes, vec!["s1", "s2"]);
+        assert_eq!(payload.edges[0].edge_style.as_deref(), Some("async"));
     }
 }

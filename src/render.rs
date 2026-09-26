@@ -179,6 +179,70 @@ pub fn render_drawio(
     cell1.push_attribute(("parent", "0"));
     w.write_event(Event::Empty(cell1))?;
 
+    // --- Group / Swimlane container cells -----------------------------------
+    for group in &compiled.groups {
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+        let mut found_count = 0;
+
+        for node_id in &group.nodes {
+            if let Some(&node_idx) = compiled.node_map.get(node_id) {
+                if let Some(nl) = layout.positions.get(&node_idx) {
+                    min_x = min_x.min(nl.x);
+                    min_y = min_y.min(nl.y);
+                    max_x = max_x.max(nl.x + nl.width);
+                    max_y = max_y.max(nl.y + nl.height);
+                    found_count += 1;
+                }
+            }
+        }
+
+        if found_count == 0 {
+            continue;
+        }
+
+        let pad_h = 24.0;
+        let pad_top = 34.0;
+        let pad_bot = 20.0;
+
+        let gx = (min_x - pad_h).max(10.0);
+        let gy = (min_y - pad_top).max(10.0);
+        let gw = (max_x - min_x) + (pad_h * 2.0);
+        let gh = (max_y - min_y) + pad_top + pad_bot;
+
+        let color = group.color.as_deref().unwrap_or("#64748b");
+        let group_style = format!(
+            "rounded=1;absoluteArcSize=1;arcSize=10;\
+             fillColor={color};fillOpacity=15;\
+             strokeColor={color};strokeWidth=1.5;\
+             dashed=1;dashPattern=6 6;\
+             verticalAlign=top;align=left;\
+             spacingLeft=16;spacingTop=8;\
+             fontFamily=Inter,Helvetica,sans-serif;\
+             fontStyle=1;fontSize=12;fontColor={color};"
+        );
+
+        let mut g_cell = BytesStart::new("mxCell");
+        g_cell.push_attribute(("id", group.id.as_str()));
+        g_cell.push_attribute(("value", group.label.as_str()));
+        g_cell.push_attribute(("style", group_style.as_str()));
+        g_cell.push_attribute(("vertex", "1"));
+        g_cell.push_attribute(("parent", "1"));
+        w.write_event(Event::Start(g_cell))?;
+
+        let mut g_geo = BytesStart::new("mxGeometry");
+        g_geo.push_attribute(("x", gx.round().to_string().as_str()));
+        g_geo.push_attribute(("y", gy.round().to_string().as_str()));
+        g_geo.push_attribute(("width", gw.round().to_string().as_str()));
+        g_geo.push_attribute(("height", gh.round().to_string().as_str()));
+        g_geo.push_attribute(("as", "geometry"));
+        w.write_event(Event::Empty(g_geo))?;
+
+        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    }
+
     // --- Node cells ---------------------------------------------------------
     for node_idx in compiled.graph.node_indices() {
         let node_data = &compiled.graph[node_idx];
@@ -288,13 +352,29 @@ pub fn render_drawio(
         let exit_x = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let entry_x = 0.5_f64;
 
+        let custom_style = match edge_data.edge_style.as_deref() {
+            Some("async") => {
+                "dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;"
+            }
+            Some("error") | Some("fallback") => {
+                "dashed=1;dashPattern=6 3;strokeColor=#ef4444;strokeWidth=1.5;endArrow=blockThin;endFill=0;"
+            }
+            Some("data") | Some("stream") => {
+                "strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;"
+            }
+            Some("bi") | Some("bidirectional") => {
+                "strokeColor=#64748b;strokeWidth=1.5;startArrow=blockThin;startFill=1;endArrow=blockThin;endFill=1;"
+            }
+            _ => "strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;",
+        };
+
         let edge_style = format!(
             "edgeStyle=orthogonalEdgeStyle;\
              rounded=1;orthogonalLoop=1;jettySize=auto;html=1;\
              exitX={exit_x:.1};exitY=1.0;exitDx=0;exitDy=0;\
              entryX={entry_x:.1};entryY=0.0;entryDx=0;entryDy=0;\
-             strokeColor=#64748b;strokeWidth=1.5;\
-             endArrow=blockThin;endFill=1;endSize=6;\
+             {custom_style}\
+             endSize=6;\
              jumpStyle=arc;jumpSize=6;\
              labelBackgroundColor=#ffffff;labelBorderColor=none;\
              fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;"
@@ -380,8 +460,67 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
     let mut bg = BytesStart::new("rect");
     bg.push_attribute(("width", "100%"));
     bg.push_attribute(("height", "100%"));
-    bg.push_attribute(("fill", "#f8f8f8"));
+    bg.push_attribute(("fill", "#f8fafc"));
     w.write_event(Event::Empty(bg))?;
+
+    // --- Draw group containers ----------------------------------------------
+    for group in &compiled.groups {
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+        let mut found_count = 0;
+
+        for node_id in &group.nodes {
+            if let Some(&node_idx) = compiled.node_map.get(node_id) {
+                if let Some(nl) = layout.positions.get(&node_idx) {
+                    min_x = min_x.min(nl.x);
+                    min_y = min_y.min(nl.y);
+                    max_x = max_x.max(nl.x + nl.width);
+                    max_y = max_y.max(nl.y + nl.height);
+                    found_count += 1;
+                }
+            }
+        }
+
+        if found_count == 0 {
+            continue;
+        }
+
+        let pad_h = 20.0;
+        let pad_top = 28.0;
+        let pad_bot = 16.0;
+
+        let gx = (min_x - pad_h).max(10.0);
+        let gy = (min_y - pad_top).max(10.0);
+        let gw = (max_x - min_x) + (pad_h * 2.0);
+        let gh = (max_y - min_y) + pad_top + pad_bot;
+        let color = group.color.as_deref().unwrap_or("#64748b");
+
+        let mut rect = BytesStart::new("rect");
+        rect.push_attribute(("x", gx.round().to_string().as_str()));
+        rect.push_attribute(("y", gy.round().to_string().as_str()));
+        rect.push_attribute(("width", gw.round().to_string().as_str()));
+        rect.push_attribute(("height", gh.round().to_string().as_str()));
+        rect.push_attribute(("rx", "8"));
+        rect.push_attribute(("fill", color));
+        rect.push_attribute(("fill-opacity", "0.08"));
+        rect.push_attribute(("stroke", color));
+        rect.push_attribute(("stroke-width", "1.5"));
+        rect.push_attribute(("stroke-dasharray", "6 6"));
+        w.write_event(Event::Empty(rect))?;
+
+        let mut text = BytesStart::new("text");
+        text.push_attribute(("x", (gx + 12.0).round().to_string().as_str()));
+        text.push_attribute(("y", (gy + 18.0).round().to_string().as_str()));
+        text.push_attribute(("font-family", "sans-serif"));
+        text.push_attribute(("font-size", "11"));
+        text.push_attribute(("font-weight", "bold"));
+        text.push_attribute(("fill", color));
+        w.write_event(Event::Start(text))?;
+        w.write_event(Event::Text(BytesText::new(&group.label)))?;
+        w.write_event(Event::End(BytesEnd::new("text")))?;
+    }
 
     // --- Draw edges (behind nodes) ------------------------------------------
     for edge_idx in compiled.graph.edge_indices() {
@@ -407,13 +546,23 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
         let x2 = dst_nl.x + dst_nl.width / 2.0;
         let y2 = dst_nl.y;
 
+        let (stroke, stroke_w, dash) = match edge_data.edge_style.as_deref() {
+            Some("async") => ("#d97706", "1.5", Some("8 4")),
+            Some("error") | Some("fallback") => ("#ef4444", "1.5", Some("6 3")),
+            Some("data") | Some("stream") => ("#6366f1", "2.0", None),
+            _ => ("#64748b", "1.5", None),
+        };
+
         let mut line = BytesStart::new("line");
         line.push_attribute(("x1", x1.to_string().as_str()));
         line.push_attribute(("y1", y1.to_string().as_str()));
         line.push_attribute(("x2", x2.to_string().as_str()));
         line.push_attribute(("y2", y2.to_string().as_str()));
-        line.push_attribute(("stroke", "#555555"));
-        line.push_attribute(("stroke-width", "1.5"));
+        line.push_attribute(("stroke", stroke));
+        line.push_attribute(("stroke-width", stroke_w));
+        if let Some(d) = dash {
+            line.push_attribute(("stroke-dasharray", d));
+        }
         line.push_attribute(("marker-end", "url(#arrow)"));
         w.write_event(Event::Empty(line))?;
 
@@ -494,6 +643,7 @@ mod tests {
                 metadata: Some("Routes all traffic".to_owned()),
             }],
             edges: vec![],
+            groups: vec![],
         }
     }
 
@@ -519,7 +669,9 @@ mod tests {
                 from: "n1".to_owned(),
                 to: "n2".to_owned(),
                 label: Some("queries".to_owned()),
+                edge_style: None,
             }],
+            groups: vec![],
         }
     }
 
@@ -638,6 +790,7 @@ mod tests {
                 metadata: None,
             }],
             edges: vec![],
+            groups: vec![],
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -708,13 +861,16 @@ mod tests {
                     from: "src".to_owned(),
                     to: "dst1".to_owned(),
                     label: None,
+                    edge_style: None,
                 },
                 EdgeDef {
                     from: "src".to_owned(),
                     to: "dst2".to_owned(),
                     label: None,
+                    edge_style: None,
                 },
             ],
+            groups: vec![],
         };
         let compiled = build_graph(&payload).unwrap();
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -728,5 +884,54 @@ mod tests {
             xml.contains("exitX=0.9;"),
             "second sibling exit port should be 0.9"
         );
+    }
+
+    #[test]
+    fn test_drawio_renders_groups_and_semantic_edge_styles() {
+        use crate::schema::GroupDef;
+
+        let payload = DiagramPayload {
+            diagram_type: "architecture".to_owned(),
+            theme: None,
+            groups: vec![GroupDef {
+                id: "grp_core".to_owned(),
+                label: "Core Services".to_owned(),
+                color: Some("#3b82f6".to_owned()),
+                nodes: vec!["s1".to_owned(), "s2".to_owned()],
+            }],
+            nodes: vec![
+                NodeDef {
+                    id: "s1".to_owned(),
+                    label: "Producer".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "s2".to_owned(),
+                    label: "Consumer".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+            ],
+            edges: vec![EdgeDef {
+                from: "s1".to_owned(),
+                to: "s2".to_owned(),
+                label: Some("events".to_owned()),
+                edge_style: Some("async".to_owned()),
+            }],
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+
+        assert!(xml.contains("id=\"grp_core\""), "must render group cell");
+        assert!(xml.contains("Core Services"), "must render group label");
+        assert!(xml.contains("dashPattern=8 4"), "async edge must be dashed");
+        assert!(xml.contains("strokeColor=#d97706"), "async edge must be amber");
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("Core Services"), "svg must render group label");
+        assert!(svg.contains("stroke-dasharray=\"8 4\""), "svg must render async dasharray");
     }
 }

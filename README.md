@@ -112,11 +112,16 @@ rdg --help
 
 ```yaml
 diagram_type: flowchart        # required — logical category
-theme: standard                # optional — overrides --theme flag
+theme: standard                # optional — standard (white-card) or dark
+groups:                        # optional — visual swimlane containers
+  - id: g1
+    label: "Ingestion Tier"
+    color: "#0284c7"           # optional hex accent
+    nodes: [n1, n2]
 nodes:
   - id: n1                     # required — unique, short, no spaces
-    label: "API Gateway"       # required — text inside the shape
-    type: proxy                # optional — controls shape + colour
+    label: "API Gateway\nv2.4" # required — supports 2-line title + subtitle
+    type: proxy                # optional — controls shape + border accent
     metadata: "Routes traffic" # optional — tooltip annotation
   - id: n2
     label: "Database"
@@ -125,21 +130,34 @@ edges:
   - from: n1                   # source node id
     to: n2                     # target node id
     label: "SQL queries"       # optional edge label
+    edge_style: async          # optional: flow | async | error | data | bidirectional
 ```
 
-### Node types
+### Node types (White-Card Design System)
 
-| `type` value | Shape | Colour |
+All nodes render as clean, modern white cards with subtle elevation (`shadow=1`), 8px rounded corners, and a semantic colored accent:
+
+| `type` value | Shape | Accent Color |
 |---|---|---|
-| `proxy` / `gateway` / `api` | Rounded box | Blue |
-| `server` / `service` / `backend` | Box | Green |
-| `database` / `db` / `storage` | Cylinder | Blue |
-| `queue` / `broker` / `bus` | Queue shape | Yellow |
-| `cache` / `redis` | Diamond | Red |
-| `function` / `lambda` / `faas` | AWS Lambda icon | Orange |
-| `client` / `user` / `browser` | Person icon | Grey |
-| `decision` / `condition` | Diamond | Yellow |
-| *(anything else)* | Rounded box | White |
+| `proxy` / `gateway` / `api` | Rounded card | Indigo (`#818cf8`) |
+| `server` / `service` / `backend` | Rounded card | Emerald (`#34d399`) |
+| `database` / `db` / `storage` | 3D Cylinder (`cylinder3`) | Sky (`#38bdf8`) |
+| `queue` / `broker` / `bus` | Queue (`start_2`) | Amber (`#fbbf24`) |
+| `cache` / `redis` | Diamond | Rose (`#f87171`) |
+| `function` / `lambda` / `faas` | AWS Lambda icon | Orange (`#fb923c`) |
+| `decision` / `condition` | Diamond | Purple (`#a78bfa`) |
+| `client` / `user` / `browser` | Person icon | Slate (`#94a3b8`) |
+| *(anything else)* | Rounded card | Slate (`#cbd5e1`) |
+
+### Edge styles (`edge_style`)
+
+| Style | Line appearance | Arrow head | Use case |
+|---|---|---|---|
+| `flow` (default) | Solid slate (`#64748b`) | Filled `blockThin` | Standard synchronous request/response |
+| `async` | Dashed amber (`#d97706`, `8 4`) | Open arrow | Asynchronous message / event publication |
+| `error` / `fallback` | Dashed red (`#ef4444`, `6 3`) | Hollow `blockThin` | Circuit breaker / dead-letter / fallback |
+| `data` / `stream` | 2px Indigo (`#6366f1`) | Filled `blockThin` | High-throughput data stream / replication |
+| `bidirectional` | Solid slate (`#64748b`) | Dual `blockThin` | Full-duplex WebSocket / mutual sync |
 
 ### CLI flags
 

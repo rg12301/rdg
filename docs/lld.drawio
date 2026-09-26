@@ -5,64 +5,79 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
+        <mxCell id="grp_cli" value="CLI &amp; Ingestion" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#64748b;fillOpacity=15;strokeColor=#64748b;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#64748b;" vertex="1" parent="1">
+          <mxGeometry x="989" y="10" width="291" height="289" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_schema" value="Schema Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#0284c7;fillOpacity=15;strokeColor=#0284c7;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#0284c7;" vertex="1" parent="1">
+          <mxGeometry x="909" y="326" width="739" height="289" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_graph" value="Graph IR Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#059669;fillOpacity=15;strokeColor=#059669;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#059669;" vertex="1" parent="1">
+          <mxGeometry x="466" y="656" width="1115" height="484" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_layout" value="Layout Engine" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#d97706;fillOpacity=15;strokeColor=#d97706;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#d97706;" vertex="1" parent="1">
+          <mxGeometry x="11" y="1006" width="602" height="679" as="geometry"/>
+        </mxCell>
+        <mxCell id="grp_render" value="Rendering Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#7c3aed;fillOpacity=15;strokeColor=#7c3aed;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#7c3aed;" vertex="1" parent="1">
+          <mxGeometry x="10" y="1561" width="1176" height="454" as="geometry"/>
+        </mxCell>
         <mxCell id="cli_args" value="&lt;b&gt;clap::Cli&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(CLI Arguments)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#818cf8;" vertex="1" parent="1" tooltip="--input, --output, --layout, --theme, --rank-spacing, --node-spacing">
-          <mxGeometry x="881" y="30" width="160" height="60" as="geometry"/>
+          <mxGeometry x="1013" y="30" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="stdin_file" value="&lt;b&gt;stdin / File&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(YAML source)&lt;/font&gt;" style="shape=mxgraph.flowchart.start_2;perimeter=mxPerimeter.ellipsePerimeter;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#fbbf24;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Read via std::io::stdin or std::fs::read_to_string">
-          <mxGeometry x="963" y="185" width="160" height="60" as="geometry"/>
+          <mxGeometry x="1096" y="195" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="diagram_payload" value="&lt;b&gt;schema::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;DiagramPayload&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="serde_yaml::from_str → DiagramPayload { diagram_type, theme, nodes: Vec&lt;NodeDef&gt;, edges: Vec&lt;EdgeDef&gt; }">
-          <mxGeometry x="963" y="340" width="160" height="60" as="geometry"/>
+          <mxGeometry x="1096" y="360" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="node_def" value="&lt;b&gt;schema::NodeDef&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label, node_type, metadata }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="node_type renamed from &apos;type&apos; via #[serde(rename)]">
-          <mxGeometry x="1214" y="495" width="160" height="60" as="geometry"/>
+          <mxGeometry x="1334" y="525" width="290" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="edge_def" value="&lt;b&gt;schema::EdgeDef&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ from, to, label }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Directed edge between two node IDs">
-          <mxGeometry x="811" y="495" width="160" height="60" as="geometry"/>
+          <mxGeometry x="933" y="525" width="180" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="stable_graph" value="&lt;b&gt;petgraph::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;StableDiGraph&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="StableDiGraph&lt;NodeData, EdgeData&gt; — stable indices survive dummy-node insertion">
-          <mxGeometry x="811" y="650" width="160" height="60" as="geometry"/>
+          <mxGeometry x="943" y="690" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="node_data" value="&lt;b&gt;graph::NodeData&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label, node_type, metadata }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Stored at each graph node index">
-          <mxGeometry x="1095" y="805" width="160" height="60" as="geometry"/>
+          <mxGeometry x="1267" y="865" width="290" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="edge_data" value="&lt;b&gt;graph::EdgeData&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ label, reversed }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="reversed=true when edge was flipped by FAS">
-          <mxGeometry x="483" y="805" width="160" height="60" as="geometry"/>
+          <mxGeometry x="490" y="865" width="180" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="fas" value="&lt;b&gt;FAS Cycle Breaker&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(DFS back-edge reversal)&lt;/font&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=2;strokeColor=#a78bfa;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontStyle=2;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Greedy Feedback Arc Set: reverses back-edges found in DFS traversal to make graph acyclic">
-          <mxGeometry x="811" y="805" width="160" height="60" as="geometry"/>
+          <mxGeometry x="851" y="855" width="290" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="compiled_graph" value="&lt;b&gt;graph::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;CompiledGraph&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="{ graph: StableDiGraph, node_map: HashMap&lt;String,NodeIndex&gt;, had_cycles: bool }">
-          <mxGeometry x="811" y="960" width="160" height="60" as="geometry"/>
+          <mxGeometry x="916" y="1050" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="layout_config" value="&lt;b&gt;layout::LayoutConfig&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ rank_spacing, node_spacing,
   node_width, node_height }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Driven by --rank-spacing and --node-spacing CLI flags">
-          <mxGeometry x="234" y="960" width="160" height="60" as="geometry"/>
+          <mxGeometry x="189" y="1040" width="250" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="visual_graph" value="&lt;b&gt;layout-rs&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;VisualGraph
 (Sugiyama engine)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="layout::topo::layout::VisualGraph — runs hierarchical Sugiyama layout algorithm">
-          <mxGeometry x="234" y="1115" width="160" height="60" as="geometry"/>
+          <mxGeometry x="234" y="1225" width="160" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="topo_fallback" value="&lt;b&gt;Topo-sort Fallback&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(longest-path ranking)&lt;/font&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=2;strokeColor=#a78bfa;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontStyle=2;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Pure-Rust fallback: petgraph::algo::toposort + longest-path layer assignment">
-          <mxGeometry x="366" y="1270" width="160" height="60" as="geometry"/>
+          <mxGeometry x="319" y="1410" width="270" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="layout_result" value="&lt;b&gt;layout::LayoutResult&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ positions: HashMap&lt;NodeIndex, NodeLayout&gt; }&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="NodeLayout { x, y, width, height } for every node">
-          <mxGeometry x="115" y="1425" width="160" height="60" as="geometry"/>
+          <mxGeometry x="35" y="1595" width="320" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="style_fn" value="&lt;b&gt;render::style_for_type()&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(node_type → draw.io style string)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Maps proxy/database/server/queue/cache/function/client/decision → mxCell style attr">
-          <mxGeometry x="835" y="1425" width="160" height="60" as="geometry"/>
+          <mxGeometry x="868" y="1595" width="290" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="xml_writer" value="&lt;b&gt;quick-xml Writer&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(mxfile XML)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Writes &lt;?xml&gt;&lt;mxfile&gt;&lt;diagram&gt;&lt;mxGraphModel&gt;&lt;root&gt; with mandatory id=0, id=1 stubs">
-          <mxGeometry x="835" y="1580" width="160" height="60" as="geometry"/>
+          <mxGeometry x="933" y="1760" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="svg_writer" value="&lt;b&gt;quick-xml Writer&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(SVG)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Writes &lt;svg&gt; with &lt;rect&gt; nodes, &lt;line&gt; edges, &lt;text&gt; labels">
-          <mxGeometry x="30" y="1580" width="160" height="60" as="geometry"/>
+          <mxGeometry x="30" y="1760" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="drawio_out" value="&lt;b&gt;output.drawio&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(mxfile XML)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Uncompressed. Open in draw.io desktop or diagrams.net">
-          <mxGeometry x="835" y="1735" width="160" height="60" as="geometry"/>
+          <mxGeometry x="933" y="1925" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="svg_out" value="&lt;b&gt;output.svg&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(SVG)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Embed in Markdown, HTML, Notion, Confluence">
-          <mxGeometry x="30" y="1735" width="160" height="60" as="geometry"/>
+          <mxGeometry x="30" y="1925" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="e_cli_args_stdin_file" value="--input / stdin" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cli_args" target="stdin_file" parent="1">
           <mxGeometry relative="1" as="geometry">

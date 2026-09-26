@@ -1,5 +1,26 @@
 diagram_type: flowchart
 theme: standard
+groups:
+  - id: grp_cli
+    label: "CLI & Ingestion"
+    color: "#64748b"
+    nodes: ["cli_args", "stdin_file"]
+  - id: grp_schema
+    label: "Schema Layer"
+    color: "#0284c7"
+    nodes: ["diagram_payload", "node_def", "edge_def"]
+  - id: grp_graph
+    label: "Graph IR Layer"
+    color: "#059669"
+    nodes: ["stable_graph", "node_data", "edge_data", "fas", "compiled_graph"]
+  - id: grp_layout
+    label: "Layout Engine"
+    color: "#d97706"
+    nodes: ["layout_config", "visual_graph", "topo_fallback", "layout_result"]
+  - id: grp_render
+    label: "Rendering Layer"
+    color: "#7c3aed"
+    nodes: ["style_fn", "xml_writer", "svg_writer", "drawio_out", "svg_out"]
 nodes:
   - id: cli_args
     label: "clap::Cli\n(CLI Arguments)"

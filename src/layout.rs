@@ -92,6 +92,40 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
 }
 
 // ---------------------------------------------------------------------------
+// Node Sizing
+// ---------------------------------------------------------------------------
+
+/// Dynamically estimate the width and height of a node based on its label and shape.
+pub fn estimate_node_size(
+    label: &str,
+    node_type: &str,
+    min_width: f64,
+    min_height: f64,
+) -> (f64, f64) {
+    let lines: Vec<&str> = label.split('\n').collect();
+    let max_chars = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
+
+    // Approximate ~7.5px per character at 12px font + 32px horizontal padding
+    let mut width = (max_chars as f64 * 7.5 + 32.0).max(min_width).min(320.0);
+    // 20px line height + 24px vertical padding
+    let mut height = (lines.len() as f64 * 20.0 + 24.0).max(min_height);
+
+    // Diamond shapes (decision, cache) need extra clearance to inscribe text
+    match node_type.to_ascii_lowercase().as_str() {
+        "decision" | "condition" | "cache" | "redis" | "memcache" => {
+            width *= 1.35;
+            height *= 1.35;
+        }
+        _ => {}
+    }
+
+    // Snap to 10px grid
+    let snapped_w = (width / 10.0).ceil() * 10.0;
+    let snapped_h = (height / 10.0).ceil() * 10.0;
+    (snapped_w, snapped_h)
+}
+
+// ---------------------------------------------------------------------------
 // layout-rs backend
 // ---------------------------------------------------------------------------
 
@@ -105,7 +139,13 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
         let node_data = &compiled.graph[idx];
         let shape = ShapeKind::new_box(&node_data.label);
         let style = StyleAttr::simple();
-        let size = Point::new(config.node_width, config.node_height);
+        let (nw, nh) = estimate_node_size(
+            &node_data.label,
+            &node_data.node_type,
+            config.node_width,
+            config.node_height,
+        );
+        let size = Point::new(nw, nh);
         let element = Element::create(shape, style, Orientation::TopToBottom, size);
         let handle = vg.add_node(element);
         handle_map.insert(idx, handle);
@@ -131,15 +171,22 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
     let mut positions: HashMap<NodeIndex, NodeLayout> = HashMap::with_capacity(handle_map.len());
     for (idx, handle) in &handle_map {
         let pos = vg.pos(*handle);
-        // pos.left/top give the bbox top-left; pos.bbox(false) returns (top_left, bottom_right).
         let (top_left, bottom_right) = pos.bbox(false);
+        let (est_w, est_h) = estimate_node_size(
+            &compiled.graph[*idx].label,
+            &compiled.graph[*idx].node_type,
+            config.node_width,
+            config.node_height,
+        );
+        let w = (bottom_right.x - top_left.x).abs().max(est_w);
+        let h = (bottom_right.y - top_left.y).abs().max(est_h);
         positions.insert(
             *idx,
             NodeLayout {
                 x: top_left.x,
                 y: top_left.y,
-                width: (bottom_right.x - top_left.x).abs().max(config.node_width),
-                height: (bottom_right.y - top_left.y).abs().max(config.node_height),
+                width: w,
+                height: h,
             },
         );
     }
@@ -151,11 +198,7 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
 // Topological fallback layout
 // ---------------------------------------------------------------------------
 
-/// Pure-Rust layered layout via topological sort + longest-path ranking.
-///
-/// Assigns each node a (column, row) position and converts to pixel coords
-/// using `config.node_width + config.node_spacing` and
-/// `config.node_height + config.rank_spacing`.
+/// Pure-Rust layered layout via topological sort + longest-path ranking + barycentric crossing reduction.
 fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
     use petgraph::algo::toposort;
     use petgraph::Direction;
@@ -187,38 +230,140 @@ fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         layer.insert(node, node_layer);
     }
 
-    // Group nodes by layer to assign horizontal positions.
+    // Group nodes by layer
     let max_layer = layer.values().copied().max().unwrap_or(0);
     let mut layer_buckets: Vec<Vec<NodeIndex>> = vec![Vec::new(); max_layer + 1];
     for (&node, &l) in &layer {
         layer_buckets[l].push(node);
     }
 
-    let cell_w = config.node_width + config.node_spacing as f64;
-    let cell_h = config.node_height + config.rank_spacing as f64;
+    // Crossing minimisation
+    minimise_crossings(&mut layer_buckets, compiled);
+
+    // Compute node sizes
+    let mut node_sizes: HashMap<NodeIndex, (f64, f64)> = HashMap::new();
+    for &node in &topo_order {
+        let data = &compiled.graph[node];
+        node_sizes.insert(
+            node,
+            estimate_node_size(&data.label, &data.node_type, config.node_width, config.node_height),
+        );
+    }
+
+    // Calculate layer widths for centering
+    let layer_widths: Vec<f64> = layer_buckets
+        .iter()
+        .map(|bucket| {
+            if bucket.is_empty() {
+                return 0.0;
+            }
+            let sum_w: f64 = bucket.iter().map(|n| node_sizes[n].0).sum();
+            let gaps = (bucket.len() - 1) as f64 * config.node_spacing as f64;
+            sum_w + gaps
+        })
+        .collect();
+
+    let max_layer_width = layer_widths.iter().copied().fold(0.0_f64, f64::max);
 
     let mut positions: HashMap<NodeIndex, NodeLayout> =
         HashMap::with_capacity(compiled.graph.node_count());
+    let mut current_y = 0.0_f64;
+
     for (row, bucket) in layer_buckets.iter().enumerate() {
-        let total_w = bucket.len() as f64 * cell_w;
-        // Centre the row horizontally (cosmetic).
-        let x_offset = 0_f64; // absolute left; centering is done per-node below.
-        for (col, &node) in bucket.iter().enumerate() {
+        if bucket.is_empty() {
+            continue;
+        }
+        let total_w = layer_widths[row];
+        let x_offset = (max_layer_width - total_w).max(0.0) / 2.0;
+        let max_h_in_layer = bucket.iter().map(|n| node_sizes[n].1).fold(0.0_f64, f64::max);
+
+        let mut current_x = x_offset;
+        for &node in bucket {
+            let (nw, nh) = node_sizes[&node];
+            // Vertically center node within layer height
+            let node_y = current_y + (max_h_in_layer - nh) / 2.0;
             positions.insert(
                 node,
                 NodeLayout {
-                    x: col as f64 * cell_w,
-                    y: row as f64 * cell_h,
-                    width: config.node_width,
-                    height: config.node_height,
+                    x: current_x,
+                    y: node_y,
+                    width: nw,
+                    height: nh,
                 },
             );
+            current_x += nw + config.node_spacing as f64;
         }
-        let _ = total_w;
-        let _ = x_offset;
+
+        current_y += max_h_in_layer + config.rank_spacing as f64;
     }
 
     Ok(LayoutResult { positions })
+}
+
+/// 3-pass barycentric crossing minimisation heuristic.
+fn minimise_crossings(
+    layer_buckets: &mut [Vec<NodeIndex>],
+    compiled: &CompiledGraph,
+) {
+    use petgraph::Direction;
+
+    for _pass in 0..3 {
+        // Forward sweep: sort by median predecessor position
+        for i in 1..layer_buckets.len() {
+            let prev_pos: HashMap<NodeIndex, f64> = layer_buckets[i - 1]
+                .iter()
+                .enumerate()
+                .map(|(idx, &n)| (n, idx as f64))
+                .collect();
+
+            layer_buckets[i].sort_by(|&a, &b| {
+                let ma = median_neighbor_pos(a, &prev_pos, &compiled.graph, Direction::Incoming);
+                let mb = median_neighbor_pos(b, &prev_pos, &compiled.graph, Direction::Incoming);
+                ma.partial_cmp(&mb).unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+
+        // Backward sweep: sort by median successor position
+        let len = layer_buckets.len();
+        for i in (0..len.saturating_sub(1)).rev() {
+            let next_pos: HashMap<NodeIndex, f64> = layer_buckets[i + 1]
+                .iter()
+                .enumerate()
+                .map(|(idx, &n)| (n, idx as f64))
+                .collect();
+
+            layer_buckets[i].sort_by(|&a, &b| {
+                let ma = median_neighbor_pos(a, &next_pos, &compiled.graph, Direction::Outgoing);
+                let mb = median_neighbor_pos(b, &next_pos, &compiled.graph, Direction::Outgoing);
+                ma.partial_cmp(&mb).unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+    }
+}
+
+fn median_neighbor_pos(
+    node: NodeIndex,
+    neighbor_positions: &HashMap<NodeIndex, f64>,
+    graph: &petgraph::stable_graph::StableDiGraph<crate::graph::NodeData, crate::graph::EdgeData>,
+    direction: petgraph::Direction,
+) -> f64 {
+    let mut positions: Vec<f64> = graph
+        .edges_directed(node, direction)
+        .filter_map(|e| {
+            let neighbor = match direction {
+                petgraph::Direction::Incoming => e.source(),
+                petgraph::Direction::Outgoing => e.target(),
+            };
+            neighbor_positions.get(&neighbor).copied()
+        })
+        .collect();
+
+    if positions.is_empty() {
+        return f64::MAX / 2.0;
+    }
+    positions.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let mid = positions.len() / 2;
+    positions[mid]
 }
 
 // ---------------------------------------------------------------------------
@@ -253,7 +398,9 @@ mod tests {
                 from: "n1".to_owned(),
                 to: "n2".to_owned(),
                 label: Some("connects".to_owned()),
+                edge_style: None,
             }],
+            groups: vec![],
         }
     }
 
@@ -277,6 +424,7 @@ mod tests {
             theme: None,
             nodes: vec![],
             edges: vec![],
+            groups: vec![],
         };
         let compiled = build_graph(&payload).unwrap();
         let result = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
@@ -292,5 +440,14 @@ mod tests {
             assert!(nl.width > 0.0, "width must be positive");
             assert!(nl.height > 0.0, "height must be positive");
         }
+    }
+
+    #[test]
+    fn test_dynamic_node_sizing() {
+        let (short_w, short_h) = estimate_node_size("API", "default", 160.0, 60.0);
+        let (long_w, _long_h) = estimate_node_size("Extremely Long Microservice Component Name Across Architecture", "default", 160.0, 60.0);
+        assert!(long_w > short_w, "longer text must produce wider node");
+        assert!(short_w >= 160.0);
+        assert!(short_h >= 60.0);
     }
 }

@@ -1,111 +1,121 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1414.125" height="1835" viewBox="0 0 1414.125 1835">
-  <rect width="100%" height="100%" fill="#f8f8f8"/>
-  <line x1="960.5" y1="90" x2="1043.25" y2="185" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1005.875" y="137.5" font-family="sans-serif" font-size="11" fill="#333333">--input / stdin</text>
-  <line x1="1043.25" y1="245" x2="1043.25" y2="340" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1047.25" y="292.5" font-family="sans-serif" font-size="11" fill="#333333">serde_yaml::from_str</text>
-  <line x1="1043.25" y1="400" x2="1294.125" y2="495" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1172.6875" y="447.5" font-family="sans-serif" font-size="11" fill="#333333">nodes[]</text>
-  <line x1="1043.25" y1="400" x2="890.75" y2="495" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="971" y="447.5" font-family="sans-serif" font-size="11" fill="#333333">edges[]</text>
-  <line x1="1294.125" y1="555" x2="890.75" y2="650" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1096.4375" y="602.5" font-family="sans-serif" font-size="11" fill="#333333">add_node → NodeData</text>
-  <line x1="890.75" y1="555" x2="890.75" y2="650" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="894.75" y="602.5" font-family="sans-serif" font-size="11" fill="#333333">add_edge → EdgeData</text>
-  <line x1="890.75" y1="710" x2="1175.375" y2="805" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1037.0625" y="757.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
-  <line x1="890.75" y1="710" x2="562.5" y2="805" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="730.625" y="757.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
-  <line x1="890.75" y1="710" x2="890.75" y2="805" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="894.75" y="757.5" font-family="sans-serif" font-size="11" fill="#333333">is_cyclic_directed?</text>
-  <line x1="890.75" y1="865" x2="890.75" y2="960" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="894.75" y="912.5" font-family="sans-serif" font-size="11" fill="#333333">acyclic graph</text>
-  <line x1="960.5" y1="90" x2="313.75" y2="960" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="641.125" y="525" font-family="sans-serif" font-size="11" fill="#333333">--rank-spacing / --node-spacing</text>
-  <line x1="890.75" y1="1020" x2="313.75" y2="1115" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="606.25" y="1067.5" font-family="sans-serif" font-size="11" fill="#333333">add nodes + edges</text>
-  <line x1="313.75" y1="1020" x2="313.75" y2="1115" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="317.75" y="1067.5" font-family="sans-serif" font-size="11" fill="#333333">node size / spacing</text>
-  <line x1="313.75" y1="1175" x2="445.875" y2="1270" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="383.8125" y="1222.5" font-family="sans-serif" font-size="11" fill="#333333">on error</text>
-  <line x1="313.75" y1="1175" x2="195" y2="1425" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="258.375" y="1300" font-family="sans-serif" font-size="11" fill="#333333">vg.pos(handle).bbox()</text>
-  <line x1="445.875" y1="1330" x2="195" y2="1425" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="324.4375" y="1377.5" font-family="sans-serif" font-size="11" fill="#333333">layer × spacing</text>
-  <line x1="890.75" y1="1020" x2="915" y2="1425" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="906.875" y="1222.5" font-family="sans-serif" font-size="11" fill="#333333">node_type</text>
-  <line x1="915" y1="1485" x2="915" y2="1580" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="919" y="1532.5" font-family="sans-serif" font-size="11" fill="#333333">style string</text>
-  <line x1="195" y1="1485" x2="915" y2="1580" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="559" y="1532.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
-  <line x1="195" y1="1485" x2="110" y2="1580" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="156.5" y="1532.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
-  <line x1="890.75" y1="1020" x2="915" y2="1580" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="906.875" y="1300" font-family="sans-serif" font-size="11" fill="#333333">node/edge data</text>
-  <line x1="890.75" y1="1020" x2="110" y2="1580" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="504.375" y="1300" font-family="sans-serif" font-size="11" fill="#333333">node/edge data</text>
-  <line x1="915" y1="1640" x2="915" y2="1735" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="919" y="1687.5" font-family="sans-serif" font-size="11" fill="#333333">write</text>
-  <line x1="110" y1="1640" x2="110" y2="1735" stroke="#555555" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="114" y="1687.5" font-family="sans-serif" font-size="11" fill="#333333">write</text>
-  <rect x="880.5" y="30" width="160" height="60" rx="6" ry="6" fill="#DAE8FC" stroke="#555555" stroke-width="1.5"/>
-  <text x="960.5" y="64" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">clap::Cli
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1664.125" height="2035" viewBox="0 0 1664.125 2035">
+  <rect width="100%" height="100%" fill="#f8fafc"/>
+  <rect x="993" y="10" width="283" height="279" rx="8" fill="#64748b" fill-opacity="0.08" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="1005" y="28" font-family="sans-serif" font-size="11" font-weight="bold" fill="#64748b">CLI &amp; Ingestion</text>
+  <rect x="913" y="332" width="731" height="279" rx="8" fill="#0284c7" fill-opacity="0.08" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="925" y="350" font-family="sans-serif" font-size="11" font-weight="bold" fill="#0284c7">Schema Layer</text>
+  <rect x="470" y="662" width="1107" height="474" rx="8" fill="#059669" fill-opacity="0.08" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="482" y="680" font-family="sans-serif" font-size="11" font-weight="bold" fill="#059669">Graph IR Layer</text>
+  <rect x="15" y="1012" width="594" height="669" rx="8" fill="#d97706" fill-opacity="0.08" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="27" y="1030" font-family="sans-serif" font-size="11" font-weight="bold" fill="#d97706">Layout Engine</text>
+  <rect x="10" y="1567" width="1168" height="444" rx="8" fill="#7c3aed" fill-opacity="0.08" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="22" y="1585" font-family="sans-serif" font-size="11" font-weight="bold" fill="#7c3aed">Rendering Layer</text>
+  <line x1="1093" y1="100" x2="1175.75" y2="195" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1138.375" y="147.5" font-family="sans-serif" font-size="11" fill="#333333">--input / stdin</text>
+  <line x1="1175.75" y1="265" x2="1175.75" y2="360" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1179.75" y="312.5" font-family="sans-serif" font-size="11" fill="#333333">serde_yaml::from_str</text>
+  <line x1="1175.75" y1="430" x2="1479.125" y2="525" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1331.4375" y="477.5" font-family="sans-serif" font-size="11" fill="#333333">nodes[]</text>
+  <line x1="1175.75" y1="430" x2="1023.25" y2="525" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1103.5" y="477.5" font-family="sans-serif" font-size="11" fill="#333333">edges[]</text>
+  <line x1="1479.125" y1="595" x2="1023.25" y2="690" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1255.1875" y="642.5" font-family="sans-serif" font-size="11" fill="#333333">add_node → NodeData</text>
+  <line x1="1023.25" y1="595" x2="1023.25" y2="690" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1027.25" y="642.5" font-family="sans-serif" font-size="11" fill="#333333">add_edge → EdgeData</text>
+  <line x1="1023.25" y1="760" x2="1411.625" y2="865" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1221.4375" y="812.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
+  <line x1="1023.25" y1="760" x2="580" y2="865" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="805.625" y="812.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
+  <line x1="1023.25" y1="760" x2="995.75" y2="855" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1013.5" y="807.5" font-family="sans-serif" font-size="11" fill="#333333">is_cyclic_directed?</text>
+  <line x1="995.75" y1="945" x2="995.75" y2="1050" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="999.75" y="997.5" font-family="sans-serif" font-size="11" fill="#333333">acyclic graph</text>
+  <line x1="1093" y1="100" x2="313.75" y2="1040" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="707.375" y="570" font-family="sans-serif" font-size="11" fill="#333333">--rank-spacing / --node-spacing</text>
+  <line x1="995.75" y1="1120" x2="313.75" y2="1225" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="658.75" y="1172.5" font-family="sans-serif" font-size="11" fill="#333333">add nodes + edges</text>
+  <line x1="313.75" y1="1130" x2="313.75" y2="1225" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="317.75" y="1177.5" font-family="sans-serif" font-size="11" fill="#333333">node size / spacing</text>
+  <line x1="313.75" y1="1315" x2="454" y2="1410" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="387.875" y="1362.5" font-family="sans-serif" font-size="11" fill="#333333">on error</text>
+  <line x1="313.75" y1="1315" x2="195" y2="1595" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="258.375" y="1455" font-family="sans-serif" font-size="11" fill="#333333">vg.pos(handle).bbox()</text>
+  <line x1="454" y1="1500" x2="195" y2="1595" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="328.5" y="1547.5" font-family="sans-serif" font-size="11" fill="#333333">layer × spacing</text>
+  <line x1="995.75" y1="1120" x2="1012.5" y2="1595" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1008.125" y="1357.5" font-family="sans-serif" font-size="11" fill="#333333">node_type</text>
+  <line x1="1012.5" y1="1665" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1016.5" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">style string</text>
+  <line x1="195" y1="1665" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="607.75" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
+  <line x1="195" y1="1665" x2="110" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="156.5" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
+  <line x1="995.75" y1="1120" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1008.125" y="1440" font-family="sans-serif" font-size="11" fill="#333333">node/edge data</text>
+  <line x1="995.75" y1="1120" x2="110" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="556.875" y="1440" font-family="sans-serif" font-size="11" fill="#333333">node/edge data</text>
+  <line x1="1012.5" y1="1830" x2="1012.5" y2="1925" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1016.5" y="1877.5" font-family="sans-serif" font-size="11" fill="#333333">write</text>
+  <line x1="110" y1="1830" x2="110" y2="1925" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="114" y="1877.5" font-family="sans-serif" font-size="11" fill="#333333">write</text>
+  <rect x="1013" y="30" width="160" height="70" rx="6" ry="6" fill="#DAE8FC" stroke="#555555" stroke-width="1.5"/>
+  <text x="1093" y="69" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">clap::Cli
 (CLI Arguments)</text>
-  <rect x="963.25" y="185" width="160" height="60" rx="6" ry="6" fill="#fff2cc" stroke="#555555" stroke-width="1.5"/>
-  <text x="1043.25" y="219" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">stdin / File
+  <rect x="1095.75" y="195" width="160" height="70" rx="6" ry="6" fill="#fff2cc" stroke="#555555" stroke-width="1.5"/>
+  <text x="1175.75" y="234" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">stdin / File
 (YAML source)</text>
-  <rect x="963.25" y="340" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="1043.25" y="374" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::
+  <rect x="1095.75" y="360" width="160" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1175.75" y="399" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::
 DiagramPayload</text>
-  <rect x="1214.125" y="495" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="1294.125" y="529" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::NodeDef
+  <rect x="1334.125" y="525" width="290" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1479.125" y="564" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::NodeDef
 { id, label, node_type, metadata }</text>
-  <rect x="810.75" y="495" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="890.75" y="529" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::EdgeDef
+  <rect x="933.25" y="525" width="180" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1023.25" y="564" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">schema::EdgeDef
 { from, to, label }</text>
-  <rect x="810.75" y="650" width="160" height="60" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
-  <text x="890.75" y="684" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">petgraph::
+  <rect x="943.25" y="690" width="160" height="70" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
+  <text x="1023.25" y="729" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">petgraph::
 StableDiGraph</text>
-  <rect x="1095.375" y="805" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="1175.375" y="839" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::NodeData
+  <rect x="1266.625" y="865" width="290" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1411.625" y="904" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::NodeData
 { id, label, node_type, metadata }</text>
-  <rect x="482.5" y="805" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="562.5" y="839" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::EdgeData
+  <rect x="490" y="865" width="180" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="580" y="904" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::EdgeData
 { label, reversed }</text>
-  <rect x="810.75" y="805" width="160" height="60" rx="6" ry="6" fill="#ffffff" stroke="#555555" stroke-width="1.5"/>
-  <text x="890.75" y="839" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">FAS Cycle Breaker
+  <rect x="850.75" y="855" width="290" height="90" rx="6" ry="6" fill="#ffffff" stroke="#555555" stroke-width="1.5"/>
+  <text x="995.75" y="904" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">FAS Cycle Breaker
 (DFS back-edge reversal)</text>
-  <rect x="810.75" y="960" width="160" height="60" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
-  <text x="890.75" y="994" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::
+  <rect x="915.75" y="1050" width="160" height="70" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
+  <text x="995.75" y="1089" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">graph::
 CompiledGraph</text>
-  <rect x="233.75" y="960" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="313.75" y="994" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout::LayoutConfig
+  <rect x="188.75" y="1040" width="250" height="90" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="313.75" y="1089" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout::LayoutConfig
 { rank_spacing, node_spacing,
   node_width, node_height }</text>
-  <rect x="233.75" y="1115" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="313.75" y="1149" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout-rs
+  <rect x="233.75" y="1225" width="160" height="90" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="313.75" y="1274" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout-rs
 VisualGraph
 (Sugiyama engine)</text>
-  <rect x="365.875" y="1270" width="160" height="60" rx="6" ry="6" fill="#ffffff" stroke="#555555" stroke-width="1.5"/>
-  <text x="445.875" y="1304" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">Topo-sort Fallback
+  <rect x="319" y="1410" width="270" height="90" rx="6" ry="6" fill="#ffffff" stroke="#555555" stroke-width="1.5"/>
+  <text x="454" y="1459" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">Topo-sort Fallback
 (longest-path ranking)</text>
-  <rect x="115" y="1425" width="160" height="60" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
-  <text x="195" y="1459" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout::LayoutResult
+  <rect x="35" y="1595" width="320" height="70" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
+  <text x="195" y="1634" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">layout::LayoutResult
 { positions: HashMap&lt;NodeIndex, NodeLayout&gt; }</text>
-  <rect x="835" y="1425" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="915" y="1459" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">render::style_for_type()
+  <rect x="867.5" y="1595" width="290" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1012.5" y="1634" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">render::style_for_type()
 (node_type → draw.io style string)</text>
-  <rect x="835" y="1580" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="915" y="1614" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">quick-xml Writer
+  <rect x="932.5" y="1760" width="160" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="1012.5" y="1799" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">quick-xml Writer
 (mxfile XML)</text>
-  <rect x="30" y="1580" width="160" height="60" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
-  <text x="110" y="1614" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">quick-xml Writer
+  <rect x="30" y="1760" width="160" height="70" rx="6" ry="6" fill="#d5e8d4" stroke="#555555" stroke-width="1.5"/>
+  <text x="110" y="1799" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">quick-xml Writer
 (SVG)</text>
-  <rect x="835" y="1735" width="160" height="60" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
-  <text x="915" y="1769" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">output.drawio
+  <rect x="932.5" y="1925" width="160" height="70" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
+  <text x="1012.5" y="1964" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">output.drawio
 (mxfile XML)</text>
-  <rect x="30" y="1735" width="160" height="60" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
-  <text x="110" y="1769" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">output.svg
+  <rect x="30" y="1925" width="160" height="70" rx="6" ry="6" fill="#dae8fc" stroke="#555555" stroke-width="1.5"/>
+  <text x="110" y="1964" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a1a1a">output.svg
 (SVG)</text>
 </svg>

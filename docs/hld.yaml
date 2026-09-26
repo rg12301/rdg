@@ -1,5 +1,18 @@
 diagram_type: flowchart
 theme: standard
+groups:
+  - id: grp_client
+    label: "Client / Prompt Layer"
+    color: "#64748b"
+    nodes: ["llm", "yaml"]
+  - id: grp_compiler
+    label: "rdg Compilation Pipeline"
+    color: "#2563eb"
+    nodes: ["rdg", "schema", "graph", "layout", "renderer"]
+  - id: grp_output
+    label: "Artifacts"
+    color: "#059669"
+    nodes: ["drawio", "svg"]
 nodes:
   - id: llm
     label: "LLM / AI Agent"
@@ -20,11 +33,11 @@ nodes:
   - id: graph
     label: "Graph Builder"
     type: server
-    metadata: "petgraph StableDiGraph + Feedback Arc Set cycle breaker"
+    metadata: "petgraph StableDiGraph + ELS FAS cycle breaker"
   - id: layout
     label: "Layout Engine"
     type: server
-    metadata: "layout-rs Sugiyama framework → Cartesian coordinates"
+    metadata: "Sugiyama framework + Crossing Minimisation"
   - id: renderer
     label: "Renderer"
     type: server
@@ -41,24 +54,32 @@ edges:
   - from: llm
     to: yaml
     label: "emits"
+    edge_style: async
   - from: yaml
     to: rdg
     label: "stdin / --input"
+    edge_style: flow
   - from: rdg
     to: schema
     label: "parse"
+    edge_style: flow
   - from: schema
     to: graph
     label: "DiagramPayload"
+    edge_style: data
   - from: graph
     to: layout
     label: "CompiledGraph"
+    edge_style: data
   - from: layout
     to: renderer
     label: "LayoutResult"
+    edge_style: data
   - from: renderer
     to: drawio
     label: ".drawio"
+    edge_style: flow
   - from: renderer
     to: svg
     label: ".svg"
+    edge_style: flow
