@@ -23,79 +23,79 @@ groups:
     nodes: ["style_fn", "xml_writer", "svg_writer", "drawio_out", "svg_out"]
 nodes:
   - id: cli_args
-    label: "clap::Cli\n(CLI Arguments)"
+    label: "`clap::Cli`\n(CLI Arguments)"
     type: proxy
     metadata: "--input, --output, --layout, --theme, --rank-spacing, --node-spacing"
   - id: stdin_file
-    label: "stdin / File\n(YAML source)"
+    label: "stdin / File\n(YAML Source)"
     type: queue
     metadata: "Read via std::io::stdin or std::fs::read_to_string"
   - id: diagram_payload
-    label: "schema::\nDiagramPayload"
+    label: "`schema::`\n`DiagramPayload`"
     type: server
     metadata: "serde_yaml::from_str → DiagramPayload { diagram_type, theme, nodes: Vec<NodeDef>, edges: Vec<EdgeDef> }"
   - id: node_def
-    label: "schema::NodeDef\n{ id, label, node_type, metadata }"
+    label: "`schema::NodeDef`\n{ id, label, type, meta }"
     type: server
     metadata: "node_type renamed from 'type' via #[serde(rename)]"
   - id: edge_def
-    label: "schema::EdgeDef\n{ from, to, label }"
+    label: "`schema::EdgeDef`\n{ from, to, label }"
     type: server
     metadata: "Directed edge between two node IDs"
   - id: stable_graph
-    label: "petgraph::\nStableDiGraph"
+    label: "`petgraph::`\n`StableDiGraph`"
     type: database
     metadata: "StableDiGraph<NodeData, EdgeData> — stable indices survive dummy-node insertion"
   - id: node_data
-    label: "graph::NodeData\n{ id, label, node_type, metadata }"
+    label: "`graph::NodeData`\n{ id, label, type, meta }"
     type: server
     metadata: "Stored at each graph node index"
   - id: edge_data
-    label: "graph::EdgeData\n{ label, reversed }"
+    label: "`graph::EdgeData`\n{ label, reversed }"
     type: server
     metadata: "reversed=true when edge was flipped by FAS"
   - id: fas
-    label: "FAS Cycle Breaker\n(DFS back-edge reversal)"
+    label: "FAS Cycle Breaker\n(DFS Back-edge Reversal)"
     type: decision
     metadata: "Greedy Feedback Arc Set: reverses back-edges found in DFS traversal to make graph acyclic"
   - id: compiled_graph
-    label: "graph::\nCompiledGraph"
+    label: "`graph::`\n`CompiledGraph`"
     type: database
     metadata: "{ graph: StableDiGraph, node_map: HashMap<String,NodeIndex>, had_cycles: bool }"
   - id: layout_config
-    label: "layout::LayoutConfig\n{ rank_spacing, node_spacing,\n  node_width, node_height }"
+    label: "`layout::LayoutConfig`\n{ rank_spacing, node_spacing }"
     type: server
     metadata: "Driven by --rank-spacing and --node-spacing CLI flags"
   - id: visual_graph
-    label: "layout-rs\nVisualGraph\n(Sugiyama engine)"
+    label: "`layout-rs`\n`VisualGraph`\n(Sugiyama Engine)"
     type: server
     metadata: "layout::topo::layout::VisualGraph — runs hierarchical Sugiyama layout algorithm"
   - id: topo_fallback
-    label: "Topo-sort Fallback\n(longest-path ranking)"
+    label: "Topo-sort Fallback\n(Longest-path Ranking)"
     type: decision
     metadata: "Pure-Rust fallback: petgraph::algo::toposort + longest-path layer assignment"
   - id: layout_result
-    label: "layout::LayoutResult\n{ positions: HashMap<NodeIndex, NodeLayout> }"
+    label: "`layout::LayoutResult`\n{ positions: HashMap }"
     type: database
     metadata: "NodeLayout { x, y, width, height } for every node"
   - id: style_fn
-    label: "render::style_for_type()\n(node_type → draw.io style string)"
+    label: "`render::style_for_type`\n(Type → Style String)"
     type: server
     metadata: "Maps proxy/database/server/queue/cache/function/client/decision → mxCell style attr"
   - id: xml_writer
-    label: "quick-xml Writer\n(mxfile XML)"
+    label: "`quick-xml` Writer\n(draw.io XML)"
     type: server
     metadata: "Writes <?xml><mxfile><diagram><mxGraphModel><root> with mandatory id=0, id=1 stubs"
   - id: svg_writer
-    label: "quick-xml Writer\n(SVG)"
+    label: "`quick-xml` Writer\n(SVG Graphics)"
     type: server
     metadata: "Writes <svg> with <rect> nodes, <line> edges, <text> labels"
   - id: drawio_out
-    label: "output.drawio\n(mxfile XML)"
+    label: "`output.drawio`\n(mxfile XML)"
     type: database
     metadata: "Uncompressed. Open in draw.io desktop or diagrams.net"
   - id: svg_out
-    label: "output.svg\n(SVG)"
+    label: "`output.svg`\n(SVG Graphics)"
     type: database
     metadata: "Embed in Markdown, HTML, Notion, Confluence"
 edges:

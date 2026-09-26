@@ -52,7 +52,7 @@ pub fn style_for_type(node_type: &str, theme: &str) -> String {
                      strokeWidth=1.5;strokeColor=#38bdf8;\
                      fontFamily=Inter,Helvetica,sans-serif;\
                      fontSize=12;fontStyle=1;fontColor=#0f172a;\
-                     spacingTop=6;spacingBottom=6;"
+                     spacingTop=16;spacingBottom=6;"
             )
         }
         "queue" | "broker" | "bus" => {
@@ -115,6 +115,546 @@ pub fn stroke_for_type(node_type: &str, theme: &str) -> &'static str {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Typography & Inline Formatting (Markdown, LaTeX, Code & Titles)
+// ---------------------------------------------------------------------------
+
+/// Maps ASCII digits and signs to Unicode subscript glyphs.
+pub fn to_subscript(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '0' => '₀',
+            '1' => '₁',
+            '2' => '₂',
+            '3' => '₃',
+            '4' => '₄',
+            '5' => '₅',
+            '6' => '₆',
+            '7' => '₇',
+            '8' => '₈',
+            '9' => '₉',
+            '+' => '₊',
+            '-' => '₋',
+            '=' => '₌',
+            '(' => '₍',
+            ')' => '₎',
+            'a' => 'ₐ',
+            'e' => 'ₑ',
+            'h' => 'ₕ',
+            'i' => 'ᵢ',
+            'j' => 'ⱼ',
+            'k' => 'ₖ',
+            'l' => 'ₗ',
+            'm' => 'ₘ',
+            'n' => 'ₙ',
+            'o' => 'ₒ',
+            'p' => 'ₚ',
+            'r' => 'ᵣ',
+            's' => 'ₛ',
+            't' => 'ₜ',
+            'u' => 'ᵤ',
+            'v' => 'ᵥ',
+            'x' => 'ₓ',
+            _ => c,
+        })
+        .collect()
+}
+
+/// Maps ASCII digits and signs to Unicode superscript glyphs.
+pub fn to_superscript(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '0' => '⁰',
+            '1' => '¹',
+            '2' => '²',
+            '3' => '³',
+            '4' => '⁴',
+            '5' => '⁵',
+            '6' => '⁶',
+            '7' => '⁷',
+            '8' => '⁸',
+            '9' => '⁹',
+            '+' => '⁺',
+            '-' => '⁻',
+            '=' => '⁼',
+            '(' => '⁽',
+            ')' => '⁾',
+            'a' => 'ᵃ',
+            'b' => 'ᵇ',
+            'c' => 'ᶜ',
+            'd' => 'ᵈ',
+            'e' => 'ᵉ',
+            'f' => 'ᶠ',
+            'g' => 'ᵍ',
+            'h' => 'ʰ',
+            'i' => 'ⁱ',
+            'j' => 'ʲ',
+            'k' => 'ᵏ',
+            'l' => 'ˡ',
+            'm' => 'ᵐ',
+            'n' => 'ⁿ',
+            'o' => 'ᵒ',
+            'p' => 'ᵖ',
+            'r' => 'ʳ',
+            's' => 'ˢ',
+            't' => 'ᵗ',
+            'u' => 'ᵘ',
+            'v' => 'ᵛ',
+            'w' => 'ʷ',
+            'x' => 'ˣ',
+            'y' => 'ʸ',
+            'z' => 'ᶻ',
+            _ => c,
+        })
+        .collect()
+}
+
+/// Converts common LaTeX mathematical operators, relations, and Greek letters
+/// to their Unicode equivalents for native SVG rendering.
+pub fn latex_to_unicode(latex: &str) -> String {
+    let mut s = latex.to_string();
+    let replacements = [
+        (r"\times", "×"),
+        (r"\cdot", "·"),
+        (r"\approx", "≈"),
+        (r"\le", "≤"),
+        (r"\ge", "≥"),
+        (r"\neq", "≠"),
+        (r"\ne", "≠"),
+        (r"\pm", "±"),
+        (r"\to", "→"),
+        (r"\rightarrow", "→"),
+        (r"\leftarrow", "←"),
+        (r"\in", "∈"),
+        (r"\notin", "∉"),
+        (r"\subset", "⊂"),
+        (r"\subseteq", "⊆"),
+        (r"\cap", "∩"),
+        (r"\cup", "∪"),
+        (r"\infty", "∞"),
+        (r"\partial", "∂"),
+        (r"\nabla", "∇"),
+        (r"\sum", "∑"),
+        (r"\prod", "∏"),
+        (r"\int", "∫"),
+        (r"\alpha", "α"),
+        (r"\beta", "β"),
+        (r"\gamma", "γ"),
+        (r"\delta", "δ"),
+        (r"\epsilon", "ε"),
+        (r"\zeta", "ζ"),
+        (r"\eta", "η"),
+        (r"\theta", "θ"),
+        (r"\kappa", "κ"),
+        (r"\lambda", "λ"),
+        (r"\mu", "μ"),
+        (r"\nu", "ν"),
+        (r"\xi", "ξ"),
+        (r"\pi", "π"),
+        (r"\rho", "ρ"),
+        (r"\sigma", "σ"),
+        (r"\tau", "τ"),
+        (r"\phi", "φ"),
+        (r"\chi", "χ"),
+        (r"\psi", "ψ"),
+        (r"\omega", "ω"),
+        (r"\Delta", "Δ"),
+        (r"\Gamma", "Γ"),
+        (r"\Lambda", "Λ"),
+        (r"\Sigma", "Σ"),
+        (r"\Phi", "Φ"),
+        (r"\Psi", "Ψ"),
+        (r"\Omega", "Ω"),
+    ];
+    for (from, to) in replacements {
+        s = s.replace(from, to);
+    }
+    s
+}
+
+/// Visual styling attributes for an inline span.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SpanStyle {
+    pub is_code: bool,
+    pub is_bold: bool,
+    pub is_italic: bool,
+    pub is_underline: bool,
+    pub is_strikethrough: bool,
+    pub is_subscript: bool,
+    pub is_superscript: bool,
+    pub is_math: bool,
+}
+
+/// A parsed span of text with associated typographic styling.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StyledSpan {
+    pub text: String,
+    pub style: SpanStyle,
+}
+
+/// Parse a single line into styled spans, recognizing:
+/// - `` `code` ``
+/// - `**bold**`
+/// - `~~strikethrough~~`
+/// - `__underline__`
+/// - `*italic*`
+/// - `~subscript~`
+/// - `^superscript^`
+/// - `$math$` or `\(math\)`
+pub fn parse_inline_spans(input: &str) -> Vec<StyledSpan> {
+    let mut spans = Vec::new();
+    let mut current_text = String::new();
+    let s = input.trim();
+    let chars: Vec<char> = s.chars().collect();
+    let n = chars.len();
+    let mut i = 0;
+
+    let flush = |spans: &mut Vec<StyledSpan>, text: &mut String| {
+        if !text.is_empty() {
+            spans.push(StyledSpan {
+                text: std::mem::take(text),
+                style: SpanStyle::default(),
+            });
+        }
+    };
+
+    while i < n {
+        // Inline code: `...`
+        if chars[i] == '`' {
+            let start = i + 1;
+            let mut j = start;
+            while j < n && chars[j] != '`' {
+                j += 1;
+            }
+            if j < n && chars[j] == '`' && j > start {
+                flush(&mut spans, &mut current_text);
+                let code_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: code_content,
+                    style: SpanStyle {
+                        is_code: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 1;
+                continue;
+            }
+        }
+
+        // Bold: **...**
+        if i + 1 < n && chars[i] == '*' && chars[i + 1] == '*' {
+            let start = i + 2;
+            let mut j = start;
+            while j + 1 < n && !(chars[j] == '*' && chars[j + 1] == '*') {
+                j += 1;
+            }
+            if j + 1 < n && chars[j] == '*' && chars[j + 1] == '*' && j > start {
+                flush(&mut spans, &mut current_text);
+                let bold_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: bold_content,
+                    style: SpanStyle {
+                        is_bold: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 2;
+                continue;
+            }
+        }
+
+        // Strikethrough: ~~...~~
+        if i + 1 < n && chars[i] == '~' && chars[i + 1] == '~' {
+            let start = i + 2;
+            let mut j = start;
+            while j + 1 < n && !(chars[j] == '~' && chars[j + 1] == '~') {
+                j += 1;
+            }
+            if j + 1 < n && chars[j] == '~' && chars[j + 1] == '~' && j > start {
+                flush(&mut spans, &mut current_text);
+                let strike_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: strike_content,
+                    style: SpanStyle {
+                        is_strikethrough: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 2;
+                continue;
+            }
+        }
+
+        // Underline: __...__
+        if i + 1 < n && chars[i] == '_' && chars[i + 1] == '_' {
+            let start = i + 2;
+            let mut j = start;
+            while j + 1 < n && !(chars[j] == '_' && chars[j + 1] == '_') {
+                j += 1;
+            }
+            if j + 1 < n && chars[j] == '_' && chars[j + 1] == '_' && j > start {
+                flush(&mut spans, &mut current_text);
+                let u_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: u_content,
+                    style: SpanStyle {
+                        is_underline: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 2;
+                continue;
+            }
+        }
+
+        // Italic: *...*
+        if chars[i] == '*' {
+            let start = i + 1;
+            let mut j = start;
+            while j < n && chars[j] != '*' {
+                j += 1;
+            }
+            if j < n && chars[j] == '*' && j > start {
+                flush(&mut spans, &mut current_text);
+                let it_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: it_content,
+                    style: SpanStyle {
+                        is_italic: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 1;
+                continue;
+            }
+        }
+
+        // Subscript: ~...~
+        if chars[i] == '~' {
+            let start = i + 1;
+            let mut j = start;
+            while j < n && chars[j] != '~' {
+                j += 1;
+            }
+            if j < n && chars[j] == '~' && j > start {
+                flush(&mut spans, &mut current_text);
+                let sub_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: sub_content,
+                    style: SpanStyle {
+                        is_subscript: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 1;
+                continue;
+            }
+        }
+
+        // Superscript: ^...^
+        if chars[i] == '^' {
+            let start = i + 1;
+            let mut j = start;
+            while j < n && chars[j] != '^' {
+                j += 1;
+            }
+            if j < n && chars[j] == '^' && j > start {
+                flush(&mut spans, &mut current_text);
+                let sup_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: sup_content,
+                    style: SpanStyle {
+                        is_superscript: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 1;
+                continue;
+            }
+        }
+
+        // LaTeX math: $...$
+        if chars[i] == '$' {
+            let start = i + 1;
+            let mut j = start;
+            while j < n && chars[j] != '$' {
+                j += 1;
+            }
+            if j < n && chars[j] == '$' && j > start {
+                flush(&mut spans, &mut current_text);
+                let math_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: math_content,
+                    style: SpanStyle {
+                        is_math: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 1;
+                continue;
+            }
+        }
+
+        // LaTeX math: \(...\)
+        if i + 1 < n && chars[i] == '\\' && chars[i + 1] == '(' {
+            let start = i + 2;
+            let mut j = start;
+            while j + 1 < n && !(chars[j] == '\\' && chars[j + 1] == ')') {
+                j += 1;
+            }
+            if j + 1 < n && chars[j] == '\\' && chars[j + 1] == ')' && j > start {
+                flush(&mut spans, &mut current_text);
+                let math_content: String = chars[start..j].iter().collect();
+                spans.push(StyledSpan {
+                    text: math_content,
+                    style: SpanStyle {
+                        is_math: true,
+                        ..Default::default()
+                    },
+                });
+                i = j + 2;
+                continue;
+            }
+        }
+
+        current_text.push(chars[i]);
+        i += 1;
+    }
+
+    flush(&mut spans, &mut current_text);
+    if spans.is_empty() {
+        spans.push(StyledSpan {
+            text: s.to_string(),
+            style: SpanStyle::default(),
+        });
+    }
+    spans
+}
+
+/// A line classified as either a title line or a muted subtitle line.
+#[derive(Debug, Clone)]
+pub struct ProcessedLine {
+    pub text: String,
+    pub is_subtitle: bool,
+}
+
+/// Wraps label into lines and classifies each line.
+///
+/// Multi-line titles (like `petgraph::\nStableDiGraph`) keep both lines as bold titles.
+/// Parenthesized `(subtitle)` or bracketed `[detail]` or `{fields}` blocks are classified
+/// as muted subtitles.
+pub fn wrap_and_classify_label(label: &str, max_chars: usize) -> Vec<ProcessedLine> {
+    let mut out = Vec::new();
+    let mut in_multiline_block = false;
+
+    for raw_line in label.split('\n') {
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let clean = crate::layout::strip_markdown_tokens(trimmed);
+        let c_trim = clean.trim();
+
+        let is_sub = if in_multiline_block {
+            if c_trim.ends_with('}') || c_trim.ends_with(')') || c_trim.ends_with(']') {
+                in_multiline_block = false;
+            }
+            true
+        } else if (c_trim.starts_with('(') && c_trim.ends_with(')'))
+            || (c_trim.starts_with('[') && c_trim.ends_with(']'))
+            || (c_trim.starts_with('{') && c_trim.ends_with('}'))
+        {
+            true
+        } else if c_trim.starts_with('{') || c_trim.starts_with('(') || c_trim.starts_with('[') {
+            in_multiline_block = true;
+            true
+        } else {
+            false
+        };
+
+        let wrapped = crate::layout::wrap_label(trimmed, max_chars);
+        for line in wrapped {
+            out.push(ProcessedLine {
+                text: line,
+                is_subtitle: is_sub,
+            });
+        }
+    }
+
+    if out.is_empty() {
+        out.push(ProcessedLine {
+            text: label.to_string(),
+            is_subtitle: false,
+        });
+    }
+
+    out
+}
+
+/// Format a label for draw.io HTML rendering, applying monospace code tags,
+/// MathJax delimiters, text formatting tags, and title/subtitle hierarchy.
+pub fn format_html_label(label: &str, theme: &str, node_type: &str) -> String {
+    let is_diamond = matches!(
+        node_type.to_ascii_lowercase().as_str(),
+        "decision" | "condition" | "cache" | "redis" | "memcache"
+    );
+    let max_chars = if is_diamond { 16 } else { 20 };
+    let lines = wrap_and_classify_label(label, max_chars);
+    if lines.is_empty() {
+        return String::new();
+    }
+
+    let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
+
+    let mut html_lines = Vec::new();
+    for pl in lines {
+        let spans = parse_inline_spans(&pl.text);
+        let mut line_html = String::new();
+
+        for span in spans {
+            let mut chunk = span.text;
+            if span.style.is_code {
+                chunk = format!(
+                    "<font face=\"JetBrains Mono, Menlo, monospace\" style=\"font-size:11px;\"><code>{chunk}</code></font>"
+                );
+            } else if span.style.is_math {
+                chunk = format!("\\({chunk}\\)");
+            } else {
+                if span.style.is_subscript {
+                    chunk = format!("<sub>{chunk}</sub>");
+                }
+                if span.style.is_superscript {
+                    chunk = format!("<sup>{chunk}</sup>");
+                }
+                if span.style.is_underline {
+                    chunk = format!("<u>{chunk}</u>");
+                }
+                if span.style.is_strikethrough {
+                    chunk = format!("<s>{chunk}</s>");
+                }
+                if span.style.is_italic {
+                    chunk = format!("<i>{chunk}</i>");
+                }
+                if span.style.is_bold {
+                    chunk = format!("<b>{chunk}</b>");
+                }
+            }
+            line_html.push_str(&chunk);
+        }
+
+        if pl.is_subtitle {
+            html_lines.push(format!(
+                "<font style=\"font-size:10px;color:{sub_color}\">{line_html}</font>"
+            ));
+        } else {
+            html_lines.push(format!("<b>{line_html}</b>"));
+        }
+    }
+
+    html_lines.join("<br/>")
 }
 
 /// Compute an orthogonal SVG path with rounded fillet corners between two points.
@@ -264,7 +804,7 @@ pub fn render_drawio(
     model.push_attribute(("pageScale", "1"));
     let bg_color = if theme == "dark" { "#0f172a" } else { "#f8fafc" };
     model.push_attribute(("background", bg_color));
-    model.push_attribute(("math", "0"));
+    model.push_attribute(("math", "1"));
     model.push_attribute(("shadow", "0"));
     w.write_event(Event::Start(model))?;
 
@@ -366,21 +906,8 @@ pub fn render_drawio(
         let style = style_for_type(&node_data.node_type, theme);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
 
-        // Build HTML label: bold title + optional muted sub-label (wrapped automatically)
-        let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
-        let lines = crate::layout::wrap_label(&node_data.label, 20);
-        let html_value = match lines.len() {
-            0 => String::new(),
-            1 => format!("<b>{}</b>", lines[0]),
-            _ => {
-                let title = &lines[0];
-                let sub = lines[1..].join("<br/>");
-                format!(
-                    "<b>{}</b><br/><font style='font-size:10px;color:{}'>{}</font>",
-                    title, sub_color, sub
-                )
-            }
-        };
+        // Build HTML label: formatted with typography, title/subtitle hierarchy, and code spans
+        let html_value = format_html_label(&node_data.label, theme, &node_data.node_type);
 
         let (parent_id, rel_x, rel_y) = if let Some(gid) = node_to_group_id.get(&node_data.id) {
             let (gx, gy) = group_origins[gid];
@@ -1077,8 +1604,9 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             w.write_event(Event::Empty(rect))?;
         }
 
-        // Multi-line text wrapping with centered tspans
-        let lines = crate::layout::wrap_label(&node_data.label, 20);
+        // Multi-line text wrapping with centered tspans and typography support
+        let max_line_chars = if is_decision { 16 } else { 20 };
+        let lines = wrap_and_classify_label(&node_data.label, max_line_chars);
         let cx = nl.x + nl.width / 2.0;
 
         let total_text_h = match lines.len() {
@@ -1086,7 +1614,17 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             1 => 14.0,
             n => 14.0 + (n - 1) as f64 * 14.0,
         };
-        let start_y = nl.y + (nl.height - total_text_h) / 2.0 + 11.0;
+
+        // Center text inside cylindrical body below the top ellipse cap for databases
+        let start_y = if is_db {
+            let rh = (nl.height * 0.18).min(12.0);
+            let body_top = nl.y + 2.0 * rh + 2.0;
+            let body_bot = nl.y + nl.height - rh - 2.0;
+            let body_h = (body_bot - body_top).max(total_text_h);
+            body_top + (body_h - total_text_h) / 2.0 + 11.0
+        } else {
+            nl.y + (nl.height - total_text_h) / 2.0 + 11.0
+        };
 
         let mut text = BytesStart::new("text");
         text.push_attribute(("x", format!("{cx:.1}").as_str()));
@@ -1095,22 +1633,69 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         w.write_event(Event::Start(text))?;
 
-        for (i, line) in lines.iter().enumerate() {
-            let mut tspan = BytesStart::new("tspan");
-            tspan.push_attribute(("x", format!("{cx:.1}").as_str()));
-            if i > 0 {
-                tspan.push_attribute(("dy", "14"));
-                tspan.push_attribute(("font-size", "10"));
-                tspan.push_attribute(("fill", sub_color));
-                tspan.push_attribute(("font-weight", "normal"));
-            } else {
-                tspan.push_attribute(("font-size", "12"));
-                tspan.push_attribute(("fill", title_color));
-                tspan.push_attribute(("font-weight", "bold"));
+        for (line_idx, pl) in lines.iter().enumerate() {
+            let spans = parse_inline_spans(&pl.text);
+
+            for (span_idx, span) in spans.into_iter().enumerate() {
+                let mut tspan = BytesStart::new("tspan");
+                if span_idx == 0 {
+                    tspan.push_attribute(("x", format!("{cx:.1}").as_str()));
+                    if line_idx > 0 {
+                        tspan.push_attribute(("dy", "14"));
+                    }
+                }
+
+                let span_text = if span.style.is_math {
+                    latex_to_unicode(&span.text)
+                } else if span.style.is_subscript {
+                    to_subscript(&span.text)
+                } else if span.style.is_superscript {
+                    to_superscript(&span.text)
+                } else {
+                    span.text
+                };
+
+                if span.style.is_code {
+                    tspan.push_attribute((
+                        "font-family",
+                        "JetBrains Mono, Menlo, Courier New, monospace",
+                    ));
+                    tspan.push_attribute(("font-size", "11"));
+                    if pl.is_subtitle {
+                        tspan.push_attribute(("font-weight", "normal"));
+                        tspan.push_attribute(("fill", sub_color));
+                    } else {
+                        tspan.push_attribute(("font-weight", "bold"));
+                        tspan.push_attribute(("fill", title_color));
+                    }
+                } else if span.style.is_math {
+                    tspan.push_attribute((
+                        "font-family",
+                        "Cambria Math, Latin Modern Math, Times New Roman, serif",
+                    ));
+                    tspan.push_attribute(("font-style", "italic"));
+                    tspan.push_attribute(("font-size", if pl.is_subtitle { "10" } else { "12" }));
+                    tspan.push_attribute(("fill", if pl.is_subtitle { sub_color } else { title_color }));
+                } else {
+                    tspan.push_attribute(("font-size", if pl.is_subtitle { "10" } else { "12" }));
+                    tspan.push_attribute(("fill", if pl.is_subtitle { sub_color } else { title_color }));
+                    let is_bold = span.style.is_bold || (!pl.is_subtitle && !span.style.is_italic);
+                    tspan.push_attribute(("font-weight", if is_bold { "bold" } else { "normal" }));
+                    if span.style.is_italic {
+                        tspan.push_attribute(("font-style", "italic"));
+                    }
+                    if span.style.is_underline {
+                        tspan.push_attribute(("text-decoration", "underline"));
+                    }
+                    if span.style.is_strikethrough {
+                        tspan.push_attribute(("text-decoration", "line-through"));
+                    }
+                }
+
+                w.write_event(Event::Start(tspan))?;
+                w.write_event(Event::Text(BytesText::new(&span_text)))?;
+                w.write_event(Event::End(BytesEnd::new("tspan")))?;
             }
-            w.write_event(Event::Start(tspan))?;
-            w.write_event(Event::Text(BytesText::new(line)))?;
-            w.write_event(Event::End(BytesEnd::new("tspan")))?;
         }
         w.write_event(Event::End(BytesEnd::new("text")))?;
     }
@@ -1286,7 +1871,7 @@ mod tests {
             direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
-                label: "API Gateway\nKong Ingress".to_owned(),
+                label: "API Gateway\n(Kong Ingress)".to_owned(),
                 node_type: "proxy".to_owned(),
                 metadata: None,
             }],
@@ -1297,9 +1882,47 @@ mod tests {
         let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
         let xml = render_drawio(&compiled, &layout, "standard").unwrap();
         assert!(
-            xml.contains("&lt;b&gt;API Gateway&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;Kong Ingress&lt;/font&gt;"),
+            xml.contains("&lt;b&gt;API Gateway&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px;color:#64748b&quot;&gt;(Kong Ingress)&lt;/font&gt;"),
             "node cell must contain two-line formatted HTML label"
         );
+    }
+
+    #[test]
+    fn test_drawio_html_multiline_title() {
+        let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
+            theme: None,
+            direction: None,
+            nodes: vec![NodeDef {
+                id: "n1".to_owned(),
+                label: "petgraph::\nStableDiGraph".to_owned(),
+                node_type: "database".to_owned(),
+                metadata: None,
+            }],
+            edges: vec![],
+            groups: vec![],
+        };
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(
+            xml.contains("&lt;b&gt;petgraph::&lt;/b&gt;&lt;br/&gt;&lt;b&gt;StableDiGraph&lt;/b&gt;"),
+            "both non-parenthesized lines must be formatted as bold titles"
+        );
+    }
+
+    #[test]
+    fn test_typography_spans_and_latex() {
+        let spans = parse_inline_spans("`clap::Cli` and $R \\times C$");
+        assert_eq!(spans.len(), 3);
+        assert!(spans[0].style.is_code);
+        assert_eq!(spans[0].text, "clap::Cli");
+        assert_eq!(spans[1].text, " and ");
+        assert!(spans[2].style.is_math);
+        assert_eq!(spans[2].text, r"R \times C");
+
+        let uni = latex_to_unicode(r"R \times C \le \alpha");
+        assert_eq!(uni, "R × C ≤ α");
     }
 
     #[test]

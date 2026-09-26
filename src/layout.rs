@@ -223,6 +223,50 @@ pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
     }
 }
 
+/// Strips inline markdown tokens (` ``, `**`, `*`, `__`, `~~`, `~`, `^`, `$`, `\(` etc.)
+/// and maps common LaTeX symbols to short glyph equivalents so that text width measurement
+/// accurately reflects visible rendered glyphs.
+pub fn strip_markdown_tokens(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '`' | '*' | '_' | '~' | '^' | '$' => {
+                // skip markdown styling delimiters
+            }
+            '\\' => {
+                // Check if \( or \)
+                if let Some(&next_c) = chars.peek() {
+                    if next_c == '(' || next_c == ')' {
+                        chars.next();
+                        continue;
+                    }
+                }
+                // Check LaTeX command e.g. \times, \alpha
+                let mut cmd = String::new();
+                while let Some(&next_c) = chars.peek() {
+                    if next_c.is_alphabetic() {
+                        cmd.push(chars.next().unwrap());
+                    } else {
+                        break;
+                    }
+                }
+                match cmd.as_str() {
+                    "times" | "cdot" | "approx" | "le" | "ge" | "ne" | "neq" | "pm" | "to"
+                    | "in" => out.push('x'),
+                    "alpha" | "beta" | "gamma" | "delta" | "theta" | "lambda" | "pi" | "sigma"
+                    | "phi" | "omega" => out.push('w'),
+                    "infty" | "sum" | "prod" | "int" => out.push('M'),
+                    "" => out.push('\\'),
+                    _ => out.push_str(&cmd),
+                }
+            }
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
 /// Dynamically estimate the width and height of a node based on its label and shape.
 pub fn estimate_node_size(
     label: &str,
@@ -230,7 +274,18 @@ pub fn estimate_node_size(
     min_width: f64,
     min_height: f64,
 ) -> (f64, f64) {
-    let lines = wrap_label(label, 22);
+    let is_diamond = matches!(
+        node_type.to_ascii_lowercase().as_str(),
+        "decision" | "condition" | "cache" | "redis" | "memcache"
+    );
+    let is_db = matches!(
+        node_type.to_ascii_lowercase().as_str(),
+        "database" | "db" | "storage"
+    );
+
+    let max_line_chars = if is_diamond { 16 } else { 22 };
+    let clean_label = strip_markdown_tokens(label);
+    let lines = wrap_label(&clean_label, max_line_chars);
     let max_chars = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
 
     // Approximate ~7.0px per character at 12px font + 20px horizontal padding
@@ -243,13 +298,16 @@ pub fn estimate_node_size(
     };
     let mut height = total_h.max(min_height);
 
-    // Diamond shapes (decision, cache) need extra clearance to inscribe text
-    match node_type.to_ascii_lowercase().as_str() {
-        "decision" | "condition" | "cache" | "redis" | "memcache" => {
-            width *= 1.30;
-            height *= 1.30;
-        }
-        _ => {}
+    if is_diamond {
+        // Diamond shapes require extra geometric headroom so that the inscribed
+        // rectangular text box doesn't touch the diagonal rhombus perimeter.
+        width = (width * 1.85).max(150.0);
+        height = (height * 1.75).max(76.0);
+    } else if is_db {
+        // Database cylinders have an elliptical top cap. Add +20px headroom so that
+        // the text is centered safely within the cylindrical body below the top rim.
+        height = (height + 20.0).max(60.0);
+        width = width.max(120.0);
     }
 
     // Snap to 10px grid

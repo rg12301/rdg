@@ -88,6 +88,30 @@ NODE TYPES (WHITE-CARD DESIGN SYSTEM)
   (anything else)            → Neutral slate card  (generic component)
 
 ─────────────────────────────────────────────────────────────────────────────
+INLINE TYPOGRAPHY & MARKDOWN FORMATTING
+─────────────────────────────────────────────────────────────────────────────
+
+  Labels in nodes, edges, and groups support rich inline typography:
+
+  `code`             → Monospace font (JetBrains Mono / Menlo) for types, APIs, filenames
+  **bold**           → Bold weight for emphasis
+  *italic*           → Italic styling for status or notes
+  __underline__      → Underline styling
+  ~~strike~~         → Strikethrough for deprecated/removed components
+  ~sub~              → Subscript (e.g. H~2~O)
+  ^super^            → Superscript (e.g. O(N^2^))
+  $math$ or \\(math\\) → LaTeX math (e.g. $R \\times C$, $\\alpha = 0.5$)
+                       Rendered natively via MathJax in draw.io (math=\"1\")
+                       and crisp Unicode mathematical glyphs in SVG.
+
+  Multi-line Titles & Subtitles:
+  • Plain and code lines are formatted as prominent BOLD TITLES.
+    E.g. `petgraph::`\\n`StableDiGraph` → both lines bold monospace titles.
+  • Parenthesized lines (subtitle) or bracketed [detail] or {fields}
+    are automatically formatted as muted 10px SUBTITLES.
+    E.g. `clap::Cli`\\n(CLI Arguments) → bold title on top, muted subtitle below.
+
+─────────────────────────────────────────────────────────────────────────────
 EDGE STYLES (edge_style)
 ─────────────────────────────────────────────────────────────────────────────
 
