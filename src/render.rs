@@ -119,6 +119,7 @@ pub fn stroke_for_type(node_type: &str, theme: &str) -> &'static str {
 
 /// Compute an orthogonal SVG path with rounded fillet corners between two points.
 /// Returns `(path_d, label_center_x, label_center_y)`.
+/// Places label along the initial straight segment away from turns and crossings.
 fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
     if is_horizontal {
         // Horizontal flow: exit right (x1, y1), entry left (x2, y2)
@@ -136,11 +137,14 @@ fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (
             .min((x2 - xmid).abs() / 2.0)
             .max(0.0);
 
+        let lx = x1 + 22.0_f64.min((xmid - x1).abs() * 0.45);
+        let ly = y1;
+
         if r < 1.0 {
             return (
                 format!("M {x1:.1} {y1:.1} L {xmid:.1} {y1:.1} L {xmid:.1} {y2:.1} L {x2:.1} {y2:.1}"),
-                xmid,
-                (y1 + y2) / 2.0,
+                lx,
+                ly,
             );
         }
 
@@ -160,7 +164,7 @@ fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (
             xm_prev = xmid - r,
             xm_next = xmid + r,
         );
-        (path, xmid, (y1 + y2) / 2.0)
+        (path, lx, ly)
     } else {
         // Vertical flow: exit bottom (x1, y1), entry top (x2, y2)
         if (x2 - x1).abs() < 1.0 {
@@ -177,11 +181,15 @@ fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (
             .min((y2 - ymid).abs() / 2.0)
             .max(0.0);
 
+        // Place label on the initial vertical drop, away from the turn at ymid
+        let lx = x1;
+        let ly = y1 + 18.0_f64.min((ymid - y1).abs() * 0.45);
+
         if r < 1.0 {
             return (
                 format!("M {x1:.1} {y1:.1} L {x1:.1} {ymid:.1} L {x2:.1} {ymid:.1} L {x2:.1} {y2:.1}"),
-                (x1 + x2) / 2.0,
-                ymid,
+                lx,
+                ly,
             );
         }
 
@@ -201,7 +209,7 @@ fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (
             ym_prev = ymid - r,
             ym_next = ymid + r,
         );
-        (path, (x1 + x2) / 2.0, ymid)
+        (path, lx, ly)
     }
 }
 
@@ -432,6 +440,49 @@ pub fn render_drawio(
         }
     }
 
+    // Group incoming edges by target node to compute distributed entry ports.
+    let mut incoming_by_dst: HashMap<
+        petgraph::graph::NodeIndex,
+        Vec<(petgraph::graph::EdgeIndex, f64)>,
+    > = HashMap::new();
+
+    for edge_idx in compiled.graph.edge_indices() {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (render_src, render_dst) = if edge_data.reversed {
+            (dst, src)
+        } else {
+            (src, dst)
+        };
+        let source_x = layout
+            .positions
+            .get(&render_src)
+            .map(|p| p.x)
+            .unwrap_or(0.0);
+        incoming_by_dst
+            .entry(render_dst)
+            .or_default()
+            .push((edge_idx, source_x));
+    }
+
+    let mut entry_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in incoming_by_dst {
+        edges.sort_by(|a, b| {
+            a.1.partial_cmp(&b.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.2 + (0.6 / (count - 1) as f64) * (i as f64)
+            };
+            entry_ports.insert(edge_idx, port);
+        }
+    }
+
     let is_dark = theme == "dark";
     let default_edge_color = if is_dark { "#94a3b8" } else { "#64748b" };
     let label_bg_color = if is_dark { "#1e293b" } else { "#ffffff" };
@@ -453,6 +504,7 @@ pub fn render_drawio(
         };
 
         let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let entry_port_frac = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
 
         let (src_nl, dst_nl) = (layout.positions.get(&s_idx), layout.positions.get(&d_idx));
         let is_horizontal = match (src_nl, dst_nl) {
@@ -463,12 +515,12 @@ pub fn render_drawio(
         let (exit_attr, entry_attr) = if is_horizontal {
             (
                 format!("exitX=1.0;exitY={port_frac:.1};exitDx=0;exitDy=0;"),
-                "entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;".to_string(),
+                format!("entryX=0.0;entryY={entry_port_frac:.1};entryDx=0;entryDy=0;"),
             )
         } else {
             (
                 format!("exitX={port_frac:.1};exitY=1.0;exitDx=0;exitDy=0;"),
-                "entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;".to_string(),
+                format!("entryX={entry_port_frac:.1};entryY=0.0;entryDx=0;entryDy=0;"),
             )
         };
 
@@ -636,7 +688,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         let mut marker = BytesStart::new("marker");
         marker.push_attribute(("id", id));
         marker.push_attribute(("viewBox", "0 0 10 10"));
-        marker.push_attribute(("refX", "7"));
+        marker.push_attribute(("refX", "8"));
         marker.push_attribute(("refY", "5"));
         marker.push_attribute(("markerWidth", "6"));
         marker.push_attribute(("markerHeight", "6"));
@@ -760,8 +812,59 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         }
     }
 
+    // Group incoming edges by target node to compute distributed entry ports.
+    let mut incoming_by_dst: HashMap<
+        petgraph::graph::NodeIndex,
+        Vec<(petgraph::graph::EdgeIndex, f64)>,
+    > = HashMap::new();
+
+    for edge_idx in compiled.graph.edge_indices() {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (render_src, render_dst) = if edge_data.reversed {
+            (dst, src)
+        } else {
+            (src, dst)
+        };
+        let source_x = layout
+            .positions
+            .get(&render_src)
+            .map(|p| p.x)
+            .unwrap_or(0.0);
+        incoming_by_dst
+            .entry(render_dst)
+            .or_default()
+            .push((edge_idx, source_x));
+    }
+
+    let mut entry_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in incoming_by_dst {
+        edges.sort_by(|a, b| {
+            a.1.partial_cmp(&b.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.2 + (0.6 / (count - 1) as f64) * (i as f64)
+            };
+            entry_ports.insert(edge_idx, port);
+        }
+    }
+
     let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
 
+    struct SvgEdgeLabel {
+        lx: f64,
+        ly: f64,
+        text: String,
+    }
+    let mut pending_labels: Vec<SvgEdgeLabel> = Vec::new();
+
+    // Pass 1: Render all edge paths
     for edge_idx in compiled.graph.edge_indices() {
         let (src_idx, dst_idx) = compiled.graph.edge_endpoints(edge_idx).unwrap();
         let edge_data = &compiled.graph[edge_idx];
@@ -780,6 +883,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         };
 
         let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let entry_port_frac = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
 
         let (x1, y1, x2, y2) = if is_horizontal {
@@ -787,13 +891,13 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
                 src_nl.x + src_nl.width,
                 src_nl.y + src_nl.height * port_frac,
                 dst_nl.x,
-                dst_nl.y + dst_nl.height * 0.5,
+                dst_nl.y + dst_nl.height * entry_port_frac,
             )
         } else {
             (
                 src_nl.x + src_nl.width * port_frac,
                 src_nl.y + src_nl.height,
-                dst_nl.x + dst_nl.width * 0.5,
+                dst_nl.x + dst_nl.width * entry_port_frac,
                 dst_nl.y,
             )
         };
@@ -822,38 +926,47 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         path.push_attribute(("marker-end", format!("url(#{marker_id})").as_str()));
         w.write_event(Event::Empty(path))?;
 
-        // Knockout pill background + edge label
         if let Some(label) = &edge_data.label {
             let label_trimmed = label.trim();
             if !label_trimmed.is_empty() {
-                let char_count = label_trimmed.chars().count();
-                let pill_w = (char_count as f64 * 6.5 + 12.0).max(24.0);
-                let pill_h = 18.0;
-                let pill_x = lx - pill_w / 2.0;
-                let pill_y = ly - pill_h / 2.0;
-
-                let mut pill = BytesStart::new("rect");
-                pill.push_attribute(("x", format!("{pill_x:.1}").as_str()));
-                pill.push_attribute(("y", format!("{pill_y:.1}").as_str()));
-                pill.push_attribute(("width", format!("{pill_w:.1}").as_str()));
-                pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
-                pill.push_attribute(("rx", "4"));
-                pill.push_attribute(("ry", "4"));
-                pill.push_attribute(("fill", bg_color));
-                w.write_event(Event::Empty(pill))?;
-
-                let mut text = BytesStart::new("text");
-                text.push_attribute(("x", format!("{lx:.1}").as_str()));
-                text.push_attribute(("y", format!("{:.1}", ly + 4.0).as_str()));
-                text.push_attribute(("text-anchor", "middle"));
-                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-                text.push_attribute(("font-size", "11"));
-                text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#475569" }));
-                w.write_event(Event::Start(text))?;
-                w.write_event(Event::Text(BytesText::new(label_trimmed)))?;
-                w.write_event(Event::End(BytesEnd::new("text")))?;
+                pending_labels.push(SvgEdgeLabel {
+                    lx,
+                    ly,
+                    text: label_trimmed.to_string(),
+                });
             }
         }
+    }
+
+    // Pass 2: Render all edge labels on top of all paths to guarantee zero line collisions
+    for el in pending_labels {
+        let char_count = el.text.chars().count();
+        let pill_w = (char_count as f64 * 6.2 + 10.0).max(20.0);
+        let pill_h = 16.0;
+        let pill_x = el.lx - pill_w / 2.0;
+        let pill_y = el.ly - pill_h / 2.0;
+
+        let mut pill = BytesStart::new("rect");
+        pill.push_attribute(("x", format!("{pill_x:.1}").as_str()));
+        pill.push_attribute(("y", format!("{pill_y:.1}").as_str()));
+        pill.push_attribute(("width", format!("{pill_w:.1}").as_str()));
+        pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
+        pill.push_attribute(("rx", "4"));
+        pill.push_attribute(("ry", "4"));
+        pill.push_attribute(("fill", bg_color));
+        w.write_event(Event::Empty(pill))?;
+
+        let mut text = BytesStart::new("text");
+        text.push_attribute(("x", format!("{:.1}", el.lx).as_str()));
+        text.push_attribute(("y", format!("{:.1}", el.ly + 3.5).as_str()));
+        text.push_attribute(("text-anchor", "middle"));
+        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+        text.push_attribute(("font-size", "10"));
+        text.push_attribute(("font-weight", "500"));
+        text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#475569" }));
+        w.write_event(Event::Start(text))?;
+        w.write_event(Event::Text(BytesText::new(&el.text)))?;
+        w.write_event(Event::End(BytesEnd::new("text")))?;
     }
 
     // --- Draw nodes with white-card elevation & semantic accents ------------

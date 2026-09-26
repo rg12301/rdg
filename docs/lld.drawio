@@ -6,78 +6,78 @@
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <mxCell id="grp_cli" value="CLI &amp; Ingestion" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#64748b;fillOpacity=15;strokeColor=#64748b;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#64748b;" vertex="1" parent="1">
-          <mxGeometry x="974" y="10" width="357" height="269" as="geometry"/>
+          <mxGeometry x="215" y="10" width="178" height="190" as="geometry"/>
         </mxCell>
         <mxCell id="grp_schema" value="Schema Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#0284c7;fillOpacity=15;strokeColor=#0284c7;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#0284c7;" vertex="1" parent="1">
-          <mxGeometry x="975" y="320" width="678" height="289" as="geometry"/>
+          <mxGeometry x="105" y="166" width="398" height="200" as="geometry"/>
         </mxCell>
         <mxCell id="grp_graph" value="Graph IR Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#059669;fillOpacity=15;strokeColor=#059669;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#059669;" vertex="1" parent="1">
-          <mxGeometry x="588" y="650" width="964" height="489" as="geometry"/>
+          <mxGeometry x="10" y="348" width="608" height="306" as="geometry"/>
         </mxCell>
         <mxCell id="grp_layout" value="Layout Engine" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#d97706;fillOpacity=15;strokeColor=#d97706;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#d97706;" vertex="1" parent="1">
-          <mxGeometry x="82" y="1000" width="632" height="709" as="geometry"/>
+          <mxGeometry x="165" y="636" width="278" height="442" as="geometry"/>
         </mxCell>
         <mxCell id="grp_render" value="Rendering Layer" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#7c3aed;fillOpacity=15;strokeColor=#7c3aed;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#7c3aed;" vertex="1" parent="1">
-          <mxGeometry x="12" y="1565" width="1292" height="454" as="geometry"/>
+          <mxGeometry x="105" y="1060" width="398" height="286" as="geometry"/>
         </mxCell>
         <mxCell id="cli_args" value="&lt;b&gt;clap::Cli&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(CLI Arguments)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#818cf8;" vertex="1" parent="1" tooltip="--input, --output, --layout, --theme, --rank-spacing, --node-spacing">
-          <mxGeometry x="998" y="44" width="150" height="60" as="geometry"/>
+          <mxGeometry x="239" y="28" width="130" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="stdin_file" value="&lt;b&gt;stdin / File&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(YAML source)&lt;/font&gt;" style="shape=mxgraph.flowchart.start_2;perimeter=mxPerimeter.ellipsePerimeter;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#fbbf24;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Read via std::io::stdin or std::fs::read_to_string">
-          <mxGeometry x="1176" y="199" width="130" height="60" as="geometry"/>
+          <mxGeometry x="244" y="114" width="120" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="diagram_payload" value="&lt;b&gt;schema::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;DiagramPayload&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="serde_yaml::from_str → DiagramPayload { diagram_type, theme, nodes: Vec&lt;NodeDef&gt;, edges: Vec&lt;EdgeDef&gt; }">
-          <mxGeometry x="1171" y="354" width="140" height="60" as="geometry"/>
+          <mxGeometry x="244" y="200" width="120" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="node_def" value="&lt;b&gt;schema::NodeDef&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label,&lt;br/&gt;node_type, metadata&lt;br/&gt;}&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="node_type renamed from &apos;type&apos; via #[serde(rename)]">
-          <mxGeometry x="1438" y="509" width="190" height="80" as="geometry"/>
+        <mxCell id="node_def" value="&lt;b&gt;schema::NodeDef&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label,&lt;br/&gt;node_type, metadata }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="node_type renamed from &apos;type&apos; via #[serde(rename)]">
+          <mxGeometry x="309" y="286" width="170" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="edge_def" value="&lt;b&gt;schema::EdgeDef&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ from, to, label }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Directed edge between two node IDs">
-          <mxGeometry x="999" y="519" width="180" height="60" as="geometry"/>
+          <mxGeometry x="129" y="291" width="160" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="stable_graph" value="&lt;b&gt;petgraph::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;StableDiGraph&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="StableDiGraph&lt;NodeData, EdgeData&gt; — stable indices survive dummy-node insertion">
-          <mxGeometry x="1024" y="684" width="130" height="60" as="geometry"/>
+          <mxGeometry x="244" y="382" width="120" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="node_data" value="&lt;b&gt;graph::NodeData&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label,&lt;br/&gt;node_type, metadata&lt;br/&gt;}&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Stored at each graph node index">
-          <mxGeometry x="1338" y="849" width="190" height="80" as="geometry"/>
+        <mxCell id="node_data" value="&lt;b&gt;graph::NodeData&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ id, label,&lt;br/&gt;node_type, metadata }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Stored at each graph node index">
+          <mxGeometry x="414" y="478" width="170" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="edge_data" value="&lt;b&gt;graph::EdgeData&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ label, reversed }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="reversed=true when edge was flipped by FAS">
-          <mxGeometry x="612" y="859" width="180" height="60" as="geometry"/>
+          <mxGeometry x="234" y="483" width="160" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="fas" value="&lt;b&gt;FAS Cycle Breaker&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(DFS back-edge&lt;br/&gt;reversal)&lt;/font&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=2;strokeColor=#a78bfa;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontStyle=2;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Greedy Feedback Arc Set: reverses back-edges found in DFS traversal to make graph acyclic">
-          <mxGeometry x="981" y="839" width="210" height="100" as="geometry"/>
+          <mxGeometry x="24" y="468" width="190" height="80" as="geometry"/>
         </mxCell>
         <mxCell id="compiled_graph" value="&lt;b&gt;graph::&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;CompiledGraph&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="{ graph: StableDiGraph, node_map: HashMap&lt;String,NodeIndex&gt;, had_cycles: bool }">
-          <mxGeometry x="1021" y="1059" width="130" height="60" as="geometry"/>
+          <mxGeometry x="244" y="584" width="120" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="layout_config" value="&lt;b&gt;layout::LayoutConfig&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ rank_spacing,&lt;br/&gt;node_spacing,&lt;br/&gt;node_width,&lt;br/&gt;node_height }&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Driven by --rank-spacing and --node-spacing CLI flags">
-          <mxGeometry x="251" y="1034" width="180" height="110" as="geometry"/>
+          <mxGeometry x="224" y="670" width="160" height="90" as="geometry"/>
         </mxCell>
         <mxCell id="visual_graph" value="&lt;b&gt;layout-rs&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;VisualGraph&lt;br/&gt;(Sugiyama engine)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="layout::topo::layout::VisualGraph — runs hierarchical Sugiyama layout algorithm">
-          <mxGeometry x="261" y="1239" width="160" height="80" as="geometry"/>
+          <mxGeometry x="234" y="796" width="140" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="topo_fallback" value="&lt;b&gt;Topo-sort Fallback&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(longest-path&lt;br/&gt;ranking)&lt;/font&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=2;strokeColor=#a78bfa;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontStyle=2;fontColor=#0f172a;" vertex="1" parent="1" tooltip="Pure-Rust fallback: petgraph::algo::toposort + longest-path layer assignment">
-          <mxGeometry x="420" y="1414" width="270" height="80" as="geometry"/>
+          <mxGeometry x="189" y="892" width="230" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="layout_result" value="&lt;b&gt;layout::LayoutResult&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;{ positions:&lt;br/&gt;HashMap&lt;NodeIndex,&lt;br/&gt;NodeLayout&gt; }&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="NodeLayout { x, y, width, height } for every node">
-          <mxGeometry x="106" y="1589" width="180" height="100" as="geometry"/>
+          <mxGeometry x="224" y="988" width="160" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="style_fn" value="&lt;b&gt;render::style_for_type()&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(node_type → draw.io&lt;br/&gt;style string)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Maps proxy/database/server/queue/cache/function/client/decision → mxCell style attr">
-          <mxGeometry x="1070" y="1599" width="210" height="80" as="geometry"/>
+          <mxGeometry x="129" y="1094" width="190" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="xml_writer" value="&lt;b&gt;quick-xml Writer&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(mxfile XML)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Writes &lt;?xml&gt;&lt;mxfile&gt;&lt;diagram&gt;&lt;mxGraphModel&gt;&lt;root&gt; with mandatory id=0, id=1 stubs">
-          <mxGeometry x="1100" y="1784" width="150" height="60" as="geometry"/>
+          <mxGeometry x="169" y="1190" width="140" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="svg_writer" value="&lt;b&gt;quick-xml Writer&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(SVG)&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="1" tooltip="Writes &lt;svg&gt; with &lt;rect&gt; nodes, &lt;line&gt; edges, &lt;text&gt; labels">
-          <mxGeometry x="36" y="1784" width="150" height="60" as="geometry"/>
+          <mxGeometry x="339" y="1099" width="140" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="drawio_out" value="&lt;b&gt;output.drawio&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(mxfile XML)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Uncompressed. Open in draw.io desktop or diagrams.net">
-          <mxGeometry x="1110" y="1939" width="130" height="60" as="geometry"/>
+          <mxGeometry x="244" y="1276" width="120" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="svg_out" value="&lt;b&gt;output.svg&lt;/b&gt;&lt;br/&gt;&lt;font style=&apos;font-size:10px;color:#64748b&apos;&gt;(SVG)&lt;/font&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#38bdf8;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;" vertex="1" parent="1" tooltip="Embed in Markdown, HTML, Notion, Confluence">
-          <mxGeometry x="51" y="1939" width="120" height="60" as="geometry"/>
+          <mxGeometry x="329" y="1190" width="110" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="e_cli_args_stdin_file" value="--input / stdin" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.9;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cli_args" target="stdin_file" parent="1">
+        <mxCell id="e_cli_args_stdin_file" value="--input / stdin" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cli_args" target="stdin_file" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -87,7 +87,7 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_diagram_payload_node_def" value="nodes[]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.9;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="diagram_payload" target="node_def" parent="1">
+        <mxCell id="e_diagram_payload_node_def" value="nodes[]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="diagram_payload" target="node_def" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -97,12 +97,12 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_node_def_stable_graph" value="add_node → NodeData" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="node_def" target="stable_graph" parent="1">
+        <mxCell id="e_node_def_stable_graph" value="add_node → NodeData" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="node_def" target="stable_graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_edge_def_stable_graph" value="add_edge → EdgeData" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="edge_def" target="stable_graph" parent="1">
+        <mxCell id="e_edge_def_stable_graph" value="add_edge → EdgeData" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.0;entryY=0.2;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="edge_def" target="stable_graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -112,17 +112,17 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_stable_graph_edge_data" value="stores" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="stable_graph" target="edge_data" parent="1">
+        <mxCell id="e_stable_graph_edge_data" value="stores" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="stable_graph" target="edge_data" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_stable_graph_fas" value="is_cyclic_directed?" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="stable_graph" target="fas" parent="1">
+        <mxCell id="e_stable_graph_fas" value="is_cyclic_directed?" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="stable_graph" target="fas" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_fas_compiled_graph" value="acyclic graph" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="fas" target="compiled_graph" parent="1">
+        <mxCell id="e_fas_compiled_graph" value="acyclic graph" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="fas" target="compiled_graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -132,57 +132,57 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_compiled_graph_visual_graph" value="add nodes + edges" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.4;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="visual_graph" parent="1">
+        <mxCell id="e_compiled_graph_visual_graph" value="add nodes + edges" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.6;exitY=1.0;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="visual_graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_layout_config_visual_graph" value="node size / spacing" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_config" target="visual_graph" parent="1">
+        <mxCell id="e_layout_config_visual_graph" value="node size / spacing" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.2;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_config" target="visual_graph" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_visual_graph_topo_fallback" value="on error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="visual_graph" target="topo_fallback" parent="1">
+        <mxCell id="e_visual_graph_topo_fallback" value="on error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="visual_graph" target="topo_fallback" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_visual_graph_layout_result" value="vg.pos(handle).bbox()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="visual_graph" target="layout_result" parent="1">
+        <mxCell id="e_visual_graph_layout_result" value="vg.pos(handle).bbox()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="visual_graph" target="layout_result" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_topo_fallback_layout_result" value="layer × spacing" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="topo_fallback" target="layout_result" parent="1">
+        <mxCell id="e_topo_fallback_layout_result" value="layer × spacing" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.2;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="topo_fallback" target="layout_result" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_compiled_graph_style_fn" value="node_type" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.6;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="style_fn" parent="1">
+        <mxCell id="e_compiled_graph_style_fn" value="node_type" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="style_fn" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_style_fn_xml_writer" value="style string" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="style_fn" target="xml_writer" parent="1">
+        <mxCell id="e_style_fn_xml_writer" value="style string" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.2;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="style_fn" target="xml_writer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_layout_result_xml_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.9;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_result" target="xml_writer" parent="1">
+        <mxCell id="e_layout_result_xml_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_result" target="xml_writer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_layout_result_svg_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_result" target="svg_writer" parent="1">
+        <mxCell id="e_layout_result_svg_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.9;exitDx=0;exitDy=0;entryX=0.0;entryY=0.2;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="layout_result" target="svg_writer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_compiled_graph_xml_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="xml_writer" parent="1">
+        <mxCell id="e_compiled_graph_xml_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.4;exitY=1.0;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="xml_writer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_compiled_graph_svg_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="svg_writer" parent="1">
+        <mxCell id="e_compiled_graph_svg_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="compiled_graph" target="svg_writer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>

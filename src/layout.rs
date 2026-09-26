@@ -62,10 +62,10 @@ pub struct LayoutConfig {
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            rank_spacing: 44,
-            node_spacing: 24,
-            node_width: 120.0,
-            node_height: 50.0,
+            rank_spacing: 36,
+            node_spacing: 20,
+            node_width: 110.0,
+            node_height: 44.0,
             direction: LayoutDirection::TopToBottom,
         }
     }
@@ -83,10 +83,8 @@ pub struct LayoutResult {
 
 /// Compute a spatial layout for `compiled` using the configured engine.
 ///
-/// Tries the `layout-rs` hierarchical (Sugiyama-style) engine first.
-/// Falls back to a deterministic topological layer assignment if the graph
-/// is empty or layout-rs cannot be applied.
-///
+/// Uses our deterministic layered layout engine with group awareness,
+/// barycentric crossing minimization, and compact spacing.
 /// Automatically normalizes coordinates to eliminate canvas whitespace wastage.
 ///
 /// # Errors
@@ -99,11 +97,8 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         });
     }
 
-    // Try layout-rs engine; fall back to topo-sort layering on any issue.
-    let mut result = match layout_with_layout_rs(compiled, config) {
-        Ok(res) => res,
-        Err(_) => layout_topological(compiled, config)?,
-    };
+    // Run deterministic layered layout engine with group-aware stage ordering
+    let mut result = layout_topological(compiled, config)?;
 
     // Normalize coordinates so the diagram starts cleanly near the top-left margin
     // without wasting huge canvas areas.
@@ -119,8 +114,8 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
             .map(|nl| nl.y)
             .fold(f64::MAX, f64::min);
 
-        let target_min_x = 36.0_f64;
-        let target_min_y = 44.0_f64;
+        let target_min_x = 24.0_f64;
+        let target_min_y = 28.0_f64;
         let dx = target_min_x - min_x;
         let dy = target_min_y - min_y;
 
@@ -138,7 +133,7 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
 // ---------------------------------------------------------------------------
 
 /// Wrap label into lines, respecting existing newlines and breaking on word boundaries.
-/// Targets ~18 characters per line to keep shapes compact.
+/// Prevents orphan closing delimiters/brackets (like single `}`) from landing alone on a line.
 pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
     let mut result = Vec::new();
     for raw_line in label.split('\n') {
@@ -158,9 +153,16 @@ pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
 
         let mut current_line = String::new();
         for word in words {
+            let is_closing = word
+                .chars()
+                .all(|c| matches!(c, '}' | ')' | ']' | '>' | ';' | ',' | '.' | ':'));
+
             if current_line.is_empty() {
                 current_line.push_str(word);
-            } else if current_line.chars().count() + 1 + word.chars().count() <= max_chars_per_line {
+            } else if is_closing
+                || current_line.chars().count() + 1 + word.chars().count()
+                    <= max_chars_per_line + if is_closing { 3 } else { 0 }
+            {
                 current_line.push(' ');
                 current_line.push_str(word);
             } else {
@@ -169,7 +171,18 @@ pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
             }
         }
         if !current_line.is_empty() {
-            result.push(current_line);
+            // Fold orphan single bracket/punctuation back into the preceding line
+            let is_orphan = current_line
+                .trim()
+                .chars()
+                .all(|c| matches!(c, '}' | ')' | ']' | '>' | ';' | ',' | '.' | ':'));
+            if is_orphan && !result.is_empty() {
+                let last = result.last_mut().unwrap();
+                last.push(' ');
+                last.push_str(current_line.trim());
+            } else {
+                result.push(current_line);
+            }
         }
     }
     if result.is_empty() {
@@ -189,16 +202,21 @@ pub fn estimate_node_size(
     let lines = wrap_label(label, 22);
     let max_chars = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
 
-    // Approximate ~7.5px per character at 12px font + 28px horizontal padding
-    let mut width = (max_chars as f64 * 7.5 + 28.0).max(min_width).min(260.0);
-    // 18px line height + 20px vertical padding
-    let mut height = (lines.len() as f64 * 18.0 + 20.0).max(min_height);
+    // Approximate ~7.0px per character at 12px font + 20px horizontal padding
+    let mut width = (max_chars as f64 * 7.0 + 20.0).max(min_width).min(240.0);
+    // Compact line heights: 16px title, 13px subtitles + 14px vertical padding
+    let total_h = if lines.len() <= 1 {
+        16.0 + 14.0
+    } else {
+        16.0 + (lines.len() - 1) as f64 * 13.0 + 14.0
+    };
+    let mut height = total_h.max(min_height);
 
     // Diamond shapes (decision, cache) need extra clearance to inscribe text
     match node_type.to_ascii_lowercase().as_str() {
         "decision" | "condition" | "cache" | "redis" | "memcache" => {
-            width *= 1.35;
-            height *= 1.35;
+            width *= 1.30;
+            height *= 1.30;
         }
         _ => {}
     }
@@ -213,6 +231,7 @@ pub fn estimate_node_size(
 // layout-rs backend
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
     let orientation = match config.direction {
         LayoutDirection::TopToBottom => Orientation::TopToBottom,
@@ -296,26 +315,92 @@ fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         anyhow::anyhow!("topological sort failed — unexpected cycle after FAS pass")
     })?;
 
-    // Compute the longest-path layer for each node.
+    // Compute layers (group-aware stage assignment when groups are defined)
     let mut layer: HashMap<NodeIndex, usize> = HashMap::with_capacity(topo_order.len());
-    for &node in &topo_order {
-        let pred_max = compiled
-            .graph
-            .neighbors_directed(node, Direction::Incoming)
-            .filter_map(|p| layer.get(&p).copied())
-            .max()
-            .unwrap_or(0);
-        let node_layer = if compiled
-            .graph
-            .neighbors_directed(node, Direction::Incoming)
-            .next()
-            .is_some()
-        {
-            pred_max + 1
-        } else {
-            0
-        };
-        layer.insert(node, node_layer);
+
+    let has_groups = !compiled.groups.is_empty();
+    if has_groups {
+        let mut node_to_group: HashMap<NodeIndex, usize> = HashMap::new();
+        for (g_idx, group) in compiled.groups.iter().enumerate() {
+            for node_id in &group.nodes {
+                if let Some(&idx) = compiled.node_map.get(node_id) {
+                    node_to_group.insert(idx, g_idx);
+                }
+            }
+        }
+
+        // Compute intra-group local layers so that nodes inside each group form a compact hierarchy
+        let mut group_local_layer: HashMap<NodeIndex, usize> = HashMap::new();
+        let mut group_depths: Vec<usize> = vec![0; compiled.groups.len()];
+
+        for (g_idx, _group) in compiled.groups.iter().enumerate() {
+            let mut max_local = 0;
+            for &node in &topo_order {
+                if node_to_group.get(&node) == Some(&g_idx) {
+                    let local_pred_max = compiled
+                        .graph
+                        .neighbors_directed(node, Direction::Incoming)
+                        .filter(|p| node_to_group.get(p) == Some(&g_idx))
+                        .filter_map(|p| group_local_layer.get(&p).copied())
+                        .max();
+                    let l = match local_pred_max {
+                        Some(m) => m + 1,
+                        None => 0,
+                    };
+                    group_local_layer.insert(node, l);
+                    max_local = max_local.max(l + 1);
+                }
+            }
+            group_depths[g_idx] = max_local.max(1);
+        }
+
+        // Compute global base layer for each group so groups stack sequentially without overlap
+        let mut group_base: Vec<usize> = Vec::with_capacity(compiled.groups.len());
+        let mut acc = 0;
+        for &d in &group_depths {
+            group_base.push(acc);
+            acc += d;
+        }
+
+        for &node in &topo_order {
+            if let Some(&g_idx) = node_to_group.get(&node) {
+                let local = group_local_layer.get(&node).copied().unwrap_or(0);
+                layer.insert(node, group_base[g_idx] + local);
+            } else {
+                let pred_max = compiled
+                    .graph
+                    .neighbors_directed(node, Direction::Incoming)
+                    .filter_map(|p| layer.get(&p).copied())
+                    .max()
+                    .unwrap_or(0);
+                let l = if compiled.graph.neighbors_directed(node, Direction::Incoming).next().is_some() {
+                    pred_max + 1
+                } else {
+                    0
+                };
+                layer.insert(node, l);
+            }
+        }
+    } else {
+        for &node in &topo_order {
+            let pred_max = compiled
+                .graph
+                .neighbors_directed(node, Direction::Incoming)
+                .filter_map(|p| layer.get(&p).copied())
+                .max()
+                .unwrap_or(0);
+            let node_layer = if compiled
+                .graph
+                .neighbors_directed(node, Direction::Incoming)
+                .next()
+                .is_some()
+            {
+                pred_max + 1
+            } else {
+                0
+            };
+            layer.insert(node, node_layer);
+        }
     }
 
     // Group nodes by layer

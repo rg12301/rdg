@@ -1,219 +1,217 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1688" height="2055" viewBox="0 0 1688 2055">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="644" height="1382" viewBox="0 0 644 1382">
   <rect width="100%" height="100%" fill="#f8fafc"/>
   <defs>
     <filter id="card-shadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/>
     </filter>
-    <marker id="arrow-slate" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
     </marker>
-    <marker id="arrow-dark" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8"/>
     </marker>
-    <marker id="arrow-amber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="none" stroke="#d97706" stroke-width="1.5"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="none" stroke="#ef4444" stroke-width="1.5"/>
     </marker>
-    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#6366f1"/>
     </marker>
   </defs>
-  <rect x="978" y="16" width="349" height="259" rx="8" fill="#64748b" fill-opacity="0.08" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="990" y="34" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#64748b">CLI &amp; Ingestion</text>
-  <rect x="979" y="326" width="670" height="279" rx="8" fill="#0284c7" fill-opacity="0.08" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="991" y="344" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#0284c7">Schema Layer</text>
-  <rect x="592" y="656" width="956" height="479" rx="8" fill="#059669" fill-opacity="0.08" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="604" y="674" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#059669">Graph IR Layer</text>
-  <rect x="86" y="1006" width="624" height="699" rx="8" fill="#d97706" fill-opacity="0.08" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="98" y="1024" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#d97706">Layout Engine</text>
-  <rect x="16" y="1571" width="1284" height="444" rx="8" fill="#7c3aed" fill-opacity="0.08" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="28" y="1589" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#7c3aed">Rendering Layer</text>
-  <path d="M 1147.5 98.0 L 1154.7 98.0 Q 1161.9 98.0 1161.9 105.2 L 1161.9 221.8 Q 1161.9 229.0 1169.1 229.0 L 1176.2 229.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1107.1" y="154.5" width="109.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1161.9" y="167.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">--input / stdin</text>
-  <path d="M 1241.2 259.0 L 1241.2 354.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1170.2" y="297.5" width="142.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1241.2" y="310.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">serde_yaml::from_str</text>
-  <path d="M 1311.2 408.0 L 1366.8 408.0 Q 1374.8 408.0 1374.8 416.0 L 1374.8 541.0 Q 1374.8 549.0 1382.8 549.0 L 1438.2 549.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1346.0" y="469.5" width="57.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1374.8" y="482.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">nodes[]</text>
-  <path d="M 1185.2 414.0 L 1185.2 458.5 Q 1185.2 466.5 1177.2 466.5 L 1096.8 466.5 Q 1088.8 466.5 1088.8 474.5 L 1088.8 519.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1108.2" y="457.5" width="57.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1137.0" y="470.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">edges[]</text>
-  <path d="M 1533.2 589.0 L 1533.2 628.5 Q 1533.2 636.5 1525.2 636.5 L 1096.8 636.5 Q 1088.8 636.5 1088.8 644.5 L 1088.8 684.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1243.2" y="627.5" width="135.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1311.0" y="640.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">add_node → NodeData</text>
-  <path d="M 1088.8 579.0 L 1088.8 684.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1021.0" y="622.5" width="135.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1088.8" y="635.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">add_edge → EdgeData</text>
-  <path d="M 1153.8 738.0 L 1238.0 738.0 Q 1246.0 738.0 1246.0 746.0 L 1246.0 881.0 Q 1246.0 889.0 1254.0 889.0 L 1338.2 889.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1220.5" y="804.5" width="51.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1246.0" y="817.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">stores</text>
-  <path d="M 1036.8 744.0 L 1036.8 793.5 Q 1036.8 801.5 1028.8 801.5 L 709.9 801.5 Q 701.9 801.5 701.9 809.5 L 701.9 859.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="843.8" y="792.5" width="51.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="869.3" y="805.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">stores</text>
-  <path d="M 1088.8 744.0 L 1088.8 790.2 Q 1088.8 791.5 1087.5 791.5 L 1087.5 791.5 Q 1086.2 791.5 1086.2 792.8 L 1086.2 839.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1019.8" y="782.5" width="135.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1087.5" y="795.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">is_cyclic_directed?</text>
-  <path d="M 1086.2 939.0 L 1086.2 1059.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1038.0" y="990.0" width="96.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1086.2" y="1003.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">acyclic graph</text>
-  <path d="M 1012.5 104.0 L 1012.5 561.0 Q 1012.5 569.0 1004.5 569.0 L 349.0 569.0 Q 341.0 569.0 341.0 577.0 L 341.0 1034.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="570.0" y="560.0" width="213.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="676.8" y="573.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">--rank-spacing / --node-spacing</text>
-  <path d="M 1068.9 1119.0 L 1068.9 1171.0 Q 1068.9 1179.0 1060.9 1179.0 L 349.0 1179.0 Q 341.0 1179.0 341.0 1187.0 L 341.0 1239.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="643.7" y="1170.0" width="122.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="705.0" y="1183.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">add nodes + edges</text>
-  <path d="M 341.0 1144.0 L 341.0 1239.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="273.2" y="1182.5" width="135.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="341.0" y="1195.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">node size / spacing</text>
-  <path d="M 405.0 1319.0 L 405.0 1358.5 Q 405.0 1366.5 413.0 1366.5 L 546.8 1366.5 Q 554.8 1366.5 554.8 1374.5 L 554.8 1414.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="447.9" y="1357.5" width="64.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="479.9" y="1370.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">on error</text>
-  <path d="M 277.0 1319.0 L 277.0 1446.0 Q 277.0 1454.0 269.0 1454.0 L 204.0 1454.0 Q 196.0 1454.0 196.0 1462.0 L 196.0 1589.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="162.2" y="1445.0" width="148.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="236.5" y="1458.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">vg.pos(handle).bbox()</text>
-  <path d="M 554.8 1494.0 L 554.8 1533.5 Q 554.8 1541.5 546.8 1541.5 L 204.0 1541.5 Q 196.0 1541.5 196.0 1549.5 L 196.0 1589.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="320.6" y="1532.5" width="109.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="375.4" y="1545.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">layer × spacing</text>
-  <path d="M 1103.6 1119.0 L 1103.6 1351.0 Q 1103.6 1359.0 1111.6 1359.0 L 1167.2 1359.0 Q 1175.2 1359.0 1175.2 1367.0 L 1175.2 1599.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1104.2" y="1350.0" width="70.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1139.4" y="1363.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">node_type</text>
-  <path d="M 1175.2 1679.0 L 1175.2 1784.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1130.2" y="1722.5" width="90.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1175.2" y="1735.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">style string</text>
-  <path d="M 286.0 1679.0 L 685.1 1679.0 Q 693.1 1679.0 693.1 1687.0 L 693.1 1806.0 Q 693.1 1814.0 701.1 1814.0 L 1100.2 1814.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="654.6" y="1737.5" width="77.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="693.1" y="1750.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">x, y, w, h</text>
-  <path d="M 124.0 1689.0 L 124.0 1730.0 Q 124.0 1736.5 117.5 1736.5 L 117.5 1736.5 Q 111.0 1736.5 111.0 1743.0 L 111.0 1784.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="79.0" y="1727.5" width="77.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="117.5" y="1740.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">x, y, w, h</text>
-  <path d="M 1138.2 1119.0 L 1138.2 1443.5 Q 1138.2 1451.5 1146.2 1451.5 L 1167.2 1451.5 Q 1175.2 1451.5 1175.2 1459.5 L 1175.2 1784.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1105.2" y="1442.5" width="103.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1156.8" y="1455.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">node/edge data</text>
-  <path d="M 1034.2 1119.0 L 1034.2 1443.5 Q 1034.2 1451.5 1026.2 1451.5 L 119.0 1451.5 Q 111.0 1451.5 111.0 1459.5 L 111.0 1784.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="521.1" y="1442.5" width="103.0" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="572.6" y="1455.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">node/edge data</text>
-  <path d="M 1175.2 1844.0 L 1175.2 1939.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="1153.0" y="1882.5" width="44.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="1175.2" y="1895.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">write</text>
-  <path d="M 111.0 1844.0 L 111.0 1939.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="88.8" y="1882.5" width="44.5" height="18.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="111.0" y="1895.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#475569">write</text>
-  <rect x="997.5" y="44.0" width="150.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#818cf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1072.5" y="71.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1072.5" font-size="12" fill="#0f172a" font-weight="bold">clap::Cli</tspan>
-    <tspan x="1072.5" dy="14" font-size="10" fill="#64748b" font-weight="normal">(CLI Arguments)</tspan>
+  <rect x="219" y="10" width="170" height="180" rx="8" fill="#64748b" fill-opacity="0.08" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="231" y="28" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#64748b">CLI &amp; Ingestion</text>
+  <rect x="109" y="172" width="390" height="190" rx="8" fill="#0284c7" fill-opacity="0.08" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="121" y="190" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#0284c7">Schema Layer</text>
+  <rect x="10" y="354" width="600" height="296" rx="8" fill="#059669" fill-opacity="0.08" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="22" y="372" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#059669">Graph IR Layer</text>
+  <rect x="169" y="642" width="270" height="432" rx="8" fill="#d97706" fill-opacity="0.08" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="181" y="660" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#d97706">Layout Engine</text>
+  <rect x="109" y="1066" width="390" height="276" rx="8" fill="#7c3aed" fill-opacity="0.08" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="121" y="1084" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#7c3aed">Rendering Layer</text>
+  <path d="M 356.0 78.0 L 356.0 88.0 Q 356.0 96.0 348.0 96.0 L 312.0 96.0 Q 304.0 96.0 304.0 104.0 L 304.0 114.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 304.0 164.0 L 304.0 200.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 352.0 250.0 L 352.0 260.0 Q 352.0 268.0 360.0 268.0 L 386.0 268.0 Q 394.0 268.0 394.0 276.0 L 394.0 286.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 256.0 250.0 L 256.0 262.5 Q 256.0 270.5 248.0 270.5 L 217.0 270.5 Q 209.0 270.5 209.0 278.5 L 209.0 291.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 394.0 346.0 L 394.0 356.0 Q 394.0 364.0 386.0 364.0 L 348.0 364.0 Q 340.0 364.0 340.0 372.0 L 340.0 382.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 289.0 316.0 L 258.5 316.0 Q 266.5 316.0 266.5 324.0 L 266.5 384.0 Q 266.5 392.0 274.5 392.0 L 244.0 392.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 364.0 427.0 L 381.0 427.0 Q 389.0 427.0 389.0 435.0 L 389.0 500.0 Q 389.0 508.0 397.0 508.0 L 414.0 508.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 304.0 432.0 L 304.0 452.5 Q 304.0 457.5 309.0 457.5 L 309.0 457.5 Q 314.0 457.5 314.0 462.5 L 314.0 483.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 256.0 432.0 L 256.0 442.0 Q 256.0 450.0 248.0 450.0 L 127.0 450.0 Q 119.0 450.0 119.0 458.0 L 119.0 468.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 214.0 508.0 L 221.5 508.0 Q 229.0 508.0 229.0 515.5 L 229.0 601.5 Q 229.0 609.0 236.5 609.0 L 244.0 609.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 252.0 78.0 L 252.0 366.0 Q 252.0 374.0 260.0 374.0 L 296.0 374.0 Q 304.0 374.0 304.0 382.0 L 304.0 670.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 320.0 634.0 L 320.0 707.0 Q 320.0 715.0 328.0 715.0 L 338.0 715.0 Q 346.0 715.0 346.0 723.0 L 346.0 796.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 304.0 760.0 L 304.0 770.0 Q 304.0 778.0 296.0 778.0 L 270.0 778.0 Q 262.0 778.0 262.0 786.0 L 262.0 796.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 248.0 856.0 L 248.0 866.0 Q 248.0 874.0 256.0 874.0 L 296.0 874.0 Q 304.0 874.0 304.0 882.0 L 304.0 892.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 360.0 856.0 L 360.0 918.0 Q 360.0 922.0 356.0 922.0 L 356.0 922.0 Q 352.0 922.0 352.0 926.0 L 352.0 988.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 304.0 952.0 L 304.0 962.0 Q 304.0 970.0 296.0 970.0 L 264.0 970.0 Q 256.0 970.0 256.0 978.0 L 256.0 988.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 256.0 634.0 L 256.0 856.0 Q 256.0 864.0 248.0 864.0 L 232.0 864.0 Q 224.0 864.0 224.0 872.0 L 224.0 1094.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 224.0 1154.0 L 224.0 1164.0 Q 224.0 1172.0 216.0 1172.0 L 205.0 1172.0 Q 197.0 1172.0 197.0 1180.0 L 197.0 1190.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 240.0 1058.0 L 240.0 1124.0 L 239.0 1124.0 L 239.0 1190.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 384.0 1051.0 L 353.5 1051.0 Q 361.5 1051.0 361.5 1059.0 L 361.5 1101.0 Q 361.5 1109.0 369.5 1109.0 L 339.0 1109.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 288.0 634.0 L 288.0 908.5 Q 288.0 912.0 284.5 912.0 L 284.5 912.0 Q 281.0 912.0 281.0 915.5 L 281.0 1190.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 352.0 634.0 L 352.0 858.5 Q 352.0 866.5 360.0 866.5 L 443.0 866.5 Q 451.0 866.5 451.0 874.5 L 451.0 1099.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 239.0 1240.0 L 239.0 1250.0 Q 239.0 1258.0 247.0 1258.0 L 296.0 1258.0 Q 304.0 1258.0 304.0 1266.0 L 304.0 1276.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 409.0 1149.0 L 409.0 1161.5 Q 409.0 1169.5 401.0 1169.5 L 392.0 1169.5 Q 384.0 1169.5 384.0 1177.5 L 384.0 1190.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <rect x="304.5" y="78.1" width="103.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="356.0" y="89.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">--input / stdin</text>
+  <rect x="237.0" y="174.0" width="134.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="304.0" y="185.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">serde_yaml::from_str</text>
+  <rect x="325.3" y="250.1" width="53.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="352.0" y="261.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">nodes[]</text>
+  <rect x="229.3" y="251.2" width="53.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="256.0" y="262.7" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">edges[]</text>
+  <rect x="330.1" y="346.1" width="127.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="394.0" y="357.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">add_node → NodeData</text>
+  <rect x="235.2" y="308.0" width="127.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="299.1" y="319.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">add_edge → EdgeData</text>
+  <rect x="351.6" y="419.0" width="47.2" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="375.2" y="430.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">stores</text>
+  <rect x="280.4" y="435.5" width="47.2" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="304.0" y="447.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">stores</text>
+  <rect x="192.1" y="432.1" width="127.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="256.0" y="443.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">is_cyclic_directed?</text>
+  <rect x="175.4" y="500.0" width="90.6" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="220.8" y="511.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">acyclic graph</text>
+  <rect x="150.9" y="88.0" width="202.2" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="252.0" y="99.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">--rank-spacing / --node-spacing</text>
+  <rect x="262.3" y="644.0" width="115.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="320.0" y="655.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">add nodes + edges</text>
+  <rect x="240.1" y="760.1" width="127.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="304.0" y="771.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">node size / spacing</text>
+  <rect x="218.2" y="856.1" width="59.6" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="248.0" y="867.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">on error</text>
+  <rect x="289.9" y="866.0" width="140.2" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="360.0" y="877.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">vg.pos(handle).bbox()</text>
+  <rect x="252.5" y="952.1" width="103.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="304.0" y="963.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">layer × spacing</text>
+  <rect x="223.1" y="644.0" width="65.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="256.0" y="655.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">node_type</text>
+  <rect x="181.8" y="1154.1" width="84.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="224.0" y="1165.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">style string</text>
+  <rect x="204.0" y="1068.0" width="72.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="240.0" y="1079.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">x, y, w, h</text>
+  <rect x="358.1" y="1043.0" width="72.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="394.1" y="1054.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">x, y, w, h</text>
+  <rect x="239.6" y="644.0" width="96.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="288.0" y="655.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">node/edge data</text>
+  <rect x="303.6" y="644.0" width="96.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="352.0" y="655.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">node/edge data</text>
+  <rect x="218.5" y="1240.1" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="239.0" y="1251.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">write</text>
+  <rect x="388.5" y="1150.2" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="409.0" y="1161.7" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">write</text>
+  <rect x="239.0" y="28.0" width="130.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#818cf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="304.0" y="50.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">clap::Cli</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(CLI Arguments)</tspan>
   </text>
-  <rect x="1176.2" y="199.0" width="130.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#fbbf24" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1241.2" y="226.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1241.2" font-size="12" fill="#0f172a" font-weight="bold">stdin / File</tspan>
-    <tspan x="1241.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">(YAML source)</tspan>
+  <rect x="244.0" y="114.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#fbbf24" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="304.0" y="136.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">stdin / File</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(YAML source)</tspan>
   </text>
-  <rect x="1171.2" y="354.0" width="140.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1241.2" y="381.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1241.2" font-size="12" fill="#0f172a" font-weight="bold">schema::</tspan>
-    <tspan x="1241.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">DiagramPayload</tspan>
+  <rect x="244.0" y="200.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="304.0" y="222.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">schema::</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">DiagramPayload</tspan>
   </text>
-  <rect x="1438.2" y="509.0" width="190.0" height="80.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1533.2" y="532.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1533.2" font-size="12" fill="#0f172a" font-weight="bold">schema::NodeDef</tspan>
-    <tspan x="1533.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ id, label,</tspan>
-    <tspan x="1533.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_type, metadata</tspan>
-    <tspan x="1533.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">}</tspan>
+  <rect x="309.0" y="286.0" width="170.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="394.0" y="306.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="394.0" font-size="12" fill="#0f172a" font-weight="bold">schema::NodeDef</tspan>
+    <tspan x="394.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ id, label,</tspan>
+    <tspan x="394.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_type, metadata }</tspan>
   </text>
-  <rect x="998.8" y="519.0" width="180.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1088.8" y="546.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1088.8" font-size="12" fill="#0f172a" font-weight="bold">schema::EdgeDef</tspan>
-    <tspan x="1088.8" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ from, to, label }</tspan>
+  <rect x="129.0" y="291.0" width="160.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="209.0" y="313.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="209.0" font-size="12" fill="#0f172a" font-weight="bold">schema::EdgeDef</tspan>
+    <tspan x="209.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ from, to, label }</tspan>
   </text>
-  <path d="M 1023.8 694.8 L 1023.8 733.2 A 65.0 10.8 0 0 0 1153.8 733.2 L 1153.8 694.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="1088.8" cy="694.8" rx="65.0" ry="10.8" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="1088.8" y="711.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1088.8" font-size="12" fill="#0f172a" font-weight="bold">petgraph::</tspan>
-    <tspan x="1088.8" dy="14" font-size="10" fill="#64748b" font-weight="normal">StableDiGraph</tspan>
+  <path d="M 244.0 391.0 L 244.0 423.0 A 60.0 9.0 0 0 0 364.0 423.0 L 364.0 391.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="304.0" cy="391.0" rx="60.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="304.0" y="404.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">petgraph::</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">StableDiGraph</tspan>
   </text>
-  <rect x="1338.2" y="849.0" width="190.0" height="80.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1433.2" y="872.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1433.2" font-size="12" fill="#0f172a" font-weight="bold">graph::NodeData</tspan>
-    <tspan x="1433.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ id, label,</tspan>
-    <tspan x="1433.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_type, metadata</tspan>
-    <tspan x="1433.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">}</tspan>
+  <rect x="414.0" y="478.0" width="170.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="499.0" y="498.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="499.0" font-size="12" fill="#0f172a" font-weight="bold">graph::NodeData</tspan>
+    <tspan x="499.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ id, label,</tspan>
+    <tspan x="499.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_type, metadata }</tspan>
   </text>
-  <rect x="611.9" y="859.0" width="180.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="701.9" y="886.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="701.9" font-size="12" fill="#0f172a" font-weight="bold">graph::EdgeData</tspan>
-    <tspan x="701.9" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ label, reversed }</tspan>
+  <rect x="234.0" y="483.0" width="160.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="314.0" y="505.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="314.0" font-size="12" fill="#0f172a" font-weight="bold">graph::EdgeData</tspan>
+    <tspan x="314.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ label, reversed }</tspan>
   </text>
-  <path d="M 1086.2 839.0 L 1191.2 889.0 L 1086.2 939.0 L 981.2 889.0 Z" fill="#ffffff" stroke="#a78bfa" stroke-width="2.0" filter="url(#card-shadow)"/>
-  <text x="1086.2" y="879.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1086.2" font-size="12" fill="#0f172a" font-weight="bold">FAS Cycle Breaker</tspan>
-    <tspan x="1086.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">(DFS back-edge</tspan>
-    <tspan x="1086.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">reversal)</tspan>
+  <path d="M 119.0 468.0 L 214.0 508.0 L 119.0 548.0 L 24.0 508.0 Z" fill="#ffffff" stroke="#a78bfa" stroke-width="2.0" filter="url(#card-shadow)"/>
+  <text x="119.0" y="498.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="119.0" font-size="12" fill="#0f172a" font-weight="bold">FAS Cycle Breaker</tspan>
+    <tspan x="119.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(DFS back-edge</tspan>
+    <tspan x="119.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">reversal)</tspan>
   </text>
-  <path d="M 1021.2 1069.8 L 1021.2 1108.2 A 65.0 10.8 0 0 0 1151.2 1108.2 L 1151.2 1069.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="1086.2" cy="1069.8" rx="65.0" ry="10.8" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="1086.2" y="1086.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1086.2" font-size="12" fill="#0f172a" font-weight="bold">graph::</tspan>
-    <tspan x="1086.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">CompiledGraph</tspan>
+  <path d="M 244.0 593.0 L 244.0 625.0 A 60.0 9.0 0 0 0 364.0 625.0 L 364.0 593.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="304.0" cy="593.0" rx="60.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="304.0" y="606.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">graph::</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">CompiledGraph</tspan>
   </text>
-  <rect x="251.0" y="1034.0" width="180.0" height="110.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="341.0" y="1065.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="341.0" font-size="12" fill="#0f172a" font-weight="bold">layout::LayoutConfig</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ rank_spacing,</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_spacing,</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_width,</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_height }</tspan>
+  <rect x="224.0" y="670.0" width="160.0" height="90.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="304.0" y="691.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">layout::LayoutConfig</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ rank_spacing,</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_spacing,</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_width,</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_height }</tspan>
   </text>
-  <rect x="261.0" y="1239.0" width="160.0" height="80.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="341.0" y="1269.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="341.0" font-size="12" fill="#0f172a" font-weight="bold">layout-rs</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">VisualGraph</tspan>
-    <tspan x="341.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(Sugiyama engine)</tspan>
+  <rect x="234.0" y="796.0" width="140.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="304.0" y="816.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">layout-rs</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">VisualGraph</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(Sugiyama engine)</tspan>
   </text>
-  <path d="M 554.8 1414.0 L 689.8 1454.0 L 554.8 1494.0 L 419.8 1454.0 Z" fill="#ffffff" stroke="#a78bfa" stroke-width="2.0" filter="url(#card-shadow)"/>
-  <text x="554.8" y="1444.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="554.8" font-size="12" fill="#0f172a" font-weight="bold">Topo-sort Fallback</tspan>
-    <tspan x="554.8" dy="14" font-size="10" fill="#64748b" font-weight="normal">(longest-path</tspan>
-    <tspan x="554.8" dy="14" font-size="10" fill="#64748b" font-weight="normal">ranking)</tspan>
+  <path d="M 304.0 892.0 L 419.0 922.0 L 304.0 952.0 L 189.0 922.0 Z" fill="#ffffff" stroke="#a78bfa" stroke-width="2.0" filter="url(#card-shadow)"/>
+  <text x="304.0" y="912.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">Topo-sort Fallback</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(longest-path</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">ranking)</tspan>
   </text>
-  <path d="M 106.0 1601.0 L 106.0 1677.0 A 90.0 12.0 0 0 0 286.0 1677.0 L 286.0 1601.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="196.0" cy="1601.0" rx="90.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="196.0" y="1622.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="196.0" font-size="12" fill="#0f172a" font-weight="bold">layout::LayoutResult</tspan>
-    <tspan x="196.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ positions:</tspan>
-    <tspan x="196.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">HashMap&lt;NodeIndex,</tspan>
-    <tspan x="196.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">NodeLayout&gt; }</tspan>
+  <path d="M 224.0 1000.0 L 224.0 1046.0 A 80.0 12.0 0 0 0 384.0 1046.0 L 384.0 1000.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="304.0" cy="1000.0" rx="80.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="304.0" y="1006.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">layout::LayoutResult</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ positions:</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">HashMap&lt;NodeIndex,</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">NodeLayout&gt; }</tspan>
   </text>
-  <rect x="1070.2" y="1599.0" width="210.0" height="80.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1175.2" y="1629.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1175.2" font-size="12" fill="#0f172a" font-weight="bold">render::style_for_type()</tspan>
-    <tspan x="1175.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">(node_type → draw.io</tspan>
-    <tspan x="1175.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">style string)</tspan>
+  <rect x="129.0" y="1094.0" width="190.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="224.0" y="1114.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="224.0" font-size="12" fill="#0f172a" font-weight="bold">render::style_for_type()</tspan>
+    <tspan x="224.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(node_type → draw.io</tspan>
+    <tspan x="224.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">style string)</tspan>
   </text>
-  <rect x="1100.2" y="1784.0" width="150.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="1175.2" y="1811.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1175.2" font-size="12" fill="#0f172a" font-weight="bold">quick-xml Writer</tspan>
-    <tspan x="1175.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">(mxfile XML)</tspan>
+  <rect x="169.0" y="1190.0" width="140.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="239.0" y="1212.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="239.0" font-size="12" fill="#0f172a" font-weight="bold">quick-xml Writer</tspan>
+    <tspan x="239.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(mxfile XML)</tspan>
   </text>
-  <rect x="36.0" y="1784.0" width="150.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="111.0" y="1811.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="111.0" font-size="12" fill="#0f172a" font-weight="bold">quick-xml Writer</tspan>
-    <tspan x="111.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG)</tspan>
+  <rect x="339.0" y="1099.0" width="140.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="409.0" y="1121.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="409.0" font-size="12" fill="#0f172a" font-weight="bold">quick-xml Writer</tspan>
+    <tspan x="409.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG)</tspan>
   </text>
-  <path d="M 1110.2 1949.8 L 1110.2 1988.2 A 65.0 10.8 0 0 0 1240.2 1988.2 L 1240.2 1949.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="1175.2" cy="1949.8" rx="65.0" ry="10.8" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="1175.2" y="1966.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="1175.2" font-size="12" fill="#0f172a" font-weight="bold">output.drawio</tspan>
-    <tspan x="1175.2" dy="14" font-size="10" fill="#64748b" font-weight="normal">(mxfile XML)</tspan>
+  <path d="M 244.0 1285.0 L 244.0 1317.0 A 60.0 9.0 0 0 0 364.0 1317.0 L 364.0 1285.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="304.0" cy="1285.0" rx="60.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="304.0" y="1298.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="304.0" font-size="12" fill="#0f172a" font-weight="bold">output.drawio</tspan>
+    <tspan x="304.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(mxfile XML)</tspan>
   </text>
-  <path d="M 51.0 1949.8 L 51.0 1988.2 A 60.0 10.8 0 0 0 171.0 1988.2 L 171.0 1949.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="111.0" cy="1949.8" rx="60.0" ry="10.8" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="111.0" y="1966.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="111.0" font-size="12" fill="#0f172a" font-weight="bold">output.svg</tspan>
-    <tspan x="111.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG)</tspan>
+  <path d="M 329.0 1199.0 L 329.0 1231.0 A 55.0 9.0 0 0 0 439.0 1231.0 L 439.0 1199.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="384.0" cy="1199.0" rx="55.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="384.0" y="1212.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="384.0" font-size="12" fill="#0f172a" font-weight="bold">output.svg</tspan>
+    <tspan x="384.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG)</tspan>
   </text>
 </svg>

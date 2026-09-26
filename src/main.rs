@@ -230,13 +230,13 @@ struct Cli {
     theme: String,
 
     /// Vertical gap in pixels between successive ranks (layers) of nodes.
-    /// Increase for more breathing room between layers. Default: 44.
-    #[arg(long, default_value_t = 44)]
+    /// Increase for more breathing room between layers. Default: 36.
+    #[arg(long, default_value_t = 36)]
     rank_spacing: u32,
 
     /// Horizontal gap in pixels between nodes on the same rank.
-    /// Increase to prevent label overlap. Default: 24.
-    #[arg(long, default_value_t = 24)]
+    /// Increase to prevent label overlap. Default: 20.
+    #[arg(long, default_value_t = 20)]
     node_spacing: u32,
 
     /// Flow direction of the diagram.
