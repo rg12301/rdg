@@ -1,0 +1,45 @@
+[package]
+name = "rdg"
+version = "1.0.0"
+edition = "2024"
+authors = ["rdg contributors"]
+description = "Render Diagram — deterministically compiles LLM semantic graphs into beautifully routed draw.io XML or SVG files."
+rust-version = "1.85"
+
+[[bin]]
+name = "rdg"
+path = "src/main.rs"
+
+[dependencies]
+# CLI parsing
+clap = { version = "4.6", features = ["derive"] }
+
+# Serialization / deserialization
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Graph data structures
+petgraph = "0.6"
+
+# XML generation for draw.io  
+quick-xml = "0.36"
+
+# SVG generation
+svg = "0.17"
+
+# Hierarchical layout engine (Sugiyama-style)
+layout-rs = "0.1"
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 3

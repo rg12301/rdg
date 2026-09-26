@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="aigraph-compiler" version="1.0">
+  <diagram id="diagram-1" name="Page-1">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="cli_args" value="clap::Cli
+(CLI Arguments)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;" vertex="1" parent="1" tooltip="--input, --output, --layout, --theme, --rank-spacing, --node-spacing">
+          <mxGeometry x="881" y="30" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="stdin_file" value="stdin / File
+(YAML source)" style="shape=mxgraph.flowchart.queue;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1" tooltip="Read via std::io::stdin or std::fs::read_to_string">
+          <mxGeometry x="963" y="185" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="diagram_payload" value="schema::
+DiagramPayload" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="serde_yaml::from_str → DiagramPayload { diagram_type, theme, nodes: Vec&lt;NodeDef&gt;, edges: Vec&lt;EdgeDef&gt; }">
+          <mxGeometry x="963" y="340" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_def" value="schema::NodeDef
+{ id, label, node_type, metadata }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="node_type renamed from &apos;type&apos; via #[serde(rename)]">
+          <mxGeometry x="1214" y="495" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_def" value="schema::EdgeDef
+{ from, to, label }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Directed edge between two node IDs">
+          <mxGeometry x="811" y="495" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="stable_graph" value="petgraph::
+StableDiGraph" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="StableDiGraph&lt;NodeData, EdgeData&gt; — stable indices survive dummy-node insertion">
+          <mxGeometry x="811" y="650" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_data" value="graph::NodeData
+{ id, label, node_type, metadata }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Stored at each graph node index">
+          <mxGeometry x="1095" y="805" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_data" value="graph::EdgeData
+{ label, reversed }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="reversed=true when edge was flipped by FAS">
+          <mxGeometry x="483" y="805" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="fas" value="FAS Cycle Breaker
+(DFS back-edge reversal)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1" tooltip="Greedy Feedback Arc Set: reverses back-edges found in DFS traversal to make graph acyclic">
+          <mxGeometry x="811" y="805" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="compiled_graph" value="graph::
+CompiledGraph" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="{ graph: StableDiGraph, node_map: HashMap&lt;String,NodeIndex&gt;, had_cycles: bool }">
+          <mxGeometry x="811" y="960" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="layout_config" value="layout::LayoutConfig
+{ rank_spacing, node_spacing,
+  node_width, node_height }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Driven by --rank-spacing and --node-spacing CLI flags">
+          <mxGeometry x="234" y="960" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="visual_graph" value="layout-rs
+VisualGraph
+(Sugiyama engine)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="layout::topo::layout::VisualGraph — runs hierarchical Sugiyama layout algorithm">
+          <mxGeometry x="234" y="1115" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="topo_fallback" value="Topo-sort Fallback
+(longest-path ranking)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1" tooltip="Pure-Rust fallback: petgraph::algo::toposort + longest-path layer assignment">
+          <mxGeometry x="366" y="1270" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="layout_result" value="layout::LayoutResult
+{ positions: HashMap&lt;NodeIndex, NodeLayout&gt; }" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="NodeLayout { x, y, width, height } for every node">
+          <mxGeometry x="115" y="1425" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="style_fn" value="render::style_for_type()
+(node_type → draw.io style string)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Maps proxy/database/server/queue/cache/function/client/decision → mxCell style attr">
+          <mxGeometry x="835" y="1425" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="xml_writer" value="quick-xml Writer
+(mxfile XML)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Writes &lt;?xml&gt;&lt;mxfile&gt;&lt;diagram&gt;&lt;mxGraphModel&gt;&lt;root&gt; with mandatory id=0, id=1 stubs">
+          <mxGeometry x="835" y="1580" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="svg_writer" value="quick-xml Writer
+(SVG)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="Writes &lt;svg&gt; with &lt;rect&gt; nodes, &lt;line&gt; edges, &lt;text&gt; labels">
+          <mxGeometry x="30" y="1580" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="drawio_out" value="output.drawio
+(mxfile XML)" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="Uncompressed. Open in draw.io desktop or diagrams.net">
+          <mxGeometry x="835" y="1735" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="svg_out" value="output.svg
+(SVG)" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="Embed in Markdown, HTML, Notion, Confluence">
+          <mxGeometry x="30" y="1735" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cli_args_stdin_file" value="--input / stdin" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="cli_args" target="stdin_file" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_stdin_file_diagram_payload" value="serde_yaml::from_str" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="stdin_file" target="diagram_payload" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_diagram_payload_node_def" value="nodes[]" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="diagram_payload" target="node_def" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_diagram_payload_edge_def" value="edges[]" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="diagram_payload" target="edge_def" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_node_def_stable_graph" value="add_node → NodeData" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="node_def" target="stable_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_edge_def_stable_graph" value="add_edge → EdgeData" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="edge_def" target="stable_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_stable_graph_node_data" value="stores" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="stable_graph" target="node_data" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_stable_graph_edge_data" value="stores" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="stable_graph" target="edge_data" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_stable_graph_fas" value="is_cyclic_directed?" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="stable_graph" target="fas" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_fas_compiled_graph" value="acyclic graph" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="fas" target="compiled_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cli_args_layout_config" value="--rank-spacing / --node-spacing" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="cli_args" target="layout_config" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_compiled_graph_visual_graph" value="add nodes + edges" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="compiled_graph" target="visual_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_layout_config_visual_graph" value="node size / spacing" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="layout_config" target="visual_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_visual_graph_topo_fallback" value="on error" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="visual_graph" target="topo_fallback" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_visual_graph_layout_result" value="vg.pos(handle).bbox()" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="visual_graph" target="layout_result" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_topo_fallback_layout_result" value="layer × spacing" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="topo_fallback" target="layout_result" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_compiled_graph_style_fn" value="node_type" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="compiled_graph" target="style_fn" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_style_fn_xml_writer" value="style string" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="style_fn" target="xml_writer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_layout_result_xml_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="layout_result" target="xml_writer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_layout_result_svg_writer" value="x, y, w, h" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="layout_result" target="svg_writer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_compiled_graph_xml_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="compiled_graph" target="xml_writer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_compiled_graph_svg_writer" value="node/edge data" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="compiled_graph" target="svg_writer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_xml_writer_drawio_out" value="write" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="xml_writer" target="drawio_out" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_svg_writer_svg_out" value="write" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="svg_writer" target="svg_out" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="aigraph-compiler" version="1.0">
+  <diagram id="diagram-1" name="Page-1">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="llm" value="LLM / AI Agent" style="shape=mxgraph.general.person_2;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1" tooltip="Generates the semantic graph as token-efficient YAML. Never computes coordinates.">
+          <mxGeometry x="140" y="30" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="yaml" value="YAML Payload" style="shape=mxgraph.flowchart.queue;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1" tooltip="Token-optimised flat schema: diagram_type, nodes[], edges[]">
+          <mxGeometry x="140" y="185" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="rdg" value="rdg CLI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;" vertex="1" parent="1" tooltip="rdg --input diagram.yaml --output out.drawio">
+          <mxGeometry x="140" y="340" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="schema" value="Schema Parser" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="serde_yaml → DiagramPayload struct">
+          <mxGeometry x="140" y="495" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="graph" value="Graph Builder" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="petgraph StableDiGraph + Feedback Arc Set cycle breaker">
+          <mxGeometry x="140" y="650" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="layout" value="Layout Engine" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="layout-rs Sugiyama framework → Cartesian coordinates">
+          <mxGeometry x="140" y="805" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="renderer" value="Renderer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1" tooltip="quick-xml mxfile writer or SVG writer">
+          <mxGeometry x="140" y="960" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="drawio" value="draw.io XML
+(.drawio)" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="Strict uncompressed mxfile format. Open in draw.io / diagrams.net">
+          <mxGeometry x="30" y="1115" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="svg" value="SVG File
+(.svg)" style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1" tooltip="Embeddable in Markdown, HTML, docs">
+          <mxGeometry x="250" y="1115" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_llm_yaml" value="emits" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="llm" target="yaml" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_yaml_rdg" value="stdin / --input" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="yaml" target="rdg" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_rdg_schema" value="parse" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="rdg" target="schema" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_schema_graph" value="DiagramPayload" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="schema" target="graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_graph_layout" value="CompiledGraph" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="graph" target="layout" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_layout_renderer" value="LayoutResult" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="layout" target="renderer" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_renderer_drawio" value=".drawio" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="renderer" target="drawio" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_renderer_svg" value=".svg" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="renderer" target="svg" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

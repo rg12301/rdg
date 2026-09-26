@@ -1,0 +1,64 @@
+diagram_type: flowchart
+theme: standard
+nodes:
+  - id: llm
+    label: "LLM / AI Agent"
+    type: client
+    metadata: "Generates the semantic graph as token-efficient YAML. Never computes coordinates."
+  - id: yaml
+    label: "YAML Payload"
+    type: queue
+    metadata: "Token-optimised flat schema: diagram_type, nodes[], edges[]"
+  - id: rdg
+    label: "rdg CLI"
+    type: proxy
+    metadata: "rdg --input diagram.yaml --output out.drawio"
+  - id: schema
+    label: "Schema Parser"
+    type: server
+    metadata: "serde_yaml → DiagramPayload struct"
+  - id: graph
+    label: "Graph Builder"
+    type: server
+    metadata: "petgraph StableDiGraph + Feedback Arc Set cycle breaker"
+  - id: layout
+    label: "Layout Engine"
+    type: server
+    metadata: "layout-rs Sugiyama framework → Cartesian coordinates"
+  - id: renderer
+    label: "Renderer"
+    type: server
+    metadata: "quick-xml mxfile writer or SVG writer"
+  - id: drawio
+    label: "draw.io XML\n(.drawio)"
+    type: database
+    metadata: "Strict uncompressed mxfile format. Open in draw.io / diagrams.net"
+  - id: svg
+    label: "SVG File\n(.svg)"
+    type: database
+    metadata: "Embeddable in Markdown, HTML, docs"
+edges:
+  - from: llm
+    to: yaml
+    label: "emits"
+  - from: yaml
+    to: rdg
+    label: "stdin / --input"
+  - from: rdg
+    to: schema
+    label: "parse"
+  - from: schema
+    to: graph
+    label: "DiagramPayload"
+  - from: graph
+    to: layout
+    label: "CompiledGraph"
+  - from: layout
+    to: renderer
+    label: "LayoutResult"
+  - from: renderer
+    to: drawio
+    label: ".drawio"
+  - from: renderer
+    to: svg
+    label: ".svg"
