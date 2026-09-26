@@ -159,7 +159,8 @@ pub fn render_drawio(
     model.push_attribute(("fold", "1"));
     model.push_attribute(("page", "0"));
     model.push_attribute(("pageScale", "1"));
-    model.push_attribute(("background", "#f8fafc"));
+    let bg_color = if theme == "dark" { "#0f172a" } else { "#f8fafc" };
+    model.push_attribute(("background", bg_color));
     model.push_attribute(("math", "0"));
     model.push_attribute(("shadow", "0"));
     w.write_event(Event::Start(model))?;
@@ -254,14 +255,15 @@ pub fn render_drawio(
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
 
         // Build HTML label: bold title + optional muted sub-label
+        let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
         let html_value = {
             let mut parts = node_data.label.splitn(2, '\n');
             let title = parts.next().unwrap_or(&node_data.label);
             let subtitle = parts.next();
             match subtitle {
                 Some(sub) => format!(
-                    "<b>{}</b><br/><font style='font-size:10px;color:#64748b'>{}</font>",
-                    title, sub
+                    "<b>{}</b><br/><font style='font-size:10px;color:{}'>{}</font>",
+                    title, sub_color, sub
                 ),
                 None => format!("<b>{}</b>", title),
             }
@@ -334,6 +336,11 @@ pub fn render_drawio(
         }
     }
 
+    let is_dark = theme == "dark";
+    let default_edge_color = if is_dark { "#94a3b8" } else { "#64748b" };
+    let label_bg_color = if is_dark { "#1e293b" } else { "#ffffff" };
+    let label_font_color = if is_dark { "#cbd5e1" } else { "#475569" };
+
     for edge_idx in compiled.graph.edge_indices() {
         let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
         let edge_data = &compiled.graph[edge_idx];
@@ -343,14 +350,34 @@ pub fn render_drawio(
         let label = edge_data.label.as_deref().unwrap_or("");
 
         // If the edge was reversed for cycle breaking, flip source/target back.
-        let (render_src, render_dst) = if edge_data.reversed {
-            (dst_id.as_str(), src_id.as_str())
+        let (render_src, render_dst, s_idx, d_idx) = if edge_data.reversed {
+            (dst_id.as_str(), src_id.as_str(), dst, src)
         } else {
-            (src_id.as_str(), dst_id.as_str())
+            (src_id.as_str(), dst_id.as_str(), src, dst)
         };
 
-        let exit_x = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
-        let entry_x = 0.5_f64;
+        let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
+
+        let (src_nl, dst_nl) = (layout.positions.get(&s_idx), layout.positions.get(&d_idx));
+        let is_horizontal = match (src_nl, dst_nl) {
+            (Some(s), Some(d)) => (d.x - s.x) > (d.y - s.y).abs(),
+            _ => false,
+        };
+
+        let (exit_attr, entry_attr) = if is_horizontal {
+            (
+                format!("exitX=1.0;exitY={port_frac:.1};exitDx=0;exitDy=0;"),
+                "entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;".to_string(),
+            )
+        } else {
+            (
+                format!("exitX={port_frac:.1};exitY=1.0;exitDx=0;exitDy=0;"),
+                "entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;".to_string(),
+            )
+        };
+
+        let bi_style = format!("strokeColor={default_edge_color};strokeWidth=1.5;startArrow=blockThin;startFill=1;endArrow=blockThin;endFill=1;");
+        let default_style = format!("strokeColor={default_edge_color};strokeWidth=1.5;endArrow=blockThin;endFill=1;");
 
         let custom_style = match edge_data.edge_style.as_deref() {
             Some("async") => {
@@ -362,22 +389,20 @@ pub fn render_drawio(
             Some("data") | Some("stream") => {
                 "strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;"
             }
-            Some("bi") | Some("bidirectional") => {
-                "strokeColor=#64748b;strokeWidth=1.5;startArrow=blockThin;startFill=1;endArrow=blockThin;endFill=1;"
-            }
-            _ => "strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;",
+            Some("bi") | Some("bidirectional") => &bi_style,
+            _ => &default_style,
         };
 
         let edge_style = format!(
             "edgeStyle=orthogonalEdgeStyle;\
              rounded=1;orthogonalLoop=1;jettySize=auto;html=1;\
-             exitX={exit_x:.1};exitY=1.0;exitDx=0;exitDy=0;\
-             entryX={entry_x:.1};entryY=0.0;entryDx=0;entryDy=0;\
+             {exit_attr}\
+             {entry_attr}\
              {custom_style}\
              endSize=6;\
              jumpStyle=arc;jumpSize=6;\
-             labelBackgroundColor=#ffffff;labelBorderColor=none;\
-             fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;"
+             labelBackgroundColor={label_bg_color};labelBorderColor=none;\
+             fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
         );
 
         let mut cell = BytesStart::new("mxCell");
@@ -430,7 +455,7 @@ pub fn render_drawio(
 /// # Errors
 ///
 /// Returns an error if the underlying XML writer fails.
-pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str) -> Result<String> {
+pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) -> Result<String> {
     // Compute canvas bounds.
     let margin = 40.0_f64;
     let (max_x, max_y) = layout
@@ -456,11 +481,14 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
     svg.push_attribute(("viewBox", format!("0 0 {canvas_w} {canvas_h}").as_str()));
     w.write_event(Event::Start(svg))?;
 
+    let is_dark = theme == "dark";
+    let bg_color = if is_dark { "#0f172a" } else { "#f8fafc" };
+
     // Background
     let mut bg = BytesStart::new("rect");
     bg.push_attribute(("width", "100%"));
     bg.push_attribute(("height", "100%"));
-    bg.push_attribute(("fill", "#f8fafc"));
+    bg.push_attribute(("fill", bg_color));
     w.write_event(Event::Empty(bg))?;
 
     // --- Draw group containers ----------------------------------------------
@@ -540,17 +568,29 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
             continue;
         };
 
-        // Centre-bottom to centre-top connector.
-        let x1 = src_nl.x + src_nl.width / 2.0;
-        let y1 = src_nl.y + src_nl.height;
-        let x2 = dst_nl.x + dst_nl.width / 2.0;
-        let y2 = dst_nl.y;
+        let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
+        let (x1, y1, x2, y2) = if is_horizontal {
+            (
+                src_nl.x + src_nl.width,
+                src_nl.y + src_nl.height / 2.0,
+                dst_nl.x,
+                dst_nl.y + dst_nl.height / 2.0,
+            )
+        } else {
+            (
+                src_nl.x + src_nl.width / 2.0,
+                src_nl.y + src_nl.height,
+                dst_nl.x + dst_nl.width / 2.0,
+                dst_nl.y,
+            )
+        };
 
+        let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
         let (stroke, stroke_w, dash) = match edge_data.edge_style.as_deref() {
             Some("async") => ("#d97706", "1.5", Some("8 4")),
             Some("error") | Some("fallback") => ("#ef4444", "1.5", Some("6 3")),
             Some("data") | Some("stream") => ("#6366f1", "2.0", None),
-            _ => ("#64748b", "1.5", None),
+            _ => (default_edge, "1.5", None),
         };
 
         let mut line = BytesStart::new("line");
@@ -575,7 +615,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
             text.push_attribute(("y", ly.to_string().as_str()));
             text.push_attribute(("font-family", "sans-serif"));
             text.push_attribute(("font-size", "11"));
-            text.push_attribute(("fill", "#333333"));
+            text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#333333" }));
             w.write_event(Event::Start(text))?;
             w.write_event(Event::Text(BytesText::new(label)))?;
             w.write_event(Event::End(BytesEnd::new("text")))?;
@@ -588,7 +628,9 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
         let Some(nl) = layout.positions.get(&node_idx) else {
             continue;
         };
-        let fill = svg_fill_for_type(&node_data.node_type);
+        let fill = if is_dark { "#1e293b" } else { svg_fill_for_type(&node_data.node_type) };
+        let stroke = if is_dark { "#475569" } else { "#555555" };
+        let text_color = if is_dark { "#f8fafc" } else { "#1a1a1a" };
 
         let mut rect = BytesStart::new("rect");
         rect.push_attribute(("x", nl.x.to_string().as_str()));
@@ -598,7 +640,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
         rect.push_attribute(("rx", "6"));
         rect.push_attribute(("ry", "6"));
         rect.push_attribute(("fill", fill));
-        rect.push_attribute(("stroke", "#555555"));
+        rect.push_attribute(("stroke", stroke));
         rect.push_attribute(("stroke-width", "1.5"));
         w.write_event(Event::Empty(rect))?;
 
@@ -611,7 +653,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, _theme: &str)
         text.push_attribute(("text-anchor", "middle"));
         text.push_attribute(("font-family", "sans-serif"));
         text.push_attribute(("font-size", "13"));
-        text.push_attribute(("fill", "#1a1a1a"));
+        text.push_attribute(("fill", text_color));
         w.write_event(Event::Start(text))?;
         w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
         w.write_event(Event::End(BytesEnd::new("text")))?;
@@ -636,6 +678,7 @@ mod tests {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "API Gateway".to_owned(),
@@ -651,6 +694,7 @@ mod tests {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "n1".to_owned(),
@@ -783,6 +827,7 @@ mod tests {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "API Gateway\nKong Ingress".to_owned(),
@@ -836,6 +881,7 @@ mod tests {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "src".to_owned(),
@@ -893,6 +939,7 @@ mod tests {
         let payload = DiagramPayload {
             diagram_type: "architecture".to_owned(),
             theme: None,
+            direction: None,
             groups: vec![GroupDef {
                 id: "grp_core".to_owned(),
                 label: "Core Services".to_owned(),
@@ -933,5 +980,33 @@ mod tests {
         let svg = render_svg(&compiled, &layout, "standard").unwrap();
         assert!(svg.contains("Core Services"), "svg must render group label");
         assert!(svg.contains("stroke-dasharray=\"8 4\""), "svg must render async dasharray");
+    }
+
+    #[test]
+    fn test_drawio_dark_mode_canvas_and_edges() {
+        let payload = two_node_payload();
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "dark").unwrap();
+
+        assert!(xml.contains("background=\"#0f172a\""), "dark theme must use slate-900 canvas");
+        assert!(xml.contains("labelBackgroundColor=#1e293b"), "dark theme must use dark edge label bg");
+
+        let svg = render_svg(&compiled, &layout, "dark").unwrap();
+        assert!(svg.contains("fill=\"#0f172a\""), "dark theme svg must have dark canvas");
+    }
+
+    #[test]
+    fn test_drawio_horizontal_ports() {
+        let payload = two_node_payload();
+        let compiled = build_graph(&payload).unwrap();
+        let config = LayoutConfig {
+            direction: crate::layout::LayoutDirection::LeftToRight,
+            ..LayoutConfig::default()
+        };
+        let layout = compute_layout(&compiled, &config).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("exitX=1.0;"), "horizontal layout edge must exit from right");
+        assert!(xml.contains("entryX=0.0;"), "horizontal layout edge must enter on left");
     }
 }

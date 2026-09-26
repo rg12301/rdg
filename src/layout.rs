@@ -34,6 +34,16 @@ pub struct NodeLayout {
     pub height: f64,
 }
 
+/// Overall flow direction of the diagram.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LayoutDirection {
+    /// Top to Bottom (hierarchical DAG standard).
+    #[default]
+    TopToBottom,
+    /// Left to Right (horizontal pipelines, sequence flows).
+    LeftToRight,
+}
+
 /// Spacing and size configuration for the layout engine.
 #[derive(Debug, Clone)]
 pub struct LayoutConfig {
@@ -45,6 +55,8 @@ pub struct LayoutConfig {
     pub node_width: f64,
     /// Default node height in pixels.
     pub node_height: f64,
+    /// Flow direction of the diagram.
+    pub direction: LayoutDirection,
 }
 
 impl Default for LayoutConfig {
@@ -54,6 +66,7 @@ impl Default for LayoutConfig {
             node_spacing: 40,
             node_width: 160.0,
             node_height: 60.0,
+            direction: LayoutDirection::TopToBottom,
         }
     }
 }
@@ -130,7 +143,11 @@ pub fn estimate_node_size(
 // ---------------------------------------------------------------------------
 
 fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
-    let mut vg = VisualGraph::new(Orientation::TopToBottom);
+    let orientation = match config.direction {
+        LayoutDirection::TopToBottom => Orientation::TopToBottom,
+        LayoutDirection::LeftToRight => Orientation::LeftToRight,
+    };
+    let mut vg = VisualGraph::new(orientation);
 
     // Map petgraph NodeIndex → layout-rs NodeHandle
     let mut handle_map: HashMap<NodeIndex, layout::adt::dag::NodeHandle> = HashMap::new();
@@ -146,7 +163,7 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
             config.node_height,
         );
         let size = Point::new(nw, nh);
-        let element = Element::create(shape, style, Orientation::TopToBottom, size);
+        let element = Element::create(shape, style, orientation, size);
         let handle = vg.add_node(element);
         handle_map.insert(idx, handle);
     }
@@ -250,51 +267,96 @@ fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         );
     }
 
-    // Calculate layer widths for centering
-    let layer_widths: Vec<f64> = layer_buckets
-        .iter()
-        .map(|bucket| {
-            if bucket.is_empty() {
-                return 0.0;
-            }
-            let sum_w: f64 = bucket.iter().map(|n| node_sizes[n].0).sum();
-            let gaps = (bucket.len() - 1) as f64 * config.node_spacing as f64;
-            sum_w + gaps
-        })
-        .collect();
-
-    let max_layer_width = layer_widths.iter().copied().fold(0.0_f64, f64::max);
-
     let mut positions: HashMap<NodeIndex, NodeLayout> =
         HashMap::with_capacity(compiled.graph.node_count());
-    let mut current_y = 0.0_f64;
 
-    for (row, bucket) in layer_buckets.iter().enumerate() {
-        if bucket.is_empty() {
-            continue;
+    match config.direction {
+        LayoutDirection::TopToBottom => {
+            let layer_widths: Vec<f64> = layer_buckets
+                .iter()
+                .map(|bucket| {
+                    if bucket.is_empty() {
+                        return 0.0;
+                    }
+                    let sum_w: f64 = bucket.iter().map(|n| node_sizes[n].0).sum();
+                    let gaps = (bucket.len() - 1) as f64 * config.node_spacing as f64;
+                    sum_w + gaps
+                })
+                .collect();
+
+            let max_layer_width = layer_widths.iter().copied().fold(0.0_f64, f64::max);
+            let mut current_y = 0.0_f64;
+
+            for (row, bucket) in layer_buckets.iter().enumerate() {
+                if bucket.is_empty() {
+                    continue;
+                }
+                let total_w = layer_widths[row];
+                let x_offset = (max_layer_width - total_w).max(0.0) / 2.0;
+                let max_h_in_layer = bucket.iter().map(|n| node_sizes[n].1).fold(0.0_f64, f64::max);
+
+                let mut current_x = x_offset;
+                for &node in bucket {
+                    let (nw, nh) = node_sizes[&node];
+                    let node_y = current_y + (max_h_in_layer - nh) / 2.0;
+                    positions.insert(
+                        node,
+                        NodeLayout {
+                            x: current_x,
+                            y: node_y,
+                            width: nw,
+                            height: nh,
+                        },
+                    );
+                    current_x += nw + config.node_spacing as f64;
+                }
+
+                current_y += max_h_in_layer + config.rank_spacing as f64;
+            }
         }
-        let total_w = layer_widths[row];
-        let x_offset = (max_layer_width - total_w).max(0.0) / 2.0;
-        let max_h_in_layer = bucket.iter().map(|n| node_sizes[n].1).fold(0.0_f64, f64::max);
+        LayoutDirection::LeftToRight => {
+            let layer_heights: Vec<f64> = layer_buckets
+                .iter()
+                .map(|bucket| {
+                    if bucket.is_empty() {
+                        return 0.0;
+                    }
+                    let sum_h: f64 = bucket.iter().map(|n| node_sizes[n].1).sum();
+                    let gaps = (bucket.len() - 1) as f64 * config.node_spacing as f64;
+                    sum_h + gaps
+                })
+                .collect();
 
-        let mut current_x = x_offset;
-        for &node in bucket {
-            let (nw, nh) = node_sizes[&node];
-            // Vertically center node within layer height
-            let node_y = current_y + (max_h_in_layer - nh) / 2.0;
-            positions.insert(
-                node,
-                NodeLayout {
-                    x: current_x,
-                    y: node_y,
-                    width: nw,
-                    height: nh,
-                },
-            );
-            current_x += nw + config.node_spacing as f64;
+            let max_layer_height = layer_heights.iter().copied().fold(0.0_f64, f64::max);
+            let mut current_x = 0.0_f64;
+
+            for (col, bucket) in layer_buckets.iter().enumerate() {
+                if bucket.is_empty() {
+                    continue;
+                }
+                let total_h = layer_heights[col];
+                let y_offset = (max_layer_height - total_h).max(0.0) / 2.0;
+                let max_w_in_col = bucket.iter().map(|n| node_sizes[n].0).fold(0.0_f64, f64::max);
+
+                let mut current_y = y_offset;
+                for &node in bucket {
+                    let (nw, nh) = node_sizes[&node];
+                    let node_x = current_x + (max_w_in_col - nw) / 2.0;
+                    positions.insert(
+                        node,
+                        NodeLayout {
+                            x: node_x,
+                            y: current_y,
+                            width: nw,
+                            height: nh,
+                        },
+                    );
+                    current_y += nh + config.node_spacing as f64;
+                }
+
+                current_x += max_w_in_col + config.rank_spacing as f64;
+            }
         }
-
-        current_y += max_h_in_layer + config.rank_spacing as f64;
     }
 
     Ok(LayoutResult { positions })
@@ -380,6 +442,7 @@ mod tests {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![
                 NodeDef {
                     id: "n1".to_owned(),
@@ -422,6 +485,7 @@ mod tests {
         let payload = DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: vec![],
             edges: vec![],
             groups: vec![],
@@ -449,5 +513,19 @@ mod tests {
         assert!(long_w > short_w, "longer text must produce wider node");
         assert!(short_w >= 160.0);
         assert!(short_h >= 60.0);
+    }
+
+    #[test]
+    fn test_left_to_right_layout() {
+        let payload = two_node_payload();
+        let compiled = build_graph(&payload).unwrap();
+        let config = LayoutConfig {
+            direction: LayoutDirection::LeftToRight,
+            ..LayoutConfig::default()
+        };
+        let result = compute_layout(&compiled, &config).unwrap();
+        let n1_pos = &result.positions[&compiled.node_map["n1"]];
+        let n2_pos = &result.positions[&compiled.node_map["n2"]];
+        assert!(n2_pos.x > n1_pos.x, "target node should be placed to the right of source");
     }
 }

@@ -238,6 +238,22 @@ struct Cli {
     /// Increase to prevent label overlap. Default: 40.
     #[arg(long, default_value_t = 40)]
     node_spacing: u32,
+
+    /// Flow direction of the diagram.
+    ///
+    /// tb — top-to-bottom (default, recommended for DAGs & hierarchies)
+    /// lr — left-to-right (recommended for pipelines & sequence flows)
+    #[arg(long, value_enum, default_value_t = CliDirection::Tb)]
+    direction: CliDirection,
+}
+
+/// Diagram flow direction.
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+enum CliDirection {
+    /// Top-to-bottom flow.
+    Tb,
+    /// Left-to-right flow.
+    Lr,
 }
 
 /// Layout algorithm to use for spatial positioning.
@@ -281,6 +297,16 @@ fn main() -> Result<()> {
     // YAML 'theme' key overrides CLI --theme flag.
     let theme = payload.theme.as_deref().unwrap_or(&cli.theme);
 
+    // Flow direction priority: YAML payload > CLI flag
+    let direction = match payload.direction.as_deref() {
+        Some("lr") | Some("LR") | Some("left_to_right") => rdg::layout::LayoutDirection::LeftToRight,
+        Some("tb") | Some("TB") | Some("top_to_bottom") => rdg::layout::LayoutDirection::TopToBottom,
+        _ => match cli.direction {
+            CliDirection::Tb => rdg::layout::LayoutDirection::TopToBottom,
+            CliDirection::Lr => rdg::layout::LayoutDirection::LeftToRight,
+        },
+    };
+
     // --- 3. Build petgraph --------------------------------------------------
     let compiled = build_graph(&payload)?;
     if compiled.had_cycles {
@@ -293,6 +319,7 @@ fn main() -> Result<()> {
     let layout_config = LayoutConfig {
         rank_spacing: cli.rank_spacing,
         node_spacing: cli.node_spacing,
+        direction,
         ..LayoutConfig::default()
     };
     let layout_result = compute_layout(&compiled, &layout_config)?;

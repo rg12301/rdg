@@ -271,6 +271,7 @@ mod tests {
         DiagramPayload {
             diagram_type: "flowchart".to_owned(),
             theme: None,
+            direction: None,
             nodes: nodes
                 .iter()
                 .map(|(id, label)| NodeDef {

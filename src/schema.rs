@@ -41,6 +41,10 @@ pub struct DiagramPayload {
     #[serde(default)]
     pub theme: Option<String>,
 
+    /// Optional flow direction override: `tb` (top-to-bottom) or `lr` (left-to-right).
+    #[serde(default)]
+    pub direction: Option<String>,
+
     /// Ordered list of node definitions.
     #[serde(default)]
     pub nodes: Vec<NodeDef>,

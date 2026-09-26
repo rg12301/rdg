@@ -15,16 +15,16 @@
   <text x="1138.375" y="147.5" font-family="sans-serif" font-size="11" fill="#333333">--input / stdin</text>
   <line x1="1175.75" y1="265" x2="1175.75" y2="360" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="1179.75" y="312.5" font-family="sans-serif" font-size="11" fill="#333333">serde_yaml::from_str</text>
-  <line x1="1175.75" y1="430" x2="1479.125" y2="525" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1331.4375" y="477.5" font-family="sans-serif" font-size="11" fill="#333333">nodes[]</text>
+  <line x1="1255.75" y1="395" x2="1334.125" y2="560" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1298.9375" y="477.5" font-family="sans-serif" font-size="11" fill="#333333">nodes[]</text>
   <line x1="1175.75" y1="430" x2="1023.25" y2="525" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="1103.5" y="477.5" font-family="sans-serif" font-size="11" fill="#333333">edges[]</text>
   <line x1="1479.125" y1="595" x2="1023.25" y2="690" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="1255.1875" y="642.5" font-family="sans-serif" font-size="11" fill="#333333">add_node → NodeData</text>
   <line x1="1023.25" y1="595" x2="1023.25" y2="690" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="1027.25" y="642.5" font-family="sans-serif" font-size="11" fill="#333333">add_edge → EdgeData</text>
-  <line x1="1023.25" y1="760" x2="1411.625" y2="865" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="1221.4375" y="812.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
+  <line x1="1103.25" y1="725" x2="1266.625" y2="900" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1188.9375" y="812.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
   <line x1="1023.25" y1="760" x2="580" y2="865" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="805.625" y="812.5" font-family="sans-serif" font-size="11" fill="#333333">stores</text>
   <line x1="1023.25" y1="760" x2="995.75" y2="855" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
@@ -47,8 +47,8 @@
   <text x="1008.125" y="1357.5" font-family="sans-serif" font-size="11" fill="#333333">node_type</text>
   <line x1="1012.5" y1="1665" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="1016.5" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">style string</text>
-  <line x1="195" y1="1665" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="607.75" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
+  <line x1="355" y1="1630" x2="932.5" y2="1795" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="647.75" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
   <line x1="195" y1="1665" x2="110" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="156.5" y="1712.5" font-family="sans-serif" font-size="11" fill="#333333">x, y, w, h</text>
   <line x1="995.75" y1="1120" x2="1012.5" y2="1760" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
