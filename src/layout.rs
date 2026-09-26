@@ -62,10 +62,10 @@ pub struct LayoutConfig {
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            rank_spacing: 60,
-            node_spacing: 40,
-            node_width: 160.0,
-            node_height: 60.0,
+            rank_spacing: 44,
+            node_spacing: 24,
+            node_width: 120.0,
+            node_height: 50.0,
             direction: LayoutDirection::TopToBottom,
         }
     }
@@ -87,6 +87,8 @@ pub struct LayoutResult {
 /// Falls back to a deterministic topological layer assignment if the graph
 /// is empty or layout-rs cannot be applied.
 ///
+/// Automatically normalizes coordinates to eliminate canvas whitespace wastage.
+///
 /// # Errors
 ///
 /// Returns an error only if internal graph operations fail unexpectedly.
@@ -98,15 +100,84 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
     }
 
     // Try layout-rs engine; fall back to topo-sort layering on any issue.
-    match layout_with_layout_rs(compiled, config) {
-        Ok(result) => Ok(result),
-        Err(_) => layout_topological(compiled, config),
+    let mut result = match layout_with_layout_rs(compiled, config) {
+        Ok(res) => res,
+        Err(_) => layout_topological(compiled, config)?,
+    };
+
+    // Normalize coordinates so the diagram starts cleanly near the top-left margin
+    // without wasting huge canvas areas.
+    if !result.positions.is_empty() {
+        let min_x = result
+            .positions
+            .values()
+            .map(|nl| nl.x)
+            .fold(f64::MAX, f64::min);
+        let min_y = result
+            .positions
+            .values()
+            .map(|nl| nl.y)
+            .fold(f64::MAX, f64::min);
+
+        let target_min_x = 36.0_f64;
+        let target_min_y = 44.0_f64;
+        let dx = target_min_x - min_x;
+        let dy = target_min_y - min_y;
+
+        for nl in result.positions.values_mut() {
+            nl.x += dx;
+            nl.y += dy;
+        }
     }
+
+    Ok(result)
 }
 
 // ---------------------------------------------------------------------------
-// Node Sizing
+// Node Sizing & Text Wrapping
 // ---------------------------------------------------------------------------
+
+/// Wrap label into lines, respecting existing newlines and breaking on word boundaries.
+/// Targets ~18 characters per line to keep shapes compact.
+pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
+    let mut result = Vec::new();
+    for raw_line in label.split('\n') {
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if trimmed.chars().count() <= max_chars_per_line {
+            result.push(trimmed.to_string());
+            continue;
+        }
+
+        let words: Vec<&str> = trimmed.split_whitespace().collect();
+        if words.is_empty() {
+            continue;
+        }
+
+        let mut current_line = String::new();
+        for word in words {
+            if current_line.is_empty() {
+                current_line.push_str(word);
+            } else if current_line.chars().count() + 1 + word.chars().count() <= max_chars_per_line {
+                current_line.push(' ');
+                current_line.push_str(word);
+            } else {
+                result.push(current_line);
+                current_line = word.to_string();
+            }
+        }
+        if !current_line.is_empty() {
+            result.push(current_line);
+        }
+    }
+    if result.is_empty() {
+        vec![label.to_string()]
+    } else {
+        result
+    }
+}
 
 /// Dynamically estimate the width and height of a node based on its label and shape.
 pub fn estimate_node_size(
@@ -115,13 +186,13 @@ pub fn estimate_node_size(
     min_width: f64,
     min_height: f64,
 ) -> (f64, f64) {
-    let lines: Vec<&str> = label.split('\n').collect();
+    let lines = wrap_label(label, 22);
     let max_chars = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
 
-    // Approximate ~7.5px per character at 12px font + 32px horizontal padding
-    let mut width = (max_chars as f64 * 7.5 + 32.0).max(min_width).min(320.0);
-    // 20px line height + 24px vertical padding
-    let mut height = (lines.len() as f64 * 20.0 + 24.0).max(min_height);
+    // Approximate ~7.5px per character at 12px font + 28px horizontal padding
+    let mut width = (max_chars as f64 * 7.5 + 28.0).max(min_width).min(260.0);
+    // 18px line height + 20px vertical padding
+    let mut height = (lines.len() as f64 * 18.0 + 20.0).max(min_height);
 
     // Diamond shapes (decision, cache) need extra clearance to inscribe text
     match node_type.to_ascii_lowercase().as_str() {
@@ -508,11 +579,17 @@ mod tests {
 
     #[test]
     fn test_dynamic_node_sizing() {
-        let (short_w, short_h) = estimate_node_size("API", "default", 160.0, 60.0);
-        let (long_w, _long_h) = estimate_node_size("Extremely Long Microservice Component Name Across Architecture", "default", 160.0, 60.0);
+        let (short_w, short_h) = estimate_node_size("API", "default", 120.0, 50.0);
+        let (long_w, long_h) = estimate_node_size(
+            "Extremely Long Microservice Component Name Across Architecture",
+            "default",
+            120.0,
+            50.0,
+        );
         assert!(long_w > short_w, "longer text must produce wider node");
-        assert!(short_w >= 160.0);
-        assert!(short_h >= 60.0);
+        assert!(long_h > short_h, "multiline wrapped text must produce taller node");
+        assert!(short_w >= 120.0);
+        assert!(short_h >= 50.0);
     }
 
     #[test]

@@ -96,17 +96,112 @@ pub fn style_for_type(node_type: &str, theme: &str) -> String {
     }
 }
 
-/// Colour used in SVG for a given node type.
-fn svg_fill_for_type(node_type: &str) -> &'static str {
-    match node_type {
-        "proxy" | "gateway" | "api" => "#DAE8FC",
-        "database" | "db" | "storage" => "#dae8fc",
-        "server" | "service" | "backend" => "#d5e8d4",
-        "queue" | "broker" | "bus" => "#fff2cc",
-        "cache" | "redis" | "memcache" => "#f8cecc",
-        "function" | "lambda" | "faas" => "#FFE6CC",
-        "client" | "user" | "browser" => "#f5f5f5",
-        _ => "#ffffff",
+/// Stroke colour used for a given node type in the white-card paradigm.
+pub fn stroke_for_type(node_type: &str, theme: &str) -> &'static str {
+    match node_type.to_ascii_lowercase().as_str() {
+        "proxy" | "gateway" | "api" => "#818cf8",
+        "server" | "service" | "backend" => "#34d399",
+        "database" | "db" | "storage" => "#38bdf8",
+        "queue" | "broker" | "bus" => "#fbbf24",
+        "cache" | "redis" | "memcache" => "#f87171",
+        "function" | "lambda" | "faas" => "#fb923c",
+        "decision" | "condition" => "#a78bfa",
+        "client" | "user" | "browser" => "#94a3b8",
+        _ => {
+            if theme == "dark" {
+                "#475569"
+            } else {
+                "#cbd5e1"
+            }
+        }
+    }
+}
+
+/// Compute an orthogonal SVG path with rounded fillet corners between two points.
+/// Returns `(path_d, label_center_x, label_center_y)`.
+fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
+    if is_horizontal {
+        // Horizontal flow: exit right (x1, y1), entry left (x2, y2)
+        if (y2 - y1).abs() < 1.0 {
+            return (
+                format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
+                (x1 + x2) / 2.0,
+                y1,
+            );
+        }
+        let xmid = (x1 + x2) / 2.0;
+        let r = 8.0_f64
+            .min((xmid - x1).abs() / 2.0)
+            .min((y2 - y1).abs() / 2.0)
+            .min((x2 - xmid).abs() / 2.0)
+            .max(0.0);
+
+        if r < 1.0 {
+            return (
+                format!("M {x1:.1} {y1:.1} L {xmid:.1} {y1:.1} L {xmid:.1} {y2:.1} L {x2:.1} {y2:.1}"),
+                xmid,
+                (y1 + y2) / 2.0,
+            );
+        }
+
+        let (q1_end_y, q2_start_y) = if y2 > y1 {
+            (y1 + r, y2 - r)
+        } else {
+            (y1 - r, y2 + r)
+        };
+
+        let path = format!(
+            "M {x1:.1} {y1:.1} \
+             L {xm_prev:.1} {y1:.1} \
+             Q {xmid:.1} {y1:.1} {xmid:.1} {q1_end_y:.1} \
+             L {xmid:.1} {q2_start_y:.1} \
+             Q {xmid:.1} {y2:.1} {xm_next:.1} {y2:.1} \
+             L {x2:.1} {y2:.1}",
+            xm_prev = xmid - r,
+            xm_next = xmid + r,
+        );
+        (path, xmid, (y1 + y2) / 2.0)
+    } else {
+        // Vertical flow: exit bottom (x1, y1), entry top (x2, y2)
+        if (x2 - x1).abs() < 1.0 {
+            return (
+                format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
+                x1,
+                (y1 + y2) / 2.0,
+            );
+        }
+        let ymid = (y1 + y2) / 2.0;
+        let r = 8.0_f64
+            .min((ymid - y1).abs() / 2.0)
+            .min((x2 - x1).abs() / 2.0)
+            .min((y2 - ymid).abs() / 2.0)
+            .max(0.0);
+
+        if r < 1.0 {
+            return (
+                format!("M {x1:.1} {y1:.1} L {x1:.1} {ymid:.1} L {x2:.1} {ymid:.1} L {x2:.1} {y2:.1}"),
+                (x1 + x2) / 2.0,
+                ymid,
+            );
+        }
+
+        let (q1_end_x, q2_start_x) = if x2 > x1 {
+            (x1 + r, x2 - r)
+        } else {
+            (x1 - r, x2 + r)
+        };
+
+        let path = format!(
+            "M {x1:.1} {y1:.1} \
+             L {x1:.1} {ym_prev:.1} \
+             Q {x1:.1} {ymid:.1} {q1_end_x:.1} {ymid:.1} \
+             L {q2_start_x:.1} {ymid:.1} \
+             Q {x2:.1} {ymid:.1} {x2:.1} {ym_next:.1} \
+             L {x2:.1} {y2:.1}",
+            ym_prev = ymid - r,
+            ym_next = ymid + r,
+        );
+        (path, (x1 + x2) / 2.0, ymid)
     }
 }
 
@@ -254,18 +349,19 @@ pub fn render_drawio(
         let style = style_for_type(&node_data.node_type, theme);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
 
-        // Build HTML label: bold title + optional muted sub-label
+        // Build HTML label: bold title + optional muted sub-label (wrapped automatically)
         let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
-        let html_value = {
-            let mut parts = node_data.label.splitn(2, '\n');
-            let title = parts.next().unwrap_or(&node_data.label);
-            let subtitle = parts.next();
-            match subtitle {
-                Some(sub) => format!(
+        let lines = crate::layout::wrap_label(&node_data.label, 20);
+        let html_value = match lines.len() {
+            0 => String::new(),
+            1 => format!("<b>{}</b>", lines[0]),
+            _ => {
+                let title = &lines[0];
+                let sub = lines[1..].join("<br/>");
+                format!(
                     "<b>{}</b><br/><font style='font-size:10px;color:{}'>{}</font>",
                     title, sub_color, sub
-                ),
-                None => format!("<b>{}</b>", title),
+                )
             }
         };
 
@@ -456,18 +552,31 @@ pub fn render_drawio(
 ///
 /// Returns an error if the underlying XML writer fails.
 pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) -> Result<String> {
-    // Compute canvas bounds.
-    let margin = 40.0_f64;
-    let (max_x, max_y) = layout
-        .positions
-        .values()
-        .fold((0.0_f64, 0.0_f64), |(mx, my), nl| {
-            (mx.max(nl.x + nl.width), my.max(nl.y + nl.height))
-        });
-    let canvas_w = max_x + margin;
-    let canvas_h = max_y + margin;
+    // Compute canvas bounds including nodes and group containers.
+    let mut max_x = 0.0_f64;
+    let mut max_y = 0.0_f64;
 
-    let mut buf = Vec::with_capacity(4096);
+    for nl in layout.positions.values() {
+        max_x = max_x.max(nl.x + nl.width);
+        max_y = max_y.max(nl.y + nl.height);
+    }
+
+    for group in &compiled.groups {
+        for node_id in &group.nodes {
+            if let Some(&node_idx) = compiled.node_map.get(node_id) {
+                if let Some(nl) = layout.positions.get(&node_idx) {
+                    max_x = max_x.max(nl.x + nl.width + 24.0);
+                    max_y = max_y.max(nl.y + nl.height + 20.0);
+                }
+            }
+        }
+    }
+
+    let margin = 36.0_f64;
+    let canvas_w = (max_x + margin).max(120.0);
+    let canvas_h = (max_y + margin).max(100.0);
+
+    let mut buf = Vec::with_capacity(8192);
     let mut w = Writer::new_with_indent(Cursor::new(&mut buf), b' ', 2);
 
     // <?xml version="1.0" encoding="UTF-8"?>
@@ -476,20 +585,78 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
     let mut svg = BytesStart::new("svg");
     svg.push_attribute(("xmlns", "http://www.w3.org/2000/svg"));
     svg.push_attribute(("version", "1.1"));
-    svg.push_attribute(("width", canvas_w.to_string().as_str()));
-    svg.push_attribute(("height", canvas_h.to_string().as_str()));
-    svg.push_attribute(("viewBox", format!("0 0 {canvas_w} {canvas_h}").as_str()));
+    svg.push_attribute(("width", canvas_w.round().to_string().as_str()));
+    svg.push_attribute(("height", canvas_h.round().to_string().as_str()));
+    svg.push_attribute((
+        "viewBox",
+        format!("0 0 {} {}", canvas_w.round(), canvas_h.round()).as_str(),
+    ));
     w.write_event(Event::Start(svg))?;
 
     let is_dark = theme == "dark";
     let bg_color = if is_dark { "#0f172a" } else { "#f8fafc" };
 
-    // Background
+    // Canvas background
     let mut bg = BytesStart::new("rect");
     bg.push_attribute(("width", "100%"));
     bg.push_attribute(("height", "100%"));
     bg.push_attribute(("fill", bg_color));
     w.write_event(Event::Empty(bg))?;
+
+    // --- Defs: drop shadows and markers -------------------------------------
+    w.write_event(Event::Start(BytesStart::new("defs")))?;
+
+    // Drop shadow filter for elevated cards
+    let mut filter = BytesStart::new("filter");
+    filter.push_attribute(("id", "card-shadow"));
+    filter.push_attribute(("x", "-20%"));
+    filter.push_attribute(("y", "-20%"));
+    filter.push_attribute(("width", "140%"));
+    filter.push_attribute(("height", "140%"));
+    w.write_event(Event::Start(filter))?;
+
+    let mut shadow = BytesStart::new("feDropShadow");
+    shadow.push_attribute(("dx", "0"));
+    shadow.push_attribute(("dy", "2"));
+    shadow.push_attribute(("stdDeviation", "3"));
+    shadow.push_attribute(("flood-color", "#0f172a"));
+    shadow.push_attribute(("flood-opacity", if is_dark { "0.35" } else { "0.08" }));
+    w.write_event(Event::Empty(shadow))?;
+    w.write_event(Event::End(BytesEnd::new("filter")))?;
+
+    // Arrow markers
+    let markers = [
+        ("arrow-slate", "#64748b", true),
+        ("arrow-dark", "#94a3b8", true),
+        ("arrow-amber", "#d97706", false),
+        ("arrow-red", "#ef4444", false),
+        ("arrow-indigo", "#6366f1", true),
+    ];
+    for (id, col, filled) in markers {
+        let mut marker = BytesStart::new("marker");
+        marker.push_attribute(("id", id));
+        marker.push_attribute(("viewBox", "0 0 10 10"));
+        marker.push_attribute(("refX", "7"));
+        marker.push_attribute(("refY", "5"));
+        marker.push_attribute(("markerWidth", "6"));
+        marker.push_attribute(("markerHeight", "6"));
+        marker.push_attribute(("orient", "auto-start-reverse"));
+        w.write_event(Event::Start(marker))?;
+
+        let mut mpath = BytesStart::new("path");
+        mpath.push_attribute(("d", "M 0 1.5 L 8 5 L 0 8.5 z"));
+        if filled {
+            mpath.push_attribute(("fill", col));
+        } else {
+            mpath.push_attribute(("fill", "none"));
+            mpath.push_attribute(("stroke", col));
+            mpath.push_attribute(("stroke-width", "1.5"));
+        }
+        w.write_event(Event::Empty(mpath))?;
+        w.write_event(Event::End(BytesEnd::new("marker")))?;
+    }
+
+    w.write_event(Event::End(BytesEnd::new("defs")))?;
 
     // --- Draw group containers ----------------------------------------------
     for group in &compiled.groups {
@@ -532,7 +699,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         rect.push_attribute(("height", gh.round().to_string().as_str()));
         rect.push_attribute(("rx", "8"));
         rect.push_attribute(("fill", color));
-        rect.push_attribute(("fill-opacity", "0.08"));
+        rect.push_attribute(("fill-opacity", if is_dark { "0.12" } else { "0.08" }));
         rect.push_attribute(("stroke", color));
         rect.push_attribute(("stroke-width", "1.5"));
         rect.push_attribute(("stroke-dasharray", "6 6"));
@@ -541,7 +708,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         let mut text = BytesStart::new("text");
         text.push_attribute(("x", (gx + 12.0).round().to_string().as_str()));
         text.push_attribute(("y", (gy + 18.0).round().to_string().as_str()));
-        text.push_attribute(("font-family", "sans-serif"));
+        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         text.push_attribute(("font-size", "11"));
         text.push_attribute(("font-weight", "bold"));
         text.push_attribute(("fill", color));
@@ -550,112 +717,265 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         w.write_event(Event::End(BytesEnd::new("text")))?;
     }
 
-    // --- Draw edges (behind nodes) ------------------------------------------
+    // --- Draw edges (behind nodes) with orthogonal rounded paths ------------
+    let mut outgoing_by_src: HashMap<
+        petgraph::graph::NodeIndex,
+        Vec<(petgraph::graph::EdgeIndex, f64)>,
+    > = HashMap::new();
+
+    for edge_idx in compiled.graph.edge_indices() {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (render_src, render_dst) = if edge_data.reversed {
+            (dst, src)
+        } else {
+            (src, dst)
+        };
+        let target_x = layout
+            .positions
+            .get(&render_dst)
+            .map(|p| p.x)
+            .unwrap_or(0.0);
+        outgoing_by_src
+            .entry(render_src)
+            .or_default()
+            .push((edge_idx, target_x));
+    }
+
+    let mut exit_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in outgoing_by_src {
+        edges.sort_by(|a, b| {
+            a.1.partial_cmp(&b.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.1 + (0.8 / (count - 1) as f64) * (i as f64)
+            };
+            exit_ports.insert(edge_idx, port);
+        }
+    }
+
+    let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
+
     for edge_idx in compiled.graph.edge_indices() {
         let (src_idx, dst_idx) = compiled.graph.edge_endpoints(edge_idx).unwrap();
         let edge_data = &compiled.graph[edge_idx];
 
-        let (src_idx, dst_idx) = if edge_data.reversed {
+        let (s_idx, d_idx) = if edge_data.reversed {
             (dst_idx, src_idx)
         } else {
             (src_idx, dst_idx)
         };
 
         let (Some(src_nl), Some(dst_nl)) = (
-            layout.positions.get(&src_idx),
-            layout.positions.get(&dst_idx),
+            layout.positions.get(&s_idx),
+            layout.positions.get(&d_idx),
         ) else {
             continue;
         };
 
+        let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
+
         let (x1, y1, x2, y2) = if is_horizontal {
             (
                 src_nl.x + src_nl.width,
-                src_nl.y + src_nl.height / 2.0,
+                src_nl.y + src_nl.height * port_frac,
                 dst_nl.x,
-                dst_nl.y + dst_nl.height / 2.0,
+                dst_nl.y + dst_nl.height * 0.5,
             )
         } else {
             (
-                src_nl.x + src_nl.width / 2.0,
+                src_nl.x + src_nl.width * port_frac,
                 src_nl.y + src_nl.height,
-                dst_nl.x + dst_nl.width / 2.0,
+                dst_nl.x + dst_nl.width * 0.5,
                 dst_nl.y,
             )
         };
 
-        let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
-        let (stroke, stroke_w, dash) = match edge_data.edge_style.as_deref() {
-            Some("async") => ("#d97706", "1.5", Some("8 4")),
-            Some("error") | Some("fallback") => ("#ef4444", "1.5", Some("6 3")),
-            Some("data") | Some("stream") => ("#6366f1", "2.0", None),
-            _ => (default_edge, "1.5", None),
+        let is_bi = matches!(edge_data.edge_style.as_deref(), Some("bi") | Some("bidirectional"));
+        let (stroke, stroke_w, dash, marker_id) = match edge_data.edge_style.as_deref() {
+            Some("async") => ("#d97706", "1.5", Some("8 4"), "arrow-amber"),
+            Some("error") | Some("fallback") => ("#ef4444", "1.5", Some("6 3"), "arrow-red"),
+            Some("data") | Some("stream") => ("#6366f1", "2.0", None, "arrow-indigo"),
+            _ => (default_edge, "1.5", None, if is_dark { "arrow-dark" } else { "arrow-slate" }),
         };
 
-        let mut line = BytesStart::new("line");
-        line.push_attribute(("x1", x1.to_string().as_str()));
-        line.push_attribute(("y1", y1.to_string().as_str()));
-        line.push_attribute(("x2", x2.to_string().as_str()));
-        line.push_attribute(("y2", y2.to_string().as_str()));
-        line.push_attribute(("stroke", stroke));
-        line.push_attribute(("stroke-width", stroke_w));
-        if let Some(d) = dash {
-            line.push_attribute(("stroke-dasharray", d));
-        }
-        line.push_attribute(("marker-end", "url(#arrow)"));
-        w.write_event(Event::Empty(line))?;
+        let (path_d, lx, ly) = orthogonal_path(x1, y1, x2, y2, is_horizontal);
 
-        // Edge label
+        let mut path = BytesStart::new("path");
+        path.push_attribute(("d", path_d.as_str()));
+        path.push_attribute(("fill", "none"));
+        path.push_attribute(("stroke", stroke));
+        path.push_attribute(("stroke-width", stroke_w));
+        if let Some(d) = dash {
+            path.push_attribute(("stroke-dasharray", d));
+        }
+        if is_bi {
+            path.push_attribute(("marker-start", format!("url(#{marker_id})").as_str()));
+        }
+        path.push_attribute(("marker-end", format!("url(#{marker_id})").as_str()));
+        w.write_event(Event::Empty(path))?;
+
+        // Knockout pill background + edge label
         if let Some(label) = &edge_data.label {
-            let lx = (x1 + x2) / 2.0 + 4.0;
-            let ly = (y1 + y2) / 2.0;
-            let mut text = BytesStart::new("text");
-            text.push_attribute(("x", lx.to_string().as_str()));
-            text.push_attribute(("y", ly.to_string().as_str()));
-            text.push_attribute(("font-family", "sans-serif"));
-            text.push_attribute(("font-size", "11"));
-            text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#333333" }));
-            w.write_event(Event::Start(text))?;
-            w.write_event(Event::Text(BytesText::new(label)))?;
-            w.write_event(Event::End(BytesEnd::new("text")))?;
+            let label_trimmed = label.trim();
+            if !label_trimmed.is_empty() {
+                let char_count = label_trimmed.chars().count();
+                let pill_w = (char_count as f64 * 6.5 + 12.0).max(24.0);
+                let pill_h = 18.0;
+                let pill_x = lx - pill_w / 2.0;
+                let pill_y = ly - pill_h / 2.0;
+
+                let mut pill = BytesStart::new("rect");
+                pill.push_attribute(("x", format!("{pill_x:.1}").as_str()));
+                pill.push_attribute(("y", format!("{pill_y:.1}").as_str()));
+                pill.push_attribute(("width", format!("{pill_w:.1}").as_str()));
+                pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
+                pill.push_attribute(("rx", "4"));
+                pill.push_attribute(("ry", "4"));
+                pill.push_attribute(("fill", bg_color));
+                w.write_event(Event::Empty(pill))?;
+
+                let mut text = BytesStart::new("text");
+                text.push_attribute(("x", format!("{lx:.1}").as_str()));
+                text.push_attribute(("y", format!("{:.1}", ly + 4.0).as_str()));
+                text.push_attribute(("text-anchor", "middle"));
+                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+                text.push_attribute(("font-size", "11"));
+                text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#475569" }));
+                w.write_event(Event::Start(text))?;
+                w.write_event(Event::Text(BytesText::new(label_trimmed)))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+            }
         }
     }
 
-    // --- Draw nodes ---------------------------------------------------------
+    // --- Draw nodes with white-card elevation & semantic accents ------------
+    let card_fill = if is_dark { "#1e293b" } else { "#ffffff" };
+    let title_color = if is_dark { "#f1f5f9" } else { "#0f172a" };
+    let sub_color = if is_dark { "#94a3b8" } else { "#64748b" };
+
     for node_idx in compiled.graph.node_indices() {
         let node_data = &compiled.graph[node_idx];
         let Some(nl) = layout.positions.get(&node_idx) else {
             continue;
         };
-        let fill = if is_dark { "#1e293b" } else { svg_fill_for_type(&node_data.node_type) };
-        let stroke = if is_dark { "#475569" } else { "#555555" };
-        let text_color = if is_dark { "#f8fafc" } else { "#1a1a1a" };
+        let stroke_color = stroke_for_type(&node_data.node_type, theme);
 
-        let mut rect = BytesStart::new("rect");
-        rect.push_attribute(("x", nl.x.to_string().as_str()));
-        rect.push_attribute(("y", nl.y.to_string().as_str()));
-        rect.push_attribute(("width", nl.width.to_string().as_str()));
-        rect.push_attribute(("height", nl.height.to_string().as_str()));
-        rect.push_attribute(("rx", "6"));
-        rect.push_attribute(("ry", "6"));
-        rect.push_attribute(("fill", fill));
-        rect.push_attribute(("stroke", stroke));
-        rect.push_attribute(("stroke-width", "1.5"));
-        w.write_event(Event::Empty(rect))?;
+        let is_db = matches!(
+            node_data.node_type.to_ascii_lowercase().as_str(),
+            "database" | "db" | "storage"
+        );
+        let is_decision = matches!(
+            node_data.node_type.to_ascii_lowercase().as_str(),
+            "decision" | "condition"
+        );
 
-        // Node label (centred)
+        if is_db {
+            let rh = (nl.height * 0.18).min(12.0);
+            let rx = nl.width / 2.0;
+            let cx = nl.x + rx;
+
+            let body_d = format!(
+                "M {x:.1} {y_top:.1} \
+                 L {x:.1} {y_bot:.1} \
+                 A {rx:.1} {rh:.1} 0 0 0 {x_right:.1} {y_bot:.1} \
+                 L {x_right:.1} {y_top:.1} Z",
+                x = nl.x,
+                y_top = nl.y + rh,
+                y_bot = nl.y + nl.height - rh,
+                x_right = nl.x + nl.width,
+            );
+            let mut body = BytesStart::new("path");
+            body.push_attribute(("d", body_d.as_str()));
+            body.push_attribute(("fill", card_fill));
+            body.push_attribute(("stroke", stroke_color));
+            body.push_attribute(("stroke-width", "1.5"));
+            body.push_attribute(("filter", "url(#card-shadow)"));
+            w.write_event(Event::Empty(body))?;
+
+            let mut top_cap = BytesStart::new("ellipse");
+            top_cap.push_attribute(("cx", format!("{cx:.1}").as_str()));
+            top_cap.push_attribute(("cy", format!("{:.1}", nl.y + rh).as_str()));
+            top_cap.push_attribute(("rx", format!("{rx:.1}").as_str()));
+            top_cap.push_attribute(("ry", format!("{rh:.1}").as_str()));
+            top_cap.push_attribute(("fill", card_fill));
+            top_cap.push_attribute(("stroke", stroke_color));
+            top_cap.push_attribute(("stroke-width", "1.5"));
+            w.write_event(Event::Empty(top_cap))?;
+        } else if is_decision {
+            let poly_d = format!(
+                "M {cx:.1} {top:.1} L {right:.1} {cy:.1} L {cx:.1} {bot:.1} L {left:.1} {cy:.1} Z",
+                cx = nl.x + nl.width / 2.0,
+                top = nl.y,
+                right = nl.x + nl.width,
+                cy = nl.y + nl.height / 2.0,
+                bot = nl.y + nl.height,
+                left = nl.x,
+            );
+            let mut poly = BytesStart::new("path");
+            poly.push_attribute(("d", poly_d.as_str()));
+            poly.push_attribute(("fill", card_fill));
+            poly.push_attribute(("stroke", stroke_color));
+            poly.push_attribute(("stroke-width", "2.0"));
+            poly.push_attribute(("filter", "url(#card-shadow)"));
+            w.write_event(Event::Empty(poly))?;
+        } else {
+            let mut rect = BytesStart::new("rect");
+            rect.push_attribute(("x", format!("{:.1}", nl.x).as_str()));
+            rect.push_attribute(("y", format!("{:.1}", nl.y).as_str()));
+            rect.push_attribute(("width", format!("{:.1}", nl.width).as_str()));
+            rect.push_attribute(("height", format!("{:.1}", nl.height).as_str()));
+            rect.push_attribute(("rx", "8"));
+            rect.push_attribute(("ry", "8"));
+            rect.push_attribute(("fill", card_fill));
+            rect.push_attribute(("stroke", stroke_color));
+            rect.push_attribute(("stroke-width", "1.5"));
+            rect.push_attribute(("filter", "url(#card-shadow)"));
+            w.write_event(Event::Empty(rect))?;
+        }
+
+        // Multi-line text wrapping with centered tspans
+        let lines = crate::layout::wrap_label(&node_data.label, 20);
         let cx = nl.x + nl.width / 2.0;
-        let cy = nl.y + nl.height / 2.0 + 4.0; // +4 for font baseline offset
+
+        let total_text_h = match lines.len() {
+            0 => 0.0,
+            1 => 14.0,
+            n => 14.0 + (n - 1) as f64 * 14.0,
+        };
+        let start_y = nl.y + (nl.height - total_text_h) / 2.0 + 11.0;
+
         let mut text = BytesStart::new("text");
-        text.push_attribute(("x", cx.to_string().as_str()));
-        text.push_attribute(("y", cy.to_string().as_str()));
+        text.push_attribute(("x", format!("{cx:.1}").as_str()));
+        text.push_attribute(("y", format!("{start_y:.1}").as_str()));
         text.push_attribute(("text-anchor", "middle"));
-        text.push_attribute(("font-family", "sans-serif"));
-        text.push_attribute(("font-size", "13"));
-        text.push_attribute(("fill", text_color));
+        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         w.write_event(Event::Start(text))?;
-        w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
+
+        for (i, line) in lines.iter().enumerate() {
+            let mut tspan = BytesStart::new("tspan");
+            tspan.push_attribute(("x", format!("{cx:.1}").as_str()));
+            if i > 0 {
+                tspan.push_attribute(("dy", "14"));
+                tspan.push_attribute(("font-size", "10"));
+                tspan.push_attribute(("fill", sub_color));
+                tspan.push_attribute(("font-weight", "normal"));
+            } else {
+                tspan.push_attribute(("font-size", "12"));
+                tspan.push_attribute(("fill", title_color));
+                tspan.push_attribute(("font-weight", "bold"));
+            }
+            w.write_event(Event::Start(tspan))?;
+            w.write_event(Event::Text(BytesText::new(line)))?;
+            w.write_event(Event::End(BytesEnd::new("tspan")))?;
+        }
         w.write_event(Event::End(BytesEnd::new("text")))?;
     }
 
@@ -1008,5 +1328,43 @@ mod tests {
         let xml = render_drawio(&compiled, &layout, "standard").unwrap();
         assert!(xml.contains("exitX=1.0;"), "horizontal layout edge must exit from right");
         assert!(xml.contains("entryX=0.0;"), "horizontal layout edge must enter on left");
+    }
+
+    #[test]
+    fn test_svg_card_shadow_and_orthogonal_paths() {
+        let payload = two_node_payload();
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+
+        assert!(svg.contains("id=\"card-shadow\""), "svg must define card-shadow filter");
+        assert!(svg.contains("feDropShadow"), "svg must include drop shadow primitive");
+        assert!(svg.contains("<path d=\"M "), "edges should be rendered as orthogonal paths");
+        assert!(svg.contains("<tspan "), "node labels must use tspan elements");
+        assert!(svg.contains("marker-end="), "edges must have arrow markers");
+        assert!(svg.contains("ellipse"), "database nodes must render 3D cylinder top cap");
+    }
+
+    #[test]
+    fn test_svg_wrapped_multiline_labels() {
+        let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
+            theme: None,
+            direction: None,
+            nodes: vec![NodeDef {
+                id: "n1".to_owned(),
+                label: "Distributed Architecture Data Pipeline Coordinator".to_owned(),
+                node_type: "server".to_owned(),
+                metadata: None,
+            }],
+            edges: vec![],
+            groups: vec![],
+        };
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+
+        assert!(svg.contains("dy=\"14\""), "wrapped lines must have dy offset");
+        assert!(svg.contains("Distributed"), "first line should contain Distributed");
     }
 }
