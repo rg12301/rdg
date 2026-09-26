@@ -284,6 +284,9 @@ pub fn render_drawio(
     w.write_event(Event::Empty(cell1))?;
 
     // --- Group / Swimlane container cells -----------------------------------
+    let mut node_to_group_id: HashMap<String, String> = HashMap::new();
+    let mut group_origins: HashMap<String, (f64, f64)> = HashMap::new();
+
     for group in &compiled.groups {
         let mut min_x = f64::MAX;
         let mut min_y = f64::MAX;
@@ -307,23 +310,29 @@ pub fn render_drawio(
             continue;
         }
 
-        let pad_h = 24.0;
-        let pad_top = 34.0;
-        let pad_bot = 20.0;
+        let pad_h = crate::layout::GROUP_PAD_H;
+        let pad_top = crate::layout::GROUP_PAD_TOP;
+        let pad_bot = crate::layout::GROUP_PAD_BOT;
 
         let gx = (min_x - pad_h).max(10.0);
         let gy = (min_y - pad_top).max(10.0);
         let gw = (max_x - min_x) + (pad_h * 2.0);
         let gh = (max_y - min_y) + pad_top + pad_bot;
 
+        group_origins.insert(group.id.clone(), (gx, gy));
+        for nid in &group.nodes {
+            node_to_group_id.insert(nid.clone(), group.id.clone());
+        }
+
         let color = group.color.as_deref().unwrap_or("#64748b");
         let group_style = format!(
             "rounded=1;absoluteArcSize=1;arcSize=10;\
-             fillColor={color};fillOpacity=15;\
+             fillColor={color};fillOpacity=10;\
              strokeColor={color};strokeWidth=1.5;\
              dashed=1;dashPattern=6 6;\
              verticalAlign=top;align=left;\
-             spacingLeft=16;spacingTop=8;\
+             spacingLeft=16;spacingTop=10;\
+             container=1;collapsible=0;recursiveResize=0;connectable=0;\
              fontFamily=Inter,Helvetica,sans-serif;\
              fontStyle=1;fontSize=12;fontColor={color};"
         );
@@ -373,12 +382,19 @@ pub fn render_drawio(
             }
         };
 
+        let (parent_id, rel_x, rel_y) = if let Some(gid) = node_to_group_id.get(&node_data.id) {
+            let (gx, gy) = group_origins[gid];
+            (gid.as_str(), nl.x - gx, nl.y - gy)
+        } else {
+            ("1", nl.x, nl.y)
+        };
+
         let mut cell = BytesStart::new("mxCell");
         cell.push_attribute(("id", node_data.id.as_str()));
         cell.push_attribute(("value", html_value.as_str()));
         cell.push_attribute(("style", style.as_str()));
         cell.push_attribute(("vertex", "1"));
-        cell.push_attribute(("parent", "1"));
+        cell.push_attribute(("parent", parent_id));
         if !tooltip.is_empty() {
             cell.push_attribute(("tooltip", tooltip));
         }
@@ -386,8 +402,8 @@ pub fn render_drawio(
 
         // <mxGeometry x="…" y="…" width="…" height="…" as="geometry" />
         let mut geo = BytesStart::new("mxGeometry");
-        geo.push_attribute(("x", nl.x.round().to_string().as_str()));
-        geo.push_attribute(("y", nl.y.round().to_string().as_str()));
+        geo.push_attribute(("x", rel_x.round().to_string().as_str()));
+        geo.push_attribute(("y", rel_y.round().to_string().as_str()));
         geo.push_attribute(("width", nl.width.round().to_string().as_str()));
         geo.push_attribute(("height", nl.height.round().to_string().as_str()));
         geo.push_attribute(("as", "geometry"));
@@ -617,8 +633,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         for node_id in &group.nodes {
             if let Some(&node_idx) = compiled.node_map.get(node_id) {
                 if let Some(nl) = layout.positions.get(&node_idx) {
-                    max_x = max_x.max(nl.x + nl.width + 24.0);
-                    max_y = max_y.max(nl.y + nl.height + 20.0);
+                    max_x = max_x.max(nl.x + nl.width + crate::layout::GROUP_PAD_H);
+                    max_y = max_y.max(nl.y + nl.height + crate::layout::GROUP_PAD_BOT);
                 }
             }
         }
@@ -734,15 +750,20 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             continue;
         }
 
-        let pad_h = 20.0;
-        let pad_top = 28.0;
-        let pad_bot = 16.0;
+        let pad_h = crate::layout::GROUP_PAD_H;
+        let pad_top = crate::layout::GROUP_PAD_TOP;
+        let pad_bot = crate::layout::GROUP_PAD_BOT;
 
         let gx = (min_x - pad_h).max(10.0);
         let gy = (min_y - pad_top).max(10.0);
         let gw = (max_x - min_x) + (pad_h * 2.0);
         let gh = (max_y - min_y) + pad_top + pad_bot;
         let color = group.color.as_deref().unwrap_or("#64748b");
+
+        let mut g = BytesStart::new("g");
+        g.push_attribute(("id", group.id.as_str()));
+        g.push_attribute(("class", "diagram-group"));
+        w.write_event(Event::Start(g))?;
 
         let mut rect = BytesStart::new("rect");
         rect.push_attribute(("x", gx.round().to_string().as_str()));
@@ -758,8 +779,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         w.write_event(Event::Empty(rect))?;
 
         let mut text = BytesStart::new("text");
-        text.push_attribute(("x", (gx + 12.0).round().to_string().as_str()));
-        text.push_attribute(("y", (gy + 18.0).round().to_string().as_str()));
+        text.push_attribute(("x", (gx + 14.0).round().to_string().as_str()));
+        text.push_attribute(("y", (gy + 20.0).round().to_string().as_str()));
         text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         text.push_attribute(("font-size", "11"));
         text.push_attribute(("font-weight", "bold"));
@@ -767,6 +788,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         w.write_event(Event::Start(text))?;
         w.write_event(Event::Text(BytesText::new(&group.label)))?;
         w.write_event(Event::End(BytesEnd::new("text")))?;
+
+        w.write_event(Event::End(BytesEnd::new("g")))?;
     }
 
     // --- Draw edges (behind nodes) with orthogonal rounded paths ------------
@@ -1407,11 +1430,14 @@ mod tests {
 
         assert!(xml.contains("id=\"grp_core\""), "must render group cell");
         assert!(xml.contains("Core Services"), "must render group label");
+        assert!(xml.contains("container=1"), "group cell style must include container=1");
+        assert!(xml.contains("parent=\"grp_core\""), "child nodes must specify group container as parent");
         assert!(xml.contains("dashPattern=8 4"), "async edge must be dashed");
         assert!(xml.contains("strokeColor=#d97706"), "async edge must be amber");
 
         let svg = render_svg(&compiled, &layout, "standard").unwrap();
         assert!(svg.contains("Core Services"), "svg must render group label");
+        assert!(svg.contains("class=\"diagram-group\""), "svg must render group container with diagram-group class");
         assert!(svg.contains("stroke-dasharray=\"8 4\""), "svg must render async dasharray");
     }
 

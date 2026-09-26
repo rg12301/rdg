@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="324" height="736" viewBox="0 0 324 736">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="518" height="702" viewBox="0 0 518 702">
   <rect width="100%" height="100%" fill="#f8fafc"/>
   <defs>
     <filter id="card-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -21,74 +21,80 @@
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#6366f1"/>
     </marker>
   </defs>
-  <rect x="64" y="10" width="160" height="180" rx="8" fill="#64748b" fill-opacity="0.08" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="76" y="28" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#64748b">Client / Prompt Layer</text>
-  <rect x="64" y="172" width="160" height="438" rx="8" fill="#2563eb" fill-opacity="0.08" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="76" y="190" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#2563eb">rdg Compilation Pipeline</text>
-  <rect x="10" y="602" width="280" height="94" rx="8" fill="#059669" fill-opacity="0.08" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 6"/>
-  <text x="22" y="620" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#059669">Artifacts</text>
-  <path d="M 144.0 78.0 L 144.0 114.0" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="8 4" marker-end="url(#arrow-amber)"/>
-  <path d="M 144.0 164.0 L 144.0 200.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <path d="M 144.0 250.0 L 144.0 286.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <path d="M 144.0 336.0 L 144.0 372.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
-  <path d="M 144.0 422.0 L 144.0 458.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
-  <path d="M 144.0 508.0 L 144.0 544.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
-  <path d="M 188.0 594.0 L 188.0 604.0 Q 188.0 612.0 196.0 612.0 L 201.0 612.0 Q 209.0 612.0 209.0 620.0 L 209.0 630.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <path d="M 100.0 594.0 L 100.0 604.0 Q 100.0 612.0 92.0 612.0 L 87.0 612.0 Q 79.0 612.0 79.0 620.0 L 79.0 630.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-  <rect x="123.5" y="88.0" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="99.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">emits</text>
-  <rect x="92.5" y="174.0" width="103.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="185.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">stdin / --input</text>
-  <rect x="123.5" y="260.0" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="271.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">parse</text>
-  <rect x="95.6" y="346.0" width="96.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="357.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">DiagramPayload</text>
-  <rect x="98.7" y="432.0" width="90.6" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="443.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">CompiledGraph</text>
-  <rect x="101.8" y="518.0" width="84.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="144.0" y="529.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">LayoutResult</text>
-  <rect x="161.3" y="594.1" width="53.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="188.0" y="605.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">.drawio</text>
-  <rect x="82.6" y="594.1" width="34.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
-  <text x="100.0" y="605.6" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">.svg</text>
-  <rect x="84.0" y="28.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="57.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">LLM / AI Agent</tspan>
+  <g id="grp_client" class="diagram-group">
+    <rect x="24" y="170" width="168" height="204" rx="8" fill="#64748b" fill-opacity="0.08" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <text x="38" y="190" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#64748b">Client / Prompt Layer</text>
+  </g>
+  <g id="grp_compiler" class="diagram-group">
+    <rect x="314" y="28" width="168" height="486" rx="8" fill="#2563eb" fill-opacity="0.08" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <text x="328" y="48" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#2563eb">rdg Compilation Pipeline</text>
+  </g>
+  <g id="grp_output" class="diagram-group">
+    <rect x="132" y="556" width="316" height="110" rx="8" fill="#059669" fill-opacity="0.08" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <text x="146" y="576" font-family="Inter, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#059669">Artifacts</text>
+  </g>
+  <path d="M 108.0 256.0 L 108.0 300.0" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="8 4" marker-end="url(#arrow-amber)"/>
+  <path d="M 168.0 325.0 L 245.0 325.0 Q 253.0 325.0 253.0 317.0 L 253.0 97.0 Q 253.0 89.0 261.0 89.0 L 338.0 89.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 398.0 114.0 L 398.0 158.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 398.0 208.0 L 398.0 252.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
+  <path d="M 398.0 302.0 L 398.0 346.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
+  <path d="M 398.0 396.0 L 398.0 440.0" fill="none" stroke="#6366f1" stroke-width="2.0" marker-end="url(#arrow-indigo)"/>
+  <path d="M 350.0 490.0 L 350.0 533.0 Q 350.0 541.0 342.0 541.0 L 224.0 541.0 Q 216.0 541.0 216.0 549.0 L 216.0 592.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 446.0 490.0 L 446.0 533.0 Q 446.0 541.0 438.0 541.0 L 372.0 541.0 Q 364.0 541.0 364.0 549.0 L 364.0 592.0" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <rect x="87.5" y="270.0" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="108.0" y="281.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">emits</text>
+  <rect x="138.5" y="317.0" width="103.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="190.0" y="328.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">stdin / --input</text>
+  <rect x="377.5" y="128.0" width="41.0" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="398.0" y="139.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">parse</text>
+  <rect x="349.6" y="222.0" width="96.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="398.0" y="233.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">DiagramPayload</text>
+  <rect x="352.7" y="316.0" width="90.6" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="398.0" y="327.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">CompiledGraph</text>
+  <rect x="355.8" y="410.0" width="84.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="398.0" y="421.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">LayoutResult</text>
+  <rect x="323.3" y="500.0" width="53.4" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="350.0" y="511.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">.drawio</text>
+  <rect x="428.6" y="500.0" width="34.8" height="16.0" rx="4" ry="4" fill="#f8fafc"/>
+  <text x="446.0" y="511.5" text-anchor="middle" font-family="Inter, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#475569">.svg</text>
+  <rect x="48.0" y="206.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="108.0" y="235.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="108.0" font-size="12" fill="#0f172a" font-weight="bold">LLM / AI Agent</tspan>
   </text>
-  <rect x="89.0" y="114.0" width="110.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#fbbf24" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="143.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">YAML Payload</tspan>
+  <rect x="48.0" y="300.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#fbbf24" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="108.0" y="329.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="108.0" font-size="12" fill="#0f172a" font-weight="bold">YAML Payload</tspan>
   </text>
-  <rect x="89.0" y="200.0" width="110.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#818cf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="229.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">rdg CLI</tspan>
+  <rect x="338.0" y="64.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#818cf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="398.0" y="93.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="398.0" font-size="12" fill="#0f172a" font-weight="bold">rdg CLI</tspan>
   </text>
-  <rect x="84.0" y="286.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="315.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">Schema Parser</tspan>
+  <rect x="338.0" y="158.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="398.0" y="187.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="398.0" font-size="12" fill="#0f172a" font-weight="bold">Schema Parser</tspan>
   </text>
-  <rect x="84.0" y="372.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="401.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">Graph Builder</tspan>
+  <rect x="338.0" y="252.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="398.0" y="281.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="398.0" font-size="12" fill="#0f172a" font-weight="bold">Graph Builder</tspan>
   </text>
-  <rect x="84.0" y="458.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="487.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">Layout Engine</tspan>
+  <rect x="338.0" y="346.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="398.0" y="375.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="398.0" font-size="12" fill="#0f172a" font-weight="bold">Layout Engine</tspan>
   </text>
-  <rect x="89.0" y="544.0" width="110.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="144.0" y="573.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="144.0" font-size="12" fill="#0f172a" font-weight="bold">Renderer</tspan>
+  <rect x="338.0" y="440.0" width="120.0" height="50.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <text x="398.0" y="469.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="398.0" font-size="12" fill="#0f172a" font-weight="bold">Renderer</tspan>
   </text>
-  <path d="M 154.0 639.0 L 154.0 671.0 A 55.0 9.0 0 0 0 264.0 671.0 L 264.0 639.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="209.0" cy="639.0" rx="55.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="209.0" y="652.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="209.0" font-size="12" fill="#0f172a" font-weight="bold">draw.io XML</tspan>
-    <tspan x="209.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(.drawio)</tspan>
+  <path d="M 156.0 601.0 L 156.0 633.0 A 60.0 9.0 0 0 0 276.0 633.0 L 276.0 601.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="216.0" cy="601.0" rx="60.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="216.0" y="614.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="216.0" font-size="12" fill="#0f172a" font-weight="bold">draw.io XML</tspan>
+    <tspan x="216.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(.drawio)</tspan>
   </text>
-  <path d="M 24.0 639.0 L 24.0 671.0 A 55.0 9.0 0 0 0 134.0 671.0 L 134.0 639.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="79.0" cy="639.0" rx="55.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="79.0" y="652.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
-    <tspan x="79.0" font-size="12" fill="#0f172a" font-weight="bold">SVG File</tspan>
-    <tspan x="79.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(.svg)</tspan>
+  <path d="M 304.0 601.0 L 304.0 633.0 A 60.0 9.0 0 0 0 424.0 633.0 L 424.0 601.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="364.0" cy="601.0" rx="60.0" ry="9.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="364.0" y="614.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+    <tspan x="364.0" font-size="12" fill="#0f172a" font-weight="bold">SVG File</tspan>
+    <tspan x="364.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(.svg)</tspan>
   </text>
 </svg>

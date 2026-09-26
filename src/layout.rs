@@ -13,9 +13,28 @@ use layout::std_shapes::shapes::{Arrow, Element, ShapeKind};
 use layout::topo::layout::VisualGraph;
 use petgraph::stable_graph::NodeIndex;
 use petgraph::visit::{EdgeRef, IntoEdgeReferences};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::graph::CompiledGraph;
+
+// ---------------------------------------------------------------------------
+// Layout Spacing & Margin Constants
+// ---------------------------------------------------------------------------
+
+/// Horizontal internal padding for group containers.
+pub const GROUP_PAD_H: f64 = 24.0;
+/// Top internal padding for group containers (space for group title header).
+pub const GROUP_PAD_TOP: f64 = 36.0;
+/// Bottom internal padding for group containers.
+pub const GROUP_PAD_BOT: f64 = 24.0;
+/// Horizontal gap between group containers.
+pub const GROUP_GAP_X: f64 = 48.0;
+/// Vertical gap between group containers.
+pub const GROUP_GAP_Y: f64 = 40.0;
+/// Canvas top-left margin X.
+pub const MARGIN_X: f64 = 24.0;
+/// Canvas top-left margin Y.
+pub const MARGIN_Y: f64 = 28.0;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -62,9 +81,9 @@ pub struct LayoutConfig {
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            rank_spacing: 36,
-            node_spacing: 20,
-            node_width: 110.0,
+            rank_spacing: 44,
+            node_spacing: 28,
+            node_width: 120.0,
             node_height: 44.0,
             direction: LayoutDirection::TopToBottom,
         }
@@ -97,8 +116,11 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         });
     }
 
-    // Run deterministic layered layout engine with group-aware stage ordering
-    let mut result = layout_topological(compiled, config)?;
+    let mut result = if !compiled.groups.is_empty() && config.direction == LayoutDirection::TopToBottom {
+        layout_compound(compiled, config)?
+    } else {
+        layout_topological(compiled, config)?
+    };
 
     // Normalize coordinates so the diagram starts cleanly near the top-left margin
     // without wasting huge canvas areas.
@@ -114,8 +136,17 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
             .map(|nl| nl.y)
             .fold(f64::MAX, f64::min);
 
-        let target_min_x = 24.0_f64;
-        let target_min_y = 28.0_f64;
+        let target_min_x = if !compiled.groups.is_empty() {
+            MARGIN_X + GROUP_PAD_H
+        } else {
+            MARGIN_X
+        };
+        let target_min_y = if !compiled.groups.is_empty() {
+            MARGIN_Y + GROUP_PAD_TOP
+        } else {
+            MARGIN_Y
+        };
+
         let dx = target_min_x - min_x;
         let dy = target_min_y - min_y;
 
@@ -302,118 +333,487 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
 }
 
 // ---------------------------------------------------------------------------
-// Topological fallback layout
+// Compound graph layout (2D Group Grid Placement for ~1:1 Aspect Ratio)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone)]
+struct GroupInfo {
+    idx: usize,
+    width: f64,
+    height: f64,
+    nodes: Vec<NodeIndex>,
+    local_pos: HashMap<NodeIndex, (f64, f64)>,
+}
+
+fn compute_group_local(
+    g_idx: usize,
+    group: &crate::schema::GroupDef,
+    compiled: &CompiledGraph,
+    config: &LayoutConfig,
+) -> Option<GroupInfo> {
+    let nodes: Vec<NodeIndex> = group
+        .nodes
+        .iter()
+        .filter_map(|id| compiled.node_map.get(id).copied())
+        .collect();
+    if nodes.is_empty() {
+        return None;
+    }
+
+    let node_set: HashSet<NodeIndex> = nodes.iter().copied().collect();
+
+    // Compute intra-group in-degrees
+    let mut in_degrees: HashMap<NodeIndex, usize> = HashMap::new();
+    for &u in &nodes {
+        let in_deg = compiled
+            .graph
+            .neighbors_directed(u, petgraph::Direction::Incoming)
+            .filter(|p| node_set.contains(p))
+            .count();
+        in_degrees.insert(u, in_deg);
+    }
+
+    // Longest path within group
+    let mut local_layer: HashMap<NodeIndex, usize> = HashMap::new();
+    let mut queue: std::collections::VecDeque<NodeIndex> = nodes
+        .iter()
+        .filter(|&&u| in_degrees[&u] == 0)
+        .copied()
+        .collect();
+
+    if queue.is_empty() {
+        for (i, &u) in nodes.iter().enumerate() {
+            local_layer.insert(u, i);
+        }
+    } else {
+        for &u in &queue {
+            local_layer.insert(u, 0);
+        }
+        let mut deg = in_degrees.clone();
+        let mut visited = 0;
+        while let Some(u) = queue.pop_front() {
+            visited += 1;
+            let current_l = local_layer[&u];
+            for v in compiled
+                .graph
+                .neighbors_directed(u, petgraph::Direction::Outgoing)
+            {
+                if node_set.contains(&v) {
+                    let next_l = local_layer.get(&v).copied().unwrap_or(0).max(current_l + 1);
+                    local_layer.insert(v, next_l);
+                    let d = deg.get_mut(&v).unwrap();
+                    *d -= 1;
+                    if *d == 0 {
+                        queue.push_back(v);
+                    }
+                }
+            }
+        }
+        if visited < nodes.len() {
+            for &u in &nodes {
+                local_layer.entry(u).or_insert(0);
+            }
+        }
+    }
+
+    let max_layer = local_layer.values().copied().max().unwrap_or(0);
+    let mut buckets: Vec<Vec<NodeIndex>> = vec![Vec::new(); max_layer + 1];
+    for &u in &nodes {
+        buckets[local_layer[&u]].push(u);
+    }
+
+    minimise_crossings(&mut buckets, compiled);
+
+    let mut node_sizes: HashMap<NodeIndex, (f64, f64)> = HashMap::new();
+    for &u in &nodes {
+        let data = &compiled.graph[u];
+        node_sizes.insert(
+            u,
+            estimate_node_size(&data.label, &data.node_type, config.node_width, config.node_height),
+        );
+    }
+
+    let layer_widths: Vec<f64> = buckets
+        .iter()
+        .map(|b| {
+            if b.is_empty() {
+                0.0
+            } else {
+                let sum_w: f64 = b.iter().map(|n| node_sizes[n].0).sum();
+                let gaps = (b.len() - 1) as f64 * config.node_spacing as f64;
+                sum_w + gaps
+            }
+        })
+        .collect();
+
+    let max_content_w = layer_widths.iter().copied().fold(0.0_f64, f64::max);
+    let mut current_y = 0.0_f64;
+    let mut local_pos: HashMap<NodeIndex, (f64, f64)> = HashMap::new();
+
+    for (r, bucket) in buckets.iter().enumerate() {
+        if bucket.is_empty() {
+            continue;
+        }
+        let lw = layer_widths[r];
+        let x_offset = (max_content_w - lw).max(0.0) / 2.0;
+        let max_h = bucket.iter().map(|n| node_sizes[n].1).fold(0.0_f64, f64::max);
+
+        let mut current_x = x_offset;
+        for &u in bucket {
+            let (nw, nh) = node_sizes[&u];
+            let ny = current_y + (max_h - nh) / 2.0;
+            local_pos.insert(u, (current_x, ny));
+            current_x += nw + config.node_spacing as f64;
+        }
+        current_y += max_h + config.rank_spacing as f64;
+    }
+
+    let content_h = if current_y > config.rank_spacing as f64 {
+        current_y - config.rank_spacing as f64
+    } else {
+        current_y
+    };
+
+    let total_w = max_content_w + 2.0 * GROUP_PAD_H;
+    let total_h = content_h + GROUP_PAD_TOP + GROUP_PAD_BOT;
+
+    Some(GroupInfo {
+        idx: g_idx,
+        width: (total_w / 4.0).ceil() * 4.0,
+        height: (total_h / 4.0).ceil() * 4.0,
+        nodes,
+        local_pos,
+    })
+}
+
+struct GridSearchCtx<'a> {
+    topo_groups: &'a [usize],
+    groups: &'a [GroupInfo],
+    edges: &'a [(usize, usize)],
+    current_grid: Vec<(usize, usize)>,
+    occupied: HashSet<(usize, usize)>,
+    best_grid: Vec<(usize, usize)>,
+    best_score: f64,
+}
+
+impl<'a> GridSearchCtx<'a> {
+    fn search(&mut self, step: usize) {
+        if step == self.topo_groups.len() {
+            let mut w0 = 0.0_f64;
+            let mut w1 = 0.0_f64;
+            let mut max_row = 0;
+            for g in self.groups {
+                let (r, c) = self.current_grid[g.idx];
+                max_row = max_row.max(r);
+                if c == 0 {
+                    w0 = w0.max(g.width);
+                } else {
+                    w1 = w1.max(g.width);
+                }
+            }
+            let num_r = max_row + 1;
+            let mut row_h = vec![0.0_f64; num_r];
+            for g in self.groups {
+                let (r, _) = self.current_grid[g.idx];
+                row_h[r] = row_h[r].max(g.height);
+            }
+
+            let tot_w = if w1 > 0.0 { w0 + GROUP_GAP_X + w1 } else { w0 };
+            let tot_h: f64 =
+                row_h.iter().sum::<f64>() + (num_r.saturating_sub(1)) as f64 * GROUP_GAP_Y;
+            let ratio = (tot_w + 2.0 * MARGIN_X) / (tot_h + 2.0 * MARGIN_Y);
+
+            let edge_dist: f64 = self
+                .edges
+                .iter()
+                .map(|&(a, b)| {
+                    let (ra, ca) = self.current_grid[a];
+                    let (rb, cb) = self.current_grid[b];
+                    let dr = rb as f64 - ra as f64;
+                    let dc = cb as f64 - ca as f64;
+                    (dr * dr + dc * dc).sqrt()
+                })
+                .sum();
+
+            let score = ratio.ln().abs() + 0.02 * edge_dist;
+            if score < self.best_score {
+                self.best_score = score;
+                self.best_grid = self.current_grid.clone();
+            }
+            return;
+        }
+
+        let g = self.topo_groups[step];
+
+        let mut min_r = 0;
+        for &(p, dst) in self.edges {
+            if dst == g {
+                let (rp, cp) = self.current_grid[p];
+                if cp == 1 {
+                    min_r = min_r.max(rp + 1);
+                } else {
+                    min_r = min_r.max(rp);
+                }
+            }
+        }
+
+        let cur_max_r = self.topo_groups[..step]
+            .iter()
+            .map(|&i| self.current_grid[i].0)
+            .max()
+            .unwrap_or(0);
+        let max_r = (cur_max_r + 1).min(self.groups.len());
+
+        for c in 0..=1 {
+            for r in min_r..=max_r {
+                let mut valid = true;
+                for &(p, dst) in self.edges {
+                    if dst == g {
+                        let (rp, cp) = self.current_grid[p];
+                        if !(r > rp || (r == rp && c > cp)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+                if !valid || self.occupied.contains(&(r, c)) {
+                    continue;
+                }
+
+                self.occupied.insert((r, c));
+                self.current_grid[g] = (r, c);
+
+                self.search(step + 1);
+
+                self.occupied.remove(&(r, c));
+            }
+        }
+    }
+}
+
+/// 2D grid placement for compound graphs with visual groups.
+/// Guarantees zero group overlap and minimizes aspect ratio deviation from 1.0.
+fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
+    let mut groups: Vec<GroupInfo> = Vec::new();
+    let mut assigned_nodes: HashSet<NodeIndex> = HashSet::new();
+
+    for (g_idx, group) in compiled.groups.iter().enumerate() {
+        if let Some(info) = compute_group_local(g_idx, group, compiled, config) {
+            for &u in &info.nodes {
+                assigned_nodes.insert(u);
+            }
+            groups.push(info);
+        }
+    }
+
+    let has_unassigned = compiled
+        .graph
+        .node_indices()
+        .any(|idx| !assigned_nodes.contains(&idx));
+
+    if has_unassigned || groups.is_empty() {
+        return layout_topological(compiled, config);
+    }
+
+    let num_groups = groups.len();
+    let mut node_to_gidx: HashMap<NodeIndex, usize> = HashMap::new();
+    for info in &groups {
+        for &u in &info.nodes {
+            node_to_gidx.insert(u, info.idx);
+        }
+    }
+
+    let mut group_edges: Vec<(usize, usize)> = Vec::new();
+    for edge_ref in compiled.graph.edge_references() {
+        let s = edge_ref.source();
+        let t = edge_ref.target();
+        if let (Some(&ga), Some(&gb)) = (node_to_gidx.get(&s), node_to_gidx.get(&t)) {
+            if ga != gb {
+                group_edges.push((ga, gb));
+            }
+        }
+    }
+    group_edges.sort_unstable();
+    group_edges.dedup();
+
+    // Topological sort of groups
+    let mut in_degrees = vec![0usize; num_groups];
+    let mut adj = vec![Vec::new(); num_groups];
+    for &(ga, gb) in &group_edges {
+        in_degrees[gb] += 1;
+        adj[ga].push(gb);
+    }
+
+    let mut topo_groups: Vec<usize> = Vec::with_capacity(num_groups);
+    let mut q: std::collections::VecDeque<usize> = in_degrees
+        .iter()
+        .enumerate()
+        .filter(|&(_, &deg)| deg == 0)
+        .map(|(i, _)| i)
+        .collect();
+
+    while let Some(g) = q.pop_front() {
+        topo_groups.push(g);
+        for &next in &adj[g] {
+            in_degrees[next] -= 1;
+            if in_degrees[next] == 0 {
+                q.push_back(next);
+            }
+        }
+    }
+    if topo_groups.len() < num_groups {
+        for i in 0..num_groups {
+            if !topo_groups.contains(&i) {
+                topo_groups.push(i);
+            }
+        }
+    }
+
+    // 1-column layout baseline
+    let mut grid_1col = vec![(0usize, 0usize); num_groups];
+    for (r, &g) in topo_groups.iter().enumerate() {
+        grid_1col[g] = (r, 0);
+    }
+    let w_1col = groups.iter().map(|g| g.width).fold(0.0_f64, f64::max);
+    let h_1col: f64 = groups.iter().map(|g| g.height).sum::<f64>()
+        + (num_groups.saturating_sub(1)) as f64 * GROUP_GAP_Y;
+    let ratio_1col = (w_1col + 2.0 * MARGIN_X) / (h_1col + 2.0 * MARGIN_Y);
+    let score_1col = ratio_1col.ln().abs();
+
+    // 2-column search
+    let chosen_grid = if num_groups >= 2 {
+        let mut ctx = GridSearchCtx {
+            topo_groups: &topo_groups,
+            groups: &groups,
+            edges: &group_edges,
+            current_grid: vec![(0usize, 0usize); num_groups],
+            occupied: HashSet::new(),
+            best_grid: grid_1col.clone(),
+            best_score: score_1col,
+        };
+        ctx.search(0);
+        if ctx.best_score < score_1col {
+            ctx.best_grid
+        } else {
+            grid_1col
+        }
+    } else {
+        grid_1col
+    };
+
+    let mut w_col0 = 0.0_f64;
+    let mut w_col1 = 0.0_f64;
+    let mut max_r = 0;
+    for info in &groups {
+        let (r, c) = chosen_grid[info.idx];
+        max_r = max_r.max(r);
+        if c == 0 {
+            w_col0 = w_col0.max(info.width);
+        } else {
+            w_col1 = w_col1.max(info.width);
+        }
+    }
+    let num_rows = max_r + 1;
+    let mut row_heights = vec![0.0_f64; num_rows];
+    for info in &groups {
+        let (r, _) = chosen_grid[info.idx];
+        row_heights[r] = row_heights[r].max(info.height);
+    }
+
+    let total_content_w = if w_col1 > 0.0 {
+        w_col0 + GROUP_GAP_X + w_col1
+    } else {
+        w_col0
+    };
+
+    let mut row_y = vec![0.0_f64; num_rows];
+    let mut cur_y = MARGIN_Y;
+    for r in 0..num_rows {
+        row_y[r] = cur_y;
+        cur_y += row_heights[r] + GROUP_GAP_Y;
+    }
+
+    let mut positions: HashMap<NodeIndex, NodeLayout> =
+        HashMap::with_capacity(compiled.graph.node_count());
+
+    for info in &groups {
+        let (r, c) = chosen_grid[info.idx];
+        let gy = row_y[r] + (row_heights[r] - info.height) / 2.0;
+
+        let is_sole_in_row = groups.iter().filter(|g| chosen_grid[g.idx].0 == r).count() == 1;
+
+        let gx = if is_sole_in_row && w_col1 > 0.0 {
+            MARGIN_X + (total_content_w - info.width).max(0.0) / 2.0
+        } else if c == 0 {
+            MARGIN_X + (w_col0 - info.width).max(0.0) / 2.0
+        } else {
+            MARGIN_X + w_col0 + GROUP_GAP_X + (w_col1 - info.width).max(0.0) / 2.0
+        };
+
+        for &u in &info.nodes {
+            let (lx, ly) = info.local_pos[&u];
+            let (nw, nh) = estimate_node_size(
+                &compiled.graph[u].label,
+                &compiled.graph[u].node_type,
+                config.node_width,
+                config.node_height,
+            );
+            positions.insert(
+                u,
+                NodeLayout {
+                    x: gx + GROUP_PAD_H + lx,
+                    y: gy + GROUP_PAD_TOP + ly,
+                    width: nw,
+                    height: nh,
+                },
+            );
+        }
+    }
+
+    Ok(LayoutResult { positions })
+}
+
+// ---------------------------------------------------------------------------
+// Topological layout (Pure-Rust layered fallback & flat layout)
 // ---------------------------------------------------------------------------
 
 /// Pure-Rust layered layout via topological sort + longest-path ranking + barycentric crossing reduction.
 fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
     use petgraph::algo::toposort;
-    use petgraph::Direction;
 
-    // Topological order (fails only on cycles — we've already broken them).
     let topo_order = toposort(&compiled.graph, None).map_err(|_| {
         anyhow::anyhow!("topological sort failed — unexpected cycle after FAS pass")
     })?;
 
-    // Compute layers (group-aware stage assignment when groups are defined)
     let mut layer: HashMap<NodeIndex, usize> = HashMap::with_capacity(topo_order.len());
-
-    let has_groups = !compiled.groups.is_empty();
-    if has_groups {
-        let mut node_to_group: HashMap<NodeIndex, usize> = HashMap::new();
-        for (g_idx, group) in compiled.groups.iter().enumerate() {
-            for node_id in &group.nodes {
-                if let Some(&idx) = compiled.node_map.get(node_id) {
-                    node_to_group.insert(idx, g_idx);
-                }
-            }
-        }
-
-        // Compute intra-group local layers so that nodes inside each group form a compact hierarchy
-        let mut group_local_layer: HashMap<NodeIndex, usize> = HashMap::new();
-        let mut group_depths: Vec<usize> = vec![0; compiled.groups.len()];
-
-        for (g_idx, _group) in compiled.groups.iter().enumerate() {
-            let mut max_local = 0;
-            for &node in &topo_order {
-                if node_to_group.get(&node) == Some(&g_idx) {
-                    let local_pred_max = compiled
-                        .graph
-                        .neighbors_directed(node, Direction::Incoming)
-                        .filter(|p| node_to_group.get(p) == Some(&g_idx))
-                        .filter_map(|p| group_local_layer.get(&p).copied())
-                        .max();
-                    let l = match local_pred_max {
-                        Some(m) => m + 1,
-                        None => 0,
-                    };
-                    group_local_layer.insert(node, l);
-                    max_local = max_local.max(l + 1);
-                }
-            }
-            group_depths[g_idx] = max_local.max(1);
-        }
-
-        // Compute global base layer for each group so groups stack sequentially without overlap
-        let mut group_base: Vec<usize> = Vec::with_capacity(compiled.groups.len());
-        let mut acc = 0;
-        for &d in &group_depths {
-            group_base.push(acc);
-            acc += d;
-        }
-
-        for &node in &topo_order {
-            if let Some(&g_idx) = node_to_group.get(&node) {
-                let local = group_local_layer.get(&node).copied().unwrap_or(0);
-                layer.insert(node, group_base[g_idx] + local);
-            } else {
-                let pred_max = compiled
-                    .graph
-                    .neighbors_directed(node, Direction::Incoming)
-                    .filter_map(|p| layer.get(&p).copied())
-                    .max()
-                    .unwrap_or(0);
-                let l = if compiled.graph.neighbors_directed(node, Direction::Incoming).next().is_some() {
-                    pred_max + 1
-                } else {
-                    0
-                };
-                layer.insert(node, l);
-            }
-        }
-    } else {
-        for &node in &topo_order {
-            let pred_max = compiled
-                .graph
-                .neighbors_directed(node, Direction::Incoming)
-                .filter_map(|p| layer.get(&p).copied())
-                .max()
-                .unwrap_or(0);
-            let node_layer = if compiled
-                .graph
-                .neighbors_directed(node, Direction::Incoming)
-                .next()
-                .is_some()
-            {
-                pred_max + 1
-            } else {
-                0
-            };
-            layer.insert(node, node_layer);
-        }
+    for &node in &topo_order {
+        let pred_max = compiled
+            .graph
+            .neighbors_directed(node, petgraph::Direction::Incoming)
+            .filter_map(|p| layer.get(&p).copied())
+            .max()
+            .unwrap_or(0);
+        let node_layer = if compiled
+            .graph
+            .neighbors_directed(node, petgraph::Direction::Incoming)
+            .next()
+            .is_some()
+        {
+            pred_max + 1
+        } else {
+            0
+        };
+        layer.insert(node, node_layer);
     }
 
-    // Group nodes by layer
     let max_layer = layer.values().copied().max().unwrap_or(0);
     let mut layer_buckets: Vec<Vec<NodeIndex>> = vec![Vec::new(); max_layer + 1];
     for (&node, &l) in &layer {
         layer_buckets[l].push(node);
     }
 
-    // Crossing minimisation
     minimise_crossings(&mut layer_buckets, compiled);
 
-    // Compute node sizes
     let mut node_sizes: HashMap<NodeIndex, (f64, f64)> = HashMap::new();
     for &node in &topo_order {
         let data = &compiled.graph[node];
@@ -689,5 +1089,119 @@ mod tests {
         let n1_pos = &result.positions[&compiled.node_map["n1"]];
         let n2_pos = &result.positions[&compiled.node_map["n2"]];
         assert!(n2_pos.x > n1_pos.x, "target node should be placed to the right of source");
+    }
+
+    #[test]
+    fn test_compound_layout_no_overlap_and_aspect_ratio() {
+        use crate::schema::GroupDef;
+
+        let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
+            theme: None,
+            direction: None,
+            groups: vec![
+                GroupDef {
+                    id: "g1".to_owned(),
+                    label: "Group 1".to_owned(),
+                    color: None,
+                    nodes: vec!["n1".to_owned(), "n2".to_owned()],
+                },
+                GroupDef {
+                    id: "g2".to_owned(),
+                    label: "Group 2".to_owned(),
+                    color: None,
+                    nodes: vec!["n3".to_owned()],
+                },
+                GroupDef {
+                    id: "g3".to_owned(),
+                    label: "Group 3".to_owned(),
+                    color: None,
+                    nodes: vec!["n4".to_owned()],
+                },
+            ],
+            nodes: vec![
+                NodeDef {
+                    id: "n1".to_owned(),
+                    label: "Node 1".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "n2".to_owned(),
+                    label: "Node 2".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "n3".to_owned(),
+                    label: "Node 3".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+                NodeDef {
+                    id: "n4".to_owned(),
+                    label: "Node 4".to_owned(),
+                    node_type: "server".to_owned(),
+                    metadata: None,
+                },
+            ],
+            edges: vec![
+                EdgeDef {
+                    from: "n1".to_owned(),
+                    to: "n2".to_owned(),
+                    label: None,
+                    edge_style: None,
+                },
+                EdgeDef {
+                    from: "n2".to_owned(),
+                    to: "n3".to_owned(),
+                    label: None,
+                    edge_style: None,
+                },
+                EdgeDef {
+                    from: "n3".to_owned(),
+                    to: "n4".to_owned(),
+                    label: None,
+                    edge_style: None,
+                },
+            ],
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let config = LayoutConfig::default();
+        let result = compute_layout(&compiled, &config).unwrap();
+
+        assert_eq!(result.positions.len(), 4);
+
+        // Verify bounding boxes of groups do not intersect
+        let mut group_bboxes = Vec::new();
+        for group in &payload.groups {
+            let mut min_x = f64::MAX;
+            let mut min_y = f64::MAX;
+            let mut max_x = f64::MIN;
+            let mut max_y = f64::MIN;
+            for nid in &group.nodes {
+                let idx = compiled.node_map[nid];
+                let nl = &result.positions[&idx];
+                min_x = min_x.min(nl.x);
+                min_y = min_y.min(nl.y);
+                max_x = max_x.max(nl.x + nl.width);
+                max_y = max_y.max(nl.y + nl.height);
+            }
+            let gx = min_x - GROUP_PAD_H;
+            let gy = min_y - GROUP_PAD_TOP;
+            let gw = (max_x - min_x) + 2.0 * GROUP_PAD_H;
+            let gh = (max_y - min_y) + GROUP_PAD_TOP + GROUP_PAD_BOT;
+            group_bboxes.push((gx, gy, gx + gw, gy + gh));
+        }
+
+        for i in 0..group_bboxes.len() {
+            for j in (i + 1)..group_bboxes.len() {
+                let (ax1, ay1, ax2, ay2) = group_bboxes[i];
+                let (bx1, by1, bx2, by2) = group_bboxes[j];
+                let overlap = ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
+                assert!(!overlap, "Group {i} and Group {j} must not overlap");
+            }
+        }
     }
 }
