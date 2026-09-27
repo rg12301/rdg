@@ -982,15 +982,21 @@ pub fn choose_edge_sides(
                 }
             }
 
-            // 3. Container title banner collision avoidance
+            // 3. Container title banner collision avoidance.
+            // Only penalise Top entry into a group if:
+            //   (a) the source is already inside the same group (internal edges must not exit-top), OR
+            //   (b) there is insufficient whitespace above the group title for a clean clearance stub
+            //       (i.e. the vertical gap between source bottom and group top is < 40px).
+            // We do NOT penalise when the source is well above the group with plenty of clearance,
+            // because Top entry is the cleanest route in that case (one bend, uses whitespace above).
             for tz in title_zones {
-                if tz.node_ids.contains(dst_id)
-                    && !tz.node_ids.contains(src_id)
-                    && src_nl.y + src_nl.height <= tz.max_y + 20.0
-                    && dst_nl.x <= tz.max_x + 20.0
-                    && d_side == Side::Top
-                {
-                    penalty += 15000.0;
+                if tz.node_ids.contains(dst_id) && d_side == Side::Top {
+                    let src_inside_group = tz.node_ids.contains(src_id);
+                    let gap_above_group = tz.min_y - (src_nl.y + src_nl.height);
+                    let insufficient_clearance = gap_above_group < 40.0;
+                    if src_inside_group || insufficient_clearance {
+                        penalty += 15000.0;
+                    }
                 }
             }
 
@@ -1234,6 +1240,16 @@ pub fn plan_all_edge_routes(
         }
     }
 
+    // Build a complete obstacle map from all node positions — used to avoid routing through them.
+    // We collect these once and filter per-edge inside the loop.
+    let all_obstacles: Vec<(petgraph::stable_graph::NodeIndex, ObstacleRect)> = layout
+        .positions
+        .iter()
+        .map(|(&ni, nl)| {
+            (ni, ObstacleRect { x: nl.x, y: nl.y, w: nl.width, h: nl.height })
+        })
+        .collect();
+
     let mut plans = HashMap::new();
     for (edge_idx, (src_side, dst_side)) in initial_sides {
         let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
@@ -1261,7 +1277,20 @@ pub fn plan_all_edge_routes(
             Side::Right => (dst_nl.x + dst_nl.width, dst_nl.y + dst_nl.height * entry_port),
         };
 
-        let waypoints = compute_edge_waypoints((x1, y1), src_side, (x2, y2), dst_side, channel_y, corridor_x);
+        // Build per-edge obstacle list: exclude source and destination nodes so their
+        // face-stubs are not treated as blocked.
+        let edge_obstacles: Vec<ObstacleRect> = all_obstacles
+            .iter()
+            .filter(|(ni, _)| *ni != s_idx && *ni != d_idx)
+            .map(|(_, obs)| obs.clone())
+            .collect();
+
+        let waypoints = compute_edge_waypoints_with_obstacles(
+            (x1, y1), src_side,
+            (x2, y2), dst_side,
+            channel_y, corridor_x,
+            &edge_obstacles,
+        );
 
         plans.insert(edge_idx, EdgeRoutingPlan {
             src_side,
@@ -1278,14 +1307,48 @@ pub fn plan_all_edge_routes(
 }
 
 /// Minimum straight clearance stub extending perpendicularly from any component face before any bend.
-pub const STUB_CLEARANCE: f64 = 20.0;
+pub const STUB_CLEARANCE: f64 = 24.0;
 
-/// Compute collision-free, isolated orthogonal waypoints between start point and end point.
-/// Guarantees that:
-/// 1. Arrows travel perpendicularly out of src_side for at least STUB_CLEARANCE before bending.
-/// 2. Arrows approach perpendicularly into dst_side for at least STUB_CLEARANCE after bending.
-/// 3. Turns are isolated, cleanly avoiding intermediate components and sharp turns near vertices.
-pub fn compute_edge_waypoints(
+/// A simple AABB obstacle used for arrow routing.
+#[derive(Debug, Clone)]
+pub struct ObstacleRect {
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
+}
+
+impl ObstacleRect {
+    /// Returns true if axis-aligned segment from (ax,ay)→(bx,by) clips through this rect.
+    /// Segment must be purely horizontal or purely vertical.
+    fn clips_segment(&self, ax: f64, ay: f64, bx: f64, by: f64, m: f64) -> bool {
+        let (rx0, rx1) = (self.x - m, self.x + self.w + m);
+        let (ry0, ry1) = (self.y - m, self.y + self.h + m);
+
+        if (ay - by).abs() < 0.5 {
+            // Horizontal segment
+            let y = ay;
+            if y <= ry0 || y >= ry1 { return false; }
+            let (sx0, sx1) = (ax.min(bx), ax.max(bx));
+            sx1 > rx0 && sx0 < rx1
+        } else {
+            // Vertical segment
+            let x = ax;
+            if x <= rx0 || x >= rx1 { return false; }
+            let (sy0, sy1) = (ay.min(by), ay.max(by));
+            sy1 > ry0 && sy0 < ry1
+        }
+    }
+}
+
+
+/// Generate the ideal orthogonal waypoints for a given face-pair, with guaranteed
+/// STUB_CLEARANCE perpendicular stubs at source and destination.
+///
+/// The `channel_y` and `corridor_x` hints are used for the shared-channel slot so
+/// parallel sibling edges don't overlap.  The result is a polyline of intermediate
+/// waypoints (not including p1/p2 themselves).
+fn ideal_waypoints_for_faces(
     p1: (f64, f64),
     src_side: Side,
     p2: (f64, f64),
@@ -1295,70 +1358,53 @@ pub fn compute_edge_waypoints(
 ) -> Vec<(f64, f64)> {
     let (x1, y1) = p1;
     let (x2, y2) = p2;
+    let sc = STUB_CLEARANCE;
 
     match (src_side, dst_side) {
+        // ── Straight down → straight up  (most common flow-diagram case) ──────
         (Side::Bottom, Side::Top) => {
             if (x2 - x1).abs() < 1.5 {
+                // Same column — no waypoints needed (straight vertical line)
                 vec![]
-            } else if y2 >= y1 + 36.0 {
-                let min_ch = y1 + STUB_CLEARANCE.min((y2 - y1) * 0.35);
-                let max_ch = y2 - STUB_CLEARANCE.min((y2 - y1) * 0.35);
-                let ch_y = channel_y.max(min_ch).min(max_ch);
+            } else if y2 >= y1 + sc * 2.0 {
+                // There is room for a single horizontal jog
+                let min_ch = y1 + sc;
+                let max_ch = y2 - sc;
+                let ch_y = channel_y.clamp(min_ch, max_ch);
                 vec![(x1, ch_y), (x2, ch_y)]
             } else {
-                let y_down = y1 + STUB_CLEARANCE;
-                let y_up = y2 - STUB_CLEARANCE;
+                // Nodes too close vertically — go around the side
+                let y_down = y1 + sc;
+                let y_up = y2 - sc;
                 let side_x = if corridor_x > 0.0 {
                     corridor_x
                 } else if x2 > x1 {
-                    (x1 - 32.0).min(x2 - 32.0)
+                    x1.min(x2) - 32.0
                 } else {
-                    (x1 + 32.0).max(x2 + 32.0)
+                    x1.max(x2) + 32.0
                 };
                 vec![(x1, y_down), (side_x, y_down), (side_x, y_up), (x2, y_up)]
             }
         }
+
+        // ── Right → Left  (horizontal same-level flow) ───────────────────────
         (Side::Right, Side::Left) => {
             if (y2 - y1).abs() < 1.5 {
                 vec![]
-            } else if x2 >= x1 + 36.0 {
-                let min_cr = x1 + STUB_CLEARANCE.min((x2 - x1) * 0.35);
-                let max_cr = x2 - STUB_CLEARANCE.min((x2 - x1) * 0.35);
+            } else if x2 >= x1 + sc * 2.0 {
+                let min_cr = x1 + sc;
+                let max_cr = x2 - sc;
                 let cr_x = if corridor_x > 0.0 { corridor_x } else { (x1 + x2) / 2.0 };
-                let cr_x = cr_x.max(min_cr).min(max_cr);
+                let cr_x = cr_x.clamp(min_cr, max_cr);
                 vec![(cr_x, y1), (cr_x, y2)]
             } else {
-                let cr_x = if corridor_x > 0.0 { corridor_x } else { (x1 + 24.0).max(x2 + 24.0) };
+                // Nodes overlap/too close horizontally — route around vertically
+                let cr_x = if corridor_x > 0.0 { corridor_x } else { x1.max(x2) + 32.0 };
                 vec![(cr_x, y1), (cr_x, y2)]
             }
         }
-        (Side::Bottom, Side::Left) => {
-            if x2 >= x1 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
-                vec![(x1, y2)]
-            } else {
-                let y_stub = y1 + STUB_CLEARANCE;
-                let x_stub = (x2 - STUB_CLEARANCE).min(x1 - 24.0);
-                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
-            }
-        }
-        (Side::Right, Side::Top) => {
-            if x2 >= x1 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
-                vec![(x2, y1)]
-            } else {
-                let x_stub = x1 + STUB_CLEARANCE;
-                let y_stub = (y2 - STUB_CLEARANCE).min(y1 - 24.0);
-                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
-            }
-        }
-        (Side::Bottom, Side::Right) => {
-            if x1 >= x2 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
-                vec![(x1, y2)]
-            } else {
-                let y_stub = y1 + STUB_CLEARANCE;
-                let x_stub = (x2 + STUB_CLEARANCE).max(x1 + 24.0);
-                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
-            }
-        }
+
+        // ── Left → Right  (reverse horizontal) ──────────────────────────────
         (Side::Left, Side::Right) => {
             if (y2 - y1).abs() < 1.5 {
                 vec![]
@@ -1366,69 +1412,255 @@ pub fn compute_edge_waypoints(
                 let cr_x = if corridor_x > 0.0 {
                     corridor_x
                 } else {
-                    (x1 + x2) / 2.0
+                    x1.min(x2) - 32.0
                 };
-                let cr_x = cr_x.min(x1 - STUB_CLEARANCE.min((x1 - x2).abs() * 0.35))
-                               .max(x2 + STUB_CLEARANCE.min((x1 - x2).abs() * 0.35));
+                let cr_x = cr_x.min(x1 - sc).min(x2 - sc);
                 vec![(cr_x, y1), (cr_x, y2)]
             }
         }
+
+        // ── Up → Down  (back-edge) ────────────────────────────────────────────
         (Side::Top, Side::Bottom) => {
             if (x2 - x1).abs() < 1.5 {
                 vec![]
             } else {
-                let ch_y = if channel_y > 0.0 {
-                    channel_y
-                } else {
-                    (y1 + y2) / 2.0
-                };
-                let ch_y = ch_y.min(y1 - STUB_CLEARANCE.min((y1 - y2).abs() * 0.35))
-                               .max(y2 + STUB_CLEARANCE.min((y1 - y2).abs() * 0.35));
+                let ch_y = if channel_y > 0.0 { channel_y } else { (y1 + y2) / 2.0 };
+                let ch_y = ch_y.min(y1 - sc).max(y2 + sc);
                 vec![(x1, ch_y), (x2, ch_y)]
             }
         }
+
+        // ── Bottom → Left  (turn right-down-left) ────────────────────────────
+        (Side::Bottom, Side::Left) => {
+            if x2 >= x1 + sc && y2 >= y1 + sc {
+                // Clean L-bend: one corner
+                vec![(x1, y2)]
+            } else {
+                let y_stub = y1 + sc;
+                let x_stub = (x2 - sc).min(x1 - 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+
+        // ── Bottom → Right  (turn left-down-right) ───────────────────────────
+        (Side::Bottom, Side::Right) => {
+            if x1 >= x2 + sc && y2 >= y1 + sc {
+                vec![(x1, y2)]
+            } else {
+                let y_stub = y1 + sc;
+                let x_stub = (x2 + sc).max(x1 + 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+
+        // ── Top → Left ────────────────────────────────────────────────────────
         (Side::Top, Side::Left) => {
-            let y_stub = y1 - STUB_CLEARANCE;
-            if x2 >= x1 + STUB_CLEARANCE && y2 <= y_stub {
+            let y_stub = y1 - sc;
+            if x2 >= x1 + sc && y2 <= y_stub {
                 vec![(x1, y2)]
             } else {
-                let x_stub = (x2 - STUB_CLEARANCE).min(x1 - 24.0);
+                let x_stub = (x2 - sc).min(x1 - 24.0);
                 vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
             }
         }
+
+        // ── Top → Right ───────────────────────────────────────────────────────
         (Side::Top, Side::Right) => {
-            let y_stub = y1 - STUB_CLEARANCE;
-            if x1 >= x2 + STUB_CLEARANCE && y2 <= y_stub {
+            let y_stub = y1 - sc;
+            if x1 >= x2 + sc && y2 <= y_stub {
                 vec![(x1, y2)]
             } else {
-                let x_stub = (x2 + STUB_CLEARANCE).max(x1 + 24.0);
+                let x_stub = (x2 + sc).max(x1 + 24.0);
                 vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
             }
         }
+
+        // ── Right → Top ───────────────────────────────────────────────────────
+        (Side::Right, Side::Top) => {
+            if x2 >= x1 + sc && y2 >= y1 + sc {
+                vec![(x2, y1)]
+            } else {
+                let x_stub = x1 + sc;
+                let y_stub = (y2 - sc).min(y1 - 24.0);
+                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
+            }
+        }
+
+        // ── Left → Top ────────────────────────────────────────────────────────
         (Side::Left, Side::Top) => {
-            let x_stub = x1 - STUB_CLEARANCE;
-            if x1 >= x2 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
+            let x_stub = x1 - sc;
+            if x1 >= x2 + sc && y2 >= y1 + sc {
                 vec![(x2, y1)]
             } else {
-                let y_stub = (y2 - STUB_CLEARANCE).min(y1 - 24.0);
+                let y_stub = (y2 - sc).min(y1 - 24.0);
                 vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
             }
         }
+
+        // ── Left → Bottom ─────────────────────────────────────────────────────
         (Side::Left, Side::Bottom) => {
-            let x_stub = x1 - STUB_CLEARANCE;
-            if x1 >= x2 + STUB_CLEARANCE && y1 >= y2 + STUB_CLEARANCE {
+            let x_stub = x1 - sc;
+            if x1 >= x2 + sc && y1 >= y2 + sc {
                 vec![(x2, y1)]
             } else {
-                let y_stub = (y2 + STUB_CLEARANCE).max(y1 + 24.0);
+                let y_stub = (y2 + sc).max(y1 + 24.0);
                 vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
             }
         }
+
+        // ── Right → Bottom ────────────────────────────────────────────────────
+        (Side::Right, Side::Bottom) => {
+            if x1 >= x2 + sc && y1 >= y2 + sc {
+                vec![(x2, y1)]
+            } else {
+                let x_stub = x1 + sc;
+                let y_stub = (y2 + sc).max(y1 + 24.0);
+                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
+            }
+        }
+
+        // ── Same-side exit/entry  (e.g. Right→Right, Bottom→Bottom) ──────────
         _ => {
             let ym = (y1 + y2) / 2.0;
             vec![(x1, ym), (x2, ym)]
         }
     }
 }
+
+/// Check whether a polyline p1 → waypoints → p2 passes through any obstacle.
+/// Returns the index of the first clipping waypoint-segment, or None.
+fn first_clipping_segment(
+    p1: (f64, f64),
+    waypoints: &[(f64, f64)],
+    p2: (f64, f64),
+    obstacles: &[ObstacleRect],
+) -> Option<usize> {
+    let mut all_pts = Vec::with_capacity(waypoints.len() + 2);
+    all_pts.push(p1);
+    all_pts.extend_from_slice(waypoints);
+    all_pts.push(p2);
+
+    for (i, w) in all_pts.windows(2).enumerate() {
+        let (ax, ay) = w[0];
+        let (bx, by) = w[1];
+        for obs in obstacles {
+            if obs.clips_segment(ax, ay, bx, by, 6.0) {
+                return Some(i);
+            }
+        }
+    }
+    None
+}
+
+/// Compute collision-free, isolated orthogonal waypoints between start point and end point.
+///
+/// Algorithm:
+/// 1. Generate ideal waypoints for the face-pair (with guaranteed STUB_CLEARANCE stubs).
+/// 2. Check each segment of the ideal path against the obstacle list.
+/// 3. If any segment clips an obstacle, add bypass legs that route the offending segment
+///    around the obstacle via open whitespace (choosing the less-blocked side).
+/// 4. Repeat up to 3 times to handle cascading obstacles.
+pub fn compute_edge_waypoints(
+    p1: (f64, f64),
+    src_side: Side,
+    p2: (f64, f64),
+    dst_side: Side,
+    channel_y: f64,
+    corridor_x: f64,
+) -> Vec<(f64, f64)> {
+    compute_edge_waypoints_with_obstacles(p1, src_side, p2, dst_side, channel_y, corridor_x, &[])
+}
+
+/// Full obstacle-aware variant of `compute_edge_waypoints`.
+pub fn compute_edge_waypoints_with_obstacles(
+    p1: (f64, f64),
+    src_side: Side,
+    p2: (f64, f64),
+    dst_side: Side,
+    channel_y: f64,
+    corridor_x: f64,
+    obstacles: &[ObstacleRect],
+) -> Vec<(f64, f64)> {
+    // Phase 1: ideal analytical waypoints
+    let mut waypoints = ideal_waypoints_for_faces(p1, src_side, p2, dst_side, channel_y, corridor_x);
+
+    if obstacles.is_empty() {
+        return waypoints;
+    }
+
+    // Phase 2: iterative obstacle bypass (max 3 passes to avoid infinite loops)
+    for _pass in 0..3 {
+        let Some(clip_seg) = first_clipping_segment(p1, &waypoints, p2, obstacles) else {
+            break; // No more clipping segments — done
+        };
+
+        // Reconstruct the full point list so we can address the clipping segment
+        let mut all_pts = Vec::with_capacity(waypoints.len() + 2);
+        all_pts.push(p1);
+        all_pts.extend_from_slice(&waypoints);
+        all_pts.push(p2);
+
+        let (ax, ay) = all_pts[clip_seg];
+        let (bx, by) = all_pts[clip_seg + 1];
+
+        // Find the clipping obstacle (first one that clips this segment)
+        let clipping_obs = obstacles.iter().find(|obs| obs.clips_segment(ax, ay, bx, by, 6.0));
+        let Some(obs) = clipping_obs else { break; };
+
+        // Compute two bypass options: go above/left of obstacle or below/right
+        let bypass = if (ay - by).abs() < 0.5 {
+            // Horizontal segment — route above or below
+            let above_y = obs.y - STUB_CLEARANCE;
+            let below_y = obs.y + obs.h + STUB_CLEARANCE;
+            let mid_x = (ax + bx) / 2.0;
+
+            // Choose side closer to channel_y hint, or less occupied
+            let use_above = if channel_y > 0.0 {
+                (above_y - channel_y).abs() < (below_y - channel_y).abs()
+            } else {
+                above_y.abs() < below_y.abs()
+            };
+            let det_y = if use_above { above_y } else { below_y };
+            vec![(ax, det_y), (mid_x, det_y), (bx, det_y)]
+        } else {
+            // Vertical segment — route left or right
+            let left_x = obs.x - STUB_CLEARANCE;
+            let right_x = obs.x + obs.w + STUB_CLEARANCE;
+            let mid_y = (ay + by) / 2.0;
+
+            let use_left = if corridor_x > 0.0 {
+                (left_x - corridor_x).abs() < (right_x - corridor_x).abs()
+            } else {
+                // Prefer whichever side is further from the centre of the diagram
+                left_x < right_x
+            };
+            let det_x = if use_left { left_x } else { right_x };
+            vec![(det_x, ay), (det_x, mid_y), (det_x, by)]
+        };
+
+        // Rebuild waypoints: keep segments before clip_seg, inject bypass, keep segments after
+        // clip_seg+1 in all_pts corresponds to waypoint index clip_seg-1 (since all_pts[0]=p1)
+        let mut new_wps: Vec<(f64, f64)> = Vec::new();
+        // Points between p1 (index 0) and clip_seg (exclusive) that are waypoints:
+        if clip_seg > 1 {
+            new_wps.extend(all_pts[1..clip_seg].iter().copied());
+        }
+
+        // Inject bypass legs (skip first and last as they coincide with segment endpoints)
+        new_wps.extend_from_slice(&bypass);
+        // Points after clip_seg+1 up to but excluding p2 (last index):
+        let tail_start = clip_seg + 2;
+        let tail_end = all_pts.len() - 1;
+        if tail_start < tail_end {
+            new_wps.extend(all_pts[tail_start..tail_end].iter().copied());
+        }
+        waypoints = new_wps;
+    }
+
+    waypoints
+}
+
+
 
 /// Compute an orthogonal SVG path with smooth fillet corners (R = 8px) passing through all waypoints.
 /// Returns `(path_d, label_center_x, label_center_y)`.

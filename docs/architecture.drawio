@@ -53,32 +53,31 @@
         <mxCell id="analytics_lake" value="&lt;table style=&quot;width:100%;height:100%;border-collapse:collapse;font-family:Inter,Helvetica,sans-serif;&quot;&gt;&lt;tr style=&quot;background:#f1f5f9;&quot;&gt;&lt;td colspan=&quot;2&quot; style=&quot;padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:center;color:#0f172a;font-size:12px;&quot;&gt;&lt;b&gt;&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMTNhYTUyIiBkPSJNMTIgMkMxMS41IDIuNyA3IDggNyAxMy4yYzAgMy44IDIuMyA2LjggNSA3LjhWMy41YzAtLjYuNC0xLjEgMC0xLjV6Ii8+PHBhdGggZmlsbD0iIzAwNjg0YSIgZD0iTTEyIDJjLjUuNyA1IDYgNSAxMS4yIDAgMy44LTIuMyA2LjgtNSA3LjhWMy41YzAtLjYtLjQtMS4xIDAtMS41eiIvPjwvc3ZnPg==&quot; width=&quot;14&quot; height=&quot;14&quot; style=&quot;vertical-align:middle;margin-right:4px;display:inline-block;&quot;/&gt;Analytics Lakehouse&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;border-bottom:1px solid #e2e8f0;&quot;&gt;&lt;td  style=&quot;padding:2px 8px;text-align:left;font-family:JetBrains Mono,monospace;font-size:10px;font-weight:bold;color:#d97706;&quot;&gt;id&lt;/td&gt;&lt;td style=&quot;padding:2px 8px;text-align:right;color:#64748b;font-size:10px;font-family:monospace;&quot;&gt;ObjectId [PK]&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;border-bottom:1px solid #e2e8f0;&quot;&gt;&lt;td  style=&quot;padding:2px 8px;text-align:left;font-family:JetBrains Mono,monospace;font-size:10px;color:#0f172a;&quot;&gt;event_type&lt;/td&gt;&lt;td style=&quot;padding:2px 8px;text-align:right;color:#64748b;font-size:10px;font-family:monospace;&quot;&gt;STRING&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;border-bottom:1px solid #e2e8f0;&quot;&gt;&lt;td  style=&quot;padding:2px 8px;text-align:left;font-family:JetBrains Mono,monospace;font-size:10px;color:#0f172a;&quot;&gt;payload&lt;/td&gt;&lt;td style=&quot;padding:2px 8px;text-align:right;color:#64748b;font-size:10px;font-family:monospace;&quot;&gt;BSON&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;strokeColor=#0284c7;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=16;spacingBottom=6;spacingLeft=8;spacingRight=8;;spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;" vertex="1" parent="grp_persistence">
           <mxGeometry x="468" y="99" width="160" height="70" as="geometry"/>
         </mxCell>
-        <mxCell id="e_web_client_api_gateway" value="HTTPS / REST" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.2;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="web_client" target="api_gateway" parent="1">
+        <mxCell id="e_web_client_api_gateway" value="HTTPS / REST" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="web_client" target="api_gateway" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="384.0" y="143.0"/>
-              <mxPoint x="384.0" y="119.0"/>
-              <mxPoint x="305.0" y="119.0"/>
+              <mxPoint x="279.0" y="192.0"/>
+              <mxPoint x="249.0" y="192.0"/>
+              <mxPoint x="249.0" y="237.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_mobile_app_api_gateway" value="HTTPS / GraphQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.8;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="mobile_app" target="api_gateway" parent="1">
+        <mxCell id="e_mobile_app_api_gateway" value="HTTPS / GraphQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="mobile_app" target="api_gateway" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="372.0" y="143.0"/>
-              <mxPoint x="372.0" y="119.0"/>
-              <mxPoint x="401.0" y="119.0"/>
+              <mxPoint x="452.0" y="192.0"/>
+              <mxPoint x="476.0" y="192.0"/>
+              <mxPoint x="476.0" y="237.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_api_gateway_auth_svc" value="gRPC: ValidateToken" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_gateway" target="auth_svc" parent="1">
+        <mxCell id="e_api_gateway_auth_svc" value="gRPC: ValidateToken" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_gateway" target="auth_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="353.0" y="282.0"/>
-              <mxPoint x="378.0" y="282.0"/>
-              <mxPoint x="378.0" y="439.0"/>
+              <mxPoint x="353.0" y="338.0"/>
+              <mxPoint x="293.0" y="338.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -86,37 +85,37 @@
         <mxCell id="e_api_gateway_order_svc" value="gRPC: CreateOrder" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.0;exitY=0.5;exitDx=0;exitDy=0;entryX=1.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_gateway" target="order_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="236.5" y="237.0"/>
-              <mxPoint x="236.5" y="439.0"/>
+              <mxPoint x="176.0" y="237.0"/>
+              <mxPoint x="176.0" y="439.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_order_svc_payment_svc" value="POST /v1/charge" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.1;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="payment_svc" parent="1">
+        <mxCell id="e_order_svc_payment_svc" value="POST /v1/charge" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.1;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="payment_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="220.0" y="419.0"/>
-              <mxPoint x="220.0" y="395.0"/>
-              <mxPoint x="209.0" y="395.0"/>
+              <mxPoint x="74.0" y="533.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_order_svc_event_bus" value="emit OrderCreated" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.9;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="event_bus" parent="1">
+        <mxCell id="e_order_svc_event_bus" value="emit OrderCreated" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1.0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="event_bus" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="425.5" y="459.0"/>
-              <mxPoint x="425.5" y="439.0"/>
+              <mxPoint x="200.0" y="488.0"/>
+              <mxPoint x="425.5" y="488.0"/>
+              <mxPoint x="651.0" y="488.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_order_svc_orders_db" value="INSERT / COMMIT" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="orders_db" parent="1">
+        <mxCell id="e_order_svc_orders_db" value="INSERT / COMMIT" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.9;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="order_svc" target="orders_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="130.0" y="484.0"/>
-              <mxPoint x="36.0" y="484.0"/>
-              <mxPoint x="36.0" y="790.0"/>
+              <mxPoint x="115.0" y="464.0"/>
+              <mxPoint x="115.0" y="525.5"/>
+              <mxPoint x="115.0" y="587.0"/>
+              <mxPoint x="161.0" y="587.0"/>
             </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
@@ -130,8 +129,12 @@
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_event_bus_analytics_worker" value="consume partitions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="event_bus" target="analytics_worker" parent="1">
+        <mxCell id="e_event_bus_analytics_worker" value="consume partitions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1.0;exitDx=0;exitDy=0;entryX=0.5;entryY=1.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="event_bus" target="analytics_worker" parent="1">
           <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="716.0" y="511.0"/>
+              <mxPoint x="716.0" y="511.0"/>
+            </Array>
             <mxPoint y="-10" as="offset"/>
           </mxGeometry>
         </mxCell>
