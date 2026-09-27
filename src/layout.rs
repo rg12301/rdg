@@ -22,15 +22,15 @@ use crate::graph::CompiledGraph;
 // ---------------------------------------------------------------------------
 
 /// Horizontal internal padding for group containers.
-pub const GROUP_PAD_H: f64 = 24.0;
+pub const GROUP_PAD_H: f64 = 32.0;
 /// Top internal padding for group containers (space for group title header).
-pub const GROUP_PAD_TOP: f64 = 36.0;
+pub const GROUP_PAD_TOP: f64 = 54.0;
 /// Bottom internal padding for group containers.
-pub const GROUP_PAD_BOT: f64 = 24.0;
+pub const GROUP_PAD_BOT: f64 = 32.0;
 /// Horizontal gap between group containers.
-pub const GROUP_GAP_X: f64 = 48.0;
+pub const GROUP_GAP_X: f64 = 64.0;
 /// Vertical gap between group containers.
-pub const GROUP_GAP_Y: f64 = 40.0;
+pub const GROUP_GAP_Y: f64 = 64.0;
 /// Canvas top-left margin X.
 pub const MARGIN_X: f64 = 24.0;
 /// Canvas top-left margin Y.
@@ -81,8 +81,8 @@ pub struct LayoutConfig {
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            rank_spacing: 44,
-            node_spacing: 28,
+            rank_spacing: 52,
+            node_spacing: 36,
             node_width: 120.0,
             node_height: 44.0,
             direction: LayoutDirection::TopToBottom,

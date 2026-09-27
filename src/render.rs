@@ -944,6 +944,7 @@ pub struct EdgeRoutingPlan {
     pub exit_port: f64,
     pub entry_port: f64,
     pub channel_y: f64,
+    pub corridor_x: f64,
 }
 
 /// Computes intelligent, obstacle-aware routing plans for all edges in the graph.
@@ -952,6 +953,7 @@ pub struct EdgeRoutingPlan {
 /// 1. Group title collision avoidance (enters Side::Left or Side::Right instead of cutting title banners).
 /// 2. Port sorting monotonically by target entry coordinates (zero self-crossings among siblings).
 /// 3. Multi-channel corridor staggering (parallel horizontal segments have dedicated channels, zero overlapping lines).
+/// 4. Obstacle-aware vertical corridor allocation (prevents lines from routing through intermediate components).
 pub fn plan_all_edge_routes(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
@@ -1085,17 +1087,85 @@ pub fn plan_all_edge_routes(
         }
     }
 
+    // Protect all group title banners: if any horizontal segment intersects a container title banner,
+    // shift channel_y above the container to preserve header legibility.
+    for (edge_idx, ch_y) in channel_y_map.iter_mut() {
+        let (src, dst) = compiled.graph.edge_endpoints(*edge_idx).unwrap();
+        let edge_data = &compiled.graph[*edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+
+        let x_span_min = src_nl.x.min(dst_nl.x);
+        let x_span_max = (src_nl.x + src_nl.width).max(dst_nl.x + dst_nl.width);
+
+        for tz in &title_zones {
+            if x_span_max >= tz.min_x
+                && x_span_min <= tz.max_x + 60.0
+                && *ch_y >= tz.min_y - 8.0
+                && *ch_y <= tz.max_y + 12.0
+            {
+                *ch_y = tz.min_y - 16.0;
+            }
+        }
+    }
+
+    // Step 5: Obstacle-aware vertical corridor allocation for horizontal transitions
+    let mut corridor_x_map: HashMap<petgraph::stable_graph::EdgeIndex, f64> = HashMap::new();
+    for (&edge_idx, &(src_side, dst_side)) in &initial_sides {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+
+        if (src_side == Side::Right && dst_side == Side::Left)
+            || (src_side == Side::Left && dst_side == Side::Right)
+        {
+            let x1 = if src_side == Side::Right { src_nl.x + src_nl.width } else { src_nl.x };
+            let x2 = if dst_side == Side::Left { dst_nl.x } else { dst_nl.x + dst_nl.width };
+            let y1 = src_nl.y + src_nl.height * 0.5;
+            let y2 = dst_nl.y + dst_nl.height * 0.5;
+            let y_min = y1.min(y2);
+            let y_max = y1.max(y2);
+
+            let mut best_x = (x1 + x2) / 2.0;
+
+            // Check if best_x collides with any intermediate node in the vertical span
+            for (other_idx, other_nl) in &layout.positions {
+                if *other_idx == s_idx || *other_idx == d_idx {
+                    continue;
+                }
+                if (other_nl.x - 12.0..=other_nl.x + other_nl.width + 12.0).contains(&best_x)
+                    && other_nl.y + other_nl.height >= y_min
+                    && other_nl.y <= y_max
+                {
+                    // Obstacle detected! Shift into the open white space to the right of the obstacle
+                    let right_candidate = other_nl.x + other_nl.width + 24.0;
+                    if x2 > x1 && right_candidate < x2 - 12.0 {
+                        best_x = right_candidate;
+                    } else if x2 > x1 {
+                        best_x = (other_nl.x - 24.0).max(x1 + 12.0);
+                    }
+                }
+            }
+            corridor_x_map.insert(edge_idx, best_x);
+        }
+    }
+
     let mut plans = HashMap::new();
     for (edge_idx, (src_side, dst_side)) in initial_sides {
         let exit_port = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let entry_port = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let channel_y = channel_y_map.get(&edge_idx).copied().unwrap_or(0.0);
+        let corridor_x = corridor_x_map.get(&edge_idx).copied().unwrap_or(0.0);
         plans.insert(edge_idx, EdgeRoutingPlan {
             src_side,
             dst_side,
             exit_port,
             entry_port,
             channel_y,
+            corridor_x,
         });
     }
 
@@ -1106,14 +1176,15 @@ pub fn plan_all_edge_routes(
 /// Returns `(path_d, label_center_x, label_center_y)`.
 /// Places label at the midpoint of the horizontal corridor away from bends and crossings.
 fn build_orthogonal_svg_path(
-    x1: f64,
-    y1: f64,
+    p1: (f64, f64),
     src_side: Side,
-    x2: f64,
-    y2: f64,
+    p2: (f64, f64),
     dst_side: Side,
     channel_y: f64,
+    corridor_x: f64,
 ) -> (String, f64, f64) {
+    let (x1, y1) = p1;
+    let (x2, y2) = p2;
     match (src_side, dst_side) {
         (Side::Bottom, Side::Top) => {
             if (x2 - x1).abs() < 1.5 {
@@ -1232,7 +1303,7 @@ fn build_orthogonal_svg_path(
                     y1,
                 )
             } else {
-                let xmid = (x1 + x2) / 2.0;
+                let xmid = if corridor_x > 0.0 { corridor_x } else { (x1 + x2) / 2.0 };
                 let r = 8.0_f64
                     .min((xmid - x1).abs() / 2.0)
                     .min((y2 - y1).abs() / 2.0)
@@ -1286,9 +1357,9 @@ fn build_orthogonal_svg_path(
 #[allow(dead_code)]
 fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
     if is_horizontal {
-        build_orthogonal_svg_path(x1, y1, Side::Right, x2, y2, Side::Left, (y1 + y2) / 2.0)
+        build_orthogonal_svg_path((x1, y1), Side::Right, (x2, y2), Side::Left, (y1 + y2) / 2.0, (x1 + x2) / 2.0)
     } else {
-        build_orthogonal_svg_path(x1, y1, Side::Bottom, x2, y2, Side::Top, (y1 + y2) / 2.0)
+        build_orthogonal_svg_path((x1, y1), Side::Bottom, (x2, y2), Side::Top, (y1 + y2) / 2.0, (x1 + x2) / 2.0)
     }
 }
 
@@ -2770,7 +2841,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             };
         }
 
-        let (path_d, lx, ly) = build_orthogonal_svg_path(x1, y1, src_side, x2, y2, dst_side, channel_y);
+        let corridor_x = plan.map(|p| p.corridor_x).unwrap_or(0.0);
+        let (path_d, lx, ly) = build_orthogonal_svg_path((x1, y1), src_side, (x2, y2), dst_side, channel_y, corridor_x);
 
         let mut path = BytesStart::new("path");
         path.push_attribute(("d", path_d.as_str()));
@@ -2803,8 +2875,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
     // Pass 2: Render all edge labels on top of all paths to guarantee zero line collisions
     for el in pending_labels {
         let char_count = el.text.chars().count();
-        let pill_w = (char_count as f64 * 6.5 + 12.0).max(22.0);
-        let pill_h = 16.0;
+        let pill_w = (char_count as f64 * 6.5 + 8.0).max(20.0);
+        let pill_h = 14.0;
         let pill_x = el.lx - pill_w / 2.0;
         let pill_y = el.ly - pill_h / 2.0;
 
@@ -2813,11 +2885,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         pill.push_attribute(("y", format!("{pill_y:.1}").as_str()));
         pill.push_attribute(("width", format!("{pill_w:.1}").as_str()));
         pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
-        pill.push_attribute(("rx", "4"));
-        pill.push_attribute(("ry", "4"));
-        pill.push_attribute(("fill", if is_dark { "#1e293b" } else { "#ffffff" }));
-        pill.push_attribute(("stroke", if is_dark { "#475569" } else { "#cbd5e1" }));
-        pill.push_attribute(("stroke-width", "1.0"));
+        // Clean text cutout background with NO border box!
+        pill.push_attribute(("fill", if is_dark { "#0f172a" } else { "#f8fafc" }));
         w.write_event(Event::Empty(pill))?;
 
         let mut text = BytesStart::new("text");
@@ -2827,7 +2896,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         text.push_attribute(("font-size", "10"));
         text.push_attribute(("font-weight", "500"));
-        text.push_attribute(("fill", if is_dark { "#f1f5f9" } else { "#334155" }));
+        text.push_attribute(("fill", if is_dark { "#94a3b8" } else { "#475569" }));
         w.write_event(Event::Start(text))?;
         w.write_event(Event::Text(BytesText::new(&el.text)))?;
         w.write_event(Event::End(BytesEnd::new("text")))?;

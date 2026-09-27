@@ -495,6 +495,15 @@ struct Cli {
                        rdg --schema > schema.json"
     )]
     schema: bool,
+
+    /// SVG export engine when writing .svg files: 'auto' (use draw.io CLI if available, else native),
+    /// 'drawio' (require exact draw.io export), or 'native' (pure-Rust SVG renderer).
+    #[arg(
+        long,
+        default_value = "auto",
+        help = "SVG export engine: 'auto' (draw.io CLI if available, else native), 'drawio', or 'native'"
+    )]
+    svg_engine: String,
 }
 
 /// Diagram flow direction.
@@ -584,17 +593,89 @@ fn main() -> Result<()> {
 
     // --- 5. Render ----------------------------------------------------------
     let output_path = Path::new(&cli.output);
-    let content = match output_path.extension().and_then(|e| e.to_str()) {
-        Some("svg") => render_svg(&compiled, &layout_result, theme)
-            .context("SVG rendering failed")?,
-        _ => render_drawio(&compiled, &layout_result, theme)
-            .context("draw.io XML rendering failed")?,
-    };
+    let is_svg = output_path.extension().and_then(|e| e.to_str()) == Some("svg");
 
-    // --- 6. Write output file -----------------------------------------------
-    fs::write(&cli.output, content)
-        .with_context(|| format!("failed to write output to '{}'", cli.output))?;
+    if is_svg {
+        let drawio_xml = render_drawio(&compiled, &layout_result, theme)
+            .context("draw.io XML rendering failed")?;
+
+        let mut rendered_exact_drawio = false;
+        if cli.svg_engine != "native" {
+            if let Some(()) = try_export_svg_via_drawio_cli(&drawio_xml, output_path, theme) {
+                rendered_exact_drawio = true;
+            }
+        }
+
+        if !rendered_exact_drawio {
+            if cli.svg_engine == "drawio" {
+                anyhow::bail!("Exact draw.io export was requested (--svg-engine=drawio), but drawio CLI is not installed or failed");
+            }
+            let svg_content = render_svg(&compiled, &layout_result, theme)
+                .context("SVG rendering failed")?;
+            fs::write(&cli.output, svg_content)
+                .with_context(|| format!("failed to write output to '{}'", cli.output))?;
+        } else {
+            eprintln!("✓ Rendered exact draw.io SVG export via drawio CLI");
+        }
+    } else {
+        let content = render_drawio(&compiled, &layout_result, theme)
+            .context("draw.io XML rendering failed")?;
+        fs::write(&cli.output, content)
+            .with_context(|| format!("failed to write output to '{}'", cli.output))?;
+    }
 
     eprintln!("✓ Diagram written to {}", cli.output);
     Ok(())
+}
+
+/// Attempts to export exact draw.io SVG using the drawio desktop CLI if available in PATH or Applications.
+fn try_export_svg_via_drawio_cli(drawio_xml: &str, output_path: &Path, theme: &str) -> Option<()> {
+    let candidates = [
+        "drawio",
+        "/opt/homebrew/bin/drawio",
+        "/Applications/draw.io.app/Contents/MacOS/draw.io",
+    ];
+
+    let mut temp_path = std::env::temp_dir();
+    let unique_id = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(12345);
+    temp_path.push(format!("rdg_export_{unique_id}.drawio"));
+
+    fs::write(&temp_path, drawio_xml).ok()?;
+
+    let theme_arg = if theme == "dark" { "dark" } else { "light" };
+
+    let mut exported = false;
+    for cmd in candidates {
+        let status = std::process::Command::new(cmd)
+            .arg("-x")
+            .arg("-f")
+            .arg("svg")
+            .arg("-e")
+            .arg("--embed-svg-fonts")
+            .arg("true")
+            .arg("--theme")
+            .arg(theme_arg)
+            .arg("-o")
+            .arg(output_path)
+            .arg(&temp_path)
+            .status();
+
+        if let Ok(s) = status {
+            if s.success() && output_path.exists() {
+                exported = true;
+                break;
+            }
+        }
+    }
+
+    let _ = fs::remove_file(&temp_path);
+
+    if exported {
+        Some(())
+    } else {
+        None
+    }
 }
