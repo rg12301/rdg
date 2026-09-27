@@ -875,7 +875,9 @@ pub fn compute_group_title_zones(
     zones
 }
 
-/// Determines the exit side and entry side for an edge, avoiding group title collisions.
+/// Determines the exit side and entry side for an edge, evaluating Euclidean face distance
+/// as the starting candidate, while adjusting for geometric flow, obstacle avoidance,
+/// and container title banners.
 pub fn choose_edge_sides(
     src_nl: &crate::layout::NodeLayout,
     src_id: &str,
@@ -891,52 +893,130 @@ pub fn choose_edge_sides(
         return (s, d);
     }
 
-    // Check if target is inside a group whose title banner would be intersected by an edge from outside
-    for tz in title_zones {
-        if tz.node_ids.contains(dst_id) && !tz.node_ids.contains(src_id) {
-            // Source is above or near top of group
-            if src_nl.y + src_nl.height <= tz.max_y + 20.0 {
-                // If entering Top would cross the title banner [tz.min_x - 10, tz.max_x + 10]
-                if dst_nl.x <= tz.max_x + 20.0 {
-                    let d_side = if let Some(d) = explicit_dst {
-                        d
-                    } else if src_nl.x + src_nl.width * 0.5 <= dst_nl.x + dst_nl.width * 0.5 {
-                        Side::Left
-                    } else {
-                        Side::Right
-                    };
-                    let s_side = explicit_src.unwrap_or(Side::Bottom);
-                    return (s_side, d_side);
+    let src_cx = src_nl.x + src_nl.width * 0.5;
+    let src_cy = src_nl.y + src_nl.height * 0.5;
+    let dst_cx = dst_nl.x + dst_nl.width * 0.5;
+    let dst_cy = dst_nl.y + dst_nl.height * 0.5;
+
+    let src_faces = [
+        (Side::Bottom, (src_cx, src_nl.y + src_nl.height)),
+        (Side::Right, (src_nl.x + src_nl.width, src_cy)),
+        (Side::Top, (src_cx, src_nl.y)),
+        (Side::Left, (src_nl.x, src_cy)),
+    ];
+
+    let dst_faces = [
+        (Side::Top, (dst_cx, dst_nl.y)),
+        (Side::Left, (dst_nl.x, dst_cy)),
+        (Side::Bottom, (dst_cx, dst_nl.y + dst_nl.height)),
+        (Side::Right, (dst_nl.x + dst_nl.width, dst_cy)),
+    ];
+
+    let mut best_pair = (Side::Bottom, Side::Top);
+    let mut best_score = f64::MAX;
+
+    for &(s_side, s_pt) in &src_faces {
+        if let Some(es) = explicit_src {
+            if es != s_side {
+                continue;
+            }
+        }
+        for &(d_side, d_pt) in &dst_faces {
+            if let Some(ed) = explicit_dst {
+                if ed != d_side {
+                    continue;
                 }
+            }
+
+            let dx = d_pt.0 - s_pt.0;
+            let dy = d_pt.1 - s_pt.1;
+            let dist = (dx * dx + dy * dy).sqrt();
+
+            let mut penalty = 0.0_f64;
+
+            // 1. Natural launch direction penalties: avoid sharp 180° backward launch
+            match s_side {
+                Side::Bottom => {
+                    if dst_nl.y + dst_nl.height < src_nl.y {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Top => {
+                    if dst_nl.y > src_nl.y + src_nl.height {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Right => {
+                    if dst_nl.x + dst_nl.width < src_nl.x {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Left => {
+                    if dst_nl.x > src_nl.x + src_nl.width {
+                        penalty += 800.0;
+                    }
+                }
+            }
+
+            // 2. Natural arrival direction penalties
+            match d_side {
+                Side::Top => {
+                    if src_nl.y + src_nl.height > dst_nl.y + 10.0 {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Bottom => {
+                    if src_nl.y < dst_nl.y + dst_nl.height - 10.0 {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Left => {
+                    if src_nl.x + src_nl.width > dst_nl.x + 10.0 {
+                        penalty += 800.0;
+                    }
+                }
+                Side::Right => {
+                    if src_nl.x < dst_nl.x + dst_nl.width - 10.0 {
+                        penalty += 800.0;
+                    }
+                }
+            }
+
+            // 3. Container title banner collision avoidance
+            for tz in title_zones {
+                if tz.node_ids.contains(dst_id)
+                    && !tz.node_ids.contains(src_id)
+                    && src_nl.y + src_nl.height <= tz.max_y + 20.0
+                    && dst_nl.x <= tz.max_x + 20.0
+                    && d_side == Side::Top
+                {
+                    penalty += 15000.0;
+                }
+            }
+
+            // 4. Primary orientation flow bonuses
+            let mut bonus = 0.0_f64;
+            let is_horizontal_flow = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs() * 1.2;
+            let is_vertical_flow = (dst_nl.y - src_nl.y) > (dst_nl.x - src_nl.x).abs() * 1.2;
+
+            if (is_vertical_flow && s_side == Side::Bottom && d_side == Side::Top)
+                || (is_horizontal_flow && s_side == Side::Right && d_side == Side::Left)
+            {
+                bonus += 60.0;
+            }
+
+            let score = dist + penalty - bonus;
+            if score < best_score {
+                best_score = score;
+                best_pair = (s_side, d_side);
             }
         }
     }
 
-    let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
-    let s_side = explicit_src.unwrap_or(if is_horizontal {
-        Side::Right
-    } else if dst_nl.y >= src_nl.y + src_nl.height - 10.0 {
-        Side::Bottom
-    } else if src_nl.y >= dst_nl.y + dst_nl.height - 10.0 {
-        Side::Top
-    } else {
-        Side::Right
-    });
-
-    let d_side = explicit_dst.unwrap_or(if is_horizontal {
-        Side::Left
-    } else if dst_nl.y >= src_nl.y + src_nl.height - 10.0 {
-        Side::Top
-    } else if src_nl.y >= dst_nl.y + dst_nl.height - 10.0 {
-        Side::Bottom
-    } else {
-        Side::Left
-    });
-
-    (s_side, d_side)
+    best_pair
 }
 
-/// Routing plan containing resolved attachment faces, distributed ports, and channel heights.
+/// Routing plan containing resolved attachment faces, distributed ports, channels, and collision-free waypoints.
 #[derive(Debug, Clone)]
 pub struct EdgeRoutingPlan {
     pub src_side: Side,
@@ -945,6 +1025,7 @@ pub struct EdgeRoutingPlan {
     pub entry_port: f64,
     pub channel_y: f64,
     pub corridor_x: f64,
+    pub waypoints: Vec<(f64, f64)>,
 }
 
 /// Computes intelligent, obstacle-aware routing plans for all edges in the graph.
@@ -1155,10 +1236,33 @@ pub fn plan_all_edge_routes(
 
     let mut plans = HashMap::new();
     for (edge_idx, (src_side, dst_side)) in initial_sides {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+
         let exit_port = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
         let entry_port = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
-        let channel_y = channel_y_map.get(&edge_idx).copied().unwrap_or(0.0);
+        let channel_y = channel_y_map.get(&edge_idx).copied().unwrap_or((src_nl.y + dst_nl.y) / 2.0);
         let corridor_x = corridor_x_map.get(&edge_idx).copied().unwrap_or(0.0);
+
+        let (x1, y1) = match src_side {
+            Side::Bottom => (src_nl.x + src_nl.width * exit_port, src_nl.y + src_nl.height),
+            Side::Top => (src_nl.x + src_nl.width * exit_port, src_nl.y),
+            Side::Left => (src_nl.x, src_nl.y + src_nl.height * exit_port),
+            Side::Right => (src_nl.x + src_nl.width, src_nl.y + src_nl.height * exit_port),
+        };
+
+        let (x2, y2) = match dst_side {
+            Side::Top => (dst_nl.x + dst_nl.width * entry_port, dst_nl.y),
+            Side::Bottom => (dst_nl.x + dst_nl.width * entry_port, dst_nl.y + dst_nl.height),
+            Side::Left => (dst_nl.x, dst_nl.y + dst_nl.height * entry_port),
+            Side::Right => (dst_nl.x + dst_nl.width, dst_nl.y + dst_nl.height * entry_port),
+        };
+
+        let waypoints = compute_edge_waypoints((x1, y1), src_side, (x2, y2), dst_side, channel_y, corridor_x);
+
         plans.insert(edge_idx, EdgeRoutingPlan {
             src_side,
             dst_side,
@@ -1166,189 +1270,251 @@ pub fn plan_all_edge_routes(
             entry_port,
             channel_y,
             corridor_x,
+            waypoints,
         });
     }
 
     plans
 }
 
-/// Compute an orthogonal SVG path with rounded fillet corners between two points and their attachment faces.
-/// Returns `(path_d, label_center_x, label_center_y)`.
-/// Places label at the midpoint of the horizontal corridor away from bends and crossings.
-fn build_orthogonal_svg_path(
+/// Minimum straight clearance stub extending perpendicularly from any component face before any bend.
+pub const STUB_CLEARANCE: f64 = 20.0;
+
+/// Compute collision-free, isolated orthogonal waypoints between start point and end point.
+/// Guarantees that:
+/// 1. Arrows travel perpendicularly out of src_side for at least STUB_CLEARANCE before bending.
+/// 2. Arrows approach perpendicularly into dst_side for at least STUB_CLEARANCE after bending.
+/// 3. Turns are isolated, cleanly avoiding intermediate components and sharp turns near vertices.
+pub fn compute_edge_waypoints(
     p1: (f64, f64),
     src_side: Side,
     p2: (f64, f64),
     dst_side: Side,
     channel_y: f64,
     corridor_x: f64,
-) -> (String, f64, f64) {
+) -> Vec<(f64, f64)> {
     let (x1, y1) = p1;
     let (x2, y2) = p2;
+
     match (src_side, dst_side) {
         (Side::Bottom, Side::Top) => {
             if (x2 - x1).abs() < 1.5 {
-                (
-                    format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
-                    x1,
-                    (y1 + y2) / 2.0,
-                )
+                vec![]
+            } else if y2 >= y1 + 36.0 {
+                let min_ch = y1 + STUB_CLEARANCE.min((y2 - y1) * 0.35);
+                let max_ch = y2 - STUB_CLEARANCE.min((y2 - y1) * 0.35);
+                let ch_y = channel_y.max(min_ch).min(max_ch);
+                vec![(x1, ch_y), (x2, ch_y)]
             } else {
-                let r = 8.0_f64
-                    .min((channel_y - y1).abs() / 2.0)
-                    .min((y2 - channel_y).abs() / 2.0)
-                    .min((x2 - x1).abs() / 2.0)
-                    .max(0.0);
-
-                let lx = (x1 + x2) / 2.0;
-                let ly = channel_y;
-
-                if r < 1.0 {
-                    (
-                        format!("M {x1:.1} {y1:.1} L {x1:.1} {channel_y:.1} L {x2:.1} {channel_y:.1} L {x2:.1} {y2:.1}"),
-                        lx,
-                        ly,
-                    )
+                let y_down = y1 + STUB_CLEARANCE;
+                let y_up = y2 - STUB_CLEARANCE;
+                let side_x = if corridor_x > 0.0 {
+                    corridor_x
+                } else if x2 > x1 {
+                    (x1 - 32.0).min(x2 - 32.0)
                 } else {
-                    let y_c1_in = channel_y - r;
-                    let x_c1_out = if x2 > x1 { x1 + r } else { x1 - r };
-                    let x_c2_in = if x2 > x1 { x2 - r } else { x2 + r };
-                    let y_c2_out = channel_y + r;
-
-                    let path = format!(
-                        "M {x1:.1} {y1:.1} \
-                         L {x1:.1} {y_c1_in:.1} \
-                         Q {x1:.1} {channel_y:.1} {x_c1_out:.1} {channel_y:.1} \
-                         L {x_c2_in:.1} {channel_y:.1} \
-                         Q {x2:.1} {channel_y:.1} {x2:.1} {y_c2_out:.1} \
-                         L {x2:.1} {y2:.1}"
-                    );
-                    (path, lx, ly)
-                }
-            }
-        }
-        (Side::Bottom, Side::Left) => {
-            let r = 8.0_f64
-                .min((y2 - y1).abs() / 2.0)
-                .min((x2 - x1).abs() / 2.0)
-                .max(0.0);
-            let lx = if (x2 - x1).abs() >= 40.0 {
-                (x1 + x2) / 2.0
-            } else {
-                x1
-            };
-            let ly = if (x2 - x1).abs() >= 40.0 {
-                y2
-            } else {
-                (y1 + y2) / 2.0
-            };
-
-            if r < 1.0 || x2 <= x1 {
-                (
-                    format!("M {x1:.1} {y1:.1} L {x1:.1} {y2:.1} L {x2:.1} {y2:.1}"),
-                    lx,
-                    ly,
-                )
-            } else {
-                let path = format!(
-                    "M {x1:.1} {y1:.1} \
-                     L {x1:.1} {y_in:.1} \
-                     Q {x1:.1} {y2:.1} {x_out:.1} {y2:.1} \
-                     L {x2:.1} {y2:.1}",
-                    y_in = y2 - r,
-                    x_out = x1 + r,
-                );
-                (path, lx, ly)
-            }
-        }
-        (Side::Bottom, Side::Right) => {
-            let r = 8.0_f64
-                .min((y2 - y1).abs() / 2.0)
-                .min((x1 - x2).abs() / 2.0)
-                .max(0.0);
-            let lx = if (x1 - x2).abs() >= 40.0 {
-                (x1 + x2) / 2.0
-            } else {
-                x1
-            };
-            let ly = if (x1 - x2).abs() >= 40.0 {
-                y2
-            } else {
-                (y1 + y2) / 2.0
-            };
-
-            if r < 1.0 || x1 <= x2 {
-                (
-                    format!("M {x1:.1} {y1:.1} L {x1:.1} {y2:.1} L {x2:.1} {y2:.1}"),
-                    lx,
-                    ly,
-                )
-            } else {
-                let path = format!(
-                    "M {x1:.1} {y1:.1} \
-                     L {x1:.1} {y_in:.1} \
-                     Q {x1:.1} {y2:.1} {x_out:.1} {y2:.1} \
-                     L {x2:.1} {y2:.1}",
-                    y_in = y2 - r,
-                    x_out = x1 - r,
-                );
-                (path, lx, ly)
+                    (x1 + 32.0).max(x2 + 32.0)
+                };
+                vec![(x1, y_down), (side_x, y_down), (side_x, y_up), (x2, y_up)]
             }
         }
         (Side::Right, Side::Left) => {
             if (y2 - y1).abs() < 1.5 {
-                (
-                    format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
-                    (x1 + x2) / 2.0,
-                    y1,
-                )
+                vec![]
+            } else if x2 >= x1 + 36.0 {
+                let min_cr = x1 + STUB_CLEARANCE.min((x2 - x1) * 0.35);
+                let max_cr = x2 - STUB_CLEARANCE.min((x2 - x1) * 0.35);
+                let cr_x = if corridor_x > 0.0 { corridor_x } else { (x1 + x2) / 2.0 };
+                let cr_x = cr_x.max(min_cr).min(max_cr);
+                vec![(cr_x, y1), (cr_x, y2)]
             } else {
-                let xmid = if corridor_x > 0.0 { corridor_x } else { (x1 + x2) / 2.0 };
-                let r = 8.0_f64
-                    .min((xmid - x1).abs() / 2.0)
-                    .min((y2 - y1).abs() / 2.0)
-                    .min((x2 - xmid).abs() / 2.0)
-                    .max(0.0);
-                let lx = xmid;
-                let ly = (y1 + y2) / 2.0;
-
-                if r < 1.0 {
-                    (
-                        format!("M {x1:.1} {y1:.1} L {xmid:.1} {y1:.1} L {xmid:.1} {y2:.1} L {x2:.1} {y2:.1}"),
-                        lx,
-                        ly,
-                    )
+                let cr_x = if corridor_x > 0.0 { corridor_x } else { (x1 + 24.0).max(x2 + 24.0) };
+                vec![(cr_x, y1), (cr_x, y2)]
+            }
+        }
+        (Side::Bottom, Side::Left) => {
+            if x2 >= x1 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
+                vec![(x1, y2)]
+            } else {
+                let y_stub = y1 + STUB_CLEARANCE;
+                let x_stub = (x2 - STUB_CLEARANCE).min(x1 - 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+        (Side::Right, Side::Top) => {
+            if x2 >= x1 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
+                vec![(x2, y1)]
+            } else {
+                let x_stub = x1 + STUB_CLEARANCE;
+                let y_stub = (y2 - STUB_CLEARANCE).min(y1 - 24.0);
+                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
+            }
+        }
+        (Side::Bottom, Side::Right) => {
+            if x1 >= x2 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
+                vec![(x1, y2)]
+            } else {
+                let y_stub = y1 + STUB_CLEARANCE;
+                let x_stub = (x2 + STUB_CLEARANCE).max(x1 + 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+        (Side::Left, Side::Right) => {
+            if (y2 - y1).abs() < 1.5 {
+                vec![]
+            } else {
+                let cr_x = if corridor_x > 0.0 {
+                    corridor_x
                 } else {
-                    let xm_prev = xmid - r;
-                    let xm_next = xmid + r;
-                    let (q1_end_y, q2_start_y) = if y2 > y1 {
-                        (y1 + r, y2 - r)
-                    } else {
-                        (y1 - r, y2 + r)
-                    };
-                    let path = format!(
-                        "M {x1:.1} {y1:.1} \
-                         L {xm_prev:.1} {y1:.1} \
-                         Q {xmid:.1} {y1:.1} {xmid:.1} {q1_end_y:.1} \
-                         L {xmid:.1} {q2_start_y:.1} \
-                         Q {xmid:.1} {y2:.1} {xm_next:.1} {y2:.1} \
-                         L {x2:.1} {y2:.1}"
-                    );
-                    (path, lx, ly)
-                }
+                    (x1 + x2) / 2.0
+                };
+                let cr_x = cr_x.min(x1 - STUB_CLEARANCE.min((x1 - x2).abs() * 0.35))
+                               .max(x2 + STUB_CLEARANCE.min((x1 - x2).abs() * 0.35));
+                vec![(cr_x, y1), (cr_x, y2)]
+            }
+        }
+        (Side::Top, Side::Bottom) => {
+            if (x2 - x1).abs() < 1.5 {
+                vec![]
+            } else {
+                let ch_y = if channel_y > 0.0 {
+                    channel_y
+                } else {
+                    (y1 + y2) / 2.0
+                };
+                let ch_y = ch_y.min(y1 - STUB_CLEARANCE.min((y1 - y2).abs() * 0.35))
+                               .max(y2 + STUB_CLEARANCE.min((y1 - y2).abs() * 0.35));
+                vec![(x1, ch_y), (x2, ch_y)]
+            }
+        }
+        (Side::Top, Side::Left) => {
+            let y_stub = y1 - STUB_CLEARANCE;
+            if x2 >= x1 + STUB_CLEARANCE && y2 <= y_stub {
+                vec![(x1, y2)]
+            } else {
+                let x_stub = (x2 - STUB_CLEARANCE).min(x1 - 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+        (Side::Top, Side::Right) => {
+            let y_stub = y1 - STUB_CLEARANCE;
+            if x1 >= x2 + STUB_CLEARANCE && y2 <= y_stub {
+                vec![(x1, y2)]
+            } else {
+                let x_stub = (x2 + STUB_CLEARANCE).max(x1 + 24.0);
+                vec![(x1, y_stub), (x_stub, y_stub), (x_stub, y2)]
+            }
+        }
+        (Side::Left, Side::Top) => {
+            let x_stub = x1 - STUB_CLEARANCE;
+            if x1 >= x2 + STUB_CLEARANCE && y2 >= y1 + STUB_CLEARANCE {
+                vec![(x2, y1)]
+            } else {
+                let y_stub = (y2 - STUB_CLEARANCE).min(y1 - 24.0);
+                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
+            }
+        }
+        (Side::Left, Side::Bottom) => {
+            let x_stub = x1 - STUB_CLEARANCE;
+            if x1 >= x2 + STUB_CLEARANCE && y1 >= y2 + STUB_CLEARANCE {
+                vec![(x2, y1)]
+            } else {
+                let y_stub = (y2 + STUB_CLEARANCE).max(y1 + 24.0);
+                vec![(x_stub, y1), (x_stub, y_stub), (x2, y_stub)]
             }
         }
         _ => {
-            let ymid = (y1 + y2) / 2.0;
-            let lx = (x1 + x2) / 2.0;
-            let ly = ymid;
-            (
-                format!("M {x1:.1} {y1:.1} L {x1:.1} {ymid:.1} L {x2:.1} {ymid:.1} L {x2:.1} {y2:.1}"),
-                lx,
-                ly,
-            )
+            let ym = (y1 + y2) / 2.0;
+            vec![(x1, ym), (x2, ym)]
         }
     }
+}
+
+/// Compute an orthogonal SVG path with smooth fillet corners (R = 8px) passing through all waypoints.
+/// Returns `(path_d, label_center_x, label_center_y)`.
+/// Places label at the midpoint of the longest segment away from bends and crossings.
+fn build_orthogonal_svg_path(
+    p1: (f64, f64),
+    p2: (f64, f64),
+    waypoints: &[(f64, f64)],
+) -> (String, f64, f64) {
+    let mut all_points = Vec::with_capacity(waypoints.len() + 2);
+    all_points.push(p1);
+    all_points.extend_from_slice(waypoints);
+    all_points.push(p2);
+
+    let n = all_points.len();
+    if n <= 1 {
+        return (String::new(), 0.0, 0.0);
+    }
+    if n == 2 {
+        let (a, b) = (all_points[0], all_points[1]);
+        return (
+            format!("M {:.1} {:.1} L {:.1} {:.1}", a.0, a.1, b.0, b.1),
+            (a.0 + b.0) / 2.0,
+            (a.1 + b.1) / 2.0,
+        );
+    }
+
+    // Identify longest segment for label placement away from corners
+    let mut max_seg_len = -1.0_f64;
+    let mut label_pos = ((all_points[0].0 + all_points[1].0) / 2.0, (all_points[0].1 + all_points[1].1) / 2.0);
+
+    for i in 0..n - 1 {
+        let dx = all_points[i + 1].0 - all_points[i].0;
+        let dy = all_points[i + 1].1 - all_points[i].1;
+        let seg_len = (dx * dx + dy * dy).sqrt();
+        if seg_len > max_seg_len {
+            max_seg_len = seg_len;
+            label_pos = (
+                (all_points[i].0 + all_points[i + 1].0) / 2.0,
+                (all_points[i].1 + all_points[i + 1].1) / 2.0,
+            );
+        }
+    }
+
+    let mut d = format!("M {:.1} {:.1}", all_points[0].0, all_points[0].1);
+    let mut current_pt = all_points[0];
+
+    for i in 1..n - 1 {
+        let prev = current_pt;
+        let corner = all_points[i];
+        let next = all_points[i + 1];
+
+        let d1_x = corner.0 - prev.0;
+        let d1_y = corner.1 - prev.1;
+        let len1 = (d1_x * d1_x + d1_y * d1_y).sqrt();
+
+        let d2_x = next.0 - corner.0;
+        let d2_y = next.1 - corner.1;
+        let len2 = (d2_x * d2_x + d2_y * d2_y).sqrt();
+
+        let r = 8.0_f64.min(len1 / 2.0).min(len2 / 2.0);
+
+        if r < 1.0 || len1 < 1.0 || len2 < 1.0 {
+            d.push_str(&format!(" L {:.1} {:.1}", corner.0, corner.1));
+            current_pt = corner;
+        } else {
+            let u1_x = d1_x / len1;
+            let u1_y = d1_y / len1;
+            let u2_x = d2_x / len2;
+            let u2_y = d2_y / len2;
+
+            let in_pt = (corner.0 - u1_x * r, corner.1 - u1_y * r);
+            let out_pt = (corner.0 + u2_x * r, corner.1 + u2_y * r);
+
+            d.push_str(&format!(
+                " L {:.1} {:.1} Q {:.1} {:.1} {:.1} {:.1}",
+                in_pt.0, in_pt.1, corner.0, corner.1, out_pt.0, out_pt.1
+            ));
+            current_pt = out_pt;
+        }
+    }
+
+    let last = all_points[n - 1];
+    d.push_str(&format!(" L {:.1} {:.1}", last.0, last.1));
+
+    (d, label_pos.0, label_pos.1)
 }
 
 /// Compute an orthogonal SVG path with rounded fillet corners between two points.
@@ -1357,9 +1523,11 @@ fn build_orthogonal_svg_path(
 #[allow(dead_code)]
 fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
     if is_horizontal {
-        build_orthogonal_svg_path((x1, y1), Side::Right, (x2, y2), Side::Left, (y1 + y2) / 2.0, (x1 + x2) / 2.0)
+        let waypoints = compute_edge_waypoints((x1, y1), Side::Right, (x2, y2), Side::Left, (y1 + y2) / 2.0, (x1 + x2) / 2.0);
+        build_orthogonal_svg_path((x1, y1), (x2, y2), &waypoints)
     } else {
-        build_orthogonal_svg_path((x1, y1), Side::Bottom, (x2, y2), Side::Top, (y1 + y2) / 2.0, (x1 + x2) / 2.0)
+        let waypoints = compute_edge_waypoints((x1, y1), Side::Bottom, (x2, y2), Side::Top, (y1 + y2) / 2.0, (x1 + x2) / 2.0);
+        build_orthogonal_svg_path((x1, y1), (x2, y2), &waypoints)
     }
 }
 
@@ -2205,6 +2373,7 @@ pub fn render_drawio(
         let entry_port_frac = plan.map(|p| p.entry_port).unwrap_or(0.5);
         let src_side = plan.map(|p| p.src_side).unwrap_or(Side::Bottom);
         let dst_side = plan.map(|p| p.dst_side).unwrap_or(Side::Top);
+        let waypoints = plan.map(|p| p.waypoints.as_slice()).unwrap_or(&[]);
 
         let exit_attr = match src_side {
             Side::Bottom => format!("exitX={port_frac:.1};exitY=1.0;exitDx=0;exitDy=0;"),
@@ -2311,17 +2480,39 @@ pub fn render_drawio(
         w.write_event(Event::Start(cell))?;
 
         // <mxGeometry relative="1" as="geometry">
+        //   <Array as="points">
+        //     <mxPoint x="..." y="..." />
+        //   </Array>
         //   <mxPoint y="-10" as="offset" />
         // </mxGeometry>
         let mut geo = BytesStart::new("mxGeometry");
         geo.push_attribute(("relative", "1"));
         geo.push_attribute(("as", "geometry"));
-        if !label.is_empty() {
+        if !waypoints.is_empty() || !label.is_empty() {
             w.write_event(Event::Start(geo))?;
-            let mut pt = BytesStart::new("mxPoint");
-            pt.push_attribute(("y", "-10"));
-            pt.push_attribute(("as", "offset"));
-            w.write_event(Event::Empty(pt))?;
+
+            if !waypoints.is_empty() {
+                let mut arr = BytesStart::new("Array");
+                arr.push_attribute(("as", "points"));
+                w.write_event(Event::Start(arr))?;
+
+                for &(wx, wy) in waypoints {
+                    let mut pt = BytesStart::new("mxPoint");
+                    pt.push_attribute(("x", format!("{wx:.1}").as_str()));
+                    pt.push_attribute(("y", format!("{wy:.1}").as_str()));
+                    w.write_event(Event::Empty(pt))?;
+                }
+
+                w.write_event(Event::End(BytesEnd::new("Array")))?;
+            }
+
+            if !label.is_empty() {
+                let mut pt = BytesStart::new("mxPoint");
+                pt.push_attribute(("y", "-10"));
+                pt.push_attribute(("as", "offset"));
+                w.write_event(Event::Empty(pt))?;
+            }
+
             w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
         } else {
             w.write_event(Event::Empty(geo))?;
@@ -2842,7 +3033,9 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         }
 
         let corridor_x = plan.map(|p| p.corridor_x).unwrap_or(0.0);
-        let (path_d, lx, ly) = build_orthogonal_svg_path((x1, y1), src_side, (x2, y2), dst_side, channel_y, corridor_x);
+        let default_wps = compute_edge_waypoints((x1, y1), src_side, (x2, y2), dst_side, channel_y, corridor_x);
+        let waypoints = plan.map(|p| p.waypoints.as_slice()).unwrap_or(&default_wps);
+        let (path_d, lx, ly) = build_orthogonal_svg_path((x1, y1), (x2, y2), waypoints);
 
         let mut path = BytesStart::new("path");
         path.push_attribute(("d", path_d.as_str()));
@@ -4092,5 +4285,74 @@ mod tests {
         assert!(svg.contains("stroke-dasharray=\"8 4\""), "svg must include dashed dasharray");
         assert!(svg.contains("marker-end=\"url(#marker-open-slate)\""), "svg must use open marker");
         assert!(svg.contains("marker-start=\"url(#marker-circle-fill)\""), "svg must use circle marker");
+    }
+
+    #[test]
+    fn test_arrow_shortest_distance_and_clearance_stubs() {
+        let p1 = (100.0, 100.0);
+        let p2 = (300.0, 250.0);
+        let channel_y = 175.0;
+        let corridor_x = 200.0;
+
+        // Downward vertical flow (Side::Bottom, Side::Top)
+        let waypoints = compute_edge_waypoints(p1, Side::Bottom, p2, Side::Top, channel_y, corridor_x);
+        assert_eq!(waypoints.len(), 2, "must produce 2 intermediate waypoints for S-bend");
+        let w1 = waypoints[0];
+        let w2 = waypoints[1];
+
+        // Verify clearance stub: turn must not happen right at start point
+        assert!(
+            (w1.1 - p1.1).abs() >= 18.0,
+            "clearance stub at start must be at least 18px from start face (got {})",
+            (w1.1 - p1.1).abs()
+        );
+        // Verify clearance stub: turn must not happen right at end point
+        assert!(
+            (p2.1 - w2.1).abs() >= 18.0,
+            "clearance stub at end must be at least 18px from destination face (got {})",
+            (p2.1 - w2.1).abs()
+        );
+
+        // Path generation with smooth fillet corners
+        let (svg_d, lx, ly) = build_orthogonal_svg_path(p1, p2, &waypoints);
+        assert!(svg_d.starts_with("M 100.0 100.0"), "must start at p1");
+        assert!(svg_d.contains("Q "), "must use rounded fillet corners");
+        assert!(svg_d.ends_with("300.0 250.0"), "must end at p2");
+        assert!((lx - 200.0).abs() < 2.0, "label should be centered in the horizontal channel");
+        assert!((ly - 175.0).abs() < 2.0, "label should be at channel height");
+    }
+
+    #[test]
+    fn test_arrow_waypoints_emitted_in_drawio_xml() {
+        // Multi-level hierarchy that requires orthogonal bends
+        let payload = DiagramPayload {
+            nodes: vec![
+                NodeDef {
+                    id: "root".to_owned(),
+                    label: "Root Node".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "child".to_owned(),
+                    label: "Child Node Offset".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            edges: vec![crate::schema::EdgeDef {
+                from: "root".to_owned(),
+                to: "child".to_owned(),
+                label: Some("routes through".to_owned()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+
+        // Check that mxGeometry contains waypoints Array if bend is needed
+        assert!(xml.contains("edgeStyle=orthogonalEdgeStyle"), "must use orthogonal edge style");
+        assert!(xml.contains("labelBackgroundColor=#ffffff"), "must have clean borderless label");
     }
 }
