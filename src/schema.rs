@@ -102,6 +102,19 @@ impl DiagramPayload {
         })
     }
 
+    /// Returns the resolved canonical diagram category.
+    /// Values: `"flowchart"`, `"architecture"`, `"sequence"`, `"er"`, `"class"`, `"state"`.
+    pub fn resolved_diagram_type(&self) -> &str {
+        match self.diagram_type.to_ascii_lowercase().trim() {
+            "seq" | "sequence" | "uml_sequence" => "sequence",
+            "er" | "erd" | "database" | "schema" | "relational" => "er",
+            "class" | "uml_class" | "oop" => "class",
+            "state" | "state_machine" | "fsm" => "state",
+            "arch" | "architecture" | "system" => "architecture",
+            _ => "flowchart",
+        }
+    }
+
     /// Returns a complete, production-ready reference YAML template.
     pub fn example_yaml() -> &'static str {
         EXAMPLE_YAML
@@ -188,6 +201,26 @@ pub struct NodeDef {
     /// Optional free-text metadata (e.g. tooltip, annotation).
     #[serde(default, alias = "description", alias = "desc", alias = "tooltip")]
     pub metadata: Option<String>,
+
+    /// Optional list of table columns (for ER diagrams) or class attributes/methods (for UML Class diagrams).
+    #[serde(default, alias = "columns", alias = "attributes", alias = "members_list")]
+    pub fields: Vec<String>,
+
+    /// Optional programming language used to code this component (e.g. `rust`, `go`, `python`, `typescript`).
+    #[serde(default, alias = "lang", alias = "runtime", alias = "code")]
+    pub language: Option<String>,
+
+    /// Optional technology stack or framework subtitle (e.g. `Axum + Tokio`, `FastAPI`, `Spring Boot`).
+    #[serde(default, alias = "tech", alias = "stack", alias = "framework")]
+    pub technology: Option<String>,
+
+    /// Optional database engine (e.g. `postgres`, `mysql`, `redis`, `mongodb`, `dynamodb`).
+    #[serde(default, alias = "database_type", alias = "engine", alias = "db")]
+    pub db_type: Option<String>,
+
+    /// Optional icon override key (e.g. `rust`, `postgres`, `user`, `kafka`).
+    #[serde(default, alias = "logo", alias = "badge")]
+    pub icon: Option<String>,
 }
 
 impl Default for NodeDef {
@@ -199,6 +232,11 @@ impl Default for NodeDef {
             subtitle: None,
             node_type: default_node_type(),
             metadata: None,
+            fields: Vec::new(),
+            language: None,
+            technology: None,
+            db_type: None,
+            icon: None,
         }
     }
 }
@@ -223,6 +261,104 @@ impl NodeDef {
         }
         self.id.clone()
     }
+
+    /// Returns the resolved list of fields (columns or class members).
+    /// If `fields` is empty, checks if `label` contains `---` or markdown list lines.
+    pub fn resolved_fields(&self) -> Vec<String> {
+        if !self.fields.is_empty() {
+            return self.fields.clone();
+        }
+        if self.label.contains("---") {
+            let mut parts = self.label.split("---");
+            let _title = parts.next();
+            if let Some(rest) = parts.next() {
+                return rest
+                    .lines()
+                    .map(|l| l.trim().trim_start_matches('-').trim())
+                    .filter(|l| !l.is_empty())
+                    .map(|s| s.to_string())
+                    .collect();
+            }
+        }
+        Vec::new()
+    }
+
+    /// Resolves the programming language for this component.
+    pub fn resolved_language(&self) -> Option<String> {
+        crate::icons::detect_language(
+            self.language.as_deref(),
+            self.technology.as_deref(),
+            &self.resolved_label(),
+            self.metadata.as_deref(),
+        )
+        .map(|s| s.to_string())
+    }
+
+    /// Resolves the database engine for this component.
+    pub fn resolved_db_type(&self) -> Option<String> {
+        crate::icons::detect_database(
+            self.db_type.as_deref(),
+            self.technology.as_deref(),
+            &self.resolved_label(),
+            &self.node_type,
+        )
+        .map(|s| s.to_string())
+    }
+
+    /// Resolves the technology stack / framework subtitle.
+    pub fn resolved_technology(&self) -> Option<String> {
+        if let Some(t) = &self.technology {
+            if !t.trim().is_empty() {
+                return Some(t.trim().to_string());
+            }
+        }
+        if let Some(lang) = self.resolved_language() {
+            return Some(match lang.as_str() {
+                "rust" => "Rust".to_string(),
+                "go" => "Go".to_string(),
+                "python" => "Python".to_string(),
+                "typescript" => "TypeScript".to_string(),
+                "javascript" => "JavaScript".to_string(),
+                "java" => "Java".to_string(),
+                "kotlin" => "Kotlin".to_string(),
+                "csharp" => "C#".to_string(),
+                "cpp" => "C++".to_string(),
+                "ruby" => "Ruby".to_string(),
+                "swift" => "Swift".to_string(),
+                "node" => "Node.js".to_string(),
+                _ => lang,
+            });
+        }
+        None
+    }
+
+    /// Resolves the icon key to render (language, database, user, or custom icon).
+    pub fn resolved_icon(&self) -> Option<String> {
+        if let Some(i) = &self.icon {
+            if !i.trim().is_empty() {
+                return Some(i.trim().to_ascii_lowercase());
+            }
+        }
+        if let Some(l) = self.resolved_language() {
+            return Some(l);
+        }
+        if let Some(db) = self.resolved_db_type() {
+            return Some(db);
+        }
+        if matches!(
+            self.node_type.to_ascii_lowercase().as_str(),
+            "user" | "client" | "actor" | "person" | "customer"
+        ) {
+            return Some("user".to_string());
+        }
+        if matches!(
+            self.node_type.to_ascii_lowercase().as_str(),
+            "table" | "entity" | "record" | "schema"
+        ) {
+            return Some("table".to_string());
+        }
+        None
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +380,9 @@ pub struct EdgeDef {
     #[serde(default, alias = "name", alias = "text")]
     pub label: Option<String>,
 
-    /// Optional semantic edge style: `flow`, `async`, `error`, `data`, `bidirectional`.
+    /// Optional semantic edge style: `flow`, `async`, `error`, `data`, `bidirectional`,
+    /// `sync`, `reply`, `self`, `one_to_many`, `many_to_many`, `one_to_one`, `zero_to_many`,
+    /// `inheritance`, `composition`, `aggregation`, `realization`, `dependency`.
     #[serde(default, alias = "style", alias = "type")]
     pub edge_style: Option<String>,
 
@@ -259,7 +397,23 @@ impl EdgeDef {
         if self.bidirectional == Some(true) {
             return Some("bidirectional".to_string());
         }
-        self.edge_style.clone()
+        self.edge_style.as_deref().map(|s| {
+            match s.to_ascii_lowercase().trim() {
+                "sync" | "call" | "sync_call" => "sync".to_string(),
+                "reply" | "return" | "response" => "reply".to_string(),
+                "self" | "self_call" => "self".to_string(),
+                "1..*" | "1:n" | "one_to_many" => "one_to_many".to_string(),
+                "*..*" | "m:n" | "many_to_many" => "many_to_many".to_string(),
+                "1..1" | "1:1" | "one_to_one" => "one_to_one".to_string(),
+                "0..*" | "0:n" | "zero_to_many" => "zero_to_many".to_string(),
+                "inheritance" | "extends" | "is_a" => "inheritance".to_string(),
+                "realization" | "implements" => "realization".to_string(),
+                "composition" => "composition".to_string(),
+                "aggregation" => "aggregation".to_string(),
+                "dependency" => "dependency".to_string(),
+                other => other.to_string(),
+            }
+        })
     }
 }
 
@@ -272,11 +426,11 @@ const EXAMPLE_YAML: &str = r##"# ━━━━━━━━━━━━━━━�
 # Compile with: rdg --input diagram.yaml --output diagram.svg
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-diagram_type: flowchart            # flowchart | architecture | sequence | graph
+diagram_type: architecture         # architecture | flowchart | sequence | erd | class | state
 theme: standard                    # standard (elevated white cards) | dark (slate-900)
 direction: tb                      # tb (top-to-bottom) | lr (left-to-right)
-title: "Microservices Architecture"
-description: "Distributed Order & Event Processing Pipeline"
+title: "Distributed Order Processing System"
+description: "High-level service architecture, persistent storage, and event streams"
 
 groups:
   - id: grp_ingress
@@ -296,25 +450,42 @@ nodes:
     metadata: "End-user client applications"
 
   - id: api_gw
-    label: "`api-gateway`\n(Reverse Proxy)"
+    label: "API Gateway"
     type: proxy
+    technology: "Kong / Nginx"
+    language: "lua"
     metadata: "TLS termination, auth, and rate-limiting"
 
   - id: auth_svc
-    label: "`auth-service`\n(OAuth2 / JWT)"
-    type: server
+    label: "Auth Service"
+    type: service
+    technology: "Go / Chi"
+    language: "go"
+    metadata: "OAuth2 / JWT token issuer"
 
   - id: order_svc
-    label: "`order-service`\n(Business Logic)"
-    type: server
+    label: "Order Service"
+    type: service
+    technology: "Axum 0.7"
+    language: "rust"
+    metadata: "Core transactional order processing"
 
   - id: order_queue
-    label: "`order.events`\n(Kafka Topic)"
+    label: "order.events"
     type: queue
+    technology: "Kafka"
+    metadata: "High-throughput partitioned event stream"
 
   - id: inventory_db
-    label: "`inventory-db`\n(PostgreSQL)"
+    label: "inventory_db"
     type: database
+    db_type: postgres
+    technology: "PostgreSQL 16"
+    fields:
+      - "id: UUID [PK]"
+      - "item_sku: VARCHAR [FK]"
+      - "quantity: INT"
+      - "updated_at: TIMESTAMP"
 
 edges:
   - from: client
@@ -324,7 +495,7 @@ edges:
 
   - from: api_gw
     to: auth_svc
-    label: "verify token"
+    label: "POST /auth/verify"
     edge_style: flow
 
   - from: api_gw
@@ -334,7 +505,7 @@ edges:
 
   - from: order_svc
     to: order_queue
-    label: "publish event"
+    label: "emit OrderPlaced"
     edge_style: async
 
   - from: order_svc
@@ -351,8 +522,9 @@ const JSON_SCHEMA: &str = r#"{
   "properties": {
     "diagram_type": {
       "type": "string",
+      "enum": ["architecture", "flowchart", "sequence", "erd", "class", "state", "graph"],
       "default": "flowchart",
-      "description": "Logical diagram category: flowchart, architecture, sequence, graph"
+      "description": "Logical diagram category: architecture, flowchart, sequence, erd, class, state, graph"
     },
     "title": {
       "type": "string",
@@ -416,7 +588,28 @@ const JSON_SCHEMA: &str = r#"{
           "type": {
             "type": "string",
             "default": "default",
-            "description": "Semantic node type: proxy, server, database, queue, cache, function, client, decision, default"
+            "description": "Semantic node type: service, proxy, database, table, queue, cache, function, client, decision, class, interface, abstract_class, start, end, choice"
+          },
+          "language": {
+            "type": "string",
+            "description": "Programming language for flat vector icon: rust, go, python, typescript, javascript, java, kotlin, cpp, csharp, ruby, swift"
+          },
+          "technology": {
+            "type": "string",
+            "description": "Framework or technology badge displayed below title: Axum, FastAPI, Kafka, Spring Boot, etc."
+          },
+          "db_type": {
+            "type": "string",
+            "description": "Database engine for icon: postgres, mysql, redis, mongodb, dynamodb, kafka, cassandra, sqlite, elasticsearch"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Explicit icon key override (e.g. rust, postgres, redis, kafka, user)"
+          },
+          "fields": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Structured field rows (e.g. 'id: UUID [PK]', '+execute(): void')"
           },
           "metadata": { "type": "string", "description": "Optional tooltip / annotation" }
         }
@@ -434,9 +627,14 @@ const JSON_SCHEMA: &str = r#"{
           "label": { "type": "string", "description": "Text rendered along connector" },
           "edge_style": {
             "type": "string",
-            "enum": ["flow", "async", "error", "data", "bidirectional"],
+            "enum": [
+              "flow", "async", "error", "data", "bidirectional",
+              "sync", "reply", "self",
+              "one_to_many", "many_to_many", "one_to_one", "zero_to_many",
+              "inheritance", "composition", "aggregation", "realization", "dependency"
+            ],
             "default": "flow",
-            "description": "Visual connector style"
+            "description": "Visual connector style with semantic arrowheads (ER crow's foot, UML markers, async dashed)"
           },
           "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" }
         }
@@ -592,5 +790,55 @@ edges:
         assert_eq!(payload.nodes.len(), 6);
         assert_eq!(payload.edges.len(), 5);
         assert_eq!(payload.groups.len(), 2);
+    }
+
+    #[test]
+    fn test_sequence_er_and_class_schema() {
+        let seq_yaml = r#"
+diagram_type: sequence
+nodes:
+  - id: client
+    label: "Web Browser"
+    type: participant
+  - id: api
+    label: "API Gateway"
+    type: participant
+edges:
+  - from: client
+    to: api
+    label: "POST /login"
+    style: sync
+  - from: api
+    to: client
+    label: "200 OK (JWT)"
+    style: reply
+"#;
+        let payload = DiagramPayload::from_yaml(seq_yaml).expect("sequence should parse");
+        assert_eq!(payload.resolved_diagram_type(), "sequence");
+        assert_eq!(payload.edges[0].resolved_style().as_deref(), Some("sync"));
+        assert_eq!(payload.edges[1].resolved_style().as_deref(), Some("reply"));
+
+        let er_yaml = r#"
+diagram_type: er
+nodes:
+  - id: users
+    label: "users"
+    type: table
+    fields:
+      - "id: uuid [PK]"
+      - "email: varchar [UQ]"
+  - id: orders
+    label: "orders\n---\nid: uuid [PK]\nuser_id: uuid [FK]"
+    type: table
+edges:
+  - from: users
+    to: orders
+    style: one_to_many
+"#;
+        let er_payload = DiagramPayload::from_yaml(er_yaml).expect("ER should parse");
+        assert_eq!(er_payload.resolved_diagram_type(), "er");
+        assert_eq!(er_payload.nodes[0].resolved_fields().len(), 2);
+        assert_eq!(er_payload.nodes[1].resolved_fields().len(), 2);
+        assert_eq!(er_payload.edges[0].resolved_style().as_deref(), Some("one_to_many"));
     }
 }

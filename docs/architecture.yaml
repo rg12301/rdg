@@ -1,0 +1,164 @@
+diagram_type: architecture
+theme: standard
+direction: tb
+title: "Global E-Commerce Order & Analytics Platform"
+description: "Microservice Container Architecture with Event Streaming and Distributed Persistence"
+
+groups:
+  - id: grp_edge
+    label: "Client & Edge Ingress"
+    color: "#64748b"
+    nodes: ["web_client", "mobile_app", "api_gateway"]
+
+  - id: grp_services
+    label: "Transactional Core Services"
+    color: "#0284c7"
+    nodes: ["auth_svc", "order_svc", "payment_svc"]
+
+  - id: grp_streaming
+    label: "Async Event Streaming"
+    color: "#d97706"
+    nodes: ["event_bus", "analytics_worker"]
+
+  - id: grp_persistence
+    label: "Persistent Storage Tier"
+    color: "#059669"
+    nodes: ["orders_db", "user_cache", "analytics_lake"]
+
+nodes:
+  - id: web_client
+    label: "Web Browser (Next.js)"
+    type: client
+    language: typescript
+    technology: "React 19"
+    metadata: "Customer storefront SPA"
+
+  - id: mobile_app
+    label: "Mobile Client (iOS/Android)"
+    type: client
+    language: swift
+    technology: "SwiftUI"
+    metadata: "Native iOS & Android mobile shopping app"
+
+  - id: api_gateway
+    label: "API Gateway & Router"
+    type: proxy
+    language: go
+    technology: "Envoy / Go"
+    metadata: "SSL offloading, rate-limiting, JWT authentication"
+
+  - id: auth_svc
+    label: "Identity & Auth Service"
+    type: service
+    language: go
+    technology: "Go 1.22 / Chi"
+    metadata: "OAuth2 / OIDC token issuance & rotation"
+
+  - id: order_svc
+    label: "Order Management Service"
+    type: service
+    language: rust
+    technology: "Rust / Axum 0.7"
+    metadata: "High-throughput ACID transaction coordinator"
+
+  - id: payment_svc
+    label: "Payment & Billing Service"
+    type: service
+    language: java
+    technology: "Spring Boot 3"
+    metadata: "Stripe & PCI-DSS compliant checkout processor"
+
+  - id: event_bus
+    label: "order.events.v1"
+    type: queue
+    technology: "Apache Kafka"
+    metadata: "Distributed partitioned commit log"
+
+  - id: analytics_worker
+    label: "Real-Time Telemetry Worker"
+    type: service
+    language: python
+    technology: "Python 3.12 / FastAPI"
+    metadata: "Stream aggregation and anomaly detection pipeline"
+
+  - id: orders_db
+    label: "orders"
+    type: table
+    db_type: postgres
+    technology: "PostgreSQL 16"
+    fields:
+      - "id: UUID [PK]"
+      - "customer_id: UUID [FK]"
+      - "total_amount: DECIMAL"
+      - "status: VARCHAR(32)"
+
+  - id: user_cache
+    label: "Session & Token Cache"
+    type: database
+    db_type: redis
+    technology: "Redis 7.2"
+    fields:
+      - "session_token: STRING [PK]"
+      - "user_id: UUID"
+      - "ttl_sec: INT"
+
+  - id: analytics_lake
+    label: "Analytics Lakehouse"
+    type: database
+    db_type: mongodb
+    technology: "MongoDB Atlas"
+    fields:
+      - "_id: ObjectId [PK]"
+      - "event_type: STRING"
+      - "payload: BSON"
+
+edges:
+  - from: web_client
+    to: api_gateway
+    label: "HTTPS / REST"
+    edge_style: flow
+
+  - from: mobile_app
+    to: api_gateway
+    label: "HTTPS / GraphQL"
+    edge_style: flow
+
+  - from: api_gateway
+    to: auth_svc
+    label: "gRPC: ValidateToken"
+    edge_style: sync
+
+  - from: api_gateway
+    to: order_svc
+    label: "gRPC: CreateOrder"
+    edge_style: sync
+
+  - from: order_svc
+    to: payment_svc
+    label: "POST /v1/charge"
+    edge_style: sync
+
+  - from: order_svc
+    to: event_bus
+    label: "emit OrderCreated"
+    edge_style: async
+
+  - from: order_svc
+    to: orders_db
+    label: "INSERT / COMMIT"
+    edge_style: one_to_many
+
+  - from: auth_svc
+    to: user_cache
+    label: "GET / SET EX"
+    edge_style: data
+
+  - from: event_bus
+    to: analytics_worker
+    label: "consume partitions"
+    edge_style: async
+
+  - from: analytics_worker
+    to: analytics_lake
+    label: "append events"
+    edge_style: data

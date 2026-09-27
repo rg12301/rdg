@@ -31,6 +31,7 @@
 //! | [`render`] | draw.io XML and SVG serialisation |
 
 pub mod graph;
+pub mod icons;
 pub mod layout;
 pub mod render;
 pub mod schema;

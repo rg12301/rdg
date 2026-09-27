@@ -45,14 +45,19 @@ pub fn style_for_type(node_type: &str, theme: &str) -> String {
     match node_type.to_ascii_lowercase().as_str() {
         "proxy" | "gateway" | "api" => format!("{base}strokeColor=#818cf8;"),
         "server" | "service" | "backend" => format!("{base}strokeColor=#34d399;"),
-        "database" | "db" | "storage" => {
+        "database" | "db" | "storage" | "table" | "entity" | "record" => {
+            let (bg, text, stroke) = if theme == "dark" {
+                ("#1e293b", "#f1f5f9", "#38bdf8")
+            } else {
+                ("#ffffff", "#0f172a", "#0284c7")
+            };
             format!(
-                "shape=cylinder3;boundedLbl=1;backgroundOutline=1;\
-                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
-                     strokeWidth=1.5;strokeColor=#38bdf8;\
-                     fontFamily=Inter,Helvetica,sans-serif;\
-                     fontSize=12;fontStyle=1;fontColor=#0f172a;\
-                     spacingTop=16;spacingBottom=6;"
+                "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;\
+                 whiteSpace=wrap;html=1;fillColor={bg};shadow=1;\
+                 strokeWidth=1.5;strokeColor={stroke};\
+                 fontFamily=Inter,Helvetica,sans-serif;\
+                 fontSize=12;fontStyle=1;fontColor={text};\
+                 spacingTop=16;spacingBottom=6;spacingLeft=8;spacingRight=8;"
             )
         }
         "queue" | "broker" | "bus" => {
@@ -92,6 +97,17 @@ pub fn style_for_type(node_type: &str, theme: &str) -> String {
                      fontSize=12;fontStyle=1;fontColor=#0f172a;"
             )
         }
+        "class" | "interface" | "abstract_class" | "struct" => format!("{base}strokeColor=#6366f1;strokeWidth=1.5;"),
+        "participant" | "actor" => format!("{base}strokeColor=#64748b;strokeWidth=1.5;"),
+        "start" | "start_state" | "initial" | "initial_state" => {
+            "shape=ellipse;fillColor=#0f172a;strokeColor=#0f172a;strokeWidth=1;".to_string()
+        }
+        "end" | "end_state" | "final" | "final_state" => {
+            "shape=endState;fillColor=#0f172a;strokeColor=#0f172a;strokeWidth=2;".to_string()
+        }
+        "choice" | "branch" => {
+            "rhombus;fillColor=#ffffff;strokeColor=#a78bfa;strokeWidth=2;whiteSpace=wrap;html=1;".to_string()
+        }
         _ => format!("{base}strokeColor=#cbd5e1;"),
     }
 }
@@ -107,6 +123,12 @@ pub fn stroke_for_type(node_type: &str, theme: &str) -> &'static str {
         "function" | "lambda" | "faas" => "#fb923c",
         "decision" | "condition" => "#a78bfa",
         "client" | "user" | "browser" => "#94a3b8",
+        "table" | "entity" | "record" => "#0284c7",
+        "class" | "interface" | "abstract_class" | "struct" => "#6366f1",
+        "participant" | "actor" => "#64748b",
+        "start" | "start_state" | "initial" | "initial_state"
+        | "end" | "end_state" | "final" | "final_state" => "#0f172a",
+        "choice" | "branch" => "#a78bfa",
         _ => {
             if theme == "dark" {
                 "#475569"
@@ -657,6 +679,117 @@ pub fn format_html_label(label: &str, theme: &str, node_type: &str) -> String {
     html_lines.join("<br/>")
 }
 
+/// Format a table or class diagram card as an HTML table for draw.io rendering.
+pub fn format_html_table_or_class(
+    label: &str,
+    fields: &[String],
+    theme: &str,
+    node_type: &str,
+    icon_key: Option<&str>,
+) -> String {
+    let header_bg = if theme == "dark" { "#334155" } else { "#f1f5f9" };
+    let border_color = if theme == "dark" { "#475569" } else { "#e2e8f0" };
+    let text_color = if theme == "dark" { "#f1f5f9" } else { "#0f172a" };
+    let muted_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
+
+    let title_prefix = if node_type.eq_ignore_ascii_case("interface") {
+        "&lt;&lt;interface&gt;&gt;<br/>"
+    } else if node_type.eq_ignore_ascii_case("abstract_class") {
+        "&lt;&lt;abstract&gt;&gt;<br/>"
+    } else {
+        ""
+    };
+
+    let icon_html = icon_key
+        .and_then(crate::icons::icon_as_data_uri)
+        .map(|uri| format!("<img src=\"{uri}\" width=\"14\" height=\"14\" style=\"vertical-align:middle;margin-right:4px;display:inline-block;\"/>"))
+        .unwrap_or_default();
+
+    let mut html = format!(
+        "<table style=\"width:100%;height:100%;border-collapse:collapse;font-family:Inter,Helvetica,sans-serif;\">\
+         <tr style=\"background:{header_bg};\">\
+           <td colspan=\"2\" style=\"padding:6px 8px;border-bottom:1px solid {border_color};text-align:center;color:{text_color};font-size:12px;\">\
+             <b>{title_prefix}{icon_html}{label}</b>\
+           </td>\
+         </tr>"
+    );
+
+    for field in fields {
+        let field_clean = crate::layout::strip_markdown_tokens(field);
+        let (left_part, right_part) = if let Some(idx) = field_clean.find(':') {
+            (&field_clean[..idx], &field_clean[idx + 1..])
+        } else {
+            (field_clean.as_str(), "")
+        };
+
+        let is_pk = field_clean.to_ascii_uppercase().contains("[PK]")
+            || field_clean.to_ascii_uppercase().contains("PRIMARY KEY");
+        let name_style = if is_pk {
+            "font-family:JetBrains Mono,monospace;font-size:10px;font-weight:bold;color:#d97706;".to_string()
+        } else {
+            format!("font-family:JetBrains Mono,monospace;font-size:10px;color:{text_color};")
+        };
+
+        let right_html = if !right_part.trim().is_empty() {
+            format!(
+                "<td style=\"padding:2px 8px;text-align:right;color:{muted_color};font-size:10px;font-family:monospace;\">{}</td>",
+                right_part.trim()
+            )
+        } else {
+            String::new()
+        };
+
+        let colspan = if right_html.is_empty() {
+            "colspan=\"2\""
+        } else {
+            ""
+        };
+
+        html.push_str(&format!(
+            "<tr style=\"border-bottom:1px solid {border_color};\">\
+               <td {colspan} style=\"padding:2px 8px;text-align:left;{name_style}\">{}</td>\
+               {right_html}\
+             </tr>",
+            left_part.trim()
+        ));
+    }
+
+    html.push_str("</table>");
+    html
+}
+
+/// Format an HTML label for a node with optional icon and technology badge.
+pub fn format_html_label_with_details(
+    label: &str,
+    theme: &str,
+    node_type: &str,
+    icon_key: Option<&str>,
+    tech: Option<&str>,
+) -> String {
+    let base_html = format_html_label(label, theme, node_type);
+    let icon_html = icon_key
+        .and_then(crate::icons::icon_as_data_uri)
+        .map(|uri| format!("<img src=\"{uri}\" width=\"16\" height=\"16\" style=\"vertical-align:middle;margin-right:5px;display:inline-block;\"/>"))
+        .unwrap_or_default();
+
+    let mut result = if !icon_html.is_empty() {
+        format!("{icon_html}{base_html}")
+    } else {
+        base_html
+    };
+
+    if let Some(t) = tech {
+        if !label.contains(t) {
+            let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
+            result.push_str(&format!(
+                "<br/><font style=\"font-size:10px;color:{sub_color};font-weight:normal;\">[{t}]</font>"
+            ));
+        }
+    }
+
+    result
+}
+
 /// Compute an orthogonal SVG path with rounded fillet corners between two points.
 /// Returns `(path_d, label_center_x, label_center_y)`.
 /// Places label along the initial straight segment away from turns and crossings.
@@ -754,6 +887,582 @@ fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (
 }
 
 // ---------------------------------------------------------------------------
+// Sequence Diagram Renderers
+// ---------------------------------------------------------------------------
+
+fn render_sequence_drawio(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    seq: &crate::layout::SequenceLayoutInfo,
+    theme: &str,
+) -> Result<String> {
+    let mut buf = Vec::with_capacity(4096);
+    let mut w = Writer::new_with_indent(Cursor::new(&mut buf), b' ', 2);
+
+    // <?xml version="1.0" encoding="UTF-8"?>
+    w.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+
+    // <mxfile host="aigraph-compiler" version="1.0">
+    let mut mxfile = BytesStart::new("mxfile");
+    mxfile.push_attribute(("host", "aigraph-compiler"));
+    mxfile.push_attribute(("version", "1.0"));
+    w.write_event(Event::Start(mxfile))?;
+
+    // <diagram id="diagram-1" name="Page-1">
+    let mut diagram = BytesStart::new("diagram");
+    diagram.push_attribute(("id", "diagram-1"));
+    diagram.push_attribute(("name", "Page-1"));
+    w.write_event(Event::Start(diagram))?;
+
+    // <mxGraphModel …>
+    let mut model = BytesStart::new("mxGraphModel");
+    model.push_attribute(("dx", "1422"));
+    model.push_attribute(("dy", "762"));
+    model.push_attribute(("grid", "1"));
+    model.push_attribute(("gridSize", "10"));
+    model.push_attribute(("guides", "1"));
+    model.push_attribute(("tooltips", "1"));
+    model.push_attribute(("connect", "1"));
+    model.push_attribute(("arrows", "1"));
+    model.push_attribute(("fold", "1"));
+    model.push_attribute(("page", "0"));
+    model.push_attribute(("pageScale", "1"));
+    let bg_color = if theme == "dark" { "#0f172a" } else { "#f8fafc" };
+    model.push_attribute(("background", bg_color));
+    model.push_attribute(("math", "1"));
+    model.push_attribute(("shadow", "0"));
+    w.write_event(Event::Start(model))?;
+
+    // <root>
+    w.write_event(Event::Start(BytesStart::new("root")))?;
+
+    // Mandatory stub cells
+    let mut cell0 = BytesStart::new("mxCell");
+    cell0.push_attribute(("id", "0"));
+    w.write_event(Event::Empty(cell0))?;
+
+    let mut cell1 = BytesStart::new("mxCell");
+    cell1.push_attribute(("id", "1"));
+    cell1.push_attribute(("parent", "0"));
+    w.write_event(Event::Empty(cell1))?;
+
+    // Title / Description
+    if let Some(title) = &compiled.title {
+        let title_color = if theme == "dark" { "#f1f5f9" } else { "#0f172a" };
+        let sub_color = if theme == "dark" { "#94a3b8" } else { "#64748b" };
+        let title_html = if let Some(desc) = &compiled.description {
+            format!(
+                "<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b><br/><font style=\"font-size:11px;color:{sub_color};\">{desc}</font>"
+            )
+        } else {
+            format!("<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b>")
+        };
+        let title_style = "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontFamily=Inter,Helvetica,sans-serif;";
+        let mut t_cell = BytesStart::new("mxCell");
+        t_cell.push_attribute(("id", "diagram_title_header"));
+        t_cell.push_attribute(("value", title_html.as_str()));
+        t_cell.push_attribute(("style", title_style));
+        t_cell.push_attribute(("vertex", "1"));
+        t_cell.push_attribute(("parent", "1"));
+        w.write_event(Event::Start(t_cell))?;
+
+        let mut t_geo = BytesStart::new("mxGeometry");
+        t_geo.push_attribute(("x", "24"));
+        t_geo.push_attribute(("y", "12"));
+        t_geo.push_attribute(("width", "500"));
+        t_geo.push_attribute(("height", "40"));
+        t_geo.push_attribute(("as", "geometry"));
+        w.write_event(Event::Empty(t_geo))?;
+        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    }
+
+    let is_dark = theme == "dark";
+    let lifeline_color = if is_dark { "#475569" } else { "#94a3b8" };
+    let label_bg_color = if is_dark { "#1e293b" } else { "#ffffff" };
+    let label_font_color = if is_dark { "#cbd5e1" } else { "#475569" };
+
+    // 1. Participant header boxes
+    for node_idx in compiled.graph.node_indices() {
+        let node_data = &compiled.graph[node_idx];
+        let nl = match layout.positions.get(&node_idx) {
+            Some(p) => p,
+            None => continue,
+        };
+        let style = style_for_type(&node_data.node_type, theme);
+        let icon_key = node_data.icon.as_deref();
+        let icon_html = icon_key
+            .and_then(crate::icons::icon_as_data_uri)
+            .map(|uri| format!("<img src=\"{uri}\" width=\"16\" height=\"16\" style=\"vertical-align:middle;margin-right:5px;display:inline-block;\"/>"))
+            .unwrap_or_default();
+        let html_value = format!("{icon_html}<b>{}</b>", node_data.label);
+
+        let mut cell = BytesStart::new("mxCell");
+        cell.push_attribute(("id", node_data.id.as_str()));
+        cell.push_attribute(("value", html_value.as_str()));
+        cell.push_attribute(("style", style.as_str()));
+        cell.push_attribute(("vertex", "1"));
+        cell.push_attribute(("parent", "1"));
+        w.write_event(Event::Start(cell))?;
+
+        let mut geo = BytesStart::new("mxGeometry");
+        geo.push_attribute(("x", nl.x.round().to_string().as_str()));
+        geo.push_attribute(("y", nl.y.round().to_string().as_str()));
+        geo.push_attribute(("width", nl.width.round().to_string().as_str()));
+        geo.push_attribute(("height", nl.height.round().to_string().as_str()));
+        geo.push_attribute(("as", "geometry"));
+        w.write_event(Event::Empty(geo))?;
+
+        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+
+        // 2. Vertical lifeline for this participant
+        let lx = seq.lifeline_x.get(&node_idx).copied().unwrap_or(nl.x + nl.width / 2.0);
+        let lifeline_style = format!(
+            "edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 6;strokeColor={lifeline_color};strokeWidth=1.5;endArrow=none;"
+        );
+        let mut line_cell = BytesStart::new("mxCell");
+        let line_id = format!("lifeline_{}", node_data.id);
+        line_cell.push_attribute(("id", line_id.as_str()));
+        line_cell.push_attribute(("value", ""));
+        line_cell.push_attribute(("style", lifeline_style.as_str()));
+        line_cell.push_attribute(("edge", "1"));
+        line_cell.push_attribute(("parent", "1"));
+        w.write_event(Event::Start(line_cell))?;
+
+        let mut line_geo = BytesStart::new("mxGeometry");
+        line_geo.push_attribute(("relative", "1"));
+        line_geo.push_attribute(("as", "geometry"));
+        w.write_event(Event::Start(line_geo))?;
+
+        let mut pt_src = BytesStart::new("mxPoint");
+        pt_src.push_attribute(("x", lx.round().to_string().as_str()));
+        pt_src.push_attribute(("y", seq.lifeline_top_y.round().to_string().as_str()));
+        pt_src.push_attribute(("as", "sourcePoint"));
+        w.write_event(Event::Empty(pt_src))?;
+
+        let mut pt_dst = BytesStart::new("mxPoint");
+        pt_dst.push_attribute(("x", lx.round().to_string().as_str()));
+        pt_dst.push_attribute(("y", seq.lifeline_bottom_y.round().to_string().as_str()));
+        pt_dst.push_attribute(("as", "targetPoint"));
+        w.write_event(Event::Empty(pt_dst))?;
+
+        w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    }
+
+    // 3. Chronological message arrows
+    for (i, msg) in seq.messages.iter().enumerate() {
+        let edge_data = &compiled.graph[msg.edge_idx];
+        let src_id = &compiled.graph[msg.from_node].id;
+        let dst_id = &compiled.graph[msg.to_node].id;
+        let edge_id = format!("seq_msg_{i}_{src_id}_{dst_id}");
+        let label = edge_data.label.as_deref().unwrap_or("");
+        let from_x = seq.lifeline_x.get(&msg.from_node).copied().unwrap_or(0.0);
+        let to_x = seq.lifeline_x.get(&msg.to_node).copied().unwrap_or(0.0);
+        let y = msg.y;
+
+        if msg.is_self_call {
+            let self_style = format!(
+                "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;\
+                 strokeColor=#475569;strokeWidth=1.5;endArrow=blockThin;endFill=1;\
+                 labelBackgroundColor={label_bg_color};labelBorderColor=none;\
+                 fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
+            );
+            let mut cell = BytesStart::new("mxCell");
+            cell.push_attribute(("id", edge_id.as_str()));
+            cell.push_attribute(("value", label));
+            cell.push_attribute(("style", self_style.as_str()));
+            cell.push_attribute(("edge", "1"));
+            cell.push_attribute(("parent", "1"));
+            w.write_event(Event::Start(cell))?;
+
+            let mut geo = BytesStart::new("mxGeometry");
+            geo.push_attribute(("relative", "1"));
+            geo.push_attribute(("as", "geometry"));
+            w.write_event(Event::Start(geo))?;
+
+            let mut pt_src = BytesStart::new("mxPoint");
+            pt_src.push_attribute(("x", from_x.round().to_string().as_str()));
+            pt_src.push_attribute(("y", (y - 8.0).round().to_string().as_str()));
+            pt_src.push_attribute(("as", "sourcePoint"));
+            w.write_event(Event::Empty(pt_src))?;
+
+            let mut pt_dst = BytesStart::new("mxPoint");
+            pt_dst.push_attribute(("x", from_x.round().to_string().as_str()));
+            pt_dst.push_attribute(("y", (y + 16.0).round().to_string().as_str()));
+            pt_dst.push_attribute(("as", "targetPoint"));
+            w.write_event(Event::Empty(pt_dst))?;
+
+            let mut pts_array = BytesStart::new("Array");
+            pts_array.push_attribute(("as", "points"));
+            w.write_event(Event::Start(pts_array))?;
+
+            let mut p1 = BytesStart::new("mxPoint");
+            p1.push_attribute(("x", (from_x + 36.0).round().to_string().as_str()));
+            p1.push_attribute(("y", (y - 8.0).round().to_string().as_str()));
+            w.write_event(Event::Empty(p1))?;
+
+            let mut p2 = BytesStart::new("mxPoint");
+            p2.push_attribute(("x", (from_x + 36.0).round().to_string().as_str()));
+            p2.push_attribute(("y", (y + 16.0).round().to_string().as_str()));
+            w.write_event(Event::Empty(p2))?;
+
+            w.write_event(Event::End(BytesEnd::new("Array")))?;
+
+            if !label.is_empty() {
+                let mut pt_offset = BytesStart::new("mxPoint");
+                pt_offset.push_attribute(("x", "20"));
+                pt_offset.push_attribute(("y", "-4"));
+                pt_offset.push_attribute(("as", "offset"));
+                w.write_event(Event::Empty(pt_offset))?;
+            }
+
+            w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+            w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+        } else {
+            let is_reply = msg.is_reply || edge_data.edge_style.as_deref() == Some("reply");
+            let is_async = edge_data.edge_style.as_deref() == Some("async");
+
+            let edge_style = if is_reply {
+                format!(
+                    "edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\
+                     dashed=1;dashPattern=6 3;strokeColor={lifeline_color};strokeWidth=1.5;\
+                     endArrow=open;endFill=0;endSize=7;\
+                     labelBackgroundColor={label_bg_color};labelBorderColor=none;\
+                     fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
+                )
+            } else if is_async {
+                format!(
+                    "edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\
+                     dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;\
+                     endArrow=open;endFill=0;endSize=7;\
+                     labelBackgroundColor={label_bg_color};labelBorderColor=none;\
+                     fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
+                )
+            } else {
+                let stroke_col = if is_dark { "#cbd5e1" } else { "#1e293b" };
+                format!(
+                    "edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\
+                     strokeColor={stroke_col};strokeWidth=1.5;\
+                     endArrow=blockThin;endFill=1;endSize=6;\
+                     labelBackgroundColor={label_bg_color};labelBorderColor=none;\
+                     fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
+                )
+            };
+
+            let mut cell = BytesStart::new("mxCell");
+            cell.push_attribute(("id", edge_id.as_str()));
+            cell.push_attribute(("value", label));
+            cell.push_attribute(("style", edge_style.as_str()));
+            cell.push_attribute(("edge", "1"));
+            cell.push_attribute(("parent", "1"));
+            w.write_event(Event::Start(cell))?;
+
+            let mut geo = BytesStart::new("mxGeometry");
+            geo.push_attribute(("relative", "1"));
+            geo.push_attribute(("as", "geometry"));
+            w.write_event(Event::Start(geo))?;
+
+            let mut pt_src = BytesStart::new("mxPoint");
+            pt_src.push_attribute(("x", from_x.round().to_string().as_str()));
+            pt_src.push_attribute(("y", y.round().to_string().as_str()));
+            pt_src.push_attribute(("as", "sourcePoint"));
+            w.write_event(Event::Empty(pt_src))?;
+
+            let mut pt_dst = BytesStart::new("mxPoint");
+            pt_dst.push_attribute(("x", to_x.round().to_string().as_str()));
+            pt_dst.push_attribute(("y", y.round().to_string().as_str()));
+            pt_dst.push_attribute(("as", "targetPoint"));
+            w.write_event(Event::Empty(pt_dst))?;
+
+            if !label.is_empty() {
+                let mut pt_offset = BytesStart::new("mxPoint");
+                pt_offset.push_attribute(("y", "-10"));
+                pt_offset.push_attribute(("as", "offset"));
+                w.write_event(Event::Empty(pt_offset))?;
+            }
+
+            w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+            w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+        }
+    }
+
+    // </root></mxGraphModel></diagram></mxfile>
+    w.write_event(Event::End(BytesEnd::new("root")))?;
+    w.write_event(Event::End(BytesEnd::new("mxGraphModel")))?;
+    w.write_event(Event::End(BytesEnd::new("diagram")))?;
+    w.write_event(Event::End(BytesEnd::new("mxfile")))?;
+
+    String::from_utf8(buf).map_err(|e| anyhow::anyhow!("invalid UTF-8 in drawio output: {e}"))
+}
+
+fn render_sequence_svg(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    seq: &crate::layout::SequenceLayoutInfo,
+    theme: &str,
+) -> Result<String> {
+    let is_dark = theme == "dark";
+    let bg_color = if is_dark { "#0f172a" } else { "#f8fafc" };
+    let card_fill = if is_dark { "#1e293b" } else { "#ffffff" };
+    let lifeline_color = if is_dark { "#475569" } else { "#94a3b8" };
+    let text_color = if is_dark { "#f1f5f9" } else { "#0f172a" };
+    let sub_color = if is_dark { "#94a3b8" } else { "#64748b" };
+
+    let max_x = layout
+        .positions
+        .values()
+        .map(|nl| nl.x + nl.width)
+        .fold(0.0_f64, f64::max);
+    let canvas_w = (max_x + 60.0).max(600.0);
+    let canvas_h = (seq.lifeline_bottom_y + 40.0).max(300.0);
+
+    let mut buf = Vec::with_capacity(8192);
+    let mut w = Writer::new_with_indent(Cursor::new(&mut buf), b' ', 2);
+
+    w.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+
+    let mut svg = BytesStart::new("svg");
+    svg.push_attribute(("xmlns", "http://www.w3.org/2000/svg"));
+    svg.push_attribute(("version", "1.1"));
+    svg.push_attribute(("width", canvas_w.round().to_string().as_str()));
+    svg.push_attribute(("height", canvas_h.round().to_string().as_str()));
+    svg.push_attribute((
+        "viewBox",
+        format!("0 0 {} {}", canvas_w.round(), canvas_h.round()).as_str(),
+    ));
+    w.write_event(Event::Start(svg))?;
+
+    // Background rect
+    let mut bg = BytesStart::new("rect");
+    bg.push_attribute(("width", "100%"));
+    bg.push_attribute(("height", "100%"));
+    bg.push_attribute(("fill", bg_color));
+    w.write_event(Event::Empty(bg))?;
+
+    // Defs: drop shadow and markers
+    w.write_event(Event::Start(BytesStart::new("defs")))?;
+
+    let mut filter = BytesStart::new("filter");
+    filter.push_attribute(("id", "card-shadow"));
+    filter.push_attribute(("x", "-20%"));
+    filter.push_attribute(("y", "-20%"));
+    filter.push_attribute(("width", "140%"));
+    filter.push_attribute(("height", "140%"));
+    w.write_event(Event::Start(filter))?;
+
+    let mut shadow = BytesStart::new("feDropShadow");
+    shadow.push_attribute(("dx", "0"));
+    shadow.push_attribute(("dy", "2"));
+    shadow.push_attribute(("stdDeviation", "3"));
+    shadow.push_attribute(("flood-color", "#0f172a"));
+    shadow.push_attribute(("flood-opacity", if is_dark { "0.35" } else { "0.08" }));
+    w.write_event(Event::Empty(shadow))?;
+    w.write_event(Event::End(BytesEnd::new("filter")))?;
+
+    // Arrow markers
+    let markers = [
+        ("seq-arrow-sync", if is_dark { "#cbd5e1" } else { "#1e293b" }, true),
+        ("seq-arrow-reply", lifeline_color, false),
+        ("seq-arrow-async", "#d97706", false),
+    ];
+    for (id, col, filled) in markers {
+        let mut marker = BytesStart::new("marker");
+        marker.push_attribute(("id", id));
+        marker.push_attribute(("viewBox", "0 0 10 10"));
+        marker.push_attribute(("refX", "8"));
+        marker.push_attribute(("refY", "5"));
+        marker.push_attribute(("markerWidth", "6"));
+        marker.push_attribute(("markerHeight", "6"));
+        marker.push_attribute(("orient", "auto"));
+        w.write_event(Event::Start(marker))?;
+
+        let mut mpath = BytesStart::new("path");
+        mpath.push_attribute(("d", "M 0 1.5 L 8 5 L 0 8.5 z"));
+        if filled {
+            mpath.push_attribute(("fill", col));
+        } else {
+            mpath.push_attribute(("fill", "none"));
+            mpath.push_attribute(("stroke", col));
+            mpath.push_attribute(("stroke-width", "1.5"));
+        }
+        w.write_event(Event::Empty(mpath))?;
+        w.write_event(Event::End(BytesEnd::new("marker")))?;
+    }
+
+    w.write_event(Event::End(BytesEnd::new("defs")))?;
+
+    // Title / Description
+    if let Some(title) = &compiled.title {
+        let mut t_elem = BytesStart::new("text");
+        t_elem.push_attribute(("x", "24"));
+        t_elem.push_attribute(("y", "28"));
+        t_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+        t_elem.push_attribute(("font-size", "15"));
+        t_elem.push_attribute(("font-weight", "bold"));
+        t_elem.push_attribute(("fill", text_color));
+        w.write_event(Event::Start(t_elem))?;
+        w.write_event(Event::Text(BytesText::new(title)))?;
+        w.write_event(Event::End(BytesEnd::new("text")))?;
+
+        if let Some(desc) = &compiled.description {
+            let mut d_elem = BytesStart::new("text");
+            d_elem.push_attribute(("x", "24"));
+            d_elem.push_attribute(("y", "44"));
+            d_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+            d_elem.push_attribute(("font-size", "11"));
+            d_elem.push_attribute(("fill", sub_color));
+            w.write_event(Event::Start(d_elem))?;
+            w.write_event(Event::Text(BytesText::new(desc)))?;
+            w.write_event(Event::End(BytesEnd::new("text")))?;
+        }
+    }
+
+    // 1. Draw lifelines (vertical dashed lines)
+    for &lx in seq.lifeline_x.values() {
+        let mut line = BytesStart::new("line");
+        line.push_attribute(("x1", lx.round().to_string().as_str()));
+        line.push_attribute(("y1", seq.lifeline_top_y.round().to_string().as_str()));
+        line.push_attribute(("x2", lx.round().to_string().as_str()));
+        line.push_attribute(("y2", seq.lifeline_bottom_y.round().to_string().as_str()));
+        line.push_attribute(("stroke", lifeline_color));
+        line.push_attribute(("stroke-width", "1.5"));
+        line.push_attribute(("stroke-dasharray", "6 6"));
+        w.write_event(Event::Empty(line))?;
+    }
+
+    // 2. Draw message arrows
+    for msg in &seq.messages {
+        let edge_data = &compiled.graph[msg.edge_idx];
+        let from_x = seq.lifeline_x.get(&msg.from_node).copied().unwrap_or(0.0);
+        let to_x = seq.lifeline_x.get(&msg.to_node).copied().unwrap_or(0.0);
+        let y = msg.y;
+        let is_reply = msg.is_reply || edge_data.edge_style.as_deref() == Some("reply");
+        let is_async = edge_data.edge_style.as_deref() == Some("async");
+
+        let (stroke, marker, dash) = if is_reply {
+            (lifeline_color, "seq-arrow-reply", Some("6 3"))
+        } else if is_async {
+            ("#d97706", "seq-arrow-async", Some("8 4"))
+        } else {
+            (if is_dark { "#cbd5e1" } else { "#1e293b" }, "seq-arrow-sync", None)
+        };
+
+        if msg.is_self_call {
+            let loop_d = format!(
+                "M {from_x:.1} {y_top:.1} H {x_out:.1} V {y_bot:.1} H {from_x:.1}",
+                y_top = y - 8.0,
+                x_out = from_x + 36.0,
+                y_bot = y + 16.0,
+            );
+            let mut path = BytesStart::new("path");
+            path.push_attribute(("d", loop_d.as_str()));
+            path.push_attribute(("fill", "none"));
+            path.push_attribute(("stroke", stroke));
+            path.push_attribute(("stroke-width", "1.5"));
+            path.push_attribute(("marker-end", format!("url(#{marker})").as_str()));
+            w.write_event(Event::Empty(path))?;
+
+            if let Some(label) = &edge_data.label {
+                let mut text = BytesStart::new("text");
+                text.push_attribute(("x", (from_x + 42.0).round().to_string().as_str()));
+                text.push_attribute(("y", (y + 6.0).round().to_string().as_str()));
+                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+                text.push_attribute(("font-size", "10"));
+                text.push_attribute(("fill", sub_color));
+                w.write_event(Event::Start(text))?;
+                w.write_event(Event::Text(BytesText::new(label)))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+            }
+        } else {
+            let mut line = BytesStart::new("line");
+            line.push_attribute(("x1", from_x.round().to_string().as_str()));
+            line.push_attribute(("y1", y.round().to_string().as_str()));
+            line.push_attribute(("x2", to_x.round().to_string().as_str()));
+            line.push_attribute(("y2", y.round().to_string().as_str()));
+            line.push_attribute(("stroke", stroke));
+            line.push_attribute(("stroke-width", "1.5"));
+            if let Some(d) = dash {
+                line.push_attribute(("stroke-dasharray", d));
+            }
+            line.push_attribute(("marker-end", format!("url(#{marker})").as_str()));
+            w.write_event(Event::Empty(line))?;
+
+            if let Some(label) = &edge_data.label {
+                let mid_x = (from_x + to_x) / 2.0;
+                let char_len = label.chars().count();
+                let pill_w = (char_len as f64 * 6.2 + 10.0).max(20.0);
+
+                let mut pill = BytesStart::new("rect");
+                pill.push_attribute(("x", (mid_x - pill_w / 2.0).round().to_string().as_str()));
+                pill.push_attribute(("y", (y - 16.0).round().to_string().as_str()));
+                pill.push_attribute(("width", pill_w.round().to_string().as_str()));
+                pill.push_attribute(("height", "14"));
+                pill.push_attribute(("rx", "3"));
+                pill.push_attribute(("fill", bg_color));
+                w.write_event(Event::Empty(pill))?;
+
+                let mut text = BytesStart::new("text");
+                text.push_attribute(("x", mid_x.round().to_string().as_str()));
+                text.push_attribute(("y", (y - 5.0).round().to_string().as_str()));
+                text.push_attribute(("text-anchor", "middle"));
+                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+                text.push_attribute(("font-size", "10"));
+                text.push_attribute(("font-weight", "500"));
+                text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#475569" }));
+                w.write_event(Event::Start(text))?;
+                w.write_event(Event::Text(BytesText::new(label)))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+            }
+        }
+    }
+
+    // 3. Draw participant cards (on top of lifelines)
+    for node_idx in compiled.graph.node_indices() {
+        let node_data = &compiled.graph[node_idx];
+        let nl = match layout.positions.get(&node_idx) {
+            Some(p) => p,
+            None => continue,
+        };
+        let stroke_color = stroke_for_type(&node_data.node_type, theme);
+
+        let mut rect = BytesStart::new("rect");
+        rect.push_attribute(("x", nl.x.round().to_string().as_str()));
+        rect.push_attribute(("y", nl.y.round().to_string().as_str()));
+        rect.push_attribute(("width", nl.width.round().to_string().as_str()));
+        rect.push_attribute(("height", nl.height.round().to_string().as_str()));
+        rect.push_attribute(("rx", "8"));
+        rect.push_attribute(("fill", card_fill));
+        rect.push_attribute(("stroke", stroke_color));
+        rect.push_attribute(("stroke-width", "1.5"));
+        rect.push_attribute(("filter", "url(#card-shadow)"));
+        w.write_event(Event::Empty(rect))?;
+
+        // Optional icon
+        if let Some(icon_key) = node_data.icon.as_deref() {
+            if let Some(icon_markup) = crate::icons::render_icon_svg(icon_key, nl.x + 10.0, nl.y + 12.0, 18.0) {
+                w.write_event(Event::Text(BytesText::from_escaped(icon_markup)))?;
+            }
+        }
+
+        let cx = if node_data.icon.is_some() { nl.x + nl.width / 2.0 + 8.0 } else { nl.x + nl.width / 2.0 };
+        let mut text = BytesStart::new("text");
+        text.push_attribute(("x", cx.round().to_string().as_str()));
+        text.push_attribute(("y", (nl.y + 26.0).round().to_string().as_str()));
+        text.push_attribute(("text-anchor", "middle"));
+        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+        text.push_attribute(("font-size", "12"));
+        text.push_attribute(("font-weight", "bold"));
+        text.push_attribute(("fill", text_color));
+        w.write_event(Event::Start(text))?;
+        w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
+        w.write_event(Event::End(BytesEnd::new("text")))?;
+    }
+
+    w.write_event(Event::End(BytesEnd::new("svg")))?;
+    String::from_utf8(buf).map_err(|e| anyhow::anyhow!("invalid UTF-8 in svg output: {e}"))
+}
+
+// ---------------------------------------------------------------------------
 // draw.io XML renderer
 // ---------------------------------------------------------------------------
 
@@ -771,6 +1480,10 @@ pub fn render_drawio(
     layout: &LayoutResult,
     theme: &str,
 ) -> Result<String> {
+    if let Some(seq) = &layout.sequence_info {
+        return render_sequence_drawio(compiled, layout, seq, theme);
+    }
+
     let mut buf = Vec::with_capacity(4096);
     let mut w = Writer::new_with_indent(Cursor::new(&mut buf), b' ', 2);
 
@@ -934,11 +1647,28 @@ pub fn render_drawio(
             Some(p) => p,
             None => continue,
         };
-        let style = style_for_type(&node_data.node_type, theme);
+        let mut style = style_for_type(&node_data.node_type, theme);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
 
         // Build HTML label: formatted with typography, title/subtitle hierarchy, and code spans
-        let html_value = format_html_label(&node_data.label, theme, &node_data.node_type);
+        let html_value = if !node_data.fields.is_empty() {
+            style.push_str(";spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;");
+            format_html_table_or_class(
+                &node_data.label,
+                &node_data.fields,
+                theme,
+                &node_data.node_type,
+                node_data.icon.as_deref(),
+            )
+        } else {
+            format_html_label_with_details(
+                &node_data.label,
+                theme,
+                &node_data.node_type,
+                node_data.icon.as_deref(),
+                node_data.technology.as_deref(),
+            )
+        };
 
         let (parent_id, rel_x, rel_y) = if let Some(gid) = node_to_group_id.get(&node_data.id) {
             let (gx, gy) = group_origins[gid];
@@ -1112,6 +1842,35 @@ pub fn render_drawio(
                 "strokeColor=#6366f1;strokeWidth=2;endArrow=blockThin;endFill=1;"
             }
             Some("bi") | Some("bidirectional") => &bi_style,
+            // ER Diagram Relationships
+            Some("one_to_many") => {
+                "strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;"
+            }
+            Some("many_to_many") => {
+                "strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERmany;startFill=0;endArrow=ERmany;endFill=0;"
+            }
+            Some("one_to_one") => {
+                "strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERone;startFill=0;endArrow=ERone;endFill=0;"
+            }
+            Some("zero_to_many") => {
+                "strokeColor=#0284c7;strokeWidth=1.5;startArrow=ERzeroToOne;startFill=0;endArrow=ERmany;endFill=0;"
+            }
+            // UML Class Diagram Relationships
+            Some("inheritance") => {
+                "strokeColor=#6366f1;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;"
+            }
+            Some("realization") => {
+                "dashed=1;dashPattern=6 3;strokeColor=#6366f1;strokeWidth=1.5;endArrow=block;endFill=0;endSize=10;"
+            }
+            Some("composition") => {
+                "strokeColor=#0f172a;strokeWidth=1.5;startArrow=diamond;startFill=1;startSize=12;endArrow=none;"
+            }
+            Some("aggregation") => {
+                "strokeColor=#0f172a;strokeWidth=1.5;startArrow=diamond;startFill=0;startSize=12;endArrow=none;"
+            }
+            Some("dependency") => {
+                "dashed=1;dashPattern=6 3;strokeColor=#64748b;strokeWidth=1.5;endArrow=open;endFill=0;"
+            }
             _ => &default_style,
         };
 
@@ -1178,6 +1937,10 @@ pub fn render_drawio(
 ///
 /// Returns an error if the underlying XML writer fails.
 pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) -> Result<String> {
+    if let Some(seq) = &layout.sequence_info {
+        return render_sequence_svg(compiled, layout, seq, theme);
+    }
+
     // Compute canvas bounds including nodes and group containers.
     let mut max_x = 0.0_f64;
     let mut max_y = 0.0_f64;
@@ -1281,6 +2044,101 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         w.write_event(Event::Empty(mpath))?;
         w.write_event(Event::End(BytesEnd::new("marker")))?;
     }
+
+    // ER & UML Markers
+    let er_color = "#0284c7";
+    let uml_color = "#6366f1";
+    let uml_dark = if is_dark { "#cbd5e1" } else { "#0f172a" };
+
+    // Crow's foot (many)
+    let mut m_er_many = BytesStart::new("marker");
+    m_er_many.push_attribute(("id", "marker-er-many"));
+    m_er_many.push_attribute(("viewBox", "0 0 12 12"));
+    m_er_many.push_attribute(("refX", "10"));
+    m_er_many.push_attribute(("refY", "6"));
+    m_er_many.push_attribute(("markerWidth", "8"));
+    m_er_many.push_attribute(("markerHeight", "8"));
+    m_er_many.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_er_many))?;
+    let mut p_er_many = BytesStart::new("path");
+    p_er_many.push_attribute(("d", "M 0 1 L 10 6 L 0 11 M 10 0 L 10 12"));
+    p_er_many.push_attribute(("fill", "none"));
+    p_er_many.push_attribute(("stroke", er_color));
+    p_er_many.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_er_many))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
+    // Single line (one)
+    let mut m_er_one = BytesStart::new("marker");
+    m_er_one.push_attribute(("id", "marker-er-one"));
+    m_er_one.push_attribute(("viewBox", "0 0 12 12"));
+    m_er_one.push_attribute(("refX", "8"));
+    m_er_one.push_attribute(("refY", "6"));
+    m_er_one.push_attribute(("markerWidth", "8"));
+    m_er_one.push_attribute(("markerHeight", "8"));
+    m_er_one.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_er_one))?;
+    let mut p_er_one = BytesStart::new("path");
+    p_er_one.push_attribute(("d", "M 4 1 L 4 11 M 8 1 L 8 11"));
+    p_er_one.push_attribute(("fill", "none"));
+    p_er_one.push_attribute(("stroke", er_color));
+    p_er_one.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_er_one))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
+    // UML Inheritance Triangle (hollow closed triangle)
+    let mut m_uml_tri = BytesStart::new("marker");
+    m_uml_tri.push_attribute(("id", "marker-uml-triangle"));
+    m_uml_tri.push_attribute(("viewBox", "0 0 12 12"));
+    m_uml_tri.push_attribute(("refX", "10"));
+    m_uml_tri.push_attribute(("refY", "6"));
+    m_uml_tri.push_attribute(("markerWidth", "8"));
+    m_uml_tri.push_attribute(("markerHeight", "8"));
+    m_uml_tri.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_uml_tri))?;
+    let mut p_uml_tri = BytesStart::new("path");
+    p_uml_tri.push_attribute(("d", "M 1 1 L 11 6 L 1 11 z"));
+    p_uml_tri.push_attribute(("fill", bg_color));
+    p_uml_tri.push_attribute(("stroke", uml_color));
+    p_uml_tri.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_uml_tri))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
+    // UML Composition Diamond (filled)
+    let mut m_uml_df = BytesStart::new("marker");
+    m_uml_df.push_attribute(("id", "marker-uml-diamond-fill"));
+    m_uml_df.push_attribute(("viewBox", "0 0 16 12"));
+    m_uml_df.push_attribute(("refX", "2"));
+    m_uml_df.push_attribute(("refY", "6"));
+    m_uml_df.push_attribute(("markerWidth", "10"));
+    m_uml_df.push_attribute(("markerHeight", "8"));
+    m_uml_df.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_uml_df))?;
+    let mut p_uml_df = BytesStart::new("path");
+    p_uml_df.push_attribute(("d", "M 1 6 L 8 1 L 15 6 L 8 11 z"));
+    p_uml_df.push_attribute(("fill", uml_dark));
+    p_uml_df.push_attribute(("stroke", uml_dark));
+    p_uml_df.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_uml_df))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
+    // UML Aggregation Diamond (hollow)
+    let mut m_uml_dh = BytesStart::new("marker");
+    m_uml_dh.push_attribute(("id", "marker-uml-diamond-hollow"));
+    m_uml_dh.push_attribute(("viewBox", "0 0 16 12"));
+    m_uml_dh.push_attribute(("refX", "2"));
+    m_uml_dh.push_attribute(("refY", "6"));
+    m_uml_dh.push_attribute(("markerWidth", "10"));
+    m_uml_dh.push_attribute(("markerHeight", "8"));
+    m_uml_dh.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_uml_dh))?;
+    let mut p_uml_dh = BytesStart::new("path");
+    p_uml_dh.push_attribute(("d", "M 1 6 L 8 1 L 15 6 L 8 11 z"));
+    p_uml_dh.push_attribute(("fill", bg_color));
+    p_uml_dh.push_attribute(("stroke", uml_dark));
+    p_uml_dh.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_uml_dh))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
 
     w.write_event(Event::End(BytesEnd::new("defs")))?;
 
@@ -1513,11 +2371,70 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         };
 
         let is_bi = matches!(edge_data.edge_style.as_deref(), Some("bi") | Some("bidirectional"));
-        let (stroke, stroke_w, dash, marker_id) = match edge_data.edge_style.as_deref() {
-            Some("async") => ("#d97706", "1.5", Some("8 4"), "arrow-amber"),
-            Some("error") | Some("fallback") => ("#ef4444", "1.5", Some("6 3"), "arrow-red"),
-            Some("data") | Some("stream") => ("#6366f1", "2.0", None, "arrow-indigo"),
-            _ => (default_edge, "1.5", None, if is_dark { "arrow-dark" } else { "arrow-slate" }),
+        let mut marker_start: Option<&str> = None;
+        let mut marker_end: Option<&str> = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
+
+        let (stroke, stroke_w, dash) = match edge_data.edge_style.as_deref() {
+            Some("async") => {
+                marker_end = Some("arrow-amber");
+                ("#d97706", "1.5", Some("8 4"))
+            }
+            Some("error") | Some("fallback") => {
+                marker_end = Some("arrow-red");
+                ("#ef4444", "1.5", Some("6 3"))
+            }
+            Some("data") | Some("stream") => {
+                marker_end = Some("arrow-indigo");
+                ("#6366f1", "2.0", None)
+            }
+            Some("one_to_many") => {
+                marker_start = Some("marker-er-one");
+                marker_end = Some("marker-er-many");
+                ("#0284c7", "1.5", None)
+            }
+            Some("many_to_many") => {
+                marker_start = Some("marker-er-many");
+                marker_end = Some("marker-er-many");
+                ("#0284c7", "1.5", None)
+            }
+            Some("one_to_one") => {
+                marker_start = Some("marker-er-one");
+                marker_end = Some("marker-er-one");
+                ("#0284c7", "1.5", None)
+            }
+            Some("zero_to_many") => {
+                marker_start = Some("marker-er-one");
+                marker_end = Some("marker-er-many");
+                ("#0284c7", "1.5", None)
+            }
+            Some("inheritance") => {
+                marker_end = Some("marker-uml-triangle");
+                ("#6366f1", "1.5", None)
+            }
+            Some("realization") => {
+                marker_end = Some("marker-uml-triangle");
+                ("#6366f1", "1.5", Some("6 3"))
+            }
+            Some("composition") => {
+                marker_start = Some("marker-uml-diamond-fill");
+                marker_end = None;
+                (if is_dark { "#cbd5e1" } else { "#0f172a" }, "1.5", None)
+            }
+            Some("aggregation") => {
+                marker_start = Some("marker-uml-diamond-hollow");
+                marker_end = None;
+                (if is_dark { "#cbd5e1" } else { "#0f172a" }, "1.5", None)
+            }
+            Some("dependency") => {
+                marker_end = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
+                ("#64748b", "1.5", Some("6 3"))
+            }
+            _ => {
+                if is_bi {
+                    marker_start = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
+                }
+                (default_edge, "1.5", None)
+            }
         };
 
         let (path_d, lx, ly) = orthogonal_path(x1, y1, x2, y2, is_horizontal);
@@ -1530,10 +2447,12 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         if let Some(d) = dash {
             path.push_attribute(("stroke-dasharray", d));
         }
-        if is_bi {
-            path.push_attribute(("marker-start", format!("url(#{marker_id})").as_str()));
+        if let Some(ms) = marker_start {
+            path.push_attribute(("marker-start", format!("url(#{ms})").as_str()));
         }
-        path.push_attribute(("marker-end", format!("url(#{marker_id})").as_str()));
+        if let Some(me) = marker_end {
+            path.push_attribute(("marker-end", format!("url(#{me})").as_str()));
+        }
         w.write_event(Event::Empty(path))?;
 
         if let Some(label) = &edge_data.label {
@@ -1591,17 +2510,172 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         };
         let stroke_color = stroke_for_type(&node_data.node_type, theme);
 
-        let is_db = matches!(
-            node_data.node_type.to_ascii_lowercase().as_str(),
-            "database" | "db" | "storage"
+        let lower_type = node_data.node_type.to_ascii_lowercase();
+        let is_start = matches!(
+            lower_type.as_str(),
+            "start" | "start_state" | "initial" | "initial_state"
         );
-        let is_decision = matches!(
-            node_data.node_type.to_ascii_lowercase().as_str(),
-            "decision" | "condition"
+        let is_end = matches!(
+            lower_type.as_str(),
+            "end" | "end_state" | "final" | "final_state"
         );
+        let is_choice = matches!(lower_type.as_str(), "choice" | "branch");
+        let is_decision = matches!(lower_type.as_str(), "decision" | "condition");
+        let is_class = matches!(
+            lower_type.as_str(),
+            "class" | "interface" | "abstract_class" | "struct"
+        );
+        let is_table_cylinder = !is_class && (matches!(
+            lower_type.as_str(),
+            "table" | "entity" | "record" | "database" | "db" | "storage"
+        ) || !node_data.fields.is_empty());
 
-        if is_db {
-            let rh = (nl.height * 0.18).min(12.0);
+        if is_start {
+            let cx = nl.x + nl.width / 2.0;
+            let cy = nl.y + nl.height / 2.0;
+            let mut circle = BytesStart::new("circle");
+            circle.push_attribute(("cx", format!("{cx:.1}").as_str()));
+            circle.push_attribute(("cy", format!("{cy:.1}").as_str()));
+            circle.push_attribute(("r", "12"));
+            circle.push_attribute(("fill", stroke_color));
+            w.write_event(Event::Empty(circle))?;
+            continue;
+        } else if is_end {
+            let cx = nl.x + nl.width / 2.0;
+            let cy = nl.y + nl.height / 2.0;
+            let mut outer = BytesStart::new("circle");
+            outer.push_attribute(("cx", format!("{cx:.1}").as_str()));
+            outer.push_attribute(("cy", format!("{cy:.1}").as_str()));
+            outer.push_attribute(("r", "14"));
+            outer.push_attribute(("fill", "none"));
+            outer.push_attribute(("stroke", stroke_color));
+            outer.push_attribute(("stroke-width", "2.0"));
+            w.write_event(Event::Empty(outer))?;
+
+            let mut inner = BytesStart::new("circle");
+            inner.push_attribute(("cx", format!("{cx:.1}").as_str()));
+            inner.push_attribute(("cy", format!("{cy:.1}").as_str()));
+            inner.push_attribute(("r", "8"));
+            inner.push_attribute(("fill", stroke_color));
+            w.write_event(Event::Empty(inner))?;
+            continue;
+        } else if is_choice || is_decision {
+            let poly_d = format!(
+                "M {cx:.1} {top:.1} L {right:.1} {cy:.1} L {cx:.1} {bot:.1} L {left:.1} {cy:.1} Z",
+                cx = nl.x + nl.width / 2.0,
+                top = nl.y,
+                right = nl.x + nl.width,
+                cy = nl.y + nl.height / 2.0,
+                bot = nl.y + nl.height,
+                left = nl.x,
+            );
+            let mut poly = BytesStart::new("path");
+            poly.push_attribute(("d", poly_d.as_str()));
+            poly.push_attribute(("fill", card_fill));
+            poly.push_attribute(("stroke", stroke_color));
+            poly.push_attribute(("stroke-width", "2.0"));
+            poly.push_attribute(("filter", "url(#card-shadow)"));
+            w.write_event(Event::Empty(poly))?;
+        } else if is_class {
+            let mut rect = BytesStart::new("rect");
+            rect.push_attribute(("x", format!("{:.1}", nl.x).as_str()));
+            rect.push_attribute(("y", format!("{:.1}", nl.y).as_str()));
+            rect.push_attribute(("width", format!("{:.1}", nl.width).as_str()));
+            rect.push_attribute(("height", format!("{:.1}", nl.height).as_str()));
+            rect.push_attribute(("rx", "6"));
+            rect.push_attribute(("ry", "6"));
+            rect.push_attribute(("fill", card_fill));
+            rect.push_attribute(("stroke", stroke_color));
+            rect.push_attribute(("stroke-width", "1.5"));
+            rect.push_attribute(("filter", "url(#card-shadow)"));
+            w.write_event(Event::Empty(rect))?;
+
+            let cx = nl.x + nl.width / 2.0;
+            let mut cur_y = nl.y + 14.0;
+
+            let stereotype = if lower_type == "interface" {
+                Some("&lt;&lt;interface&gt;&gt;")
+            } else if lower_type == "abstract_class" {
+                Some("&lt;&lt;abstract&gt;&gt;")
+            } else {
+                None
+            };
+
+            if let Some(st) = stereotype {
+                let mut st_text = BytesStart::new("text");
+                st_text.push_attribute(("x", format!("{cx:.1}").as_str()));
+                st_text.push_attribute(("y", format!("{cur_y:.1}").as_str()));
+                st_text.push_attribute(("text-anchor", "middle"));
+                st_text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+                st_text.push_attribute(("font-size", "10"));
+                st_text.push_attribute(("font-style", "italic"));
+                st_text.push_attribute(("fill", sub_color));
+                w.write_event(Event::Start(st_text))?;
+                w.write_event(Event::Text(BytesText::from_escaped(st)))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+                cur_y += 14.0;
+            }
+
+            let mut title_text = BytesStart::new("text");
+            title_text.push_attribute(("x", format!("{cx:.1}").as_str()));
+            title_text.push_attribute(("y", format!("{cur_y:.1}").as_str()));
+            title_text.push_attribute(("text-anchor", "middle"));
+            title_text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+            title_text.push_attribute(("font-size", "12"));
+            title_text.push_attribute(("font-weight", "bold"));
+            if lower_type == "abstract_class" {
+                title_text.push_attribute(("font-style", "italic"));
+            }
+            title_text.push_attribute(("fill", title_color));
+            w.write_event(Event::Start(title_text))?;
+            w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
+            w.write_event(Event::End(BytesEnd::new("text")))?;
+            cur_y += 8.0;
+
+            let mut h_line = BytesStart::new("line");
+            h_line.push_attribute(("x1", (nl.x).round().to_string().as_str()));
+            h_line.push_attribute(("y1", cur_y.round().to_string().as_str()));
+            h_line.push_attribute(("x2", (nl.x + nl.width).round().to_string().as_str()));
+            h_line.push_attribute(("y2", cur_y.round().to_string().as_str()));
+            h_line.push_attribute(("stroke", if is_dark { "#475569" } else { "#e2e8f0" }));
+            h_line.push_attribute(("stroke-width", "1.0"));
+            w.write_event(Event::Empty(h_line))?;
+
+            for (f_idx, field) in node_data.fields.iter().enumerate() {
+                let field_y = cur_y + 16.0 + (f_idx as f64 * 18.0);
+                let field_clean = crate::layout::strip_markdown_tokens(field);
+                let (left_part, right_part) = if let Some(idx) = field_clean.find(':') {
+                    (&field_clean[..idx], &field_clean[idx + 1..])
+                } else {
+                    (field_clean.as_str(), "")
+                };
+
+                let mut left_text = BytesStart::new("text");
+                left_text.push_attribute(("x", (nl.x + 12.0).round().to_string().as_str()));
+                left_text.push_attribute(("y", field_y.round().to_string().as_str()));
+                left_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
+                left_text.push_attribute(("font-size", "10"));
+                left_text.push_attribute(("fill", title_color));
+                w.write_event(Event::Start(left_text))?;
+                w.write_event(Event::Text(BytesText::new(left_part.trim())))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+
+                if !right_part.trim().is_empty() {
+                    let mut right_text = BytesStart::new("text");
+                    right_text.push_attribute(("x", (nl.x + nl.width - 12.0).round().to_string().as_str()));
+                    right_text.push_attribute(("y", field_y.round().to_string().as_str()));
+                    right_text.push_attribute(("text-anchor", "end"));
+                    right_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
+                    right_text.push_attribute(("font-size", "10"));
+                    right_text.push_attribute(("fill", sub_color));
+                    w.write_event(Event::Start(right_text))?;
+                    w.write_event(Event::Text(BytesText::new(right_part.trim())))?;
+                    w.write_event(Event::End(BytesEnd::new("text")))?;
+                }
+            }
+            continue;
+        } else if is_table_cylinder {
+            let rh = (nl.height * 0.14).clamp(8.0, 14.0);
             let rx = nl.width / 2.0;
             let cx = nl.x + rx;
 
@@ -1628,27 +2702,80 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             top_cap.push_attribute(("cy", format!("{:.1}", nl.y + rh).as_str()));
             top_cap.push_attribute(("rx", format!("{rx:.1}").as_str()));
             top_cap.push_attribute(("ry", format!("{rh:.1}").as_str()));
-            top_cap.push_attribute(("fill", card_fill));
+            let cap_fill = if is_dark { "#334155" } else { "#f1f5f9" };
+            top_cap.push_attribute(("fill", cap_fill));
             top_cap.push_attribute(("stroke", stroke_color));
             top_cap.push_attribute(("stroke-width", "1.5"));
             w.write_event(Event::Empty(top_cap))?;
-        } else if is_decision {
-            let poly_d = format!(
-                "M {cx:.1} {top:.1} L {right:.1} {cy:.1} L {cx:.1} {bot:.1} L {left:.1} {cy:.1} Z",
-                cx = nl.x + nl.width / 2.0,
-                top = nl.y,
-                right = nl.x + nl.width,
-                cy = nl.y + nl.height / 2.0,
-                bot = nl.y + nl.height,
-                left = nl.x,
-            );
-            let mut poly = BytesStart::new("path");
-            poly.push_attribute(("d", poly_d.as_str()));
-            poly.push_attribute(("fill", card_fill));
-            poly.push_attribute(("stroke", stroke_color));
-            poly.push_attribute(("stroke-width", "2.0"));
-            poly.push_attribute(("filter", "url(#card-shadow)"));
-            w.write_event(Event::Empty(poly))?;
+
+            // If table has fields, render structured table rows inside the cylinder!
+            if !node_data.fields.is_empty() {
+                // Table header label
+                let header_y = nl.y + rh * 2.0 + 8.0;
+                let mut text = BytesStart::new("text");
+                text.push_attribute(("x", format!("{cx:.1}").as_str()));
+                text.push_attribute(("y", format!("{header_y:.1}").as_str()));
+                text.push_attribute(("text-anchor", "middle"));
+                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
+                text.push_attribute(("font-size", "11"));
+                text.push_attribute(("font-weight", "bold"));
+                text.push_attribute(("fill", title_color));
+                w.write_event(Event::Start(text))?;
+                w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
+                w.write_event(Event::End(BytesEnd::new("text")))?;
+
+                // Divider line below header
+                let mut h_line = BytesStart::new("line");
+                h_line.push_attribute(("x1", (nl.x + 8.0).round().to_string().as_str()));
+                h_line.push_attribute(("y1", (header_y + 6.0).round().to_string().as_str()));
+                h_line.push_attribute(("x2", (nl.x + nl.width - 8.0).round().to_string().as_str()));
+                h_line.push_attribute(("y2", (header_y + 6.0).round().to_string().as_str()));
+                h_line.push_attribute(("stroke", if is_dark { "#475569" } else { "#e2e8f0" }));
+                h_line.push_attribute(("stroke-width", "1.0"));
+                w.write_event(Event::Empty(h_line))?;
+
+                // Fields rows
+                for (f_idx, field) in node_data.fields.iter().enumerate() {
+                    let field_y = header_y + 18.0 + (f_idx as f64 * 20.0);
+                    let field_clean = crate::layout::strip_markdown_tokens(field);
+                    let (left_part, right_part) = if let Some(idx) = field_clean.find(':') {
+                        (&field_clean[..idx], &field_clean[idx + 1..])
+                    } else {
+                        (field_clean.as_str(), "")
+                    };
+                    let is_pk = field_clean.to_ascii_uppercase().contains("[PK]")
+                        || field_clean.to_ascii_uppercase().contains("PRIMARY KEY");
+
+                    let mut left_text = BytesStart::new("text");
+                    left_text.push_attribute(("x", (nl.x + 12.0).round().to_string().as_str()));
+                    left_text.push_attribute(("y", field_y.round().to_string().as_str()));
+                    left_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
+                    left_text.push_attribute(("font-size", "10"));
+                    if is_pk {
+                        left_text.push_attribute(("font-weight", "bold"));
+                        left_text.push_attribute(("fill", "#d97706"));
+                    } else {
+                        left_text.push_attribute(("fill", title_color));
+                    }
+                    w.write_event(Event::Start(left_text))?;
+                    w.write_event(Event::Text(BytesText::new(left_part.trim())))?;
+                    w.write_event(Event::End(BytesEnd::new("text")))?;
+
+                    if !right_part.trim().is_empty() {
+                        let mut right_text = BytesStart::new("text");
+                        right_text.push_attribute(("x", (nl.x + nl.width - 12.0).round().to_string().as_str()));
+                        right_text.push_attribute(("y", field_y.round().to_string().as_str()));
+                        right_text.push_attribute(("text-anchor", "end"));
+                        right_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
+                        right_text.push_attribute(("font-size", "9"));
+                        right_text.push_attribute(("fill", sub_color));
+                        w.write_event(Event::Start(right_text))?;
+                        w.write_event(Event::Text(BytesText::new(right_part.trim())))?;
+                        w.write_event(Event::End(BytesEnd::new("text")))?;
+                    }
+                }
+                continue;
+            }
         } else {
             let mut rect = BytesStart::new("rect");
             rect.push_attribute(("x", format!("{:.1}", nl.x).as_str()));
@@ -1662,6 +2789,13 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             rect.push_attribute(("stroke-width", "1.5"));
             rect.push_attribute(("filter", "url(#card-shadow)"));
             w.write_event(Event::Empty(rect))?;
+
+            // Render language / database / user icon if available!
+            if let Some(icon_key) = node_data.icon.as_deref() {
+                if let Some(icon_markup) = crate::icons::render_icon_svg(icon_key, nl.x + 8.0, nl.y + 8.0, 16.0) {
+                    w.write_event(Event::Text(BytesText::from_escaped(icon_markup)))?;
+                }
+            }
         }
 
         // Multi-line text wrapping with centered tspans and typography support
@@ -1675,9 +2809,9 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             n => 14.0 + (n - 1) as f64 * 14.0,
         };
 
-        // Center text inside cylindrical body below the top ellipse cap for databases
-        let start_y = if is_db {
-            let rh = (nl.height * 0.18).min(12.0);
+        // Center text inside cylindrical body below the top ellipse cap for databases/tables
+        let start_y = if is_table_cylinder {
+            let rh = (nl.height * 0.14).clamp(8.0, 14.0);
             let body_top = nl.y + 2.0 * rh + 2.0;
             let body_bot = nl.y + nl.height - rh - 2.0;
             let body_h = (body_bot - body_top).max(total_text_h);
@@ -1757,6 +2891,21 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
                 w.write_event(Event::End(BytesEnd::new("tspan")))?;
             }
         }
+
+        if let Some(t) = &node_data.technology {
+            if !node_data.label.contains(t) {
+                let mut tech_span = BytesStart::new("tspan");
+                tech_span.push_attribute(("x", format!("{cx:.1}").as_str()));
+                tech_span.push_attribute(("dy", "14"));
+                tech_span.push_attribute(("font-family", "JetBrains Mono, monospace"));
+                tech_span.push_attribute(("font-size", "9"));
+                tech_span.push_attribute(("fill", sub_color));
+                w.write_event(Event::Start(tech_span))?;
+                w.write_event(Event::Text(BytesText::new(&format!("[{t}]"))))?;
+                w.write_event(Event::End(BytesEnd::new("tspan")))?;
+            }
+        }
+
         w.write_event(Event::End(BytesEnd::new("text")))?;
     }
 
@@ -2171,5 +3320,204 @@ mod tests {
 
         assert!(svg.contains("dy=\"14\""), "wrapped lines must have dy offset");
         assert!(svg.contains("Distributed"), "first line should contain Distributed");
+    }
+
+    #[test]
+    fn test_language_and_database_icons_rendered() {
+        let payload = DiagramPayload {
+            diagram_type: "architecture".to_owned(),
+            nodes: vec![
+                NodeDef {
+                    id: "svc".to_owned(),
+                    label: "Order Service".to_owned(),
+                    node_type: "service".to_owned(),
+                    language: Some("rust".to_owned()),
+                    technology: Some("Axum".to_owned()),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "db".to_owned(),
+                    label: "Order DB".to_owned(),
+                    node_type: "database".to_owned(),
+                    db_type: Some("postgres".to_owned()),
+                    ..Default::default()
+                },
+            ],
+            edges: vec![
+                crate::schema::EdgeDef {
+                    from: "svc".to_owned(),
+                    to: "db".to_owned(),
+                    label: Some("queries".to_owned()),
+                    ..Default::default()
+                }
+            ],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("data:image/svg+xml;base64,"), "drawio must embed base64 icon data URI");
+        assert!(xml.contains("Axum"), "drawio must include tech badge");
+        assert!(xml.contains("shape=cylinder3"), "drawio database must use cylinder3 shape");
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("class=\"node-tech-icon\""), "svg must embed tech icon element");
+        assert!(svg.contains("ellipse"), "svg database must render 3D cylinder top cap");
+        assert!(svg.contains("Order Service"), "svg must render service title");
+    }
+
+    #[test]
+    fn test_erd_markers_and_table_cylinder() {
+        let payload = DiagramPayload {
+            diagram_type: "erd".to_owned(),
+            nodes: vec![
+                NodeDef {
+                    id: "orders".to_owned(),
+                    label: "orders".to_owned(),
+                    node_type: "table".to_owned(),
+                    fields: vec![
+                        "id: UUID [PK]".to_owned(),
+                        "user_id: UUID [FK]".to_owned(),
+                        "amount: DECIMAL".to_owned(),
+                    ],
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "users".to_owned(),
+                    label: "users".to_owned(),
+                    node_type: "table".to_owned(),
+                    fields: vec![
+                        "id: UUID [PK]".to_owned(),
+                        "email: VARCHAR".to_owned(),
+                    ],
+                    ..Default::default()
+                },
+            ],
+            edges: vec![
+                crate::schema::EdgeDef {
+                    from: "users".to_owned(),
+                    to: "orders".to_owned(),
+                    edge_style: Some("one_to_many".to_owned()),
+                    label: Some("places".to_owned()),
+                    ..Default::default()
+                }
+            ],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("startArrow=ERone"), "drawio ER edge must have ERone start arrow");
+        assert!(xml.contains("endArrow=ERmany"), "drawio ER edge must have ERmany end arrow");
+        assert!(xml.contains("[PK]"), "drawio table must render PK field");
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("marker-er-many"), "svg must define and use marker-er-many");
+        assert!(svg.contains("marker-er-one"), "svg must define and use marker-er-one");
+        assert!(svg.contains("UUID [PK]"), "svg must render primary key column");
+    }
+
+    #[test]
+    fn test_uml_markers_and_class_render() {
+        let payload = DiagramPayload {
+            diagram_type: "class".to_owned(),
+            nodes: vec![
+                NodeDef {
+                    id: "animal".to_owned(),
+                    label: "Animal".to_owned(),
+                    node_type: "abstract_class".to_owned(),
+                    fields: vec![
+                        "+name: String".to_owned(),
+                        "+make_sound(): void".to_owned(),
+                    ],
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "dog".to_owned(),
+                    label: "Dog".to_owned(),
+                    node_type: "class".to_owned(),
+                    fields: vec![
+                        "+bark(): void".to_owned(),
+                    ],
+                    ..Default::default()
+                },
+            ],
+            edges: vec![
+                crate::schema::EdgeDef {
+                    from: "dog".to_owned(),
+                    to: "animal".to_owned(),
+                    edge_style: Some("inheritance".to_owned()),
+                    ..Default::default()
+                }
+            ],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("endArrow=block;endFill=0"), "drawio UML inheritance must be hollow triangle");
+        assert!(
+            xml.contains("&amp;lt;&amp;lt;abstract&amp;gt;&amp;gt;") || xml.contains("&lt;&lt;abstract&gt;&gt;"),
+            "drawio abstract class must have stereotype prefix"
+        );
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("marker-uml-triangle"), "svg must define and use marker-uml-triangle");
+        assert!(svg.contains("&lt;&lt;abstract&gt;&gt;"), "svg must render abstract stereotype");
+    }
+
+    #[test]
+    fn test_sequence_diagram_render() {
+        let payload = DiagramPayload {
+            diagram_type: "sequence".to_owned(),
+            nodes: vec![
+                NodeDef {
+                    id: "client".to_owned(),
+                    label: "Client".to_owned(),
+                    node_type: "client".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "server".to_owned(),
+                    label: "API Server".to_owned(),
+                    node_type: "server".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            edges: vec![
+                crate::schema::EdgeDef {
+                    from: "client".to_owned(),
+                    to: "server".to_owned(),
+                    label: Some("POST /login".to_owned()),
+                    ..Default::default()
+                },
+                crate::schema::EdgeDef {
+                    from: "server".to_owned(),
+                    to: "client".to_owned(),
+                    label: Some("200 OK (JWT)".to_owned()),
+                    edge_style: Some("dashed".to_owned()),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("dashed=1"), "drawio sequence lifeline must be dashed");
+        assert!(xml.contains("dashPattern=6 6"), "drawio sequence lifeline must have dash pattern");
+        assert!(xml.contains("POST /login"), "drawio sequence must include message label");
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("stroke-dasharray=\"6 6\""), "svg sequence lifeline must be dashed");
+        assert!(svg.contains("POST /login"), "svg sequence must include message text");
     }
 }

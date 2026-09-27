@@ -20,6 +20,21 @@
     <marker id="arrow-indigo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#6366f1"/>
     </marker>
+    <marker id="marker-er-many" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 6 L 0 11 M 10 0 L 10 12" fill="none" stroke="#0284c7" stroke-width="1.5"/>
+    </marker>
+    <marker id="marker-er-one" viewBox="0 0 12 12" refX="8" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 4 1 L 4 11 M 8 1 L 8 11" fill="none" stroke="#0284c7" stroke-width="1.5"/>
+    </marker>
+    <marker id="marker-uml-triangle" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#f8fafc" stroke="#6366f1" stroke-width="1.5"/>
+    </marker>
+    <marker id="marker-uml-diamond-fill" viewBox="0 0 16 12" refX="2" refY="6" markerWidth="10" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 6 L 8 1 L 15 6 L 8 11 z" fill="#0f172a" stroke="#0f172a" stroke-width="1.5"/>
+    </marker>
+    <marker id="marker-uml-diamond-hollow" viewBox="0 0 16 12" refX="2" refY="6" markerWidth="10" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 6 L 8 1 L 15 6 L 8 11 z" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+    </marker>
   </defs>
   <text x="24" y="28" font-family="Inter, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#0f172a">Low-Level Design Architecture</text>
   <text x="24" y="44" font-family="Inter, Helvetica, sans-serif" font-size="11" fill="#64748b">Deterministic Compilation Pipeline (Ingestion → Schema → IR → Layout → Render)</text>
@@ -141,9 +156,9 @@
     <tspan x="998.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">schema::EdgeDef</tspan>
     <tspan x="998.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ from, to, label }</tspan>
   </text>
-  <path d="M 286.0 414.0 L 286.0 460.0 A 60.0 12.0 0 0 0 406.0 460.0 L 406.0 414.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="346.0" cy="414.0" rx="60.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="346.0" y="440.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <path d="M 286.0 411.8 L 286.0 462.2 A 60.0 9.8 0 0 0 406.0 462.2 L 406.0 411.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="346.0" cy="411.8" rx="60.0" ry="9.8" fill="#f1f5f9" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="346.0" y="438.9" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="346.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">petgraph::</tspan>
     <tspan x="346.0" dy="14" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">StableDiGraph</tspan>
   </text>
@@ -165,9 +180,9 @@
     <tspan x="163.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(DFS Back-edge</tspan>
     <tspan x="163.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">Reversal)</tspan>
   </text>
-  <path d="M 286.0 702.0 L 286.0 748.0 A 60.0 12.0 0 0 0 406.0 748.0 L 406.0 702.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="346.0" cy="702.0" rx="60.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="346.0" y="728.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <path d="M 286.0 699.8 L 286.0 750.2 A 60.0 9.8 0 0 0 406.0 750.2 L 406.0 699.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="346.0" cy="699.8" rx="60.0" ry="9.8" fill="#f1f5f9" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="346.0" y="726.9" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="346.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">graph::</tspan>
     <tspan x="346.0" dy="14" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">CompiledGraph</tspan>
   </text>
@@ -177,11 +192,11 @@
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ rank_spacing,</tspan>
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">node_spacing }</tspan>
   </text>
-  <rect x="839.0" y="460.0" width="140.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <text x="909.0" y="480.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <rect x="839.0" y="460.0" width="140.0" height="60.0" rx="8" ry="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" filter="url(#card-shadow)"/><g class="node-tech-icon" transform="translate(847.0, 468.0) scale(0.6667)"><rect width="22" height="16" x="1" y="4" rx="3" fill="#00add8"/><path fill="#ffffff" d="M5.5 8h4.5v1.8H7.3v4.4h2.7v-1.8H8.5v-1.4h3.3v4.5H5.5V8zm7.5 0h4.8c1.2 0 2.2 1 2.2 2.2v2.8c0 1.2-1 2.2-2.2 2.2H13V8zm1.8 1.8v3.6h2.8c.3 0 .5-.2.5-.5v-2.6c0-.3-.2-.5-.5-.5h-2.8z"/></g><text x="909.0" y="480.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="909.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">layout-rs</tspan>
     <tspan x="909.0" dy="14" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">VisualGraph</tspan>
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(Sugiyama Engine)</tspan>
+    <tspan x="909.0" dy="14" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">[Go]</tspan>
   </text>
   <path d="M 909.0 564.0 L 1024.0 629.0 L 909.0 694.0 L 794.0 629.0 Z" fill="#ffffff" stroke="#a78bfa" stroke-width="2.0" filter="url(#card-shadow)"/>
   <text x="909.0" y="612.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
@@ -189,10 +204,11 @@
     <tspan x="909.0" dy="14" font-size="12" fill="#0f172a" font-weight="bold">Fallback</tspan>
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(Longest-path</tspan>
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">Ranking)</tspan>
+    <tspan x="909.0" dy="14" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">[Rust]</tspan>
   </text>
-  <path d="M 819.0 750.0 L 819.0 796.0 A 90.0 12.0 0 0 0 999.0 796.0 L 999.0 750.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="909.0" cy="750.0" rx="90.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="909.0" y="776.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <path d="M 819.0 747.8 L 819.0 798.2 A 90.0 9.8 0 0 0 999.0 798.2 L 999.0 747.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="909.0" cy="747.8" rx="90.0" ry="9.8" fill="#f1f5f9" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="909.0" y="774.9" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="909.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">layout::LayoutResult</tspan>
     <tspan x="909.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">{ positions: HashMap }</tspan>
   </text>
@@ -214,15 +230,16 @@
     <tspan font-size="12" fill="#0f172a" font-weight="bold"> Writer</tspan>
     <tspan x="662.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG Graphics)</tspan>
   </text>
-  <path d="M 503.0 1128.0 L 503.0 1174.0 A 60.0 12.0 0 0 0 623.0 1174.0 L 623.0 1128.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="563.0" cy="1128.0" rx="60.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="563.0" y="1154.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <path d="M 503.0 1125.8 L 503.0 1176.2 A 60.0 9.8 0 0 0 623.0 1176.2 L 623.0 1125.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="563.0" cy="1125.8" rx="60.0" ry="9.8" fill="#f1f5f9" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="563.0" y="1152.9" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="563.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">output.drawio</tspan>
     <tspan x="563.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(mxfile XML)</tspan>
+    <tspan x="563.0" dy="14" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748b">[C#]</tspan>
   </text>
-  <path d="M 587.0 1014.0 L 587.0 1060.0 A 60.0 12.0 0 0 0 707.0 1060.0 L 707.0 1014.0 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
-  <ellipse cx="647.0" cy="1014.0" rx="60.0" ry="12.0" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5"/>
-  <text x="647.0" y="1040.0" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
+  <path d="M 587.0 1011.8 L 587.0 1062.2 A 60.0 9.8 0 0 0 707.0 1062.2 L 707.0 1011.8 Z" fill="#ffffff" stroke="#38bdf8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <ellipse cx="647.0" cy="1011.8" rx="60.0" ry="9.8" fill="#f1f5f9" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="647.0" y="1038.9" text-anchor="middle" font-family="Inter, Helvetica, sans-serif">
     <tspan x="647.0" font-family="JetBrains Mono, Menlo, Courier New, monospace" font-size="11" font-weight="bold" fill="#0f172a">output.svg</tspan>
     <tspan x="647.0" dy="14" font-size="10" fill="#64748b" font-weight="normal">(SVG Graphics)</tspan>
   </text>

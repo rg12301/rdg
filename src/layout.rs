@@ -90,10 +90,36 @@ impl Default for LayoutConfig {
     }
 }
 
+/// Single chronological message in a sequence diagram.
+#[derive(Debug, Clone)]
+pub struct SequenceMessageLayout {
+    pub edge_idx: petgraph::stable_graph::EdgeIndex,
+    pub from_node: NodeIndex,
+    pub to_node: NodeIndex,
+    pub y: f64,
+    pub is_self_call: bool,
+    pub is_reply: bool,
+}
+
+/// Metadata and lifeline geometry for sequence diagrams.
+#[derive(Debug, Clone)]
+pub struct SequenceLayoutInfo {
+    /// Maps participant NodeIndex to its vertical lifeline X centerline.
+    pub lifeline_x: HashMap<NodeIndex, f64>,
+    /// Top Y coordinate of the lifelines (bottom of participant header cards).
+    pub lifeline_top_y: f64,
+    /// Bottom Y coordinate of the lifelines (below all messages).
+    pub lifeline_bottom_y: f64,
+    /// Chronological list of message layout positions.
+    pub messages: Vec<SequenceMessageLayout>,
+}
+
 /// Computed spatial positions for every node in the graph.
 pub struct LayoutResult {
     /// Maps petgraph [`NodeIndex`] to its computed 2D layout box.
     pub positions: HashMap<NodeIndex, NodeLayout>,
+    /// Optional sequence diagram layout metadata (when diagram_type == "sequence").
+    pub sequence_info: Option<SequenceLayoutInfo>,
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +139,12 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
     if compiled.graph.node_count() == 0 {
         return Ok(LayoutResult {
             positions: HashMap::new(),
+            sequence_info: None,
         });
+    }
+
+    if compiled.diagram_type == "sequence" {
+        return compute_sequence_layout(compiled, config);
     }
 
     let mut result = if !compiled.groups.is_empty() && config.direction == LayoutDirection::TopToBottom {
@@ -158,6 +189,88 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
     }
 
     Ok(result)
+}
+
+/// Compute coordinates for a sequence diagram.
+/// Places participants horizontally along the top, extends vertical lifelines downwards,
+/// and allocates chronological rows for each message arrow.
+pub fn compute_sequence_layout(
+    compiled: &CompiledGraph,
+    _config: &LayoutConfig,
+) -> Result<LayoutResult> {
+    let mut positions = HashMap::new();
+    let mut lifeline_x = HashMap::new();
+
+    if compiled.graph.node_count() == 0 {
+        return Ok(LayoutResult {
+            positions,
+            sequence_info: None,
+        });
+    }
+
+    let title_offset_y = if compiled.title.is_some() { 48.0 } else { 0.0 };
+    let start_y = MARGIN_Y + title_offset_y;
+
+    // Collect participants in stable node_indices order
+    let participants: Vec<NodeIndex> = compiled.graph.node_indices().collect();
+
+    let participant_w = 140.0;
+    let participant_h = 44.0;
+    let participant_gap = 64.0;
+
+    for (i, &node_idx) in participants.iter().enumerate() {
+        let x = MARGIN_X + (i as f64) * (participant_w + participant_gap);
+        let y = start_y;
+        positions.insert(
+            node_idx,
+            NodeLayout {
+                x,
+                y,
+                width: participant_w,
+                height: participant_h,
+            },
+        );
+        lifeline_x.insert(node_idx, x + participant_w / 2.0);
+    }
+
+    let lifeline_top_y = start_y + participant_h;
+    let mut current_y = lifeline_top_y + 36.0;
+    let mut messages = Vec::new();
+
+    for &edge_idx in &compiled.edge_order {
+        if let Some((src, dst)) = compiled.graph.edge_endpoints(edge_idx) {
+            let edge_data = &compiled.graph[edge_idx];
+            let is_self_call = src == dst;
+            let is_reply = edge_data.edge_style.as_deref() == Some("reply");
+
+            messages.push(SequenceMessageLayout {
+                edge_idx,
+                from_node: src,
+                to_node: dst,
+                y: current_y,
+                is_self_call,
+                is_reply,
+            });
+
+            if is_self_call {
+                current_y += 52.0;
+            } else {
+                current_y += 40.0;
+            }
+        }
+    }
+
+    let lifeline_bottom_y = current_y + 24.0;
+
+    Ok(LayoutResult {
+        positions,
+        sequence_info: Some(SequenceLayoutInfo {
+            lifeline_x,
+            lifeline_top_y,
+            lifeline_bottom_y,
+            messages,
+        }),
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -229,40 +342,62 @@ pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
 /// accurately reflects visible rendered glyphs.
 pub fn strip_markdown_tokens(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
-    let mut chars = text.chars().peekable();
-    while let Some(c) = chars.next() {
+    let chars: Vec<char> = text.chars().collect();
+    let n = chars.len();
+    let mut i = 0;
+
+    while i < n {
+        let c = chars[i];
         match c {
-            '`' | '*' | '_' | '~' | '^' | '$' => {
-                // skip markdown styling delimiters
+            '`' | '*' | '~' | '^' | '$' => {
+                i += 1;
+            }
+            '_' => {
+                // If double underscore `__`, skip both (markdown underline tag)
+                if i + 1 < n && chars[i + 1] == '_' {
+                    i += 2;
+                    continue;
+                }
+                // Intraword underscore: preserve if preceded and followed by alphanumeric
+                let prev_is_alnum = i > 0 && chars[i - 1].is_alphanumeric();
+                let next_is_alnum = i + 1 < n && chars[i + 1].is_alphanumeric();
+                if prev_is_alnum && next_is_alnum {
+                    out.push('_');
+                }
+                i += 1;
             }
             '\\' => {
                 // Check if \( or \)
-                if let Some(&next_c) = chars.peek() {
-                    if next_c == '(' || next_c == ')' {
-                        chars.next();
-                        continue;
-                    }
+                if i + 1 < n && (chars[i + 1] == '(' || chars[i + 1] == ')') {
+                    i += 2;
+                    continue;
                 }
                 // Check LaTeX command e.g. \times, \alpha
                 let mut cmd = String::new();
-                while let Some(&next_c) = chars.peek() {
-                    if next_c.is_alphabetic() {
-                        cmd.push(chars.next().unwrap());
-                    } else {
-                        break;
-                    }
+                let mut j = i + 1;
+                while j < n && chars[j].is_alphabetic() {
+                    cmd.push(chars[j]);
+                    j += 1;
                 }
-                match cmd.as_str() {
-                    "times" | "cdot" | "approx" | "le" | "ge" | "ne" | "neq" | "pm" | "to"
-                    | "in" => out.push('x'),
-                    "alpha" | "beta" | "gamma" | "delta" | "theta" | "lambda" | "pi" | "sigma"
-                    | "phi" | "omega" => out.push('w'),
-                    "infty" | "sum" | "prod" | "int" => out.push('M'),
-                    "" => out.push('\\'),
-                    _ => out.push_str(&cmd),
+                if !cmd.is_empty() {
+                    match cmd.as_str() {
+                        "times" | "cdot" | "approx" | "le" | "ge" | "ne" | "neq" | "pm" | "to"
+                        | "in" => out.push('x'),
+                        "alpha" | "beta" | "gamma" | "delta" | "theta" | "lambda" | "pi" | "sigma"
+                        | "phi" | "omega" => out.push('w'),
+                        "infty" | "sum" | "prod" | "int" => out.push('M'),
+                        _ => out.push_str(&cmd),
+                    }
+                    i = j;
+                } else {
+                    out.push('\\');
+                    i += 1;
                 }
             }
-            _ => out.push(c),
+            _ => {
+                out.push(c);
+                i += 1;
+            }
         }
     }
     out
@@ -299,6 +434,14 @@ pub fn estimate_node_size(
     };
     let mut height = total_h.max(min_height);
 
+    let lower = node_type.to_ascii_lowercase();
+    match lower.as_str() {
+        "start" | "start_state" | "initial" | "initial_state" => return (28.0, 28.0),
+        "end" | "end_state" | "final" | "final_state" => return (32.0, 32.0),
+        "choice" | "branch" => return (36.0, 36.0),
+        _ => {}
+    }
+
     if is_diamond {
         // Diamond shapes require extra geometric headroom so that the inscribed
         // rectangular text box doesn't touch the diagonal rhombus perimeter.
@@ -315,6 +458,50 @@ pub fn estimate_node_size(
     let snapped_w = (width / 10.0).ceil() * 10.0;
     let snapped_h = (height / 10.0).ceil() * 10.0;
     (snapped_w, snapped_h)
+}
+
+/// Dynamically estimate the width and height of a node based on its label, shape, and fields.
+pub fn estimate_node_size_with_fields(
+    label: &str,
+    node_type: &str,
+    fields: &[String],
+    min_width: f64,
+    min_height: f64,
+) -> (f64, f64) {
+    let lower_type = node_type.to_ascii_lowercase();
+    match lower_type.as_str() {
+        "start" | "start_state" | "initial" | "initial_state" => return (28.0, 28.0),
+        "end" | "end_state" | "final" | "final_state" => return (32.0, 32.0),
+        "choice" | "branch" => return (36.0, 36.0),
+        _ => {}
+    }
+
+    let is_table = matches!(
+        lower_type.as_str(),
+        "table" | "entity" | "record" | "schema"
+    );
+    let is_class = matches!(
+        lower_type.as_str(),
+        "class" | "interface" | "abstract_class" | "struct"
+    );
+
+    if (is_table || is_class) && !fields.is_empty() {
+        let max_field_chars = fields.iter().map(|f| f.chars().count()).max().unwrap_or(0);
+        let title_chars = strip_markdown_tokens(label).chars().count();
+        let max_chars = title_chars.max(max_field_chars);
+        let width = (max_chars as f64 * 7.5 + 40.0).max(min_width.max(160.0)).min(360.0);
+        // Table cylinders require top ellipse cap headroom (18px) and curved bottom padding (14px)
+        let height = if is_table {
+            48.0 + (fields.len() as f64 * 22.0) + 18.0
+        } else {
+            36.0 + (fields.len() as f64 * 22.0) + 12.0
+        };
+        let snapped_w = (width / 10.0).ceil() * 10.0;
+        let snapped_h = (height / 10.0).ceil() * 10.0;
+        return (snapped_w, snapped_h);
+    }
+
+    estimate_node_size(label, node_type, min_width, min_height)
 }
 
 // ---------------------------------------------------------------------------
@@ -369,9 +556,10 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
     for (idx, handle) in &handle_map {
         let pos = vg.pos(*handle);
         let (top_left, bottom_right) = pos.bbox(false);
-        let (est_w, est_h) = estimate_node_size(
+        let (est_w, est_h) = estimate_node_size_with_fields(
             &compiled.graph[*idx].label,
             &compiled.graph[*idx].node_type,
+            &compiled.graph[*idx].fields,
             config.node_width,
             config.node_height,
         );
@@ -388,7 +576,10 @@ fn layout_with_layout_rs(compiled: &CompiledGraph, config: &LayoutConfig) -> Res
         );
     }
 
-    Ok(LayoutResult { positions })
+    Ok(LayoutResult {
+        positions,
+        sequence_info: None,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -488,7 +679,7 @@ fn compute_group_local(
         let data = &compiled.graph[u];
         node_sizes.insert(
             u,
-            estimate_node_size(&data.label, &data.node_type, config.node_width, config.node_height),
+            estimate_node_size_with_fields(&data.label, &data.node_type, &data.fields, config.node_width, config.node_height),
         );
     }
 
@@ -811,9 +1002,10 @@ fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<La
 
         for &u in &info.nodes {
             let (lx, ly) = info.local_pos[&u];
-            let (nw, nh) = estimate_node_size(
+            let (nw, nh) = estimate_node_size_with_fields(
                 &compiled.graph[u].label,
                 &compiled.graph[u].node_type,
+                &compiled.graph[u].fields,
                 config.node_width,
                 config.node_height,
             );
@@ -829,7 +1021,10 @@ fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<La
         }
     }
 
-    Ok(LayoutResult { positions })
+    Ok(LayoutResult {
+        positions,
+        sequence_info: None,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -878,7 +1073,7 @@ fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         let data = &compiled.graph[node];
         node_sizes.insert(
             node,
-            estimate_node_size(&data.label, &data.node_type, config.node_width, config.node_height),
+            estimate_node_size_with_fields(&data.label, &data.node_type, &data.fields, config.node_width, config.node_height),
         );
     }
 
@@ -974,7 +1169,10 @@ fn layout_topological(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         }
     }
 
-    Ok(LayoutResult { positions })
+    Ok(LayoutResult {
+        positions,
+        sequence_info: None,
+    })
 }
 
 /// 3-pass barycentric crossing minimisation heuristic.
@@ -1247,5 +1445,47 @@ mod tests {
                 assert!(!overlap, "Group {i} and Group {j} must not overlap");
             }
         }
+    }
+
+    #[test]
+    fn test_sequence_layout_computes_lifelines_and_messages() {
+        let seq_yaml = r#"
+diagram_type: sequence
+nodes:
+  - id: client
+    label: "Browser"
+  - id: server
+    label: "Server"
+edges:
+  - from: client
+    to: server
+    label: "GET /"
+  - from: server
+    to: client
+    label: "200 OK"
+    style: reply
+"#;
+        let payload = DiagramPayload::from_yaml(seq_yaml).unwrap();
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        assert!(layout.sequence_info.is_some());
+        let seq = layout.sequence_info.unwrap();
+        assert_eq!(seq.lifeline_x.len(), 2);
+        assert_eq!(seq.messages.len(), 2);
+        assert!(seq.messages[0].y < seq.messages[1].y, "first message must be placed above second message");
+        assert!(seq.messages[1].is_reply);
+        assert!(seq.lifeline_bottom_y > seq.messages[1].y);
+    }
+
+    #[test]
+    fn test_table_sizing_with_fields() {
+        let fields = vec![
+            "id: uuid [PK]".to_string(),
+            "email: varchar(255) [UQ]".to_string(),
+            "created_at: timestamp".to_string(),
+        ];
+        let (w, h) = estimate_node_size_with_fields("users", "table", &fields, 120.0, 50.0);
+        assert!(w >= 160.0);
+        assert!(h >= 36.0 + 3.0 * 22.0);
     }
 }

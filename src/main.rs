@@ -46,8 +46,9 @@ This separation prevents coordinate hallucinations and XML syntax errors.
 INPUT SCHEMA (YAML) — emit exactly this structure
 ─────────────────────────────────────────────────────────────────────────────
 
-  diagram_type: flowchart          # required — logical category (string)
+  diagram_type: architecture       # architecture | flowchart | sequence | erd | class | state
   theme: standard                  # optional — standard (white-card) or dark
+  direction: tb                    # optional — tb (top-to-bottom) or lr (left-to-right)
   groups:                          # optional — visual swimlane containers
     - id: g1
       label: \"Core Cluster\"        # container title
@@ -55,14 +56,24 @@ INPUT SCHEMA (YAML) — emit exactly this structure
       nodes: [n1, n2]              # node ids enclosed in container
   nodes:
     - id: n1                       # required — unique, short, no spaces
-      label: \"API Gateway\\nv2\"     # required — title, newline adds subtitle
-      type: proxy                  # optional — semantic type (see NODE TYPES)
+      label: \"Order Service\"       # required — component title
+      type: service                # optional — semantic type (see NODE TYPES)
+      language: rust               # optional — flat vector logo: rust, go, python, ts, java...
+      technology: \"Axum 0.7\"       # optional — tech stack badge
       metadata: \"tooltip text\"     # optional — free annotation / tooltip
+    - id: n2
+      label: \"orders\"              # required — table / db entity
+      type: database               # database or table renders 3D cylinder
+      db_type: postgres            # optional — postgres, mysql, redis, mongo, kafka...
+      fields:                      # optional — column or member rows
+        - \"id: UUID [PK]\"
+        - \"user_id: UUID [FK]\"
+        - \"amount: DECIMAL\"
   edges:
     - from: n1                     # required — source node id
       to:   n2                     # required — target node id
-      label: \"edge label\"          # optional — text along the connector
-      edge_style: async            # optional: flow | async | error | data | bidirectional
+      label: \"SQL INSERT\"          # optional — text along connector / protocol
+      edge_style: one_to_many      # optional: flow | async | sync | reply | one_to_many | inheritance...
 
 Rules:
   • ids must be unique across all nodes and groups.
@@ -72,6 +83,35 @@ Rules:
   • The 'theme' key in YAML takes precedence over --theme flag.
 
 ─────────────────────────────────────────────────────────────────────────────
+DIAGRAM TYPES & ARCHITECTURE STANDARDS
+─────────────────────────────────────────────────────────────────────────────
+
+  architecture (HLD / LLD / C4)
+    • Level 2 (Container) & Level 3 (Component) architecture diagrams.
+    • Services display vector language badges and technology stack tags.
+    • Databases render 3D cylinders with database engine badges.
+    • Edge labels should name explicit communication protocols (e.g. gRPC, HTTPS, SQL).
+
+  flowchart / graph
+    • General computational pipelines, logic flows, state transitions.
+
+  sequence
+    • Participant lifelines at top; time flows strictly downward.
+    • Solid lines with filled arrows for sync requests; dashed lines with open
+      arrows for replies (edge_style: reply) and async events (edge_style: async).
+
+  erd (Entity Relationship Diagram)
+    • Tables rendered as cylinders or structured entity cards with [PK] and [FK] fields.
+    • Connectors feature standard Crow's Foot notation:
+      one_to_many (1:N), many_to_many (M:N), one_to_one (1:1), zero_to_many (0:N).
+
+  class (UML Class Diagram)
+    • Structured compartment cards with member fields and methods.
+    • Stereotype badges: <<interface>>, <<abstract>>.
+    • Connectors: inheritance (hollow triangle), realization (dashed triangle),
+      composition (filled diamond), aggregation (hollow diamond), dependency (dashed open).
+
+─────────────────────────────────────────────────────────────────────────────
 NODE TYPES (WHITE-CARD DESIGN SYSTEM)
 ─────────────────────────────────────────────────────────────────────────────
 
@@ -79,13 +119,30 @@ NODE TYPES (WHITE-CARD DESIGN SYSTEM)
 
   proxy / gateway / api      → Indigo accent card  (API gateways, load balancers)
   server / service / backend → Emerald accent card (microservices, backends)
-  database / db / storage    → Sky 3D cylinder     (databases, object stores)
+  database / db / storage    → Sky 3D cylinder     (databases, persistent stores)
+  table / entity / record    → Sky 3D cylinder     (database tables, entities)
   queue / broker / bus       → Amber queue pill    (Kafka, RabbitMQ, SQS)
   cache / redis / memcache   → Rose diamond        (Redis, Memcached, CDN edge)
   function / lambda / faas   → Orange Lambda card  (serverless handlers)
   client / user / browser    → Slate person icon   (end-users, web clients)
   decision / condition       → Purple diamond      (branching logic)
+  class / abstract_class     → UML structured card (classes with methods/fields)
+  interface                  → UML interface card  (<<interface>> stereotype)
+  start / start_state        → Solid filled circle (entry point)
+  end / end_state            → Bullseye circle     (terminal state)
   (anything else)            → Neutral slate card  (generic component)
+
+─────────────────────────────────────────────────────────────────────────────
+SUPPORTED FLAT VECTOR ICONS
+─────────────────────────────────────────────────────────────────────────────
+
+  Languages:
+    rust, go, python, typescript, javascript, java, kotlin, cpp, csharp,
+    ruby, swift, node
+
+  Databases & Message Stores:
+    postgres, mysql, redis, mongodb, dynamodb, kafka, cassandra, sqlite,
+    elasticsearch, database, table, user
 
 ─────────────────────────────────────────────────────────────────────────────
 INLINE TYPOGRAPHY & MARKDOWN FORMATTING
@@ -104,22 +161,31 @@ INLINE TYPOGRAPHY & MARKDOWN FORMATTING
                        Rendered natively via MathJax in draw.io (math=\"1\")
                        and crisp Unicode mathematical glyphs in SVG.
 
-  Multi-line Titles & Subtitles:
-  • Plain and code lines are formatted as prominent BOLD TITLES.
-    E.g. `petgraph::`\\n`StableDiGraph` → both lines bold monospace titles.
-  • Parenthesized lines (subtitle) or bracketed [detail] or {fields}
-    are automatically formatted as muted 10px SUBTITLES.
-    E.g. `clap::Cli`\\n(CLI Arguments) → bold title on top, muted subtitle below.
-
 ─────────────────────────────────────────────────────────────────────────────
 EDGE STYLES (edge_style)
 ─────────────────────────────────────────────────────────────────────────────
 
-  flow (default)   → Solid slate line, filled block arrow
-  async            → Dashed amber line, open arrow (events, queues)
-  error / fallback → Dashed red line, hollow arrow (dead-letter, circuit breaker)
-  data / stream    → 2px Indigo line, filled block arrow (data replication)
-  bidirectional    → Solid slate line, dual arrows (WebSocket, full-duplex)
+  General:
+    flow (default)   → Solid slate line, filled block arrow
+    async            → Dashed amber line, open arrow (events, queues)
+    error / fallback → Dashed red line, hollow arrow (dead-letter, circuit breaker)
+    data / stream    → 2px Indigo line, filled block arrow (data replication)
+    bidirectional    → Solid slate line, dual arrows (WebSocket, full-duplex)
+    sync / call      → Synchronous call arrow
+    reply / return   → Dashed return message arrow
+
+  Entity Relationship (ER):
+    one_to_many      → Crow's foot one-to-many (1:N)
+    many_to_many     → Crow's foot many-to-many (M:N)
+    one_to_one       → Crow's foot one-to-one (1:1)
+    zero_to_many     → Crow's foot zero-to-many (0:N)
+
+  UML Class Relationships:
+    inheritance      → Solid line with hollow triangle arrowhead
+    realization      → Dashed line with hollow triangle arrowhead
+    composition      → Solid line with filled diamond start marker
+    aggregation      → Solid line with hollow diamond start marker
+    dependency       → Dashed line with open arrowhead
 
 ─────────────────────────────────────────────────────────────────────────────
 OUTPUT FORMATS — extension controls format

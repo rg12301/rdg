@@ -34,6 +34,16 @@ pub struct NodeData {
     pub node_type: String,
     /// Optional free-text annotation.
     pub metadata: Option<String>,
+    /// Optional list of table columns or class members.
+    pub fields: Vec<String>,
+    /// Optional programming language used to code this component (e.g. `rust`, `go`, `python`).
+    pub language: Option<String>,
+    /// Optional technology stack or framework subtitle (e.g. `Axum + Tokio`, `FastAPI`).
+    pub technology: Option<String>,
+    /// Optional database engine (e.g. `postgres`, `mysql`, `redis`, `mongodb`).
+    pub db_type: Option<String>,
+    /// Resolved icon key for visual rendering.
+    pub icon: Option<String>,
 }
 
 /// Data attached to every graph edge.
@@ -62,6 +72,10 @@ pub struct CompiledGraph {
     pub title: Option<String>,
     /// Optional diagram description / subtitle.
     pub description: Option<String>,
+    /// Canonical diagram category (e.g. `flowchart`, `sequence`, `er`, `class`, `state`).
+    pub diagram_type: String,
+    /// Sequential order of edges as declared in input payload.
+    pub edge_order: Vec<petgraph::stable_graph::EdgeIndex>,
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +96,10 @@ pub struct CompiledGraph {
 pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
     let mut graph: StableDiGraph<NodeData, EdgeData> = StableDiGraph::new();
     let mut node_map: HashMap<String, NodeIndex> = HashMap::with_capacity(payload.nodes.len());
+    let mut edge_order: Vec<EdgeIndex> = Vec::with_capacity(payload.edges.len());
+
+    let diagram_type = payload.resolved_diagram_type().to_string();
+    let is_sequence = diagram_type == "sequence";
 
     // --- 1. Add nodes -------------------------------------------------------
     for node_def in &payload.nodes {
@@ -90,6 +108,11 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             label: node_def.resolved_label(),
             node_type: node_def.node_type.clone(),
             metadata: node_def.metadata.clone(),
+            fields: node_def.resolved_fields(),
+            language: node_def.resolved_language(),
+            technology: node_def.resolved_technology(),
+            db_type: node_def.resolved_db_type(),
+            icon: node_def.resolved_icon(),
         };
         let idx = graph.add_node(data);
         node_map.insert(node_def.id.clone(), idx);
@@ -109,7 +132,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 edge_def.to
             )
         })?;
-        graph.add_edge(
+        let e_idx = graph.add_edge(
             src,
             dst,
             EdgeData {
@@ -118,10 +141,11 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 reversed: false,
             },
         );
+        edge_order.push(e_idx);
     }
 
-    // --- 3. Cycle detection & breaking --------------------------------------
-    let had_cycles = if is_cyclic_directed(&graph) {
+    // --- 3. Cycle detection & breaking (skipped for sequence diagrams) -------
+    let had_cycles = if !is_sequence && is_cyclic_directed(&graph) {
         break_cycles(&mut graph);
         true
     } else {
@@ -135,6 +159,8 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         groups: payload.groups.clone(),
         title: payload.title.clone(),
         description: payload.description.clone(),
+        diagram_type,
+        edge_order,
     })
 }
 
@@ -339,5 +365,30 @@ mod tests {
         assert_eq!(compiled.graph.node_count(), 0);
         assert_eq!(compiled.graph.edge_count(), 0);
         assert!(!compiled.had_cycles);
+    }
+
+    #[test]
+    fn test_sequence_diagram_preserves_ping_pong_edges() {
+        let seq_yaml = r#"
+diagram_type: sequence
+nodes:
+  - id: client
+    label: "Browser"
+  - id: server
+    label: "Server"
+edges:
+  - from: client
+    to: server
+    label: "GET /data"
+  - from: server
+    to: client
+    label: "200 OK"
+"#;
+        let payload = DiagramPayload::from_yaml(seq_yaml).unwrap();
+        let compiled = build_graph(&payload).unwrap();
+        assert_eq!(compiled.graph.node_count(), 2);
+        assert_eq!(compiled.graph.edge_count(), 2);
+        assert!(!compiled.had_cycles, "sequence diagrams must not treat ping-pong calls as cycles");
+        assert_eq!(compiled.edge_order.len(), 2);
     }
 }
