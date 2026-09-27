@@ -56,6 +56,20 @@ pub struct EdgeData {
     /// `true` when this edge was reversed to break a cycle.
     /// The renderer uses this flag to flip arrow direction.
     pub reversed: bool,
+    /// Optional custom stroke color (e.g. `#ef4444`, `#0284c7`).
+    pub color: Option<String>,
+    /// Optional stroke width/thickness in pixels.
+    pub width: Option<f64>,
+    /// Optional line pattern (`solid`, `dashed`, `dotted`).
+    pub line_style: Option<String>,
+    /// Optional arrow head marker type.
+    pub head: Option<String>,
+    /// Optional arrow tail marker type.
+    pub tail: Option<String>,
+    /// Optional explicit source port face (`top`, `bottom`, `left`, `right`).
+    pub source_port: Option<String>,
+    /// Optional explicit target port face (`top`, `bottom`, `left`, `right`).
+    pub target_port: Option<String>,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -139,6 +153,13 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 label: edge_def.label.clone(),
                 edge_style: edge_def.resolved_style(),
                 reversed: false,
+                color: edge_def.color.clone(),
+                width: edge_def.width,
+                line_style: edge_def.line_style.clone(),
+                head: edge_def.head.clone(),
+                tail: edge_def.tail.clone(),
+                source_port: edge_def.source_port.clone(),
+                target_port: edge_def.target_port.clone(),
             },
         );
         edge_order.push(e_idx);
@@ -284,6 +305,13 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                     label: data.label,
                     edge_style: data.edge_style,
                     reversed: true,
+                    color: data.color,
+                    width: data.width,
+                    line_style: data.line_style,
+                    head: data.head,
+                    tail: data.tail,
+                    source_port: data.source_port,
+                    target_port: data.target_port,
                 },
             );
         }

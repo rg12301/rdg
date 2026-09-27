@@ -790,99 +790,505 @@ pub fn format_html_label_with_details(
     result
 }
 
-/// Compute an orthogonal SVG path with rounded fillet corners between two points.
-/// Returns `(path_d, label_center_x, label_center_y)`.
-/// Places label along the initial straight segment away from turns and crossings.
-fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
-    if is_horizontal {
-        // Horizontal flow: exit right (x1, y1), entry left (x2, y2)
-        if (y2 - y1).abs() < 1.0 {
-            return (
-                format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
-                (x1 + x2) / 2.0,
-                y1,
-            );
+/// Bounding face for node connector port attachment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Side {
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
+impl Side {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "top" | "north" | "n" => Some(Side::Top),
+            "bottom" | "south" | "s" => Some(Side::Bottom),
+            "left" | "west" | "w" => Some(Side::Left),
+            "right" | "east" | "e" => Some(Side::Right),
+            _ => None,
         }
-        let xmid = (x1 + x2) / 2.0;
-        let r = 8.0_f64
-            .min((xmid - x1).abs() / 2.0)
-            .min((y2 - y1).abs() / 2.0)
-            .min((x2 - xmid).abs() / 2.0)
-            .max(0.0);
+    }
+}
 
-        let lx = x1 + 22.0_f64.min((xmid - x1).abs() * 0.45);
-        let ly = y1;
+impl std::str::FromStr for Side {
+    type Err = ();
 
-        if r < 1.0 {
-            return (
-                format!("M {x1:.1} {y1:.1} L {xmid:.1} {y1:.1} L {xmid:.1} {y2:.1} L {x2:.1} {y2:.1}"),
-                lx,
-                ly,
-            );
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Side::parse(s).ok_or(())
+    }
+}
+
+/// Metadata bounding container title zones to prevent edge cutting through group titles.
+#[derive(Debug, Clone)]
+pub struct GroupTitleZone {
+    pub min_x: f64,
+    pub max_x: f64,
+    pub min_y: f64,
+    pub max_y: f64,
+    pub node_ids: std::collections::HashSet<String>,
+}
+
+/// Computes the group title avoidance zones from compiled groups and layout positions.
+pub fn compute_group_title_zones(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+) -> Vec<GroupTitleZone> {
+    let mut zones = Vec::new();
+    for group in &compiled.groups {
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+        let mut found_count = 0;
+
+        for node_id in &group.nodes {
+            if let Some(&node_idx) = compiled.node_map.get(node_id) {
+                if let Some(nl) = layout.positions.get(&node_idx) {
+                    min_x = min_x.min(nl.x);
+                    min_y = min_y.min(nl.y);
+                    max_x = max_x.max(nl.x + nl.width);
+                    max_y = max_y.max(nl.y + nl.height);
+                    found_count += 1;
+                }
+            }
         }
 
-        let (q1_end_y, q2_start_y) = if y2 > y1 {
-            (y1 + r, y2 - r)
-        } else {
-            (y1 - r, y2 + r)
-        };
+        if found_count == 0 {
+            continue;
+        }
 
-        let path = format!(
-            "M {x1:.1} {y1:.1} \
-             L {xm_prev:.1} {y1:.1} \
-             Q {xmid:.1} {y1:.1} {xmid:.1} {q1_end_y:.1} \
-             L {xmid:.1} {q2_start_y:.1} \
-             Q {xmid:.1} {y2:.1} {xm_next:.1} {y2:.1} \
-             L {x2:.1} {y2:.1}",
-            xm_prev = xmid - r,
-            xm_next = xmid + r,
-        );
-        (path, lx, ly)
+        let pad_h = crate::layout::GROUP_PAD_H;
+        let pad_top = crate::layout::GROUP_PAD_TOP;
+        let gx = (min_x - pad_h).max(10.0);
+        let gy = (min_y - pad_top).max(10.0);
+        let title_w = (group.label.chars().count() as f64 * 8.5 + 40.0).max(160.0);
+
+        zones.push(GroupTitleZone {
+            min_x: gx,
+            max_x: gx + title_w,
+            min_y: gy,
+            max_y: gy + 34.0,
+            node_ids: group.nodes.iter().cloned().collect(),
+        });
+    }
+    zones
+}
+
+/// Determines the exit side and entry side for an edge, avoiding group title collisions.
+pub fn choose_edge_sides(
+    src_nl: &crate::layout::NodeLayout,
+    src_id: &str,
+    dst_nl: &crate::layout::NodeLayout,
+    dst_id: &str,
+    edge_data: &crate::graph::EdgeData,
+    title_zones: &[GroupTitleZone],
+) -> (Side, Side) {
+    let explicit_src = edge_data.source_port.as_deref().and_then(Side::parse);
+    let explicit_dst = edge_data.target_port.as_deref().and_then(Side::parse);
+
+    if let (Some(s), Some(d)) = (explicit_src, explicit_dst) {
+        return (s, d);
+    }
+
+    // Check if target is inside a group whose title banner would be intersected by an edge from outside
+    for tz in title_zones {
+        if tz.node_ids.contains(dst_id) && !tz.node_ids.contains(src_id) {
+            // Source is above or near top of group
+            if src_nl.y + src_nl.height <= tz.max_y + 20.0 {
+                // If entering Top would cross the title banner [tz.min_x - 10, tz.max_x + 10]
+                if dst_nl.x <= tz.max_x + 20.0 {
+                    let d_side = if let Some(d) = explicit_dst {
+                        d
+                    } else if src_nl.x + src_nl.width * 0.5 <= dst_nl.x + dst_nl.width * 0.5 {
+                        Side::Left
+                    } else {
+                        Side::Right
+                    };
+                    let s_side = explicit_src.unwrap_or(Side::Bottom);
+                    return (s_side, d_side);
+                }
+            }
+        }
+    }
+
+    let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
+    let s_side = explicit_src.unwrap_or(if is_horizontal {
+        Side::Right
+    } else if dst_nl.y >= src_nl.y + src_nl.height - 10.0 {
+        Side::Bottom
+    } else if src_nl.y >= dst_nl.y + dst_nl.height - 10.0 {
+        Side::Top
     } else {
-        // Vertical flow: exit bottom (x1, y1), entry top (x2, y2)
-        if (x2 - x1).abs() < 1.0 {
-            return (
-                format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
-                x1,
-                (y1 + y2) / 2.0,
-            );
+        Side::Right
+    });
+
+    let d_side = explicit_dst.unwrap_or(if is_horizontal {
+        Side::Left
+    } else if dst_nl.y >= src_nl.y + src_nl.height - 10.0 {
+        Side::Top
+    } else if src_nl.y >= dst_nl.y + dst_nl.height - 10.0 {
+        Side::Bottom
+    } else {
+        Side::Left
+    });
+
+    (s_side, d_side)
+}
+
+/// Routing plan containing resolved attachment faces, distributed ports, and channel heights.
+#[derive(Debug, Clone)]
+pub struct EdgeRoutingPlan {
+    pub src_side: Side,
+    pub dst_side: Side,
+    pub exit_port: f64,
+    pub entry_port: f64,
+    pub channel_y: f64,
+}
+
+/// Computes intelligent, obstacle-aware routing plans for all edges in the graph.
+///
+/// Features:
+/// 1. Group title collision avoidance (enters Side::Left or Side::Right instead of cutting title banners).
+/// 2. Port sorting monotonically by target entry coordinates (zero self-crossings among siblings).
+/// 3. Multi-channel corridor staggering (parallel horizontal segments have dedicated channels, zero overlapping lines).
+pub fn plan_all_edge_routes(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+) -> HashMap<petgraph::stable_graph::EdgeIndex, EdgeRoutingPlan> {
+    let title_zones = compute_group_title_zones(compiled, layout);
+    let mut initial_sides: HashMap<petgraph::stable_graph::EdgeIndex, (Side, Side)> = HashMap::new();
+
+    for edge_idx in compiled.graph.edge_indices() {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let (Some(src_nl), Some(dst_nl)) = (layout.positions.get(&s_idx), layout.positions.get(&d_idx)) else {
+            continue;
+        };
+        let src_id = &compiled.graph[s_idx].id;
+        let dst_id = &compiled.graph[d_idx].id;
+        let sides = choose_edge_sides(src_nl, src_id, dst_nl, dst_id, edge_data, &title_zones);
+        initial_sides.insert(edge_idx, sides);
+    }
+
+    // Step 2: Distribute exit ports without crossing
+    // Group outgoing edges by (source_node, src_side)
+    let mut outgoing_groups: HashMap<(petgraph::stable_graph::NodeIndex, Side), Vec<(petgraph::stable_graph::EdgeIndex, f64)>> = HashMap::new();
+
+    for (&edge_idx, &(src_side, dst_side)) in &initial_sides {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+
+        // Sort coordinate: actual target entry coordinate
+        let target_coord = match dst_side {
+            Side::Left => dst_nl.x,
+            Side::Right => dst_nl.x + dst_nl.width,
+            Side::Top | Side::Bottom => dst_nl.x + dst_nl.width * 0.5,
+        };
+        outgoing_groups.entry((s_idx, src_side)).or_default().push((edge_idx, target_coord));
+    }
+
+    let mut exit_ports: HashMap<petgraph::stable_graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in outgoing_groups {
+        edges.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.0.cmp(&b.0)));
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.1 + (0.8 / (count - 1) as f64) * (i as f64)
+            };
+            exit_ports.insert(edge_idx, port);
         }
-        let ymid = (y1 + y2) / 2.0;
-        let r = 8.0_f64
-            .min((ymid - y1).abs() / 2.0)
-            .min((x2 - x1).abs() / 2.0)
-            .min((y2 - ymid).abs() / 2.0)
-            .max(0.0);
+    }
 
-        // Place label on the initial vertical drop, away from the turn at ymid
-        let lx = x1;
-        let ly = y1 + 18.0_f64.min((ymid - y1).abs() * 0.45);
+    // Step 3: Distribute entry ports without crossing
+    let mut incoming_groups: HashMap<(petgraph::stable_graph::NodeIndex, Side), Vec<(petgraph::stable_graph::EdgeIndex, f64)>> = HashMap::new();
 
-        if r < 1.0 {
-            return (
+    for (&edge_idx, &(src_side, dst_side)) in &initial_sides {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+
+        let src_coord = match src_side {
+            Side::Left => src_nl.x,
+            Side::Right => src_nl.x + src_nl.width,
+            Side::Top | Side::Bottom => src_nl.x + src_nl.width * 0.5,
+        };
+        incoming_groups.entry((d_idx, dst_side)).or_default().push((edge_idx, src_coord));
+    }
+
+    let mut entry_ports: HashMap<petgraph::stable_graph::EdgeIndex, f64> = HashMap::new();
+    for (_, mut edges) in incoming_groups {
+        edges.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.0.cmp(&b.0)));
+        let count = edges.len();
+        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let port = if count <= 1 {
+                0.5
+            } else {
+                0.2 + (0.6 / (count - 1) as f64) * (i as f64)
+            };
+            entry_ports.insert(edge_idx, port);
+        }
+    }
+
+    // Step 4: Multi-channel corridor allocation for parallel horizontal segments
+    let mut corridor_buckets: HashMap<(i32, i32), Vec<(petgraph::stable_graph::EdgeIndex, f64)>> = HashMap::new();
+    let mut channel_y_map: HashMap<petgraph::stable_graph::EdgeIndex, f64> = HashMap::new();
+
+    for (&edge_idx, &(src_side, dst_side)) in &initial_sides {
+        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
+        let edge_data = &compiled.graph[edge_idx];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+
+        if src_side == Side::Bottom && dst_side == Side::Top {
+            let y1 = src_nl.y + src_nl.height;
+            let y2 = dst_nl.y;
+            if y2 > y1 + 10.0 {
+                let key = ((y1 / 45.0).round() as i32, (y2 / 45.0).round() as i32);
+                let mid_x = (src_nl.x + dst_nl.x) / 2.0;
+                corridor_buckets.entry(key).or_default().push((edge_idx, mid_x));
+                continue;
+            }
+        }
+
+        // Default channel height
+        let y1 = src_nl.y + src_nl.height;
+        let y2 = dst_nl.y;
+        channel_y_map.insert(edge_idx, (y1 + y2) / 2.0);
+    }
+
+    for (_, mut edges) in corridor_buckets {
+        edges.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.0.cmp(&b.0)));
+        let m = edges.len();
+        let first_edge = edges[0].0;
+        let (src, dst) = compiled.graph.edge_endpoints(first_edge).unwrap();
+        let edge_data = &compiled.graph[first_edge];
+        let (s_idx, d_idx) = if edge_data.reversed { (dst, src) } else { (src, dst) };
+        let src_nl = layout.positions.get(&s_idx).unwrap();
+        let dst_nl = layout.positions.get(&d_idx).unwrap();
+        let y1 = src_nl.y + src_nl.height;
+        let y2 = dst_nl.y;
+        let base_ymid = (y1 + y2) / 2.0;
+        let max_spread = (y2 - y1 - 20.0).max(0.0);
+        let gap = 16.0_f64.min(max_spread / (m as f64).max(1.0));
+
+        for (k, (edge_idx, _)) in edges.into_iter().enumerate() {
+            let ch_y = base_ymid + (k as f64 - (m - 1) as f64 * 0.5) * gap;
+            channel_y_map.insert(edge_idx, ch_y);
+        }
+    }
+
+    let mut plans = HashMap::new();
+    for (edge_idx, (src_side, dst_side)) in initial_sides {
+        let exit_port = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let entry_port = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let channel_y = channel_y_map.get(&edge_idx).copied().unwrap_or(0.0);
+        plans.insert(edge_idx, EdgeRoutingPlan {
+            src_side,
+            dst_side,
+            exit_port,
+            entry_port,
+            channel_y,
+        });
+    }
+
+    plans
+}
+
+/// Compute an orthogonal SVG path with rounded fillet corners between two points and their attachment faces.
+/// Returns `(path_d, label_center_x, label_center_y)`.
+/// Places label at the midpoint of the horizontal corridor away from bends and crossings.
+fn build_orthogonal_svg_path(
+    x1: f64,
+    y1: f64,
+    src_side: Side,
+    x2: f64,
+    y2: f64,
+    dst_side: Side,
+    channel_y: f64,
+) -> (String, f64, f64) {
+    match (src_side, dst_side) {
+        (Side::Bottom, Side::Top) => {
+            if (x2 - x1).abs() < 1.5 {
+                (
+                    format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
+                    x1,
+                    (y1 + y2) / 2.0,
+                )
+            } else {
+                let r = 8.0_f64
+                    .min((channel_y - y1).abs() / 2.0)
+                    .min((y2 - channel_y).abs() / 2.0)
+                    .min((x2 - x1).abs() / 2.0)
+                    .max(0.0);
+
+                let lx = (x1 + x2) / 2.0;
+                let ly = channel_y;
+
+                if r < 1.0 {
+                    (
+                        format!("M {x1:.1} {y1:.1} L {x1:.1} {channel_y:.1} L {x2:.1} {channel_y:.1} L {x2:.1} {y2:.1}"),
+                        lx,
+                        ly,
+                    )
+                } else {
+                    let y_c1_in = channel_y - r;
+                    let x_c1_out = if x2 > x1 { x1 + r } else { x1 - r };
+                    let x_c2_in = if x2 > x1 { x2 - r } else { x2 + r };
+                    let y_c2_out = channel_y + r;
+
+                    let path = format!(
+                        "M {x1:.1} {y1:.1} \
+                         L {x1:.1} {y_c1_in:.1} \
+                         Q {x1:.1} {channel_y:.1} {x_c1_out:.1} {channel_y:.1} \
+                         L {x_c2_in:.1} {channel_y:.1} \
+                         Q {x2:.1} {channel_y:.1} {x2:.1} {y_c2_out:.1} \
+                         L {x2:.1} {y2:.1}"
+                    );
+                    (path, lx, ly)
+                }
+            }
+        }
+        (Side::Bottom, Side::Left) => {
+            let r = 8.0_f64
+                .min((y2 - y1).abs() / 2.0)
+                .min((x2 - x1).abs() / 2.0)
+                .max(0.0);
+            let lx = if (x2 - x1).abs() >= 40.0 {
+                (x1 + x2) / 2.0
+            } else {
+                x1
+            };
+            let ly = if (x2 - x1).abs() >= 40.0 {
+                y2
+            } else {
+                (y1 + y2) / 2.0
+            };
+
+            if r < 1.0 || x2 <= x1 {
+                (
+                    format!("M {x1:.1} {y1:.1} L {x1:.1} {y2:.1} L {x2:.1} {y2:.1}"),
+                    lx,
+                    ly,
+                )
+            } else {
+                let path = format!(
+                    "M {x1:.1} {y1:.1} \
+                     L {x1:.1} {y_in:.1} \
+                     Q {x1:.1} {y2:.1} {x_out:.1} {y2:.1} \
+                     L {x2:.1} {y2:.1}",
+                    y_in = y2 - r,
+                    x_out = x1 + r,
+                );
+                (path, lx, ly)
+            }
+        }
+        (Side::Bottom, Side::Right) => {
+            let r = 8.0_f64
+                .min((y2 - y1).abs() / 2.0)
+                .min((x1 - x2).abs() / 2.0)
+                .max(0.0);
+            let lx = if (x1 - x2).abs() >= 40.0 {
+                (x1 + x2) / 2.0
+            } else {
+                x1
+            };
+            let ly = if (x1 - x2).abs() >= 40.0 {
+                y2
+            } else {
+                (y1 + y2) / 2.0
+            };
+
+            if r < 1.0 || x1 <= x2 {
+                (
+                    format!("M {x1:.1} {y1:.1} L {x1:.1} {y2:.1} L {x2:.1} {y2:.1}"),
+                    lx,
+                    ly,
+                )
+            } else {
+                let path = format!(
+                    "M {x1:.1} {y1:.1} \
+                     L {x1:.1} {y_in:.1} \
+                     Q {x1:.1} {y2:.1} {x_out:.1} {y2:.1} \
+                     L {x2:.1} {y2:.1}",
+                    y_in = y2 - r,
+                    x_out = x1 - r,
+                );
+                (path, lx, ly)
+            }
+        }
+        (Side::Right, Side::Left) => {
+            if (y2 - y1).abs() < 1.5 {
+                (
+                    format!("M {x1:.1} {y1:.1} L {x2:.1} {y2:.1}"),
+                    (x1 + x2) / 2.0,
+                    y1,
+                )
+            } else {
+                let xmid = (x1 + x2) / 2.0;
+                let r = 8.0_f64
+                    .min((xmid - x1).abs() / 2.0)
+                    .min((y2 - y1).abs() / 2.0)
+                    .min((x2 - xmid).abs() / 2.0)
+                    .max(0.0);
+                let lx = xmid;
+                let ly = (y1 + y2) / 2.0;
+
+                if r < 1.0 {
+                    (
+                        format!("M {x1:.1} {y1:.1} L {xmid:.1} {y1:.1} L {xmid:.1} {y2:.1} L {x2:.1} {y2:.1}"),
+                        lx,
+                        ly,
+                    )
+                } else {
+                    let xm_prev = xmid - r;
+                    let xm_next = xmid + r;
+                    let (q1_end_y, q2_start_y) = if y2 > y1 {
+                        (y1 + r, y2 - r)
+                    } else {
+                        (y1 - r, y2 + r)
+                    };
+                    let path = format!(
+                        "M {x1:.1} {y1:.1} \
+                         L {xm_prev:.1} {y1:.1} \
+                         Q {xmid:.1} {y1:.1} {xmid:.1} {q1_end_y:.1} \
+                         L {xmid:.1} {q2_start_y:.1} \
+                         Q {xmid:.1} {y2:.1} {xm_next:.1} {y2:.1} \
+                         L {x2:.1} {y2:.1}"
+                    );
+                    (path, lx, ly)
+                }
+            }
+        }
+        _ => {
+            let ymid = (y1 + y2) / 2.0;
+            let lx = (x1 + x2) / 2.0;
+            let ly = ymid;
+            (
                 format!("M {x1:.1} {y1:.1} L {x1:.1} {ymid:.1} L {x2:.1} {ymid:.1} L {x2:.1} {y2:.1}"),
                 lx,
                 ly,
-            );
+            )
         }
+    }
+}
 
-        let (q1_end_x, q2_start_x) = if x2 > x1 {
-            (x1 + r, x2 - r)
-        } else {
-            (x1 - r, x2 + r)
-        };
-
-        let path = format!(
-            "M {x1:.1} {y1:.1} \
-             L {x1:.1} {ym_prev:.1} \
-             Q {x1:.1} {ymid:.1} {q1_end_x:.1} {ymid:.1} \
-             L {q2_start_x:.1} {ymid:.1} \
-             Q {x2:.1} {ymid:.1} {x2:.1} {ym_next:.1} \
-             L {x2:.1} {y2:.1}",
-            ym_prev = ymid - r,
-            ym_next = ymid + r,
-        );
-        (path, lx, ly)
+/// Compute an orthogonal SVG path with rounded fillet corners between two points.
+/// Returns `(path_d, label_center_x, label_center_y)`.
+/// Retained for backwards compatibility with tests and callers.
+#[allow(dead_code)]
+fn orthogonal_path(x1: f64, y1: f64, x2: f64, y2: f64, is_horizontal: bool) -> (String, f64, f64) {
+    if is_horizontal {
+        build_orthogonal_svg_path(x1, y1, Side::Right, x2, y2, Side::Left, (y1 + y2) / 2.0)
+    } else {
+        build_orthogonal_svg_path(x1, y1, Side::Bottom, x2, y2, Side::Top, (y1 + y2) / 2.0)
     }
 }
 
@@ -1701,91 +2107,7 @@ pub fn render_drawio(
     }
 
     // --- Edge cells ---------------------------------------------------------
-    // Group outgoing edges by their rendered source node to compute distributed exit ports.
-    let mut outgoing_by_src: HashMap<
-        petgraph::graph::NodeIndex,
-        Vec<(petgraph::graph::EdgeIndex, f64)>,
-    > = HashMap::new();
-
-    for edge_idx in compiled.graph.edge_indices() {
-        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
-        let edge_data = &compiled.graph[edge_idx];
-        let (render_src, render_dst) = if edge_data.reversed {
-            (dst, src)
-        } else {
-            (src, dst)
-        };
-        let target_x = layout
-            .positions
-            .get(&render_dst)
-            .map(|p| p.x)
-            .unwrap_or(0.0);
-        outgoing_by_src
-            .entry(render_src)
-            .or_default()
-            .push((edge_idx, target_x));
-    }
-
-    let mut exit_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
-    for (_, mut edges) in outgoing_by_src {
-        edges.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        let count = edges.len();
-        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
-            let port = if count <= 1 {
-                0.5
-            } else {
-                0.1 + (0.8 / (count - 1) as f64) * (i as f64)
-            };
-            exit_ports.insert(edge_idx, port);
-        }
-    }
-
-    // Group incoming edges by target node to compute distributed entry ports.
-    let mut incoming_by_dst: HashMap<
-        petgraph::graph::NodeIndex,
-        Vec<(petgraph::graph::EdgeIndex, f64)>,
-    > = HashMap::new();
-
-    for edge_idx in compiled.graph.edge_indices() {
-        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
-        let edge_data = &compiled.graph[edge_idx];
-        let (render_src, render_dst) = if edge_data.reversed {
-            (dst, src)
-        } else {
-            (src, dst)
-        };
-        let source_x = layout
-            .positions
-            .get(&render_src)
-            .map(|p| p.x)
-            .unwrap_or(0.0);
-        incoming_by_dst
-            .entry(render_dst)
-            .or_default()
-            .push((edge_idx, source_x));
-    }
-
-    let mut entry_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
-    for (_, mut edges) in incoming_by_dst {
-        edges.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        let count = edges.len();
-        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
-            let port = if count <= 1 {
-                0.5
-            } else {
-                0.2 + (0.6 / (count - 1) as f64) * (i as f64)
-            };
-            entry_ports.insert(edge_idx, port);
-        }
-    }
+    let edge_plans = plan_all_edge_routes(compiled, layout);
 
     let is_dark = theme == "dark";
     let default_edge_color = if is_dark { "#94a3b8" } else { "#64748b" };
@@ -1801,37 +2123,36 @@ pub fn render_drawio(
         let label = edge_data.label.as_deref().unwrap_or("");
 
         // If the edge was reversed for cycle breaking, flip source/target back.
-        let (render_src, render_dst, s_idx, d_idx) = if edge_data.reversed {
-            (dst_id.as_str(), src_id.as_str(), dst, src)
+        let (render_src, render_dst) = if edge_data.reversed {
+            (dst_id.as_str(), src_id.as_str())
         } else {
-            (src_id.as_str(), dst_id.as_str(), src, dst)
+            (src_id.as_str(), dst_id.as_str())
         };
 
-        let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
-        let entry_port_frac = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
+        let plan = edge_plans.get(&edge_idx);
+        let port_frac = plan.map(|p| p.exit_port).unwrap_or(0.5);
+        let entry_port_frac = plan.map(|p| p.entry_port).unwrap_or(0.5);
+        let src_side = plan.map(|p| p.src_side).unwrap_or(Side::Bottom);
+        let dst_side = plan.map(|p| p.dst_side).unwrap_or(Side::Top);
 
-        let (src_nl, dst_nl) = (layout.positions.get(&s_idx), layout.positions.get(&d_idx));
-        let is_horizontal = match (src_nl, dst_nl) {
-            (Some(s), Some(d)) => (d.x - s.x) > (d.y - s.y).abs(),
-            _ => false,
+        let exit_attr = match src_side {
+            Side::Bottom => format!("exitX={port_frac:.1};exitY=1.0;exitDx=0;exitDy=0;"),
+            Side::Top => format!("exitX={port_frac:.1};exitY=0.0;exitDx=0;exitDy=0;"),
+            Side::Left => format!("exitX=0.0;exitY={port_frac:.1};exitDx=0;exitDy=0;"),
+            Side::Right => format!("exitX=1.0;exitY={port_frac:.1};exitDx=0;exitDy=0;"),
         };
 
-        let (exit_attr, entry_attr) = if is_horizontal {
-            (
-                format!("exitX=1.0;exitY={port_frac:.1};exitDx=0;exitDy=0;"),
-                format!("entryX=0.0;entryY={entry_port_frac:.1};entryDx=0;entryDy=0;"),
-            )
-        } else {
-            (
-                format!("exitX={port_frac:.1};exitY=1.0;exitDx=0;exitDy=0;"),
-                format!("entryX={entry_port_frac:.1};entryY=0.0;entryDx=0;entryDy=0;"),
-            )
+        let entry_attr = match dst_side {
+            Side::Top => format!("entryX={entry_port_frac:.1};entryY=0.0;entryDx=0;entryDy=0;"),
+            Side::Bottom => format!("entryX={entry_port_frac:.1};entryY=1.0;entryDx=0;entryDy=0;"),
+            Side::Left => format!("entryX=0.0;entryY={entry_port_frac:.1};entryDx=0;entryDy=0;"),
+            Side::Right => format!("entryX=1.0;entryY={entry_port_frac:.1};entryDx=0;entryDy=0;"),
         };
 
         let bi_style = format!("strokeColor={default_edge_color};strokeWidth=1.5;startArrow=blockThin;startFill=1;endArrow=blockThin;endFill=1;");
         let default_style = format!("strokeColor={default_edge_color};strokeWidth=1.5;endArrow=blockThin;endFill=1;");
 
-        let custom_style = match edge_data.edge_style.as_deref() {
+        let base_custom_style = match edge_data.edge_style.as_deref() {
             Some("async") => {
                 "dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;"
             }
@@ -1873,6 +2194,28 @@ pub fn render_drawio(
             }
             _ => &default_style,
         };
+
+        let mut custom_style = base_custom_style.to_string();
+        if let Some(c) = &edge_data.color {
+            custom_style.push_str(&format!("strokeColor={c};"));
+        }
+        if let Some(w) = edge_data.width {
+            custom_style.push_str(&format!("strokeWidth={w:.1};"));
+        }
+        if let Some(ls) = &edge_data.line_style {
+            match ls.to_ascii_lowercase().as_str() {
+                "dashed" => custom_style.push_str("dashed=1;dashPattern=8 4;"),
+                "dotted" => custom_style.push_str("dashed=1;dashPattern=2 3;"),
+                "solid" => custom_style.push_str("dashed=0;"),
+                _ => {}
+            }
+        }
+        if let Some(h) = &edge_data.head {
+            custom_style.push_str(&format!("endArrow={h};"));
+        }
+        if let Some(t) = &edge_data.tail {
+            custom_style.push_str(&format!("startArrow={t};"));
+        }
 
         let edge_style = format!(
             "edgeStyle=orthogonalEdgeStyle;\
@@ -2140,6 +2483,42 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
     w.write_event(Event::Empty(p_uml_dh))?;
     w.write_event(Event::End(BytesEnd::new("marker")))?;
 
+    // Open Chevron Marker
+    let mut m_open = BytesStart::new("marker");
+    m_open.push_attribute(("id", "marker-open-slate"));
+    m_open.push_attribute(("viewBox", "0 0 10 10"));
+    m_open.push_attribute(("refX", "7"));
+    m_open.push_attribute(("refY", "5"));
+    m_open.push_attribute(("markerWidth", "6"));
+    m_open.push_attribute(("markerHeight", "6"));
+    m_open.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_open))?;
+    let mut p_open = BytesStart::new("path");
+    p_open.push_attribute(("d", "M 1 2 L 7 5 L 1 8"));
+    p_open.push_attribute(("fill", "none"));
+    p_open.push_attribute(("stroke", if is_dark { "#94a3b8" } else { "#64748b" }));
+    p_open.push_attribute(("stroke-width", "1.5"));
+    w.write_event(Event::Empty(p_open))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
+    // Circle / Dot Marker
+    let mut m_circle = BytesStart::new("marker");
+    m_circle.push_attribute(("id", "marker-circle-fill"));
+    m_circle.push_attribute(("viewBox", "0 0 10 10"));
+    m_circle.push_attribute(("refX", "5"));
+    m_circle.push_attribute(("refY", "5"));
+    m_circle.push_attribute(("markerWidth", "6"));
+    m_circle.push_attribute(("markerHeight", "6"));
+    m_circle.push_attribute(("orient", "auto-start-reverse"));
+    w.write_event(Event::Start(m_circle))?;
+    let mut c_elem = BytesStart::new("circle");
+    c_elem.push_attribute(("cx", "5"));
+    c_elem.push_attribute(("cy", "5"));
+    c_elem.push_attribute(("r", "3.5"));
+    c_elem.push_attribute(("fill", if is_dark { "#94a3b8" } else { "#64748b" }));
+    w.write_event(Event::Empty(c_elem))?;
+    w.write_event(Event::End(BytesEnd::new("marker")))?;
+
     w.write_event(Event::End(BytesEnd::new("defs")))?;
 
     // --- Optional Diagram Title Header --------------------------------------
@@ -2237,92 +2616,8 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         w.write_event(Event::End(BytesEnd::new("g")))?;
     }
 
-    // --- Draw edges (behind nodes) with orthogonal rounded paths ------------
-    let mut outgoing_by_src: HashMap<
-        petgraph::graph::NodeIndex,
-        Vec<(petgraph::graph::EdgeIndex, f64)>,
-    > = HashMap::new();
-
-    for edge_idx in compiled.graph.edge_indices() {
-        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
-        let edge_data = &compiled.graph[edge_idx];
-        let (render_src, render_dst) = if edge_data.reversed {
-            (dst, src)
-        } else {
-            (src, dst)
-        };
-        let target_x = layout
-            .positions
-            .get(&render_dst)
-            .map(|p| p.x)
-            .unwrap_or(0.0);
-        outgoing_by_src
-            .entry(render_src)
-            .or_default()
-            .push((edge_idx, target_x));
-    }
-
-    let mut exit_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
-    for (_, mut edges) in outgoing_by_src {
-        edges.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        let count = edges.len();
-        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
-            let port = if count <= 1 {
-                0.5
-            } else {
-                0.1 + (0.8 / (count - 1) as f64) * (i as f64)
-            };
-            exit_ports.insert(edge_idx, port);
-        }
-    }
-
-    // Group incoming edges by target node to compute distributed entry ports.
-    let mut incoming_by_dst: HashMap<
-        petgraph::graph::NodeIndex,
-        Vec<(petgraph::graph::EdgeIndex, f64)>,
-    > = HashMap::new();
-
-    for edge_idx in compiled.graph.edge_indices() {
-        let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
-        let edge_data = &compiled.graph[edge_idx];
-        let (render_src, render_dst) = if edge_data.reversed {
-            (dst, src)
-        } else {
-            (src, dst)
-        };
-        let source_x = layout
-            .positions
-            .get(&render_src)
-            .map(|p| p.x)
-            .unwrap_or(0.0);
-        incoming_by_dst
-            .entry(render_dst)
-            .or_default()
-            .push((edge_idx, source_x));
-    }
-
-    let mut entry_ports: HashMap<petgraph::graph::EdgeIndex, f64> = HashMap::new();
-    for (_, mut edges) in incoming_by_dst {
-        edges.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        let count = edges.len();
-        for (i, (edge_idx, _)) in edges.into_iter().enumerate() {
-            let port = if count <= 1 {
-                0.5
-            } else {
-                0.2 + (0.6 / (count - 1) as f64) * (i as f64)
-            };
-            entry_ports.insert(edge_idx, port);
-        }
-    }
-
+    // --- Draw edges (behind nodes) with intelligent orthogonal rounded paths -
+    let edge_plans = plan_all_edge_routes(compiled, layout);
     let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
 
     struct SvgEdgeLabel {
@@ -2350,31 +2645,32 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             continue;
         };
 
-        let port_frac = exit_ports.get(&edge_idx).copied().unwrap_or(0.5);
-        let entry_port_frac = entry_ports.get(&edge_idx).copied().unwrap_or(0.5);
-        let is_horizontal = (dst_nl.x - src_nl.x) > (dst_nl.y - src_nl.y).abs();
+        let plan = edge_plans.get(&edge_idx);
+        let src_side = plan.map(|p| p.src_side).unwrap_or(Side::Bottom);
+        let dst_side = plan.map(|p| p.dst_side).unwrap_or(Side::Top);
+        let exit_port = plan.map(|p| p.exit_port).unwrap_or(0.5);
+        let entry_port = plan.map(|p| p.entry_port).unwrap_or(0.5);
+        let channel_y = plan.map(|p| p.channel_y).unwrap_or((src_nl.y + dst_nl.y) / 2.0);
 
-        let (x1, y1, x2, y2) = if is_horizontal {
-            (
-                src_nl.x + src_nl.width,
-                src_nl.y + src_nl.height * port_frac,
-                dst_nl.x,
-                dst_nl.y + dst_nl.height * entry_port_frac,
-            )
-        } else {
-            (
-                src_nl.x + src_nl.width * port_frac,
-                src_nl.y + src_nl.height,
-                dst_nl.x + dst_nl.width * entry_port_frac,
-                dst_nl.y,
-            )
+        let (x1, y1) = match src_side {
+            Side::Bottom => (src_nl.x + src_nl.width * exit_port, src_nl.y + src_nl.height),
+            Side::Top => (src_nl.x + src_nl.width * exit_port, src_nl.y),
+            Side::Left => (src_nl.x, src_nl.y + src_nl.height * exit_port),
+            Side::Right => (src_nl.x + src_nl.width, src_nl.y + src_nl.height * exit_port),
+        };
+
+        let (x2, y2) = match dst_side {
+            Side::Top => (dst_nl.x + dst_nl.width * entry_port, dst_nl.y),
+            Side::Bottom => (dst_nl.x + dst_nl.width * entry_port, dst_nl.y + dst_nl.height),
+            Side::Left => (dst_nl.x, dst_nl.y + dst_nl.height * entry_port),
+            Side::Right => (dst_nl.x + dst_nl.width, dst_nl.y + dst_nl.height * entry_port),
         };
 
         let is_bi = matches!(edge_data.edge_style.as_deref(), Some("bi") | Some("bidirectional"));
         let mut marker_start: Option<&str> = None;
         let mut marker_end: Option<&str> = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
 
-        let (stroke, stroke_w, dash) = match edge_data.edge_style.as_deref() {
+        let (base_stroke, base_w, base_dash) = match edge_data.edge_style.as_deref() {
             Some("async") => {
                 marker_end = Some("arrow-amber");
                 ("#d97706", "1.5", Some("8 4"))
@@ -2437,13 +2733,50 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             }
         };
 
-        let (path_d, lx, ly) = orthogonal_path(x1, y1, x2, y2, is_horizontal);
+        // Custom formatting overrides
+        let stroke = edge_data.color.as_deref().unwrap_or(base_stroke);
+        let stroke_w_buf = edge_data.width.map(|w| format!("{w:.1}")).unwrap_or_else(|| base_w.to_string());
+        let dash = if let Some(ls) = &edge_data.line_style {
+            match ls.to_ascii_lowercase().as_str() {
+                "dashed" => Some("8 4"),
+                "dotted" => Some("3 3"),
+                "solid" => None,
+                _ => base_dash,
+            }
+        } else {
+            base_dash
+        };
+
+        if let Some(h) = &edge_data.head {
+            marker_end = match h.to_ascii_lowercase().as_str() {
+                "none" => None,
+                "open" => Some("marker-open-slate"),
+                "diamond" => Some("marker-uml-diamond-fill"),
+                "circle" | "oval" => Some("marker-circle-fill"),
+                "ermany" => Some("marker-er-many"),
+                "erone" => Some("marker-er-one"),
+                _ => Some(if is_dark { "arrow-dark" } else { "arrow-slate" }),
+            };
+        }
+        if let Some(t) = &edge_data.tail {
+            marker_start = match t.to_ascii_lowercase().as_str() {
+                "none" => None,
+                "open" => Some("marker-open-slate"),
+                "diamond" => Some("marker-uml-diamond-fill"),
+                "circle" | "oval" => Some("marker-circle-fill"),
+                "ermany" => Some("marker-er-many"),
+                "erone" => Some("marker-er-one"),
+                _ => Some(if is_dark { "arrow-dark" } else { "arrow-slate" }),
+            };
+        }
+
+        let (path_d, lx, ly) = build_orthogonal_svg_path(x1, y1, src_side, x2, y2, dst_side, channel_y);
 
         let mut path = BytesStart::new("path");
         path.push_attribute(("d", path_d.as_str()));
         path.push_attribute(("fill", "none"));
         path.push_attribute(("stroke", stroke));
-        path.push_attribute(("stroke-width", stroke_w));
+        path.push_attribute(("stroke-width", stroke_w_buf.as_str()));
         if let Some(d) = dash {
             path.push_attribute(("stroke-dasharray", d));
         }
@@ -2470,7 +2803,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
     // Pass 2: Render all edge labels on top of all paths to guarantee zero line collisions
     for el in pending_labels {
         let char_count = el.text.chars().count();
-        let pill_w = (char_count as f64 * 6.2 + 10.0).max(20.0);
+        let pill_w = (char_count as f64 * 6.5 + 12.0).max(22.0);
         let pill_h = 16.0;
         let pill_x = el.lx - pill_w / 2.0;
         let pill_y = el.ly - pill_h / 2.0;
@@ -2482,7 +2815,9 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
         pill.push_attribute(("rx", "4"));
         pill.push_attribute(("ry", "4"));
-        pill.push_attribute(("fill", bg_color));
+        pill.push_attribute(("fill", if is_dark { "#1e293b" } else { "#ffffff" }));
+        pill.push_attribute(("stroke", if is_dark { "#475569" } else { "#cbd5e1" }));
+        pill.push_attribute(("stroke-width", "1.0"));
         w.write_event(Event::Empty(pill))?;
 
         let mut text = BytesStart::new("text");
@@ -2492,7 +2827,7 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
         text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
         text.push_attribute(("font-size", "10"));
         text.push_attribute(("font-weight", "500"));
-        text.push_attribute(("fill", if is_dark { "#cbd5e1" } else { "#475569" }));
+        text.push_attribute(("fill", if is_dark { "#f1f5f9" } else { "#334155" }));
         w.write_event(Event::Start(text))?;
         w.write_event(Event::Text(BytesText::new(&el.text)))?;
         w.write_event(Event::End(BytesEnd::new("text")))?;
@@ -2708,6 +3043,13 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             top_cap.push_attribute(("stroke-width", "1.5"));
             w.write_event(Event::Empty(top_cap))?;
 
+            // Render authentic database/engine icon badge pinned at top-left boundary!
+            if let Some(icon_key) = node_data.icon.as_deref() {
+                if let Some(badge_markup) = crate::icons::render_icon_badge_svg(icon_key, nl.x, nl.y, is_dark) {
+                    w.write_event(Event::Text(BytesText::from_escaped(badge_markup)))?;
+                }
+            }
+
             // If table has fields, render structured table rows inside the cylinder!
             if !node_data.fields.is_empty() {
                 // Table header label
@@ -2790,10 +3132,10 @@ pub fn render_svg(compiled: &CompiledGraph, layout: &LayoutResult, theme: &str) 
             rect.push_attribute(("filter", "url(#card-shadow)"));
             w.write_event(Event::Empty(rect))?;
 
-            // Render language / database / user icon if available!
+            // Render authentic language / database / user icon badge pinned at top-left boundary!
             if let Some(icon_key) = node_data.icon.as_deref() {
-                if let Some(icon_markup) = crate::icons::render_icon_svg(icon_key, nl.x + 8.0, nl.y + 8.0, 16.0) {
-                    w.write_event(Event::Text(BytesText::from_escaped(icon_markup)))?;
+                if let Some(badge_markup) = crate::icons::render_icon_badge_svg(icon_key, nl.x, nl.y, is_dark) {
+                    w.write_event(Event::Text(BytesText::from_escaped(badge_markup)))?;
                 }
             }
         }
@@ -3519,5 +3861,167 @@ mod tests {
         let svg = render_svg(&compiled, &layout, "standard").unwrap();
         assert!(svg.contains("stroke-dasharray=\"6 6\""), "svg sequence lifeline must be dashed");
         assert!(svg.contains("POST /login"), "svg sequence must include message text");
+    }
+
+    #[test]
+    fn test_group_title_collision_avoidance() {
+        use crate::schema::GroupDef;
+
+        let payload = DiagramPayload {
+            nodes: vec![
+                NodeDef {
+                    id: "source_node".to_owned(),
+                    label: "Source Node".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "target_node".to_owned(),
+                    label: "Target Node".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            groups: vec![GroupDef {
+                id: "grp1".to_owned(),
+                label: "Rendering Layer Container".to_owned(),
+                color: Some("#7c3aed".to_owned()),
+                nodes: vec!["target_node".to_owned()],
+            }],
+            edges: vec![crate::schema::EdgeDef {
+                from: "source_node".to_owned(),
+                to: "target_node".to_owned(),
+                label: Some("connects".to_owned()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let plans = plan_all_edge_routes(&compiled, &layout);
+
+        let plan = plans.values().next().unwrap();
+        // Since target_node is inside a group whose title sits directly at the top,
+        // the router must divert the entry face to Left or Right to avoid cutting the container title!
+        assert!(
+            plan.dst_side == Side::Left || plan.dst_side == Side::Right,
+            "target face must be Left or Right to avoid cutting container title banner"
+        );
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("connects"), "edge label must be rendered");
+    }
+
+    #[test]
+    fn test_monotonic_port_sorting_no_crossing() {
+        // Source node connects to two target nodes placed left and right
+        let payload = DiagramPayload {
+            nodes: vec![
+                NodeDef {
+                    id: "src".to_owned(),
+                    label: "Source".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "dst_left".to_owned(),
+                    label: "Left Target".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "dst_right".to_owned(),
+                    label: "Right Target".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            edges: vec![
+                // Declare right first, left second to verify sorting fixes crossing
+                crate::schema::EdgeDef {
+                    from: "src".to_owned(),
+                    to: "dst_right".to_owned(),
+                    ..Default::default()
+                },
+                crate::schema::EdgeDef {
+                    from: "src".to_owned(),
+                    to: "dst_left".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let plans = plan_all_edge_routes(&compiled, &layout);
+
+        // Find the plans for dst_left and dst_right
+        let left_edge_idx = compiled.graph.edge_indices().find(|&e| {
+            let (_, d) = compiled.graph.edge_endpoints(e).unwrap();
+            compiled.graph[d].id == "dst_left"
+        }).unwrap();
+        let right_edge_idx = compiled.graph.edge_indices().find(|&e| {
+            let (_, d) = compiled.graph.edge_endpoints(e).unwrap();
+            compiled.graph[d].id == "dst_right"
+        }).unwrap();
+
+        let plan_left = &plans[&left_edge_idx];
+        let plan_right = &plans[&right_edge_idx];
+
+        let left_target_nl = &layout.positions[&compiled.node_map["dst_left"]];
+        let right_target_nl = &layout.positions[&compiled.node_map["dst_right"]];
+
+        if left_target_nl.x < right_target_nl.x {
+            assert!(
+                plan_left.exit_port < plan_right.exit_port,
+                "exit ports must be monotonic with target coordinates to prevent crossings (left: {}, right: {})",
+                plan_left.exit_port,
+                plan_right.exit_port
+            );
+        }
+    }
+
+    #[test]
+    fn test_custom_edge_formatting_render() {
+        let payload = DiagramPayload {
+            nodes: vec![
+                NodeDef {
+                    id: "n1".to_owned(),
+                    label: "Service A".to_owned(),
+                    ..Default::default()
+                },
+                NodeDef {
+                    id: "n2".to_owned(),
+                    label: "Service B".to_owned(),
+                    ..Default::default()
+                },
+            ],
+            edges: vec![crate::schema::EdgeDef {
+                from: "n1".to_owned(),
+                to: "n2".to_owned(),
+                label: Some("custom edge".to_owned()),
+                color: Some("#ec4899".to_owned()),
+                width: Some(2.5),
+                line_style: Some("dashed".to_owned()),
+                head: Some("open".to_owned()),
+                tail: Some("circle".to_owned()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        let compiled = build_graph(&payload).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+
+        let xml = render_drawio(&compiled, &layout, "standard").unwrap();
+        assert!(xml.contains("strokeColor=#ec4899"), "drawio must include custom edge color");
+        assert!(xml.contains("strokeWidth=2.5"), "drawio must include custom stroke width");
+        assert!(xml.contains("dashed=1"), "drawio must include dashed line style");
+        assert!(xml.contains("endArrow=open"), "drawio must include open endArrow");
+        assert!(xml.contains("startArrow=circle"), "drawio must include circle startArrow");
+
+        let svg = render_svg(&compiled, &layout, "standard").unwrap();
+        assert!(svg.contains("stroke=\"#ec4899\""), "svg must include custom edge color");
+        assert!(svg.contains("stroke-width=\"2.5\""), "svg must include custom stroke width");
+        assert!(svg.contains("stroke-dasharray=\"8 4\""), "svg must include dashed dasharray");
+        assert!(svg.contains("marker-end=\"url(#marker-open-slate)\""), "svg must use open marker");
+        assert!(svg.contains("marker-start=\"url(#marker-circle-fill)\""), "svg must use circle marker");
     }
 }

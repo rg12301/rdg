@@ -389,6 +389,34 @@ pub struct EdgeDef {
     /// Optional flag to render bidirectional arrows.
     #[serde(default, alias = "bidir")]
     pub bidirectional: Option<bool>,
+
+    /// Optional stroke color for the edge connector (e.g. `#ef4444`, `#0284c7`).
+    #[serde(default, alias = "colour", alias = "stroke")]
+    pub color: Option<String>,
+
+    /// Optional stroke width/thickness in pixels (e.g. 1.5, 2.0).
+    #[serde(default, alias = "stroke_width", alias = "thickness")]
+    pub width: Option<f64>,
+
+    /// Optional line style: `solid`, `dashed`, `dotted`.
+    #[serde(default, alias = "stroke_style", alias = "pattern", alias = "style_type")]
+    pub line_style: Option<String>,
+
+    /// Optional arrow head marker type: `classic`, `block`, `blockThin`, `open`, `diamond`, `oval`, `none`, `ERmany`, `ERone`, etc.
+    #[serde(default, alias = "arrow_head", alias = "end_arrow", alias = "head_type", alias = "target_arrow")]
+    pub head: Option<String>,
+
+    /// Optional arrow tail marker type: `none`, `diamond`, `oval`, `ERone`, `open`, etc.
+    #[serde(default, alias = "arrow_tail", alias = "start_arrow", alias = "tail_type", alias = "source_arrow")]
+    pub tail: Option<String>,
+
+    /// Optional explicit source port face: `top`, `bottom`, `left`, `right`.
+    #[serde(default, alias = "src_port", alias = "from_port", alias = "exit_port")]
+    pub source_port: Option<String>,
+
+    /// Optional explicit target port face: `top`, `bottom`, `left`, `right`.
+    #[serde(default, alias = "dst_port", alias = "to_port", alias = "entry_port")]
+    pub target_port: Option<String>,
 }
 
 impl EdgeDef {
