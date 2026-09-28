@@ -6,13 +6,13 @@
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <mxCell id="diagram_title_header" value="&lt;b&gt;&lt;font style=&quot;font-size:16px;color:#0f172a;&quot;&gt;Netflix-style Streaming Platform (Disconnected Subsystems)&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontFamily=Inter,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="28.0" width="500" height="40" as="geometry"/>
+          <mxGeometry x="24.2" y="28.0" width="500" height="40" as="geometry"/>
         </mxCell>
         <mxCell id="grp_playback" value="Playback Path" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#dc2626;fillOpacity=10;strokeColor=#dc2626;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#dc2626;html=1;" vertex="1" parent="1">
           <mxGeometry x="63" y="64" width="490" height="505" as="geometry"/>
         </mxCell>
         <mxCell id="grp_billing" value="&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjN0Y1MkZGIiBkPSJNMjQgMjRIMFYwaDI0TDEyIDEyWiIvPjwvc3ZnPg==&quot; width=&quot;16&quot; height=&quot;16&quot; style=&quot;vertical-align:middle;margin-right:6px;&quot;/&gt;&lt;b&gt;Billing &amp; Subscription&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#059669;fillOpacity=10;strokeColor=#059669;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#059669;html=1;" vertex="1" parent="1">
-          <mxGeometry x="617" y="88" width="254" height="516" as="geometry"/>
+          <mxGeometry x="617" y="89" width="254" height="515" as="geometry"/>
         </mxCell>
         <mxCell id="grp_content" value="&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMzc3NkFCIiBkPSJNMTQuMjUuMThsLjkuMi43My4yNi41OS4zLjQ1LjMyLjM0LjM0LjI1LjM0LjE2LjMzLjEuMy4wNC4yNi4wMi4yLS4wMS4xM1Y4LjVsLS4wNS42My0uMTMuNTUtLjIxLjQ2LS4yNi4zOC0uMy4zMS0uMzMuMjUtLjM1LjE5LS4zNS4xNC0uMzMuMS0uMy4wNy0uMjYuMDQtLjIxLjAySDguNzdsLS42OS4wNS0uNTkuMTQtLjUuMjItLjQxLjI3LS4zMy4zMi0uMjcuMzUtLjIuMzYtLjE1LjM3LS4xLjM1LS4wNy4zMi0uMDQuMjctLjAyLjIxdjMuMDZIMy4xN2wtLjIxLS4wMy0uMjgtLjA3LS4zMi0uMTItLjM1LS4xOC0uMzYtLjI2LS4zNi0uMzYtLjM1LS40Ni0uMzItLjU5LS4yOC0uNzMtLjIxLS44OC0uMTQtMS4wNS0uMDUtMS4yMy4wNi0xLjIyLjE2LTEuMDQuMjQtLjg3LjMyLS43MS4zNi0uNTcuNC0uNDQuNDItLjMzLjQyLS4yNC40LS4xNi4zNi0uMS4zMi0uMDUuMjQtLjAxaC4xNmwuMDYuMDFoOC4xNnYtLjgzSDYuMThsLS4wMS0yLjc1LS4wMi0uMzcuMDUtLjM0LjExLS4zMS4xNy0uMjguMjUtLjI2LjMxLS4yMy4zOC0uMi40NC0uMTguNTEtLjE1LjU4LS4xMi42NC0uMS43MS0uMDYuNzctLjA0Ljg0LS4wMiAxLjI3LjA1em0tNi4zIDEuOThsLS4yMy4zMy0uMDguNDEuMDguNDEuMjMuMzQuMzMuMjIuNDEuMDkuNDEtLjA5LjMzLS4yMi4yMy0uMzQuMDgtLjQxLS4wOC0uNDEtLjIzLS4zMy0uMzMtLjIyLS40MS0uMDktLjQxLjA5em0xMy4wOSAzLjk1bC4yOC4wNi4zMi4xMi4zNS4xOC4zNi4yNy4zNi4zNS4zNS40Ny4zMi41OS4yOC43My4yMS44OC4xNCAxLjA0LjA1IDEuMjMtLjA2IDEuMjMtLjE2IDEuMDQtLjI0Ljg2LS4zMi43MS0uMzYuNTctLjQuNDUtLjQyLjMzLS40Mi4yNC0uNC4xNi0uMzYuMDktLjMyLjA1LS4yNC4wMi0uMTYtLjAxaC04LjIydi44Mmg1Ljg0bC4wMSAyLjc2LjAyLjM2LS4wNS4zNC0uMTEuMzEtLjE3LjI5LS4yNS4yNS0uMzEuMjQtLjM4LjItLjQ0LjE3LS41MS4xNS0uNTguMTMtLjY0LjA5LS43MS4wNy0uNzcuMDQtLjg0LjAxLTEuMjctLjA0LTEuMDctLjE0LS45LS4yLS43My0uMjUtLjU5LS4zLS40NS0uMzMtLjM0LS4zNC0uMjUtLjM0LS4xNi0uMzMtLjEtLjMtLjA0LS4yNS0uMDItLjIuMDEtLjEzdi01LjM0bC4wNS0uNjQuMTMtLjU0LjIxLS40Ni4yNi0uMzguMy0uMzIuMzMtLjI0LjM1LS4yLjM1LS4xNC4zMy0uMS4zLS4wNi4yNi0uMDQuMjEtLjAyLjEzLS4wMWg1Ljg0bC42OS0uMDUuNTktLjE0LjUtLjIxLjQxLS4yOC4zMy0uMzIuMjctLjM1LjItLjM2LjE1LS4zNi4xLS4zNS4wNy0uMzIuMDQtLjI4LjAyLS4yMVY2LjA3aDIuMDlsLjE0LjAxem0tNi40NyAxNC4yNWwtLjIzLjMzLS4wOC40MS4wOC40MS4yMy4zMy4zMy4yMy40MS4wOC40MS0uMDguMzMtLjIzLjIzLS4zMy4wOC0uNDEtLjA4LS40MS0uMjMtLjMzLS4zMy0uMjMtLjQxLS4wOC0uNDEuMDh6Ii8+PC9zdmc+&quot; width=&quot;16&quot; height=&quot;16&quot; style=&quot;vertical-align:middle;margin-right:6px;&quot;/&gt;&lt;b&gt;Content Operations&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#7c3aed;fillOpacity=10;strokeColor=#7c3aed;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#7c3aed;html=1;" vertex="1" parent="1">
           <mxGeometry x="63" y="668" width="382" height="404" as="geometry"/>
@@ -45,7 +45,7 @@
           <mxGeometry x="-11" y="39" width="22" height="22" as="geometry"/>
         </mxCell>
         <mxCell id="billing_svc" value="&lt;b&gt;Billing Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px;color:#64748b;font-weight:normal;&quot;&gt;[Kotlin]&lt;/font&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="grp_billing">
-          <mxGeometry x="61" y="434" width="130" height="50" as="geometry"/>
+          <mxGeometry x="61" y="433" width="130" height="50" as="geometry"/>
         </mxCell>
         <mxCell id="payment_gw" value="&lt;b&gt;Payment Gateway&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#818cf8;" vertex="1" parent="grp_billing">
           <mxGeometry x="54" y="48" width="130" height="50" as="geometry"/>
@@ -74,126 +74,125 @@
         <mxCell id="cms" value="&lt;b&gt;Content Management&lt;/b&gt;&lt;br/&gt;&lt;b&gt;System&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#34d399;" vertex="1" parent="grp_content">
           <mxGeometry x="200" y="154" width="150" height="50" as="geometry"/>
         </mxCell>
-        <mxCell id="e_device_open_connect" value="HTTPS segment fetch" style="edgeStyle=none;rounded=1;html=1;exitX=0.367;exitY=0.0;exitDx=0;exitDy=0;entryX=0.617;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="device" target="open_connect" parent="1">
+        <mxCell id="e_device_open_connect" value="HTTPS segment fetch" style="edgeStyle=none;rounded=1;html=1;exitX=0.36667;exitY=0.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.16000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="device" target="open_connect" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="223.9" y="462.9"/>
-              <mxPoint x="84.8" y="462.9"/>
-              <mxPoint x="84.8" y="185.8"/>
-              <mxPoint x="262.0" y="185.8"/>
+              <mxPoint x="224.0" y="463.0"/>
+              <mxPoint x="85.0" y="463.0"/>
+              <mxPoint x="85.0" y="120.0"/>
+              <mxPoint x="127.0" y="120.0"/>
             </Array>
-            <mxPoint y="38.6" as="offset"/>
+            <mxPoint y="6.2" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_device_playback_svc" value="gRPC manifest req" style="edgeStyle=none;rounded=1;html=1;exitX=0.633;exitY=0.0;exitDx=0;exitDy=0;entryX=0.500;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="device" target="playback_svc" parent="1">
+        <mxCell id="e_device_playback_svc" value="gRPC manifest req" style="edgeStyle=none;rounded=1;html=1;exitX=0.63333;exitY=0.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="device" target="playback_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="263.9" y="462.9"/>
-              <mxPoint x="242.1" y="462.9"/>
-            </Array>
-            <mxPoint y="-10.0" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e_playback_svc_license_svc" value="gRPC" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.500;exitDx=0;exitDy=0;entryX=0.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="playback_svc" target="license_svc" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="336.1" y="413.9"/>
-              <mxPoint x="337.0" y="407.5"/>
+              <mxPoint x="264.0" y="463.0"/>
+              <mxPoint x="242.0" y="463.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_playback_svc_cdn_cache" value="GET manifest" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=0.0;exitDx=0;exitDy=0;entryX=0.500;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="playback_svc" target="cdn_cache" parent="1">
+        <mxCell id="e_playback_svc_license_svc" value="gRPC" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.38000;exitDx=0;exitDy=0;entryX=0.0;entryY=0.50000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="playback_svc" target="license_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="242.1" y="364.9"/>
-              <mxPoint x="242.1" y="358.5"/>
-              <mxPoint x="234.8" y="358.5"/>
+              <mxPoint x="336.0" y="408.0"/>
+              <mxPoint x="336.0" y="408.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_open_connect_cdn_cache" value="origin pull" style="edgeStyle=none;rounded=1;html=1;exitX=0.383;exitY=1.0;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="open_connect" target="cdn_cache" parent="1">
+        <mxCell id="e_playback_svc_cdn_cache" value="GET manifest" style="edgeStyle=none;rounded=1;html=1;exitX=0.45000;exitY=0.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="playback_svc" target="cdn_cache" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="220.0" y="209.8"/>
-              <mxPoint x="234.8" y="209.8"/>
+              <mxPoint x="235.0" y="365.0"/>
+              <mxPoint x="235.0" y="359.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_billing_svc_payment_gw" value="charge" style="edgeStyle=none;rounded=1;html=1;exitX=0.367;exitY=0.0;exitDx=0;exitDy=0;entryX=0.600;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="billing_svc" target="payment_gw" parent="1">
+        <mxCell id="e_open_connect_cdn_cache" value="origin pull" style="edgeStyle=none;rounded=1;html=1;exitX=0.38333;exitY=1.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="open_connect" target="cdn_cache" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="725.4" y="497.8"/>
-              <mxPoint x="639.0" y="497.8"/>
-              <mxPoint x="639.0" y="210.5"/>
-              <mxPoint x="749.1" y="210.5"/>
+              <mxPoint x="220.0" y="210.0"/>
+              <mxPoint x="235.0" y="210.0"/>
+            </Array>
+            <mxPoint y="-10.0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_billing_svc_payment_gw" value="charge" style="edgeStyle=none;rounded=1;html=1;exitX=0.36923;exitY=0.0;exitDx=0;exitDy=0;entryX=0.60000;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="billing_svc" target="payment_gw" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="726.0" y="498.0"/>
+              <mxPoint x="639.0" y="498.0"/>
+              <mxPoint x="639.0" y="211.0"/>
+              <mxPoint x="749.0" y="211.0"/>
             </Array>
             <mxPoint y="-26.2" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_billing_svc_billing_db" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.633;exitY=0.0;exitDx=0;exitDy=0;entryX=0.500;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="billing_svc" target="billing_db" parent="1">
+        <mxCell id="e_billing_svc_billing_db" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.63077;exitY=0.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="billing_svc" target="billing_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="760.1" y="496.5"/>
-              <mxPoint x="744.0" y="496.5"/>
+              <mxPoint x="760.0" y="497.0"/>
+              <mxPoint x="744.0" y="497.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_dunning_worker_billing_db" value="SQL retry" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="dunning_worker" target="billing_db" parent="1">
+        <mxCell id="e_dunning_worker_billing_db" value="SQL retry" style="edgeStyle=none;rounded=1;html=1;exitX=0.58462;exitY=1.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="dunning_worker" target="billing_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="733.2" y="308.5"/>
-              <mxPoint x="744.0" y="308.5"/>
+              <mxPoint x="744.0" y="309.0"/>
+              <mxPoint x="744.0" y="309.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_dunning_worker_payment_gw" value="retry charge" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=0.0;exitDx=0;exitDy=0;entryX=0.400;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="dunning_worker" target="payment_gw" parent="1">
+        <mxCell id="e_dunning_worker_payment_gw" value="retry charge" style="edgeStyle=none;rounded=1;html=1;exitX=0.42308;exitY=0.0;exitDx=0;exitDy=0;entryX=0.40000;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="dunning_worker" target="payment_gw" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="733.2" y="210.5"/>
-              <mxPoint x="723.1" y="210.5"/>
+              <mxPoint x="723.0" y="211.0"/>
+              <mxPoint x="723.0" y="211.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ingest_svc_encoder_farm" value="submit job" style="edgeStyle=none;rounded=1;html=1;exitX=0.383;exitY=1.0;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingest_svc" target="encoder_farm" parent="1">
+        <mxCell id="e_ingest_svc_encoder_farm" value="submit job" style="edgeStyle=none;rounded=1;html=1;exitX=0.38333;exitY=1.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingest_svc" target="encoder_farm" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="218.4" y="790.0"/>
-              <mxPoint x="154.8" y="790.0"/>
+              <mxPoint x="219.0" y="790.0"/>
+              <mxPoint x="155.0" y="790.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_encoder_farm_catalog_db" value="SQL update" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.400;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="encoder_farm" target="catalog_db" parent="1">
+        <mxCell id="e_encoder_farm_catalog_db" value="SQL update" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.40000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="encoder_farm" target="catalog_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="154.8" y="888.0"/>
-              <mxPoint x="154.8" y="896.1"/>
-              <mxPoint x="226.7" y="896.1"/>
+              <mxPoint x="155.0" y="888.0"/>
+              <mxPoint x="155.0" y="896.0"/>
+              <mxPoint x="227.0" y="896.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_cms_catalog_db" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.600;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cms" target="catalog_db" parent="1">
+        <mxCell id="e_cms_catalog_db" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.60000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cms" target="catalog_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="337.8" y="896.1"/>
-              <mxPoint x="262.7" y="896.1"/>
+              <mxPoint x="338.0" y="896.0"/>
+              <mxPoint x="263.0" y="896.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_cms_ingest_svc" value="trigger ingest" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=0.0;exitDx=0;exitDy=0;entryX=0.617;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cms" target="ingest_svc" parent="1">
+        <mxCell id="e_cms_ingest_svc" value="trigger ingest" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=0.0;exitDx=0;exitDy=0;entryX=0.61667;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cms" target="ingest_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="337.8" y="798.1"/>
-              <mxPoint x="260.4" y="798.1"/>
-              <mxPoint x="260.4" y="790.0"/>
+              <mxPoint x="338.0" y="798.0"/>
+              <mxPoint x="261.0" y="798.0"/>
+              <mxPoint x="261.0" y="790.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>

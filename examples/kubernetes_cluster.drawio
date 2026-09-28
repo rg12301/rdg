@@ -12,13 +12,13 @@
           <mxGeometry x="378" y="64" width="214" height="228" as="geometry"/>
         </mxCell>
         <mxCell id="grp_app" value="app namespace" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#059669;fillOpacity=10;strokeColor=#059669;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#059669;html=1;" vertex="1" parent="1">
-          <mxGeometry x="568" y="360" width="477" height="390" as="geometry"/>
+          <mxGeometry x="568" y="356" width="477" height="390" as="geometry"/>
         </mxCell>
         <mxCell id="grp_data" value="data namespace" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#7c3aed;fillOpacity=10;strokeColor=#7c3aed;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#7c3aed;html=1;" vertex="1" parent="1">
-          <mxGeometry x="196" y="816" width="577" height="308" as="geometry"/>
+          <mxGeometry x="196" y="812" width="577" height="308" as="geometry"/>
         </mxCell>
         <mxCell id="grp_platform" value="kube-system namespace" style="rounded=1;absoluteArcSize=1;arcSize=10;fillColor=#64748b;fillOpacity=10;strokeColor=#64748b;strokeWidth=1.5;dashed=1;dashPattern=6 6;verticalAlign=top;align=left;spacingLeft=16;spacingTop=10;container=1;collapsible=0;recursiveResize=0;connectable=0;fontFamily=Inter,Helvetica,sans-serif;fontStyle=1;fontSize=12;fontColor=#64748b;html=1;" vertex="1" parent="1">
-          <mxGeometry x="24" y="430" width="377" height="248" as="geometry"/>
+          <mxGeometry x="24" y="428" width="377" height="248" as="geometry"/>
         </mxCell>
         <mxCell id="ingress_ctrl" value="&lt;b&gt;Ingress Controller&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;strokeWidth=1.5;fontFamily=Inter,Helvetica,sans-serif;fontSize=12;fontStyle=1;fontColor=#0f172a;spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;strokeColor=#818cf8;" vertex="1" parent="grp_ingress">
           <mxGeometry x="32" y="146" width="150" height="50" as="geometry"/>
@@ -77,131 +77,118 @@
         <mxCell id="etcd_badge" value="&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1LjUiIHJ4PSI4IiByeT0iMyIgZmlsbD0iIzAyODRjNyIvPjxwYXRoIGZpbGw9IiMwMjg0YzciIGQ9Ik00IDUuNXYxM2MwIDEuNyAzLjYgMyA4IDNzOC0xLjMgOC0zdi0xM0g0em04IDE0LjVjLTMuNSAwLTYuNS0uOS03LjUtMlY5LjhjMS44IDEuMSA0LjUgMS43IDcuNSAxLjdzNS43LS42IDcuNS0xLjdWMTdjLTEgMS4xLTQgMi03LjUgMnoiLz48L3N2Zz4=&quot; width=&quot;22&quot; height=&quot;22&quot;/&gt;" style="fillColor=none;strokeColor=none;rounded=0;shadow=0;html=1;align=center;verticalAlign=middle;connectable=0;" vertex="1" parent="etcd">
           <mxGeometry x="-11" y="-11" width="22" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="e_ingress_ctrl_frontend_pod" value="HTTP" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingress_ctrl" target="frontend_pod" parent="1">
+        <mxCell id="e_ingress_ctrl_frontend_pod" value="HTTP" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.50000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingress_ctrl" target="frontend_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="485.0" y="432.8"/>
+              <mxPoint x="485.0" y="429.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ingress_ctrl_api_pod" value="HTTP" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.500;exitDx=0;exitDy=0;entryX=0.0;entryY=0.325;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingress_ctrl" target="api_pod" parent="1">
+        <mxCell id="e_ingress_ctrl_api_pod" value="HTTP" style="edgeStyle=none;rounded=1;html=1;exitX=0.15333;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.15278;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="ingress_ctrl" target="api_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="584.0" y="234.8"/>
-              <mxPoint x="584.0" y="349.6"/>
-              <mxPoint x="558.0" y="349.6"/>
-              <mxPoint x="558.0" y="557.2"/>
-              <mxPoint x="717.5" y="557.2"/>
+              <mxPoint x="433.0" y="541.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_cert_manager_ingress_ctrl" value="TLS cert" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cert_manager" target="ingress_ctrl" parent="1">
+        <mxCell id="e_cert_manager_ingress_ctrl" value="TLS cert" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="cert_manager" target="ingress_ctrl" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_frontend_pod_api_pod" value="REST" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.500;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="frontend_pod" target="api_pod" parent="1">
+        <mxCell id="e_frontend_pod_api_pod" value="REST" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.50000;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="frontend_pod" target="api_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="806.5" y="432.8"/>
+              <mxPoint x="807.0" y="429.0"/>
             </Array>
             <mxPoint y="6.2" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_api_pod_worker_pod" value="enqueue job" style="edgeStyle=none;rounded=1;html=1;exitX=0.675;exitY=1.0;exitDx=0;exitDy=0;entryX=0.400;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="worker_pod" parent="1">
+        <mxCell id="e_api_pod_worker_pod" value="enqueue job" style="edgeStyle=none;rounded=1;html=1;exitX=0.66923;exitY=1.0;exitDx=0;exitDy=0;entryX=0.40000;entryY=0.0;entryDx=0;entryDy=0;dashed=1;dashPattern=8 4;strokeColor=#d97706;strokeWidth=1.5;endArrow=open;endFill=0;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="worker_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="829.2" y="636.8"/>
-              <mxPoint x="791.5" y="636.8"/>
+              <mxPoint x="829.0" y="633.0"/>
+              <mxPoint x="792.0" y="633.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_api_pod_postgres_sts" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.0;exitY=0.675;exitDx=0;exitDy=0;entryX=1.0;entryY=0.400;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="postgres_sts" parent="1">
+        <mxCell id="e_api_pod_postgres_sts" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.0;exitY=0.68056;exitDx=0;exitDy=0;entryX=1.0;entryY=0.40000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="postgres_sts" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="429.0" y="582.4"/>
-              <mxPoint x="429.0" y="911.8"/>
+              <mxPoint x="429.0" y="579.0"/>
+              <mxPoint x="429.0" y="908.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_api_pod_redis_sts" value="GET/SET" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=1.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="redis_sts" parent="1">
+        <mxCell id="e_api_pod_redis_sts" value="GET/SET" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.15278;exitDx=0;exitDy=0;entryX=1.0;entryY=0.50000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="api_pod" target="redis_sts" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="806.5" y="653.8"/>
-              <mxPoint x="721.5" y="653.8"/>
-              <mxPoint x="721.5" y="727.8"/>
-              <mxPoint x="765.0" y="727.8"/>
-              <mxPoint x="765.0" y="918.8"/>
-            </Array>
-            <mxPoint y="6.2" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e_worker_pod_postgres_sts" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.0;exitY=0.500;exitDx=0;exitDy=0;entryX=1.0;entryY=0.600;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="worker_pod" target="postgres_sts" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="437.0" y="692.8"/>
-              <mxPoint x="437.0" y="925.8"/>
+              <mxPoint x="896.0" y="541.0"/>
+              <mxPoint x="896.0" y="915.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_postgres_sts_pvc" value="mount" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="postgres_sts" target="pvc" parent="1">
+        <mxCell id="e_worker_pod_postgres_sts" value="SQL" style="edgeStyle=none;rounded=1;html=1;exitX=0.0;exitY=0.50000;exitDx=0;exitDy=0;entryX=1.0;entryY=0.60000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="worker_pod" target="postgres_sts" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="313.0" y="1056.8"/>
+              <mxPoint x="437.0" y="689.0"/>
+              <mxPoint x="437.0" y="922.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_hpa_api_pod" value="scale signal" style="edgeStyle=none;rounded=1;html=1;exitX=0.367;exitY=1.0;exitDx=0;exitDy=0;entryX=1.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="hpa" target="api_pod" parent="1">
+        <mxCell id="e_postgres_sts_pvc" value="mount" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.50000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="postgres_sts" target="pvc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="892.7" y="481.8"/>
-              <mxPoint x="916.7" y="481.8"/>
-              <mxPoint x="916.7" y="569.8"/>
+              <mxPoint x="313.0" y="1053.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_hpa_worker_pod" value="scale signal" style="edgeStyle=none;rounded=1;html=1;exitX=0.633;exitY=1.0;exitDx=0;exitDy=0;entryX=0.600;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="hpa" target="worker_pod" parent="1">
+        <mxCell id="e_hpa_api_pod" value="scale signal" style="edgeStyle=none;rounded=1;html=1;exitX=0.36842;exitY=1.0;exitDx=0;exitDy=0;entryX=0.14615;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="hpa" target="api_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="943.3" y="521.8"/>
-              <mxPoint x="895.5" y="521.8"/>
-              <mxPoint x="895.5" y="643.8"/>
-              <mxPoint x="821.5" y="643.8"/>
-            </Array>
-            <mxPoint y="38.6" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e_coredns_api_pod" value="DNS resolve" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.500;exitDx=0;exitDy=0;entryX=0.0;entryY=0.500;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="coredns" target="api_pod" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="579.2" y="512.8"/>
-              <mxPoint x="579.2" y="569.8"/>
+              <mxPoint x="893.0" y="492.0"/>
+              <mxPoint x="761.0" y="492.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_kube_proxy_api_pod" value="svc routing" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.500;exitDx=0;exitDy=0;entryX=0.325;entryY=1.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="kube_proxy" target="api_pod" parent="1">
+        <mxCell id="e_hpa_worker_pod" value="scale signal" style="edgeStyle=none;rounded=1;html=1;exitX=0.63158;exitY=1.0;exitDx=0;exitDy=0;entryX=1.0;entryY=0.16000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="hpa" target="worker_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="296.5" y="620.8"/>
-              <mxPoint x="296.5" y="644.8"/>
-              <mxPoint x="783.8" y="644.8"/>
+              <mxPoint x="943.0" y="672.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_etcd_kube_proxy" value="watch" style="edgeStyle=none;rounded=1;html=1;exitX=0.500;exitY=1.0;exitDx=0;exitDy=0;entryX=0.500;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="etcd" target="kube_proxy" parent="1">
+        <mxCell id="e_coredns_api_pod" value="DNS resolve" style="edgeStyle=none;rounded=1;html=1;exitX=0.15000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.0;entryY=0.50000;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="coredns" target="api_pod" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="121.0" y="571.8"/>
-              <mxPoint x="212.5" y="571.8"/>
+              <mxPoint x="267.0" y="566.0"/>
+            </Array>
+            <mxPoint y="-10.0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_kube_proxy_api_pod" value="svc routing" style="edgeStyle=none;rounded=1;html=1;exitX=1.0;exitY=0.50000;exitDx=0;exitDy=0;entryX=0.0;entryY=0.84722;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="kube_proxy" target="api_pod" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="507.0" y="619.0"/>
+              <mxPoint x="507.0" y="591.0"/>
+            </Array>
+            <mxPoint y="-10.0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_etcd_kube_proxy" value="watch" style="edgeStyle=none;rounded=1;html=1;exitX=0.50000;exitY=1.0;exitDx=0;exitDy=0;entryX=0.50000;entryY=0.0;entryDx=0;entryDy=0;strokeColor=#64748b;strokeWidth=1.5;endArrow=blockThin;endFill=1;endSize=6;jumpStyle=arc;jumpSize=6;labelBackgroundColor=#ffffff;labelBorderColor=none;fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor=#475569;" edge="1" source="etcd" target="kube_proxy" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="121.0" y="570.0"/>
+              <mxPoint x="213.0" y="570.0"/>
             </Array>
             <mxPoint y="-10.0" as="offset"/>
           </mxGeometry>
