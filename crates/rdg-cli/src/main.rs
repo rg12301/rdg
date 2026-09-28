@@ -771,8 +771,8 @@ fn main() -> Result<()> {
     let max_passes = layout_config.tokens.max_review_passes;
     let reviewed = compute_reviewed_layout(&compiled, &layout_config, max_passes, &decision)
         .context("layout computation failed")?;
-    report_review(&reviewed);
     let remaining_anomalies = reviewed.remaining_anomalies(&compiled, &layout_config.tokens);
+    report_review(&reviewed, remaining_anomalies.len());
     if std::env::var("RDG_DEBUG_ANOMALIES").is_ok() {
         for a in &remaining_anomalies {
             eprintln!("  [{:?}] {}", a.kind, a.description);
@@ -879,7 +879,7 @@ fn report_dispatch(decision: &rdg_dispatch::AlgorithmDecision, was_auto: bool) {
 
 /// Prints a concise stderr summary of the self-review retry loop: nothing at all for a
 /// clean first pass, one line per retry otherwise, and a final resolved/remaining summary.
-fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout) {
+fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout, final_count: usize) {
     if reviewed.passes.len() == 1 && reviewed.passes[0].anomaly_count == 0 {
         return;
     }
@@ -900,29 +900,24 @@ fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout) {
             );
         }
     }
-    // The layout `rdg` actually writes is whichever pass had the *fewest* anomalies,
-    // not necessarily the last one — widening spacing helps a layered Sugiyama layout
-    // almost monotonically, but for the force-directed/fCoSE engines a wider spacing
-    // scale can just as easily make crossings worse, so later passes aren't guaranteed
-    // to improve on earlier ones. Reporting `passes.last()` here would describe a pass
-    // whose result was silently discarded — this must match what `remaining_anomalies`
-    // (and thus `--strict`) actually sees.
-    let best_count = reviewed
-        .passes
-        .iter()
-        .map(|p| p.anomaly_count)
-        .min()
-        .expect("at least one pass always runs");
-    if best_count == 0 {
+    // What matters is the layout `rdg` actually writes: the fewest-anomaly pass (widening
+    // spacing helps a layered layout almost monotonically, but for the force-directed/fCoSE
+    // engines a wider scale can just as easily make crossings worse, so the last pass isn't
+    // necessarily the best) *after* the final polish pass, which can clear an anomaly the
+    // review loop had given up on. `final_count` is that post-polish figure — the same one
+    // `--strict` acts on — so this summary can never contradict the exit code.
+    if final_count == 0 {
         if reviewed.passes.len() > 1 {
             eprintln!("✓  resolved after {} pass(es)", reviewed.passes.len());
+        } else {
+            eprintln!("✓  resolved by the polish pass");
         }
     } else {
         eprintln!(
             "✗  {} anomal{} {} in the best attempt tried ({} pass(es)) — writing it anyway",
-            best_count,
-            if best_count == 1 { "y" } else { "ies" },
-            if best_count == 1 { "remains" } else { "remain" },
+            final_count,
+            if final_count == 1 { "y" } else { "ies" },
+            if final_count == 1 { "remains" } else { "remain" },
             reviewed.passes.len(),
         );
     }

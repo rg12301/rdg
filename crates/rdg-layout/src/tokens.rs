@@ -103,6 +103,11 @@ pub struct DesignTokens {
     /// guarded, deterministic adjustments to edge ports and waypoints that remove micro-jogs
     /// and avoidable crossings without changing the layout.
     pub polish_enabled: bool,
+    /// Whether the final stage snaps node boxes, ports and waypoints to whole pixels (only
+    /// effective when [`Self::polish_enabled`] is on). draw.io rounds node geometry to
+    /// integers but writes ports as fractions and waypoints unrounded, which leaves up to
+    /// ~0.6px of skew between a port and the line leaving it.
+    pub polish_snap: bool,
     /// Shortest interior segment that still reads as intentional, as a multiple of
     /// [`Self::unit`]. Shorter than this is a "micro-jog" the polish pass tries to remove.
     pub polish_min_jog_units: f64,
@@ -260,6 +265,7 @@ impl Default for DesignTokens {
             channel_pitch_units: 1.75,
             min_port_pitch_units: 1.5,
             polish_enabled: true,
+            polish_snap: true,
             polish_min_jog_units: 1.5,
             polish_max_passes: 6,
             polish_max_reroutes: 1500,
@@ -347,16 +353,20 @@ impl DesignTokens {
     /// nodes' combined bounding box, *before* padding.
     pub fn group_pad_for(&self, content_w: f64, content_h: f64) -> f64 {
         let scale = (content_w + content_h) * 0.5;
-        (scale * self.group_pad_fraction).max(self.group_pad())
+        // Whole pixels: a group box is `node bbox - pad`, so an integer pad keeps its
+        // corner on the same pixel grid as the (snapped) nodes inside it — draw.io rounds
+        // every cell and group-relative coordinate independently, and a fractional pad is
+        // how a child ended up half a pixel off its container.
+        (scale * self.group_pad_fraction).max(self.group_pad()).round()
     }
     /// Content-aware counterpart to [`Self::group_pad_top`] — see
     /// [`Self::group_pad_for`].
     pub fn group_pad_top_for(&self, content_w: f64, content_h: f64) -> f64 {
-        self.line_height(self.font_size) + self.group_pad_for(content_w, content_h)
+        (self.line_height(self.font_size) + self.group_pad_for(content_w, content_h)).round()
     }
     /// Vertical band reserved above the content for the diagram title.
     pub fn title_band(&self) -> f64 {
-        self.line_height(self.font_size) * 2.2
+        (self.line_height(self.font_size) * 2.2).round()
     }
     /// Smallest allowed gap between adjacent ranks: [`Self::min_rank_gap_units`], but
     /// never less than two clearance stubs (one off each face).

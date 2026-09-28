@@ -1318,8 +1318,9 @@ fn deoverlap_pass(
 }
 
 /// The point half-way (by arc length, not by waypoint count) along the polyline
-/// `p1 -> waypoints -> p2`. This is where both render backends anchor an edge's label
-/// by default, so it needs to match what's actually drawn — the midpoint of the
+/// `p1 -> waypoints -> p2`. This is the one label anchor: both render backends and the
+/// canvas bounds use it (the SVG backend used to pick its own, so a label could sit on a
+/// different leg than in draw.io). It needs to match what's actually drawn — the midpoint of the
 /// *longest* segment would put the label on a different leg of the path than the one
 /// a viewer's eye follows, and the midpoint of the waypoint list (rather than of the
 /// path's length) skews toward whichever end has more bends.

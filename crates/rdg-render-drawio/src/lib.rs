@@ -489,17 +489,17 @@ pub fn render_drawio(
         let marker_exit_y = if marker_bottom_exit { tokens.marker_label_clearance_ratio } else { 1.0 };
 
         let exit_attr = match src_side {
-            Side::Bottom => format!("exitX={port_frac:.3};exitY={marker_exit_y:.1};exitDx=0;exitDy=0;{exit_perimeter}"),
-            Side::Top => format!("exitX={port_frac:.3};exitY=0.0;exitDx=0;exitDy=0;"),
-            Side::Left => format!("exitX=0.0;exitY={port_frac:.3};exitDx=0;exitDy=0;"),
-            Side::Right => format!("exitX=1.0;exitY={port_frac:.3};exitDx=0;exitDy=0;"),
+            Side::Bottom => format!("exitX={port_frac:.5};exitY={marker_exit_y:.1};exitDx=0;exitDy=0;{exit_perimeter}"),
+            Side::Top => format!("exitX={port_frac:.5};exitY=0.0;exitDx=0;exitDy=0;"),
+            Side::Left => format!("exitX=0.0;exitY={port_frac:.5};exitDx=0;exitDy=0;"),
+            Side::Right => format!("exitX=1.0;exitY={port_frac:.5};exitDx=0;exitDy=0;"),
         };
 
         let entry_attr = match dst_side {
-            Side::Top => format!("entryX={entry_port_frac:.3};entryY=0.0;entryDx=0;entryDy=0;"),
-            Side::Bottom => format!("entryX={entry_port_frac:.3};entryY=1.0;entryDx=0;entryDy=0;"),
-            Side::Left => format!("entryX=0.0;entryY={entry_port_frac:.3};entryDx=0;entryDy=0;"),
-            Side::Right => format!("entryX=1.0;entryY={entry_port_frac:.3};entryDx=0;entryDy=0;"),
+            Side::Top => format!("entryX={entry_port_frac:.5};entryY=0.0;entryDx=0;entryDy=0;"),
+            Side::Bottom => format!("entryX={entry_port_frac:.5};entryY=1.0;entryDx=0;entryDy=0;"),
+            Side::Left => format!("entryX=0.0;entryY={entry_port_frac:.5};entryDx=0;entryDy=0;"),
+            Side::Right => format!("entryX=1.0;entryY={entry_port_frac:.5};entryDx=0;entryDy=0;"),
         };
 
         // Flow-numbering badge: a small floating circle near the source exit point, when

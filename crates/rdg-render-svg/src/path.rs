@@ -3,14 +3,17 @@
 //! This is genuinely SVG-specific (emits raw `M`/`L`/`Q` path syntax), unlike the
 //! waypoint *geometry* in `rdg_render_core::routing`, which both backends share.
 
-/// Compute an orthogonal SVG path with smooth fillet corners (R = 8px) passing through all waypoints.
-/// Returns `(path_d, label_center_x, label_center_y)`.
-/// Places label at the midpoint of the longest segment away from bends and crossings.
+/// Compute an orthogonal SVG path with smooth fillet corners passing through all waypoints.
+///
+/// Returns only the path string: where an edge's label goes is decided in one place,
+/// `rdg_render_core::routing::polyline_midpoint`, which the draw.io backend and the canvas
+/// bounds also use. This function used to pick its own anchor (the longest segment's
+/// midpoint), so the same edge's label sat on a different leg in SVG than in draw.io.
 pub fn build_orthogonal_svg_path(
     p1: (f64, f64),
     p2: (f64, f64),
     waypoints: &[(f64, f64)],
-) -> (String, f64, f64) {
+) -> String {
     let mut all_points = Vec::with_capacity(waypoints.len() + 2);
     all_points.push(p1);
     all_points.extend_from_slice(waypoints);
@@ -18,35 +21,11 @@ pub fn build_orthogonal_svg_path(
 
     let n = all_points.len();
     if n <= 1 {
-        return (String::new(), 0.0, 0.0);
+        return String::new();
     }
     if n == 2 {
         let (a, b) = (all_points[0], all_points[1]);
-        return (
-            format!("M {:.1} {:.1} L {:.1} {:.1}", a.0, a.1, b.0, b.1),
-            (a.0 + b.0) / 2.0,
-            (a.1 + b.1) / 2.0,
-        );
-    }
-
-    // Identify longest segment for label placement away from corners
-    let mut max_seg_len = -1.0_f64;
-    let mut label_pos = (
-        (all_points[0].0 + all_points[1].0) / 2.0,
-        (all_points[0].1 + all_points[1].1) / 2.0,
-    );
-
-    for i in 0..n - 1 {
-        let dx = all_points[i + 1].0 - all_points[i].0;
-        let dy = all_points[i + 1].1 - all_points[i].1;
-        let seg_len = (dx * dx + dy * dy).sqrt();
-        if seg_len > max_seg_len {
-            max_seg_len = seg_len;
-            label_pos = (
-                (all_points[i].0 + all_points[i + 1].0) / 2.0,
-                (all_points[i].1 + all_points[i + 1].1) / 2.0,
-            );
-        }
+        return format!("M {:.1} {:.1} L {:.1} {:.1}", a.0, a.1, b.0, b.1);
     }
 
     let mut d = format!("M {:.1} {:.1}", all_points[0].0, all_points[0].1);
@@ -97,7 +76,7 @@ pub fn build_orthogonal_svg_path(
     let last = all_points[n - 1];
     d.push_str(&format!(" L {:.1} {:.1}", last.0, last.1));
 
-    (d, label_pos.0, label_pos.1)
+    d
 }
 
 #[cfg(test)]
@@ -106,14 +85,13 @@ mod tests {
 
     #[test]
     fn test_two_point_path_is_a_straight_line() {
-        let (d, lx, ly) = build_orthogonal_svg_path((0.0, 0.0), (10.0, 0.0), &[]);
+        let d = build_orthogonal_svg_path((0.0, 0.0), (10.0, 0.0), &[]);
         assert_eq!(d, "M 0.0 0.0 L 10.0 0.0");
-        assert_eq!((lx, ly), (5.0, 0.0));
     }
 
     #[test]
     fn test_path_with_waypoints_has_fillet_curves() {
-        let (d, _, _) = build_orthogonal_svg_path((0.0, 0.0), (20.0, 20.0), &[(20.0, 0.0)]);
+        let d = build_orthogonal_svg_path((0.0, 0.0), (20.0, 20.0), &[(20.0, 0.0)]);
         assert!(
             d.contains('Q'),
             "a corner between two segments should be filleted"

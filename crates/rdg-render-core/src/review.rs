@@ -822,6 +822,9 @@ pub fn compute_reviewed_layout(
     // touches is covered by that translation, and before anomalies are re-checked so
     // `--strict` judges the polished result.
     let polish = crate::polish::polish(compiled, &mut layout, &mut edge_plans, decision.routing.algorithm, &config.tokens);
+    // Whole-pixel geometry, *before* the canvas shift; that shift is itself rounded to whole
+    // pixels (see `finalize_canvas`), so it can't undo the snapping.
+    crate::polish::snap_to_pixels(compiled, &mut layout, &mut edge_plans, &config.tokens);
     crate::canvas::finalize_canvas(
         compiled,
         &mut layout,

@@ -601,7 +601,8 @@ pub fn render_svg(
             tokens,
         );
         let waypoints = plan.map_or(default_wps.as_slice(), |p| p.waypoints.as_slice());
-        let (path_d, lx, ly) = build_orthogonal_svg_path((x1, y1), (x2, y2), waypoints);
+        let path_d = build_orthogonal_svg_path((x1, y1), (x2, y2), waypoints);
+        let (lx, ly) = rdg_render_core::routing::polyline_midpoint((x1, y1), waypoints, (x2, y2));
 
         let mut path = BytesStart::new("path");
         path.push_attribute(("d", path_d.as_str()));

@@ -40,6 +40,18 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
   cutting through nodes, an explicit size too small for its content, a lopsided canvas)
   and retries with wider spacing before writing anything; `--strict` turns unresolved
   anomalies into a non-zero exit code for CI/agent pipelines.
+- **Consistent whitespace**: rank gaps, node gaps, group padding and the canvas margin
+  scale with how connected a component is (arrows never shrink below a readable stub,
+  parallel edges get their own lanes, a hub's faces are sized to hold its ports), and the
+  configured margin holds on all four sides of everything drawn.
+- **Polish pass**: the last stage reviews the routed diagram for small imperfections — an
+  arrow with a needless micro-jog, an avoidable crossing, two edges drawn on top of each
+  other — and fixes each with a small guarded adjustment (sliding a port along its face,
+  swapping two edges' ports, moving one edge to another face). A fix is kept only if it
+  breaks no rule (no node hit, no extra bend, no shorter arrow) and strictly improves the
+  diagram, so the pass is deterministic and idempotent; nodes are never moved. It also
+  snaps geometry to whole pixels so draw.io draws exactly what was routed. `--no-polish`
+  turns it off; `RDG_DEBUG_POLISH=1` prints every adjustment.
 - **Real brand logos**: ~60 languages/clouds/databases/frameworks now use vendored
   [Simple Icons](https://simpleicons.org) artwork (CC0) instead of hand-drawn
   approximations — see [`crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md`](crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md).
@@ -205,6 +217,7 @@ Options:
       --rank-spacing <N>        Vertical gap between layers in px [default: 60]
       --node-spacing <N>        Horizontal gap between nodes in px [default: 40]
       --strict                  Exit non-zero if self-review anomalies remain after retrying
+      --no-polish               Skip the final micro-jog / crossing cleanup pass
       --svg-engine <ENGINE>     auto | drawio | native — SVG export engine [default: auto]
   -h, --help                    Print full LLM usage guide
   -V, --version                 Print version

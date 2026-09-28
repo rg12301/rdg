@@ -896,6 +896,133 @@ impl<'a> Polisher<'a> {
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// Pixel snapping
+// ---------------------------------------------------------------------------
+
+/// Snaps every node box, port and waypoint to whole pixels, so the geometry the renderers
+/// write is the geometry the router meant. draw.io rounds node `x/y/width/height` to
+/// integers on its own but writes ports as fractions of the *rounded* box and waypoints
+/// unrounded, which left up to ~0.6px between a port and the line leaving it — a hairline
+/// kink on the exact draw.io SVG export.
+///
+/// Node boxes snap by their edges (`round(x)`, `round(x + w)`) so a face sits on the same
+/// pixel the routed ports were computed against; each port then snaps to the nearest pixel
+/// on its face; each waypoint coordinate rounds, with coordinates that were equal within
+/// tolerance forced equal so straight segments stay straight. An edge whose snapped path
+/// would clip a node or leave/enter a face wrongly keeps its original geometry.
+///
+/// Returns the number of edges snapped. Run after `finalize_canvas` so the canvas shift
+/// itself is already whole-pixel.
+pub fn snap_to_pixels(
+    compiled: &CompiledGraph,
+    layout: &mut LayoutResult,
+    edge_plans: &mut HashMap<EdgeIndex, EdgeRoutingPlan>,
+    tokens: &DesignTokens,
+) -> usize {
+    if !tokens.polish_enabled || !tokens.polish_snap || layout.sequence_info.is_some() {
+        return 0;
+    }
+    let mut ids: Vec<EdgeIndex> = edge_plans.keys().copied().collect();
+    ids.sort_by_key(|e| e.index());
+
+    // Old (pre-snap) absolute paths.
+    let old_paths: HashMap<EdgeIndex, Vec<Pt>> = ids
+        .iter()
+        .filter_map(|&e| edge_full_path(compiled, layout, e, &edge_plans[&e]).map(|p| (e, p)))
+        .collect();
+
+    // 1. Nodes, by edges.
+    for nl in layout.positions.values_mut() {
+        let (x0, y0) = (nl.x.round(), nl.y.round());
+        let (x1, y1) = ((nl.x + nl.width).round(), (nl.y + nl.height).round());
+        nl.x = x0;
+        nl.y = y0;
+        nl.width = (x1 - x0).max(1.0);
+        nl.height = (y1 - y0).max(1.0);
+    }
+    let obstacles = node_obstacles(layout);
+    let titles = compute_group_title_zones(compiled, layout, tokens);
+
+    // 2. Edges.
+    let mut snapped = 0;
+    for e in ids {
+        let (Some(old), Some((s_idx, d_idx, src_nl, dst_nl))) =
+            (old_paths.get(&e), resolve_edge_layout(compiled, layout, e))
+        else {
+            continue;
+        };
+        let plan = edge_plans[&e].clone();
+        let mut r: Vec<Pt> = old.iter().map(|&(x, y)| (x.round(), y.round())).collect();
+        // Coordinates that were the same before must stay the same after: rounding two
+        // values that differ by 0.02 can split them across a .5 boundary.
+        let n = r.len();
+        for pass in 0..2 {
+            let order: Vec<usize> = if pass == 0 { (1..n).collect() } else { (0..n - 1).rev().collect() };
+            for i in order {
+                let j = if pass == 0 { i - 1 } else { i + 1 };
+                if (old[i].0 - old[j].0).abs() < SKEW_TOL && (r[i].0 - r[j].0).abs() > 0.0 && i != 0 && i != n - 1 {
+                    r[i].0 = r[j].0;
+                }
+                if (old[i].1 - old[j].1).abs() < SKEW_TOL && (r[i].1 - r[j].1).abs() > 0.0 && i != 0 && i != n - 1 {
+                    r[i].1 = r[j].1;
+                }
+            }
+        }
+        let (p1, p2) = (r[0], r[n - 1]);
+
+        // Port fractions such that the drawn port is exactly p1/p2 on the snapped faces.
+        let frac = |p: Pt, side: Side, nl: &NodeLayout| -> Option<f64> {
+            let (v, lo, len) = match side {
+                Side::Top | Side::Bottom => (p.0, nl.x, nl.width),
+                Side::Left | Side::Right => (p.1, nl.y, nl.height),
+            };
+            let f = (v - lo) / len;
+            (0.0..=1.0).contains(&f).then_some(f)
+        };
+        let (Some(exit), Some(entry)) = (frac(p1, plan.src_side, src_nl), frac(p2, plan.dst_side, dst_nl)) else {
+            continue;
+        };
+        let mut np = plan.clone();
+        np.exit_port = exit;
+        np.entry_port = entry;
+        np.waypoints = r[1..n - 1].to_vec();
+
+        // The port must land exactly on its face (it does by construction for the face
+        // coordinate; verify), and the path must still be clean.
+        if (port_point(src_nl, np.src_side, exit).0 - p1.0).abs() > 1e-6
+            || (port_point(src_nl, np.src_side, exit).1 - p1.1).abs() > 1e-6
+            || (port_point(dst_nl, np.dst_side, entry).0 - p2.0).abs() > 1e-6
+            || (port_point(dst_nl, np.dst_side, entry).1 - p2.1).abs() > 1e-6
+        {
+            continue;
+        }
+        let mut pts = vec![p1];
+        pts.extend_from_slice(&np.waypoints);
+        pts.push(p2);
+        if pts.windows(2).any(|w| orientation(w[0], w[1]).is_none() && seg_len(w[0], w[1]) > TOL) {
+            continue;
+        }
+        let mut obs: Vec<ObstacleRect> = obstacles
+            .iter()
+            .filter(|(n, _)| *n != s_idx && *n != d_idx)
+            .map(|(_, r)| r.clone())
+            .collect();
+        obs.extend(titles.iter().map(|t| ObstacleRect { x: t.min_x, y: t.min_y, w: t.max_x - t.min_x, h: t.max_y - t.min_y }));
+        let src_rect = ObstacleRect { x: src_nl.x, y: src_nl.y, w: src_nl.width, h: src_nl.height };
+        let dst_rect = ObstacleRect { x: dst_nl.x, y: dst_nl.y, w: dst_nl.width, h: dst_nl.height };
+        if first_clipping_segment(p1, &np.waypoints, p2, &obs).is_some()
+            || !path_respects_faces(p1, np.src_side, &np.waypoints, p2, np.dst_side, &src_rect, &dst_rect)
+        {
+            continue;
+        }
+        edge_plans.insert(e, np);
+        snapped += 1;
+    }
+    snapped
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -966,7 +1093,9 @@ mod tests {
             assert!(m1.min_arrow_len.unwrap_or(f64::MAX) + 0.01 >= m0.min_arrow_len.unwrap_or(0.0).min(cfg.tokens.stub_clearance()), "{name}: shortest arrow shrank");
             assert!(m1.min_port_pitch.unwrap_or(f64::MAX) + 0.01 >= m0.min_port_pitch.unwrap_or(0.0).min(cfg.tokens.min_port_pitch()), "{name}: port pitch shrank");
             let gap = |m: &crate::review::SpacingMetrics| m.min_node_gap.unwrap_or(0.0);
-            assert!((gap(&m1) - gap(&m0)).abs() < 1e-6, "{name}: polish moved a node");
+            // Nodes never move except by whole-pixel snapping, which shifts a box edge by at
+            // most half a pixel — so a gap between two boxes changes by at most 1px.
+            assert!((gap(&m1) - gap(&m0)).abs() <= 1.0 + 1e-6, "{name}: polish moved a node ({} -> {})", gap(&m0), gap(&m1));
         }
     }
 

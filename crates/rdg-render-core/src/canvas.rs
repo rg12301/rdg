@@ -150,7 +150,9 @@ pub fn finalize_canvas(
     let Some(b) = content_bounds(compiled, layout, edge_plans, tokens) else {
         return;
     };
-    let (dx, dy) = (margin_x - b.min_x, margin_y - b.min_y);
+    // Whole pixels: a fractional shift would put snapped nodes, ports and waypoints back
+    // off the pixel grid the polish stage just put them on.
+    let (dx, dy) = ((margin_x - b.min_x).round(), (margin_y - b.min_y).round());
     if dx == 0.0 && dy == 0.0 {
         return;
     }
