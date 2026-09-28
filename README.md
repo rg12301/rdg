@@ -139,6 +139,25 @@ sudo cp target/release/rdg /usr/local/bin/rdg
 cp target/release/rdg ~/.local/bin/rdg
 ```
 
+### Download precompiled binary
+
+**Recommended:** grab a precompiled binary for your platform from the [latest release](https://github.com/rg12301/rdg/releases):
+
+- **macOS**: `rdg-macos-x86_64` (Intel) or `rdg-macos-aarch64` (Apple Silicon)
+- **Linux**: `rdg-linux-x86_64` (glibc, x86_64) or `rdg-linux-aarch64` (ARM64)
+- **Windows**: `rdg-windows-x86_64.exe`
+
+Unzip/untar and place the binary on your `$PATH`:
+
+```bash
+# macOS / Linux example:
+tar xzf rdg-macos-aarch64.tar.gz
+sudo mv rdg /usr/local/bin/
+
+# Or without sudo:
+mv rdg ~/.local/bin/
+```
+
 ### Verify installation
 
 ```bash
