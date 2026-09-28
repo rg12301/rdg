@@ -99,6 +99,27 @@ pub struct DesignTokens {
     /// neighbouring arrows read as one thick line. Face selection treats a face that
     /// would drop below it as full and spills further edges onto another face.
     pub min_port_pitch_units: f64,
+    /// Master switch for the final polish pass (`rdg-render-core::polish`): small,
+    /// guarded, deterministic adjustments to edge ports and waypoints that remove micro-jogs
+    /// and avoidable crossings without changing the layout.
+    pub polish_enabled: bool,
+    /// Shortest interior segment that still reads as intentional, as a multiple of
+    /// [`Self::unit`]. Shorter than this is a "micro-jog" the polish pass tries to remove.
+    pub polish_min_jog_units: f64,
+    /// Upper bound on polish sweeps over the diagram (it also stops early when a sweep
+    /// changes nothing).
+    pub polish_max_passes: u32,
+    /// Longest an edge may grow when polish re-routes it, as a multiple of its current
+    /// length (plus a fixed slack of a few units). Removing a crossing is worth a small
+    /// detour, not sending an edge around the whole diagram.
+    pub polish_max_detour_ratio: f64,
+    /// Budget of edge re-routes polish may spend in one run. A hard, deterministic cap (a
+    /// count, not a clock) so a very large or very dense diagram can't make the final pass
+    /// dominate render time; it stops trying fixes once the budget is spent.
+    pub polish_max_reroutes: u32,
+    /// Farthest polish may slide an edge's port along its face, as a multiple of
+    /// [`Self::unit`].
+    pub polish_max_port_shift_units: f64,
     /// Extra A* route cost charged per direction change — higher favors fewer,
     /// straighter bends over a shorter but more zig-zag path.
     pub astar_bend_penalty: f64,
@@ -238,6 +259,12 @@ impl Default for DesignTokens {
             min_rank_gap_units: 6.0,
             channel_pitch_units: 1.75,
             min_port_pitch_units: 1.5,
+            polish_enabled: true,
+            polish_min_jog_units: 1.5,
+            polish_max_passes: 6,
+            polish_max_reroutes: 1500,
+            polish_max_detour_ratio: 1.3,
+            polish_max_port_shift_units: 6.0,
             astar_bend_penalty: 40.0,
             astar_hug_penalty: 15.0,
             astar_max_obstacles: 15,
@@ -338,6 +365,12 @@ impl DesignTokens {
     }
     pub fn channel_pitch(&self) -> f64 {
         self.px(self.channel_pitch_units)
+    }
+    pub fn polish_min_jog(&self) -> f64 {
+        self.px(self.polish_min_jog_units)
+    }
+    pub fn polish_max_port_shift(&self) -> f64 {
+        self.px(self.polish_max_port_shift_units)
     }
     pub fn min_port_pitch(&self) -> f64 {
         self.px(self.min_port_pitch_units)

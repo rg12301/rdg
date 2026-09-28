@@ -555,6 +555,20 @@ struct Cli {
     )]
     strict: bool,
 
+    /// Skip the final polish pass (small guarded port/waypoint adjustments that remove
+    /// micro-jogs and avoidable crossings), leaving routing exactly as first planned.
+    #[arg(
+        long,
+        help = "Disable the final polish pass (micro-jog / crossing cleanup)",
+        long_help = "After layout, routing and self-review, rdg runs a deterministic polish \
+                     pass that slides edge ports and waypoints by a few pixels to remove \
+                     micro-jogs and avoidable crossings. Every adjustment is guarded (no new \
+                     overlap, node hit, bend or shorter arrow) and kept only if it strictly \
+                     improves the diagram. --no-polish skips it. Set RDG_DEBUG_POLISH=1 to \
+                     see each adjustment on stderr."
+    )]
+    no_polish: bool,
+
     /// Path to a design-tokens YAML file overriding rdg's base spacing/typography/
     /// threshold tokens, without recompiling. See `DesignTokens` in `rdg-layout` for
     /// every overridable field and its default.
@@ -678,7 +692,10 @@ fn main() -> Result<()> {
     // `--design-config` (a YAML file setting any subset of `DesignTokens`'s fields —
     // see that struct's own docs). This is the one thing in the pipeline read from an
     // external file rather than computed; everything else derives from it.
-    let tokens = load_design_tokens(cli.design_config.as_deref())?;
+    let mut tokens = load_design_tokens(cli.design_config.as_deref())?;
+    if cli.no_polish {
+        tokens.polish_enabled = false;
+    }
 
     // --- 3. Build petgraph --------------------------------------------------
     // Moved ahead of the spacing block below: computing a proportional
@@ -764,13 +781,15 @@ fn main() -> Result<()> {
     let layout_result = &reviewed.layout;
     let edge_plans = &reviewed.edge_plans;
     if std::env::var("RDG_DEBUG_SPACING").is_ok() {
-        let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans);
+        let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
         let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
         eprintln!(
-            "spacing: arrow={} node_gap={} port_pitch={}  [arrow: {}; pitch: {}]",
+            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={}  [arrow: {}; pitch: {}]",
             fmt(m.min_arrow_len),
             fmt(m.min_node_gap),
             fmt(m.min_port_pitch),
+            m.micro_jogs,
+            m.crossings,
             m.min_arrow_edge.as_deref().unwrap_or("-"),
             m.min_pitch_face.as_deref().unwrap_or("-")
         );

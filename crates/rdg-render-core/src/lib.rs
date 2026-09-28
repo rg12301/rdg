@@ -5,6 +5,7 @@
 //! two backends can't drift apart on what a given node type or edge style *means*.
 
 pub mod canvas;
+pub mod polish;
 pub mod review;
 pub mod routing;
 pub mod style;

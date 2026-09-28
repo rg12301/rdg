@@ -140,7 +140,11 @@ pub fn render_sequence_svg(
     }
 
     // 1. Draw lifelines (vertical dashed lines)
-    for &lx in seq.lifeline_x.values() {
+    // `lifeline_x` is a `HashMap` (randomized iteration order per process); emit in node
+    // order so the same input always produces byte-identical SVG.
+    let mut lifelines: Vec<(usize, f64)> = seq.lifeline_x.iter().map(|(n, &x)| (n.index(), x)).collect();
+    lifelines.sort_by_key(|&(i, _)| i);
+    for (_, lx) in lifelines {
         let mut line = BytesStart::new("line");
         line.push_attribute(("x1", lx.round().to_string().as_str()));
         line.push_attribute(("y1", seq.lifeline_top_y.round().to_string().as_str()));

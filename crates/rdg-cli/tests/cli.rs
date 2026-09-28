@@ -315,6 +315,10 @@ fn test_fcose_disconnected_components_are_deterministic_across_many_runs() {
 fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut checked = 0;
+    // Whole-suite polish budgets (measured after polish: 1 micro-jog, 24 crossings across the
+    // bundled diagrams; unpolished it was 11 and 54). A little headroom keeps unrelated
+    // layout changes from tripping this, while a real regression in polish still does.
+    let (mut total_jogs, mut total_crossings) = (0.0_f64, 0.0_f64);
     for dir in ["examples", "docs"] {
         let mut files: Vec<_> = std::fs::read_dir(root.join(dir))
             .expect("read fixture dir")
@@ -347,9 +351,13 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
             if let Some(pitch) = field("port_pitch=") {
                 assert!(pitch >= 8.0, "{}: ports only {pitch}px apart — {line}", file.display());
             }
+            total_jogs += field("jogs=").unwrap_or(0.0);
+            total_crossings += field("crossings=").unwrap_or(0.0);
             let _ = std::fs::remove_file(&out_path);
             checked += 1;
         }
     }
     assert!(checked >= 8, "expected to check the bundled fixtures, checked {checked}");
+    assert!(total_jogs <= 3.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 3)");
+    assert!(total_crossings <= 30.0, "crossings across bundled diagrams: {total_crossings} (budget 30)");
 }

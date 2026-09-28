@@ -84,6 +84,116 @@ fn face_capacity(nl: &NodeLayout, side: Side, tokens: &DesignTokens) -> usize {
     (((len * 0.7) / tokens.min_port_pitch()).floor() as usize).saturating_sub(1).max(1)
 }
 
+/// Every node's box as a routing obstacle, sorted by `NodeIndex`. `layout.positions` is a
+/// `HashMap` (randomized iteration order per process), and this router is documented as
+/// deterministic, so every order-sensitive obstacle scan goes through this sorted list.
+pub(crate) fn node_obstacles(layout: &LayoutResult) -> Vec<(NodeIndex, ObstacleRect)> {
+    let mut all: Vec<(NodeIndex, ObstacleRect)> = layout
+        .positions
+        .iter()
+        .map(|(&ni, nl)| (ni, ObstacleRect { x: nl.x, y: nl.y, w: nl.width, h: nl.height }))
+        .collect();
+    all.sort_by_key(|(ni, _)| ni.index());
+    all
+}
+
+/// Everything [`route_edge`] needs besides the edge itself: the obstacle field, the group
+/// title boxes, and which router to use. Shared by the initial planner and the polish pass,
+/// so a re-routed edge is routed exactly the way it originally was.
+pub(crate) struct RouteEnv<'a> {
+    pub all_obstacles: &'a [(NodeIndex, ObstacleRect)],
+    pub title_zones: &'a [GroupTitleZone],
+    pub algorithm: RoutingAlgorithm,
+    pub tokens: &'a DesignTokens,
+}
+
+/// Routes one edge between two already-chosen faces and ports and returns its waypoints
+/// (excluding the two port points). `channel_y`/`corridor_x` are the shared-corridor hints
+/// from planning Steps 4/5.
+pub(crate) fn route_edge(
+    env: &RouteEnv<'_>,
+    (s_idx, src_nl, src_side, exit_port): (NodeIndex, &NodeLayout, Side, f64),
+    (d_idx, dst_nl, dst_side, entry_port): (NodeIndex, &NodeLayout, Side, f64),
+    channel_y: f64,
+    corridor_x: f64,
+) -> Vec<(f64, f64)> {
+    let tokens = env.tokens;
+    let (x1, y1) = port_point(src_nl, src_side, exit_port);
+    let (x2, y2) = port_point(dst_nl, dst_side, entry_port);
+
+    // Per-edge obstacle list: exclude source and destination nodes so their face-stubs are
+    // not treated as blocked. Group title text is an obstacle too: a line drawn through
+    // "Persistent Storage Tier" is as unreadable as one through a node. Only the title's
+    // own text box (not the whole container), so edges still cross group borders freely.
+    let mut edge_obstacles: Vec<ObstacleRect> = env
+        .all_obstacles
+        .iter()
+        .filter(|(ni, _)| *ni != s_idx && *ni != d_idx)
+        .map(|(_, obs)| obs.clone())
+        .collect();
+    edge_obstacles.extend(env.title_zones.iter().map(|tz| ObstacleRect {
+        x: tz.min_x,
+        y: tz.min_y,
+        w: tz.max_x - tz.min_x,
+        h: tz.max_y - tz.min_y,
+    }));
+    let src_rect = ObstacleRect { x: src_nl.x, y: src_nl.y, w: src_nl.width, h: src_nl.height };
+    let dst_rect = ObstacleRect { x: dst_nl.x, y: dst_nl.y, w: dst_nl.width, h: dst_nl.height };
+
+    // A* between the two clearance stubs (not the raw ports): A* itself knows nothing about
+    // faces, so routed port-to-port it happily arrives sideways along a face (or with a 1px
+    // jog right at the port), giving an arrow with no perpendicular run-in at all.
+    // Starting/ending one stub out from each face, then re-attaching the stub, guarantees
+    // every edge leaves and enters its face straight for at least `stub_clearance`.
+    let astar_route = |obstacles: &[ObstacleRect]| -> Option<Vec<(f64, f64)>> {
+        let sc = tokens.stub_clearance();
+        let s1 = stub_point((x1, y1), src_side, clear_stub_len((x1, y1), src_side, sc, obstacles));
+        let s2 = stub_point((x2, y2), dst_side, clear_stub_len((x2, y2), dst_side, sc, obstacles));
+        compute_edge_waypoints_astar(s1, s2, obstacles, tokens).map(|mut inner| {
+            inner.insert(0, s1);
+            inner.push(s2);
+            simplify_orthogonal_polyline(&mut inner);
+            inner
+        })
+    };
+    let corner_route = || {
+        compute_edge_waypoints_with_obstacles_and_clearance(
+            (x1, y1),
+            src_side,
+            (x2, y2),
+            dst_side,
+            channel_y,
+            corridor_x,
+            &edge_obstacles,
+            Some(&src_rect),
+            Some(&dst_rect),
+            tokens,
+        )
+    };
+    let mut waypoints = match env.algorithm {
+        RoutingAlgorithm::CornerHeuristic => corner_route(),
+        RoutingAlgorithm::VisibilityGraphAStar => astar_route(&edge_obstacles).unwrap_or_else(corner_route),
+    };
+
+    // The corridor heuristic's own-node exemptions (first leg vs. the source box, last leg
+    // vs. the destination box) assume those legs are proper stubs leaving/entering their
+    // face from outside. After a bypass detour that isn't guaranteed: a route can arrive
+    // at, say, a Right face from the far side, running the whole width of the destination's
+    // body. Re-route those through A* with both endpoint boxes solid (the stubs start
+    // outside them, so that's satisfiable) and keep the result if it is genuinely clean.
+    if !path_respects_faces((x1, y1), src_side, &waypoints, (x2, y2), dst_side, &src_rect, &dst_rect) {
+        let mut solid = edge_obstacles.clone();
+        solid.push(src_rect.clone());
+        solid.push(dst_rect.clone());
+        if let Some(repaired) = astar_route(&solid).filter(|w| {
+            path_respects_faces((x1, y1), src_side, w, (x2, y2), dst_side, &src_rect, &dst_rect)
+        }) {
+            waypoints = repaired;
+        }
+    }
+    waypoints
+}
+
 /// Whether a routed path really leaves its source face and enters its destination face
 /// from outside: the first leg must run out along the source face's normal, the last leg
 /// must arrive along the destination face's normal from its outward side, and no *other*
@@ -631,22 +741,7 @@ pub fn plan_all_edge_routes(
     // same output" — so it must not depend on that randomized order) give the same answer on
     // every run for the same input, rather than picking a different "first" colliding obstacle
     // each time.
-    let mut all_obstacles: Vec<(NodeIndex, ObstacleRect)> = layout
-        .positions
-        .iter()
-        .map(|(&ni, nl)| {
-            (
-                ni,
-                ObstacleRect {
-                    x: nl.x,
-                    y: nl.y,
-                    w: nl.width,
-                    h: nl.height,
-                },
-            )
-        })
-        .collect();
-    all_obstacles.sort_by_key(|(ni, _)| ni.index());
+    let all_obstacles = node_obstacles(layout);
 
     // Step 4: Multi-channel corridor allocation for parallel horizontal segments
     let mut corridor_buckets: HashMap<(i32, i32), Vec<(EdgeIndex, f64)>> = HashMap::new();
@@ -874,6 +969,7 @@ pub fn plan_all_edge_routes(
         }
     }
 
+    let env = RouteEnv { all_obstacles: &all_obstacles, title_zones: &title_zones, algorithm, tokens };
     let mut plans = HashMap::new();
     for (edge_idx, (src_side, dst_side)) in initial_sides {
         let Some((s_idx, d_idx, src_nl, dst_nl)) = resolve_edge_layout(compiled, layout, edge_idx)
@@ -889,91 +985,13 @@ pub fn plan_all_edge_routes(
             .unwrap_or((src_nl.y + dst_nl.y) / 2.0);
         let corridor_x = corridor_x_map.get(&edge_idx).copied().unwrap_or(0.0);
 
-        let (x1, y1) = port_point(src_nl, src_side, exit_port);
-        let (x2, y2) = port_point(dst_nl, dst_side, entry_port);
-
-        // Build per-edge obstacle list: exclude source and destination nodes so their
-        // face-stubs are not treated as blocked.
-        // Group title text is an obstacle too: a line drawn through "Persistent Storage
-        // Tier" is as unreadable as one through a node. Only the title's own text box
-        // (not the whole container), so edges still cross group borders freely.
-        let mut edge_obstacles: Vec<ObstacleRect> = all_obstacles
-            .iter()
-            .filter(|(ni, _)| *ni != s_idx && *ni != d_idx)
-            .map(|(_, obs)| obs.clone())
-            .collect();
-        edge_obstacles.extend(title_zones.iter().map(|tz| ObstacleRect {
-            x: tz.min_x,
-            y: tz.min_y,
-            w: tz.max_x - tz.min_x,
-            h: tz.max_y - tz.min_y,
-        }));
-        let src_rect = ObstacleRect {
-            x: src_nl.x,
-            y: src_nl.y,
-            w: src_nl.width,
-            h: src_nl.height,
-        };
-        let dst_rect = ObstacleRect {
-            x: dst_nl.x,
-            y: dst_nl.y,
-            w: dst_nl.width,
-            h: dst_nl.height,
-        };
-
-        // A* between the two clearance stubs (not the raw ports): A* itself knows
-        // nothing about faces, so routed port-to-port it happily arrives sideways along a
-        // face (or with a 1px jog right at the port), giving an arrow with no
-        // perpendicular run-in at all. Starting/ending one stub out from each face, then
-        // re-attaching the stub, guarantees every edge leaves and enters its face
-        // straight for at least `stub_clearance`.
-        let astar_route = |obstacles: &[ObstacleRect]| -> Option<Vec<(f64, f64)>> {
-            let sc = tokens.stub_clearance();
-            let s1 = stub_point((x1, y1), src_side, clear_stub_len((x1, y1), src_side, sc, obstacles));
-            let s2 = stub_point((x2, y2), dst_side, clear_stub_len((x2, y2), dst_side, sc, obstacles));
-            compute_edge_waypoints_astar(s1, s2, obstacles, tokens).map(|mut inner| {
-                inner.insert(0, s1);
-                inner.push(s2);
-                simplify_orthogonal_polyline(&mut inner);
-                inner
-            })
-        };
-        let corner_route = || {
-            compute_edge_waypoints_with_obstacles_and_clearance(
-                (x1, y1),
-                src_side,
-                (x2, y2),
-                dst_side,
-                channel_y,
-                corridor_x,
-                &edge_obstacles,
-                Some(&src_rect),
-                Some(&dst_rect),
-                tokens,
-            )
-        };
-        let mut waypoints = match algorithm {
-            RoutingAlgorithm::CornerHeuristic => corner_route(),
-            RoutingAlgorithm::VisibilityGraphAStar => astar_route(&edge_obstacles).unwrap_or_else(corner_route),
-        };
-
-        // The corridor heuristic's own-node exemptions (first leg vs. the source box, last
-        // leg vs. the destination box) assume those legs are proper stubs leaving/entering
-        // their face from outside. After a bypass detour that isn't guaranteed: a route
-        // can arrive at, say, a Right face from the far side, running the whole width of
-        // the destination's body. Re-route those through A* with both endpoint boxes solid
-        // (the stubs start outside them, so that's satisfiable) and keep the result if it
-        // is genuinely clean.
-        if !path_respects_faces((x1, y1), src_side, &waypoints, (x2, y2), dst_side, &src_rect, &dst_rect) {
-            let mut solid = edge_obstacles.clone();
-            solid.push(src_rect.clone());
-            solid.push(dst_rect.clone());
-            if let Some(repaired) = astar_route(&solid).filter(|w| {
-                path_respects_faces((x1, y1), src_side, w, (x2, y2), dst_side, &src_rect, &dst_rect)
-            }) {
-                waypoints = repaired;
-            }
-        }
+        let waypoints = route_edge(
+            &env,
+            (s_idx, src_nl, src_side, exit_port),
+            (d_idx, dst_nl, dst_side, entry_port),
+            channel_y,
+            corridor_x,
+        );
 
         let corridor_bucket_size = corridor_bucket_size_map.get(&edge_idx).copied().unwrap_or(1);
 
@@ -1024,7 +1042,7 @@ fn segment_orientation(a: (f64, f64), b: (f64, f64), tol: f64) -> Option<bool> {
 /// real readability threshold. Zero when the segments aren't both axis-aligned the same
 /// way or don't share a span, which distinguishes two edges that merely cross at a point
 /// from two that run alongside each other for a real stretch.
-fn parallel_overlap_len(
+pub(crate) fn parallel_overlap_len(
     a0: (f64, f64),
     a1: (f64, f64),
     b0: (f64, f64),
@@ -1105,7 +1123,7 @@ fn nearest_clear_position(a: f64, b: f64, lo: f64, hi: f64, blocked: &mut Vec<(f
     }
 }
 
-fn edge_full_path(
+pub(crate) fn edge_full_path(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     edge_idx: EdgeIndex,
@@ -1169,7 +1187,7 @@ fn deoverlap_edge_plans(
 /// — the line doubling back over itself. Such a path draws as a shorter one (the retraced
 /// stretch cancels visually), which is how a shift that flipped a tiny jog's direction
 /// turned a normal arrow run-in into a couple of pixels.
-fn has_fold_back(pts: &[(f64, f64)]) -> bool {
+pub(crate) fn has_fold_back(pts: &[(f64, f64)]) -> bool {
     const TOL: f64 = 0.5;
     pts.windows(3).any(|w| {
         let (d1x, d1y) = (w[1].0 - w[0].0, w[1].1 - w[0].1);
@@ -1442,7 +1460,7 @@ pub struct ObstacleRect {
 impl ObstacleRect {
     /// Returns true if axis-aligned segment from (ax,ay)→(bx,by) clips through this rect.
     /// Segment must be purely horizontal or purely vertical.
-    fn clips_segment(&self, ax: f64, ay: f64, bx: f64, by: f64, m: f64) -> bool {
+    pub(crate) fn clips_segment(&self, ax: f64, ay: f64, bx: f64, by: f64, m: f64) -> bool {
         let (rx0, rx1) = (self.x - m, self.x + self.w + m);
         let (ry0, ry1) = (self.y - m, self.y + self.h + m);
 

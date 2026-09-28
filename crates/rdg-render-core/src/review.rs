@@ -20,7 +20,7 @@ use rdg_layout::{
 };
 
 use crate::routing::{
-    EdgeRoutingPlan, ObstacleRect, first_clipping_segment, plan_all_edge_routes, port_point,
+    EdgeRoutingPlan, ObstacleRect, edge_full_path, first_clipping_segment, plan_all_edge_routes, port_point,
 };
 
 
@@ -175,26 +175,6 @@ fn collinear_overlap_len(a0: (f64, f64), a1: (f64, f64), b0: (f64, f64), b1: (f6
         }
         _ => 0.0,
     }
-}
-
-/// The full point list (exit stub through entry stub) for one edge's routed path, or
-/// `None` if either endpoint's layout is unavailable.
-fn edge_full_path(
-    compiled: &CompiledGraph,
-    layout: &LayoutResult,
-    edge_idx: EdgeIndex,
-    plan: &EdgeRoutingPlan,
-) -> Option<Vec<(f64, f64)>> {
-    let (s_idx, d_idx) = edge_endpoint_ids(compiled, edge_idx)?;
-    let src_nl = layout.positions.get(&s_idx)?;
-    let dst_nl = layout.positions.get(&d_idx)?;
-    let p1 = port_point(src_nl, plan.src_side, plan.exit_port);
-    let p2 = port_point(dst_nl, plan.dst_side, plan.entry_port);
-    let mut pts = Vec::with_capacity(plan.waypoints.len() + 2);
-    pts.push(p1);
-    pts.extend_from_slice(&plan.waypoints);
-    pts.push(p2);
-    Some(pts)
 }
 
 /// Finds every pair of *different* edges whose routed paths run collinear-overlapping
@@ -599,6 +579,10 @@ pub struct SpacingMetrics {
     pub min_arrow_edge: Option<String>,
     /// `node.face` behind [`Self::min_port_pitch`], for diagnostics.
     pub min_pitch_face: Option<String>,
+    /// Interior segments shorter than `polish_min_jog` (see `polish::micro_jog_segments`).
+    pub micro_jogs: usize,
+    /// Right-angle crossings between different edges.
+    pub crossings: usize,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -617,6 +601,7 @@ pub fn spacing_metrics(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     edge_plans: &HashMap<EdgeIndex, EdgeRoutingPlan>,
+    tokens: &DesignTokens,
 ) -> SpacingMetrics {
     let mut m = SpacingMetrics::default();
     if layout.sequence_info.is_some() {
@@ -628,6 +613,21 @@ pub fn spacing_metrics(
     for (i, a) in ids.iter().enumerate() {
         for b in &ids[i + 1..] {
             m.min_node_gap = min_opt(m.min_node_gap, rect_gap(&layout.positions[a], &layout.positions[b]));
+        }
+    }
+
+    // Micro-jogs and crossings, over every edge's full path in a fixed (EdgeIndex) order.
+    let mut edge_ids: Vec<&EdgeIndex> = edge_plans.keys().collect();
+    edge_ids.sort_by_key(|e| e.index());
+    let paths: Vec<Vec<(f64, f64)>> = edge_ids
+        .iter()
+        .filter_map(|&&e| edge_full_path(compiled, layout, e, &edge_plans[&e]))
+        .collect();
+    let min_jog = tokens.polish_min_jog();
+    for (i, pa) in paths.iter().enumerate() {
+        m.micro_jogs += crate::polish::micro_jog_segments(pa, min_jog).len();
+        for pb in &paths[i + 1..] {
+            m.crossings += crate::polish::crossing_points(pa, pb).len();
         }
     }
 
@@ -690,6 +690,8 @@ pub struct ReviewedLayout {
     pub layout: LayoutResult,
     pub edge_plans: HashMap<EdgeIndex, EdgeRoutingPlan>,
     pub passes: Vec<PassReport>,
+    /// What the final polish pass changed (empty when polish is disabled).
+    pub polish: crate::polish::PolishReport,
 }
 
 impl ReviewedLayout {
@@ -815,6 +817,11 @@ pub fn compute_reviewed_layout(
     }
 
     let (mut layout, mut edge_plans, _) = best.expect("the loop always runs at least one pass");
+    // Final polish: small guarded port/waypoint adjustments on the chosen attempt. Runs
+    // before `finalize_canvas` (which shifts everything onto the margin) so any geometry it
+    // touches is covered by that translation, and before anomalies are re-checked so
+    // `--strict` judges the polished result.
+    let polish = crate::polish::polish(compiled, &mut layout, &mut edge_plans, decision.routing.algorithm, &config.tokens);
     crate::canvas::finalize_canvas(
         compiled,
         &mut layout,
@@ -827,6 +834,7 @@ pub fn compute_reviewed_layout(
         layout,
         edge_plans,
         passes,
+        polish,
     })
 }
 
@@ -1077,7 +1085,10 @@ mod tests {
             "fixture should dispatch to ForceDirected for this test to be meaningful"
         );
 
-        let config = LayoutConfig::default();
+        // Polish is a separate, later stage that also edits routes; this test isolates the
+        // review loop's own incremental nudge, so it runs with polish off.
+        let mut config = LayoutConfig::default();
+        config.tokens.polish_enabled = false;
         let tokens = config.tokens;
 
         // The raw first attempt, with no incremental nudge applied — what
