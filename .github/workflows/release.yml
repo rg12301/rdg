@@ -57,7 +57,7 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Strip binary (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && matrix.target != 'aarch64-unknown-linux-gnu'
         run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
       - name: Upload artifacts
