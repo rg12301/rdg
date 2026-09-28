@@ -1,0 +1,13 @@
+[package]
+name = "rdg-schema"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Serde types and parsing for rdg's token-optimized YAML diagram payload."
+
+[dependencies]
+rdg-icons = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }

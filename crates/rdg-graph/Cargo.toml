@@ -1,0 +1,12 @@
+[package]
+name = "rdg-graph"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "petgraph construction and Feedback Arc Set cycle breaking for rdg."
+
+[dependencies]
+rdg-schema = { workspace = true }
+anyhow = { workspace = true }
+petgraph = { workspace = true }

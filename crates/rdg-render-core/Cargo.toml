@@ -1,0 +1,17 @@
+[package]
+name = "rdg-render-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Shared style resolution, typography, and edge-routing geometry used by rdg's render backends."
+
+[dependencies]
+rdg-graph = { workspace = true }
+rdg-layout = { workspace = true }
+rdg-dispatch = { workspace = true }
+petgraph = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+rdg-schema = { workspace = true }

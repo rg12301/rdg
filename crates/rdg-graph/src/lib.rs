@@ -10,14 +10,14 @@
 
 use anyhow::Result;
 use petgraph::{
+    Direction,
     algo::is_cyclic_directed,
     stable_graph::{EdgeIndex, NodeIndex, StableDiGraph},
     visit::{EdgeRef, IntoEdgeReferences},
-    Direction,
 };
 use std::collections::{HashMap, HashSet};
 
-use crate::schema::{DiagramPayload, GroupDef};
+use rdg_schema::{DiagramPayload, GroupDef};
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -44,6 +44,18 @@ pub struct NodeData {
     pub db_type: Option<String>,
     /// Resolved icon key for visual rendering.
     pub icon: Option<String>,
+    /// Optional custom accent/border color, overriding the semantic-type color table.
+    pub color: Option<String>,
+    /// Optional explicit width in pixels (skips automatic content-based sizing).
+    pub width: Option<f64>,
+    /// Optional explicit height in pixels (skips automatic content-based sizing).
+    pub height: Option<f64>,
+    /// Optional cloud provider hint (`aws`, `gcp`, `azure`) for icon/shape selection.
+    pub provider: Option<String>,
+    /// Optional raw draw.io style fragment appended verbatim (draw.io backend only).
+    pub style_extra: Option<String>,
+    /// Optional URL making the rendered shape clickable (draw.io backend only).
+    pub link: Option<String>,
 }
 
 /// Data attached to every graph edge.
@@ -70,6 +82,11 @@ pub struct EdgeData {
     pub source_port: Option<String>,
     /// Optional explicit target port face (`top`, `bottom`, `left`, `right`).
     pub target_port: Option<String>,
+    /// Optional raw draw.io style fragment appended verbatim (draw.io backend only).
+    pub style_extra: Option<String>,
+    /// Resolved flow sequence number (1-indexed), set only when the diagram opted into
+    /// `numbered: true`; `None` means "don't draw a sequence badge for this edge."
+    pub step: Option<u32>,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -115,37 +132,108 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
     let diagram_type = payload.resolved_diagram_type().to_string();
     let is_sequence = diagram_type == "sequence";
 
-    // --- 1. Add nodes -------------------------------------------------------
+    // --- 1. Resolve container / group languages and icon inheritance ----------
+    let mut node_to_group_lang: HashMap<String, String> = HashMap::new();
+    let mut compiled_groups = payload.groups.clone();
+
+    for group in &mut compiled_groups {
+        let explicit_or_label_lang = group.resolved_language();
+        let common_lang = if let Some(l) = explicit_or_label_lang {
+            Some(l)
+        } else {
+            // Check if member nodes in this group share a common language
+            let member_langs: Vec<String> = group
+                .nodes
+                .iter()
+                .filter_map(|nid| {
+                    payload
+                        .nodes
+                        .iter()
+                        .find(|n| &n.id == nid)
+                        .and_then(|n| n.resolved_language())
+                })
+                .collect();
+            if !member_langs.is_empty() && member_langs.iter().all(|l| l == &member_langs[0]) {
+                Some(member_langs[0].clone())
+            } else {
+                None
+            }
+        };
+
+        if let Some(lang) = common_lang {
+            if group.language.is_none() {
+                group.language = Some(lang.clone());
+            }
+            if group.icon.is_none() {
+                group.icon = Some(lang.clone());
+            }
+            for nid in &group.nodes {
+                node_to_group_lang.insert(nid.clone(), lang.clone());
+            }
+        }
+    }
+
+    // --- 2. Add nodes ---------------------------------------------------------
+    // `effective_node` resolves any `class:` style preset before we read fields off of it, so
+    // presets and per-node explicit fields both flow through the same `resolved_*()` accessors.
     for node_def in &payload.nodes {
+        let node_def = payload.effective_node(node_def);
+        let node_lang = node_def.resolved_language();
+        let mut icon = node_def.resolved_icon();
+
+        // If the node belongs to a group with the same language, and the node did NOT explicitly
+        // set a custom icon or specific database engine, suppress the redundant language icon on the shape!
+        if let Some(grp_lang) = node_to_group_lang.get(&node_def.id) {
+            let has_explicit_icon = node_def.icon.as_ref().is_some_and(|i| !i.trim().is_empty());
+            let has_db_engine = node_def.resolved_db_type().is_some();
+            if !has_explicit_icon && !has_db_engine {
+                if let Some(ref nl) = node_lang {
+                    if nl == grp_lang {
+                        // Same stack as container! Highlight on container instead of cluttering each shape.
+                        icon = None;
+                    }
+                }
+            }
+        }
+
         let data = NodeData {
             id: node_def.id.clone(),
             label: node_def.resolved_label(),
             node_type: node_def.node_type.clone(),
             metadata: node_def.metadata.clone(),
             fields: node_def.resolved_fields(),
-            language: node_def.resolved_language(),
+            language: node_lang,
             technology: node_def.resolved_technology(),
             db_type: node_def.resolved_db_type(),
-            icon: node_def.resolved_icon(),
+            icon,
+            color: node_def.color.clone(),
+            width: node_def.width,
+            height: node_def.height,
+            provider: node_def.provider.clone(),
+            style_extra: node_def.style_extra.clone(),
+            link: node_def.link.clone(),
         };
         let idx = graph.add_node(data);
         node_map.insert(node_def.id.clone(), idx);
     }
 
-    // --- 2. Add edges -------------------------------------------------------
-    for edge_def in &payload.edges {
+    // --- 2. Add edges -----------------------------------------------------------
+    let numbered = payload.is_numbered();
+    for (decl_index, edge_def) in payload.edges.iter().enumerate() {
+        let edge_def = payload.effective_edge(edge_def);
         let src = node_map.get(&edge_def.from).copied().ok_or_else(|| {
-            anyhow::anyhow!(
-                "edge references unknown source node id '{}'",
-                edge_def.from
-            )
+            anyhow::anyhow!("edge references unknown source node id '{}'", edge_def.from)
         })?;
         let dst = node_map.get(&edge_def.to).copied().ok_or_else(|| {
-            anyhow::anyhow!(
-                "edge references unknown target node id '{}'",
-                edge_def.to
-            )
+            anyhow::anyhow!("edge references unknown target node id '{}'", edge_def.to)
         })?;
+        // Only resolve a sequence number when the diagram opted in — an explicit `step`
+        // always wins, otherwise it's the 1-indexed declaration order.
+        let step = if numbered {
+            Some(edge_def.step.unwrap_or(decl_index as u32 + 1))
+        } else {
+            edge_def.step
+        };
         let e_idx = graph.add_edge(
             src,
             dst,
@@ -160,6 +248,8 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 tail: edge_def.tail.clone(),
                 source_port: edge_def.source_port.clone(),
                 target_port: edge_def.target_port.clone(),
+                style_extra: edge_def.style_extra.clone(),
+                step,
             },
         );
         edge_order.push(e_idx);
@@ -177,7 +267,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         graph,
         node_map,
         had_cycles,
-        groups: payload.groups.clone(),
+        groups: compiled_groups,
         title: payload.title.clone(),
         description: payload.description.clone(),
         diagram_type,
@@ -199,20 +289,31 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
         return;
     }
 
-    let mut remaining: HashSet<NodeIndex> = all_nodes.into_iter().collect();
+    let mut remaining: HashSet<NodeIndex> = all_nodes.iter().copied().collect();
 
     // Sequences s1 (left, sources) and s2 (right, sinks)
     let mut s1: Vec<NodeIndex> = Vec::new();
     let mut s2: Vec<NodeIndex> = Vec::new();
 
+    // Every scan below iterates `all_nodes` (a `Vec`, fixed insertion order) filtered by
+    // `remaining.contains(..)`, not `remaining.iter()` directly — `remaining` is a
+    // `HashSet`, whose iteration order is randomized per process (Rust's default hasher
+    // seeds itself from the OS on each run). A dense graph with many same-degree nodes
+    // (ties are the common case, not the exception) hits that order at three points here:
+    // which simultaneous sinks/sources get appended to s1/s2 in what order, and — worse —
+    // `max_by_key`'s tie-break, which returns the *last* maximal element seen, so a tied
+    // "net-source" pick silently changed between runs too. Any of those reorders `s1`,
+    // which decides which edges get flagged as back-edges and reversed — changing the
+    // DAG orientation, and downstream layout, for a diagram whose YAML never changed.
     while !remaining.is_empty() {
         // 1. Sink elimination: nodes with out-degree 0 among remaining
         let mut sink_found = true;
         while sink_found {
             sink_found = false;
-            let sinks: Vec<NodeIndex> = remaining
+            let sinks: Vec<NodeIndex> = all_nodes
                 .iter()
                 .copied()
+                .filter(|u| remaining.contains(u))
                 .filter(|&u| {
                     graph
                         .edges_directed(u, Direction::Outgoing)
@@ -237,9 +338,10 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
         let mut source_found = true;
         while source_found {
             source_found = false;
-            let sources: Vec<NodeIndex> = remaining
+            let sources: Vec<NodeIndex> = all_nodes
                 .iter()
                 .copied()
+                .filter(|u| remaining.contains(u))
                 .filter(|&u| {
                     graph
                         .edges_directed(u, Direction::Incoming)
@@ -261,17 +363,22 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
         }
 
         // 3. Net-source selection: pick node maximizing out_deg - in_deg
-        if let Some(&best) = remaining.iter().max_by_key(|&&u| {
-            let out_deg = graph
-                .edges_directed(u, Direction::Outgoing)
-                .filter(|e| remaining.contains(&e.target()))
-                .count() as i64;
-            let in_deg = graph
-                .edges_directed(u, Direction::Incoming)
-                .filter(|e| remaining.contains(&e.source()))
-                .count() as i64;
-            out_deg - in_deg
-        }) {
+        if let Some(best) = all_nodes
+            .iter()
+            .copied()
+            .filter(|u| remaining.contains(u))
+            .max_by_key(|&u| {
+                let out_deg = graph
+                    .edges_directed(u, Direction::Outgoing)
+                    .filter(|e| remaining.contains(&e.target()))
+                    .count() as i64;
+                let in_deg = graph
+                    .edges_directed(u, Direction::Incoming)
+                    .filter(|e| remaining.contains(&e.source()))
+                    .count() as i64;
+                out_deg - in_deg
+            })
+        {
             remaining.remove(&best);
             s1.push(best);
         }
@@ -312,6 +419,8 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                     tail: data.tail,
                     source_port: data.source_port,
                     target_port: data.target_port,
+                    style_extra: data.style_extra,
+                    step: data.step,
                 },
             );
         }
@@ -325,7 +434,7 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::schema::{DiagramPayload, EdgeDef, NodeDef};
+    use rdg_schema::{DiagramPayload, EdgeDef, NodeDef};
 
     fn make_payload(nodes: &[(&str, &str)], edges: &[(&str, &str)]) -> DiagramPayload {
         DiagramPayload {
@@ -416,7 +525,143 @@ edges:
         let compiled = build_graph(&payload).unwrap();
         assert_eq!(compiled.graph.node_count(), 2);
         assert_eq!(compiled.graph.edge_count(), 2);
-        assert!(!compiled.had_cycles, "sequence diagrams must not treat ping-pong calls as cycles");
+        assert!(
+            !compiled.had_cycles,
+            "sequence diagrams must not treat ping-pong calls as cycles"
+        );
         assert_eq!(compiled.edge_order.len(), 2);
+    }
+
+    #[test]
+    fn test_numbered_edges_get_declaration_order_step() {
+        let yaml = r#"
+numbered: true
+nodes:
+  - id: n1
+    label: "A"
+  - id: n2
+    label: "B"
+  - id: n3
+    label: "C"
+edges:
+  - from: n1
+    to: n2
+  - from: n2
+    to: n3
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let compiled = build_graph(&payload).unwrap();
+        let steps: Vec<Option<u32>> = compiled
+            .edge_order
+            .iter()
+            .map(|&idx| compiled.graph[idx].step)
+            .collect();
+        assert_eq!(steps, vec![Some(1), Some(2)]);
+    }
+
+    #[test]
+    fn test_unnumbered_edges_have_no_step() {
+        let payload = make_payload(&[("n1", "A"), ("n2", "B")], &[("n1", "n2")]);
+        let compiled = build_graph(&payload).unwrap();
+        assert_eq!(compiled.graph[compiled.edge_order[0]].step, None);
+    }
+
+    #[test]
+    fn test_explicit_step_overrides_declaration_order() {
+        let yaml = r#"
+numbered: true
+nodes:
+  - id: n1
+    label: "A"
+  - id: n2
+    label: "B"
+edges:
+  - from: n1
+    to: n2
+    step: 42
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let compiled = build_graph(&payload).unwrap();
+        assert_eq!(compiled.graph[compiled.edge_order[0]].step, Some(42));
+    }
+
+    #[test]
+    fn test_node_style_preset_applied_in_graph() {
+        let yaml = r##"
+node_styles:
+  critical:
+    color: "#ef4444"
+nodes:
+  - id: n1
+    label: "A"
+    class: critical
+edges: []
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let compiled = build_graph(&payload).unwrap();
+        let idx = compiled.node_map["n1"];
+        assert_eq!(compiled.graph[idx].color.as_deref(), Some("#ef4444"));
+    }
+
+    #[test]
+    fn test_duplicate_node_ids_last_one_wins_in_node_map() {
+        // Not an error today — documents current behavior so a future change is deliberate,
+        // not an accidental silent regression.
+        let payload = make_payload(&[("dup", "First"), ("dup", "Second")], &[]);
+        let compiled = build_graph(&payload).expect("build should succeed");
+        assert_eq!(compiled.graph.node_count(), 2);
+        assert_eq!(compiled.node_map.len(), 1);
+        let idx = compiled.node_map["dup"];
+        assert_eq!(compiled.graph[idx].label, "Second");
+    }
+
+    #[test]
+    fn test_self_loop_edge_builds_without_error() {
+        let payload = make_payload(&[("n1", "A")], &[("n1", "n1")]);
+        let compiled = build_graph(&payload).expect("self-loop should build");
+        assert_eq!(compiled.graph.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_fully_connected_small_graph_breaks_cycles() {
+        let nodes = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D")];
+        let mut edges = Vec::new();
+        for (from, _) in &nodes {
+            for (to, _) in &nodes {
+                if from != to {
+                    edges.push((*from, *to));
+                }
+            }
+        }
+        let payload = make_payload(&nodes, &edges);
+        let compiled = build_graph(&payload).expect("fully-connected graph should build");
+        assert!(compiled.had_cycles);
+        assert!(!is_cyclic_directed(&compiled.graph));
+    }
+
+    #[test]
+    fn test_single_node_no_edges() {
+        let payload = make_payload(&[("solo", "Solo")], &[]);
+        let compiled = build_graph(&payload).expect("single node should build");
+        assert_eq!(compiled.graph.node_count(), 1);
+        assert_eq!(compiled.graph.edge_count(), 0);
+        assert!(!compiled.had_cycles);
+    }
+
+    #[test]
+    fn test_large_graph_builds_without_excessive_cost() {
+        // A 500-node chain plus a long-range back edge, to exercise FAS on a graph much
+        // larger than the hand-written fixtures above without taking real wall-clock time.
+        const N: usize = 500;
+        let ids: Vec<String> = (0..N).map(|i| format!("n{i}")).collect();
+        let id_refs: Vec<(&str, &str)> = ids.iter().map(|s| (s.as_str(), s.as_str())).collect();
+        let mut edges: Vec<(&str, &str)> = id_refs.windows(2).map(|w| (w[0].0, w[1].0)).collect();
+        edges.push((ids[N - 1].as_str(), ids[0].as_str())); // one back-edge to force FAS to run
+        let payload = make_payload(&id_refs, &edges);
+        let compiled = build_graph(&payload).expect("large graph should build");
+        assert_eq!(compiled.graph.node_count(), N);
+        assert_eq!(compiled.graph.edge_count(), N); // (N-1) chain edges + 1 back-edge
+        assert!(compiled.had_cycles);
+        assert!(!is_cyclic_directed(&compiled.graph));
     }
 }

@@ -1,0 +1,23 @@
+[package]
+name = "rdg-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Render Diagram — deterministically compiles LLM semantic graphs into draw.io XML or SVG files."
+
+[[bin]]
+name = "rdg"
+path = "src/main.rs"
+
+[dependencies]
+rdg-schema = { workspace = true }
+rdg-graph = { workspace = true }
+rdg-dispatch = { workspace = true }
+rdg-layout = { workspace = true }
+rdg-render-core = { workspace = true }
+rdg-render-drawio = { workspace = true }
+rdg-render-svg = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+serde_yaml = { workspace = true }

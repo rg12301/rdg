@@ -6,6 +6,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
 // Top-level diagram payload
@@ -63,6 +64,32 @@ pub struct DiagramPayload {
     #[serde(default)]
     pub node_spacing: Option<u32>,
 
+    /// Optional canvas-level configuration (margin, background).
+    #[serde(default)]
+    pub canvas: Option<CanvasConfig>,
+
+    /// Optional spacing configuration, grouping the individual spacing knobs.
+    /// `rank_spacing`/`node_spacing` above take priority over `spacing.rank`/`spacing.node`
+    /// when both are set — they exist for backward compatibility with earlier payloads.
+    #[serde(default)]
+    pub spacing: Option<SpacingConfig>,
+
+    /// When `true`, edges are annotated with a sequence badge (1, 2, 3, …) in the order
+    /// they're declared (or per-edge `step` override), so a reader can trace the flow.
+    #[serde(default)]
+    pub numbered: Option<bool>,
+
+    /// Named, reusable node style presets. A node opts in via `class: <name>`; any field the
+    /// node doesn't already set explicitly is filled in from the preset. Existing keys are
+    /// never overwritten by a preset — this exists to de-duplicate repeated per-node styling,
+    /// not to act as a second source of truth.
+    #[serde(default, alias = "node_classes", alias = "component_styles")]
+    pub node_styles: HashMap<String, NodeStyleOverride>,
+
+    /// Named, reusable edge style presets — same resolution rules as [`node_styles`].
+    #[serde(default, alias = "edge_classes", alias = "connector_styles")]
+    pub edge_styles: HashMap<String, EdgeStyleOverride>,
+
     /// Ordered list of node definitions.
     #[serde(default)]
     pub nodes: Vec<NodeDef>,
@@ -74,6 +101,19 @@ pub struct DiagramPayload {
     /// Optional list of visual group / swimlane containers.
     #[serde(default, alias = "containers", alias = "swimlanes")]
     pub groups: Vec<GroupDef>,
+}
+
+/// Overall flow direction of the diagram, as resolved from the YAML payload.
+///
+/// Deliberately schema-local (rather than reusing `rdg_layout::LayoutDirection`) so that
+/// `rdg-schema` has no dependency on `rdg-layout`; the CLI maps this to the layout
+/// engine's own direction type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
+    /// Top to Bottom (hierarchical DAG standard).
+    TopToBottom,
+    /// Left to Right (horizontal pipelines, sequence flows).
+    LeftToRight,
 }
 
 fn default_diagram_type() -> String {
@@ -94,12 +134,18 @@ impl DiagramPayload {
         serde_yaml::from_str(input).context("failed to deserialize YAML diagram payload")
     }
 
-    /// Resolves the optional direction string into [`crate::layout::LayoutDirection`].
-    pub fn resolved_direction(&self) -> Option<crate::layout::LayoutDirection> {
-        self.direction.as_deref().map(|d| match d.trim().to_ascii_lowercase().as_str() {
-            "lr" | "left_to_right" | "horizontal" | "h" => crate::layout::LayoutDirection::LeftToRight,
-            _ => crate::layout::LayoutDirection::TopToBottom,
-        })
+    /// Resolves the optional direction string into a [`Direction`].
+    ///
+    /// This is a schema-local type (rather than `rdg_layout::LayoutDirection`) so that
+    /// `rdg-schema` does not need to depend on `rdg-layout`; callers map it to the
+    /// layout engine's own direction type.
+    pub fn resolved_direction(&self) -> Option<Direction> {
+        self.direction
+            .as_deref()
+            .map(|d| match d.trim().to_ascii_lowercase().as_str() {
+                "lr" | "left_to_right" | "horizontal" | "h" => Direction::LeftToRight,
+                _ => Direction::TopToBottom,
+            })
     }
 
     /// Returns the resolved canonical diagram category.
@@ -113,6 +159,88 @@ impl DiagramPayload {
             "arch" | "architecture" | "system" => "architecture",
             _ => "flowchart",
         }
+    }
+
+    /// Returns `true` when edges should be annotated with a flow sequence badge.
+    pub fn is_numbered(&self) -> bool {
+        self.numbered.unwrap_or(false)
+    }
+
+    /// Merges a node's `class` style preset (if any) into a copy of `node`.
+    ///
+    /// Fields the node already set explicitly are left untouched — a preset only fills in
+    /// gaps, it never overrides an author's explicit choice. Unknown class names, or a node
+    /// with no `class`, return `node` unchanged (cloned).
+    pub fn effective_node(&self, node: &NodeDef) -> NodeDef {
+        let mut merged = node.clone();
+        let Some(class) = node.class.as_deref() else {
+            return merged;
+        };
+        let Some(preset) = self.node_styles.get(class) else {
+            return merged;
+        };
+        if merged.color.is_none() {
+            merged.color = preset.color.clone();
+        }
+        if merged.technology.is_none() {
+            merged.technology = preset.technology.clone();
+        }
+        if merged.language.is_none() {
+            merged.language = preset.language.clone();
+        }
+        if merged.db_type.is_none() {
+            merged.db_type = preset.db_type.clone();
+        }
+        if merged.icon.is_none() {
+            merged.icon = preset.icon.clone();
+        }
+        if merged.width.is_none() {
+            merged.width = preset.width;
+        }
+        if merged.height.is_none() {
+            merged.height = preset.height;
+        }
+        if merged.provider.is_none() {
+            merged.provider = preset.provider.clone();
+        }
+        if merged.style_extra.is_none() {
+            merged.style_extra = preset.style_extra.clone();
+        }
+        merged
+    }
+
+    /// Merges an edge's `class` style preset (if any) into a copy of `edge`. Same
+    /// gap-filling semantics as [`DiagramPayload::effective_node`].
+    pub fn effective_edge(&self, edge: &EdgeDef) -> EdgeDef {
+        let mut merged = edge.clone();
+        let Some(class) = edge.class.as_deref() else {
+            return merged;
+        };
+        let Some(preset) = self.edge_styles.get(class) else {
+            return merged;
+        };
+        if merged.edge_style.is_none() {
+            merged.edge_style = preset.edge_style.clone();
+        }
+        if merged.color.is_none() {
+            merged.color = preset.color.clone();
+        }
+        if merged.width.is_none() {
+            merged.width = preset.width;
+        }
+        if merged.line_style.is_none() {
+            merged.line_style = preset.line_style.clone();
+        }
+        if merged.head.is_none() {
+            merged.head = preset.head.clone();
+        }
+        if merged.tail.is_none() {
+            merged.tail = preset.tail.clone();
+        }
+        if merged.style_extra.is_none() {
+            merged.style_extra = preset.style_extra.clone();
+        }
+        merged
     }
 
     /// Returns a complete, production-ready reference YAML template.
@@ -136,11 +264,53 @@ impl Default for DiagramPayload {
             direction: None,
             rank_spacing: None,
             node_spacing: None,
+            canvas: None,
+            spacing: None,
+            numbered: None,
+            node_styles: HashMap::new(),
+            edge_styles: HashMap::new(),
             nodes: Vec::new(),
             edges: Vec::new(),
             groups: Vec::new(),
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Canvas & spacing configuration
+// ---------------------------------------------------------------------------
+
+/// Canvas-level rendering configuration.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CanvasConfig {
+    /// Outer margin in pixels around the whole diagram (replaces the built-in default).
+    #[serde(default)]
+    pub margin: Option<f64>,
+
+    /// Canvas background color (e.g. `#f8fafc`). Overrides the theme default.
+    #[serde(default, alias = "bg", alias = "fill")]
+    pub background: Option<String>,
+}
+
+/// Grouped spacing configuration — an alternative to the flat `rank_spacing`/`node_spacing`
+/// top-level fields for payloads that want every spacing knob in one place.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpacingConfig {
+    /// Vertical gap between ranks/layers in pixels.
+    #[serde(default)]
+    pub rank: Option<u32>,
+
+    /// Horizontal gap between sibling nodes on the same rank in pixels.
+    #[serde(default)]
+    pub node: Option<u32>,
+
+    /// Horizontal gap between adjacent group containers in pixels.
+    #[serde(default)]
+    pub group_gap_x: Option<f64>,
+
+    /// Vertical gap between adjacent group containers in pixels.
+    #[serde(default)]
+    pub group_gap_y: Option<f64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -164,6 +334,91 @@ pub struct GroupDef {
     /// List of node IDs contained in this group.
     #[serde(default, alias = "members", alias = "node_ids")]
     pub nodes: Vec<String>,
+
+    /// Optional programming language or tech stack for the container (e.g. `rust`, `go`, `python`).
+    /// When specified or detected, member nodes sharing this stack do not display redundant icons.
+    #[serde(default, alias = "lang")]
+    pub language: Option<String>,
+
+    /// Optional explicit brand or service icon for the group container header.
+    #[serde(default)]
+    pub icon: Option<String>,
+}
+
+impl GroupDef {
+    /// Resolves the programming language for this container.
+    pub fn resolved_language(&self) -> Option<String> {
+        let explicit =
+            rdg_icons::detect_language(self.language.as_deref(), None, &self.label, None);
+        if explicit.is_some() {
+            return explicit.map(|s| s.to_string());
+        }
+        // Check for common prefix patterns like "crates/" or "cargo/"
+        let lower = self.label.to_ascii_lowercase();
+        if lower.contains("crates/") || lower.contains("cargo") {
+            return Some("rust".to_string());
+        }
+        None
+    }
+
+    /// Resolves the icon key for the container header.
+    pub fn resolved_icon(&self) -> Option<String> {
+        if let Some(i) = &self.icon {
+            if !i.trim().is_empty() {
+                return Some(i.trim().to_ascii_lowercase());
+            }
+        }
+        if let Some(l) = self.resolved_language() {
+            return Some(l);
+        }
+        None
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Reusable style presets
+// ---------------------------------------------------------------------------
+
+/// A named, reusable set of node styling fields. See [`DiagramPayload::node_styles`].
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct NodeStyleOverride {
+    #[serde(default, alias = "colour", alias = "stroke")]
+    pub color: Option<String>,
+    #[serde(default, alias = "tech", alias = "stack", alias = "framework")]
+    pub technology: Option<String>,
+    #[serde(default, alias = "lang")]
+    pub language: Option<String>,
+    #[serde(default, alias = "database_type", alias = "engine", alias = "db")]
+    pub db_type: Option<String>,
+    #[serde(default, alias = "logo", alias = "badge")]
+    pub icon: Option<String>,
+    #[serde(default)]
+    pub width: Option<f64>,
+    #[serde(default)]
+    pub height: Option<f64>,
+    #[serde(default, alias = "cloud")]
+    pub provider: Option<String>,
+    #[serde(default, alias = "drawio_style", alias = "extra_style")]
+    pub style_extra: Option<String>,
+}
+
+/// A named, reusable set of edge styling fields. See [`DiagramPayload::edge_styles`].
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EdgeStyleOverride {
+    #[serde(default, alias = "style", alias = "type")]
+    pub edge_style: Option<String>,
+    #[serde(default, alias = "colour", alias = "stroke")]
+    pub color: Option<String>,
+    #[serde(default, alias = "stroke_width", alias = "thickness")]
+    pub width: Option<f64>,
+    #[serde(default, alias = "stroke_style", alias = "pattern")]
+    pub line_style: Option<String>,
+    #[serde(default, alias = "arrow_head", alias = "end_arrow")]
+    pub head: Option<String>,
+    #[serde(default, alias = "arrow_tail", alias = "start_arrow")]
+    pub tail: Option<String>,
+    #[serde(default, alias = "drawio_style", alias = "extra_style")]
+    pub style_extra: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +458,12 @@ pub struct NodeDef {
     pub metadata: Option<String>,
 
     /// Optional list of table columns (for ER diagrams) or class attributes/methods (for UML Class diagrams).
-    #[serde(default, alias = "columns", alias = "attributes", alias = "members_list")]
+    #[serde(
+        default,
+        alias = "columns",
+        alias = "attributes",
+        alias = "members_list"
+    )]
     pub fields: Vec<String>,
 
     /// Optional programming language used to code this component (e.g. `rust`, `go`, `python`, `typescript`).
@@ -221,6 +481,38 @@ pub struct NodeDef {
     /// Optional icon override key (e.g. `rust`, `postgres`, `user`, `kafka`).
     #[serde(default, alias = "logo", alias = "badge")]
     pub icon: Option<String>,
+
+    /// Optional custom accent/border color (e.g. `#ef4444`), overriding the semantic-type
+    /// default color table for just this node.
+    #[serde(default, alias = "colour", alias = "stroke", alias = "accent")]
+    pub color: Option<String>,
+
+    /// Optional explicit width in pixels, skipping automatic content-based sizing.
+    #[serde(default)]
+    pub width: Option<f64>,
+
+    /// Optional explicit height in pixels, skipping automatic content-based sizing.
+    #[serde(default)]
+    pub height: Option<f64>,
+
+    /// Optional cloud provider hint (`aws`, `gcp`, `azure`) steering icon/shape selection
+    /// for provider-specific component types (e.g. a `function` node with `provider: aws`).
+    #[serde(default, alias = "cloud")]
+    pub provider: Option<String>,
+
+    /// Optional named style preset to inherit from — see [`DiagramPayload::node_styles`].
+    #[serde(default, alias = "preset", alias = "style")]
+    pub class: Option<String>,
+
+    /// Optional raw draw.io style fragment appended verbatim to the computed style string
+    /// (e.g. `"opacity=60;glass=1;"`). draw.io-only — the SVG backend has no equivalent raw
+    /// styling surface, so this field is ignored there.
+    #[serde(default, alias = "drawio_style", alias = "extra_style")]
+    pub style_extra: Option<String>,
+
+    /// Optional URL. When set, the rendered shape becomes a clickable link (draw.io only).
+    #[serde(default, alias = "url", alias = "href")]
+    pub link: Option<String>,
 }
 
 impl Default for NodeDef {
@@ -237,6 +529,13 @@ impl Default for NodeDef {
             technology: None,
             db_type: None,
             icon: None,
+            color: None,
+            width: None,
+            height: None,
+            provider: None,
+            class: None,
+            style_extra: None,
+            link: None,
         }
     }
 }
@@ -285,7 +584,7 @@ impl NodeDef {
 
     /// Resolves the programming language for this component.
     pub fn resolved_language(&self) -> Option<String> {
-        crate::icons::detect_language(
+        rdg_icons::detect_language(
             self.language.as_deref(),
             self.technology.as_deref(),
             &self.resolved_label(),
@@ -296,7 +595,7 @@ impl NodeDef {
 
     /// Resolves the database engine for this component.
     pub fn resolved_db_type(&self) -> Option<String> {
-        crate::icons::detect_database(
+        rdg_icons::detect_database(
             self.db_type.as_deref(),
             self.technology.as_deref(),
             &self.resolved_label(),
@@ -344,6 +643,11 @@ impl NodeDef {
         }
         if let Some(db) = self.resolved_db_type() {
             return Some(db);
+        }
+        if let Some(p) = &self.provider {
+            if let Some(icon) = rdg_icons::detect_provider(p) {
+                return Some(icon.to_string());
+            }
         }
         if matches!(
             self.node_type.to_ascii_lowercase().as_str(),
@@ -399,15 +703,32 @@ pub struct EdgeDef {
     pub width: Option<f64>,
 
     /// Optional line style: `solid`, `dashed`, `dotted`.
-    #[serde(default, alias = "stroke_style", alias = "pattern", alias = "style_type")]
+    #[serde(
+        default,
+        alias = "stroke_style",
+        alias = "pattern",
+        alias = "style_type"
+    )]
     pub line_style: Option<String>,
 
     /// Optional arrow head marker type: `classic`, `block`, `blockThin`, `open`, `diamond`, `oval`, `none`, `ERmany`, `ERone`, etc.
-    #[serde(default, alias = "arrow_head", alias = "end_arrow", alias = "head_type", alias = "target_arrow")]
+    #[serde(
+        default,
+        alias = "arrow_head",
+        alias = "end_arrow",
+        alias = "head_type",
+        alias = "target_arrow"
+    )]
     pub head: Option<String>,
 
     /// Optional arrow tail marker type: `none`, `diamond`, `oval`, `ERone`, `open`, etc.
-    #[serde(default, alias = "arrow_tail", alias = "start_arrow", alias = "tail_type", alias = "source_arrow")]
+    #[serde(
+        default,
+        alias = "arrow_tail",
+        alias = "start_arrow",
+        alias = "tail_type",
+        alias = "source_arrow"
+    )]
     pub tail: Option<String>,
 
     /// Optional explicit source port face: `top`, `bottom`, `left`, `right`.
@@ -417,6 +738,20 @@ pub struct EdgeDef {
     /// Optional explicit target port face: `top`, `bottom`, `left`, `right`.
     #[serde(default, alias = "dst_port", alias = "to_port", alias = "entry_port")]
     pub target_port: Option<String>,
+
+    /// Optional explicit flow sequence number (1-indexed), overriding the declaration-order
+    /// auto-numbering used when the diagram sets `numbered: true`.
+    #[serde(default, alias = "order", alias = "sequence")]
+    pub step: Option<u32>,
+
+    /// Optional named style preset to inherit from — see [`DiagramPayload::edge_styles`].
+    #[serde(default, alias = "preset")]
+    pub class: Option<String>,
+
+    /// Optional raw draw.io style fragment appended verbatim to the computed edge style
+    /// string. draw.io-only, same as [`NodeDef::style_extra`].
+    #[serde(default, alias = "drawio_style", alias = "extra_style")]
+    pub style_extra: Option<String>,
 }
 
 impl EdgeDef {
@@ -425,8 +760,9 @@ impl EdgeDef {
         if self.bidirectional == Some(true) {
             return Some("bidirectional".to_string());
         }
-        self.edge_style.as_deref().map(|s| {
-            match s.to_ascii_lowercase().trim() {
+        self.edge_style
+            .as_deref()
+            .map(|s| match s.to_ascii_lowercase().trim() {
                 "sync" | "call" | "sync_call" => "sync".to_string(),
                 "reply" | "return" | "response" => "reply".to_string(),
                 "self" | "self_call" => "self".to_string(),
@@ -440,8 +776,7 @@ impl EdgeDef {
                 "aggregation" => "aggregation".to_string(),
                 "dependency" => "dependency".to_string(),
                 other => other.to_string(),
-            }
-        })
+            })
     }
 }
 
@@ -459,6 +794,17 @@ theme: standard                    # standard (elevated white cards) | dark (sla
 direction: tb                      # tb (top-to-bottom) | lr (left-to-right)
 title: "Distributed Order Processing System"
 description: "High-level service architecture, persistent storage, and event streams"
+numbered: true                     # number edges 1, 2, 3... in declaration order
+
+canvas:
+  margin: 32                       # outer canvas margin in px
+
+# Named style presets — define once, reference from any node/edge via `class:`.
+# A preset only fills in fields the node/edge didn't already set explicitly.
+node_styles:
+  critical:
+    color: "#ef4444"
+    style_extra: "strokeWidth=3;"
 
 groups:
   - id: grp_ingress
@@ -496,6 +842,7 @@ nodes:
     type: service
     technology: "Axum 0.7"
     language: "rust"
+    class: critical                # inherits the `critical` preset above
     metadata: "Core transactional order processing"
 
   - id: order_queue
@@ -584,6 +931,63 @@ const JSON_SCHEMA: &str = r#"{
       "minimum": 10,
       "description": "Horizontal gap between sibling nodes in pixels (default: 28)"
     },
+    "numbered": {
+      "type": "boolean",
+      "default": false,
+      "description": "Number edges 1, 2, 3... in declaration order (or per-edge `step`) so a reader can trace the flow"
+    },
+    "canvas": {
+      "type": "object",
+      "description": "Canvas-level configuration",
+      "properties": {
+        "margin": { "type": "number", "description": "Outer canvas margin in pixels" },
+        "background": { "type": "string", "description": "Canvas background color, overrides theme default" }
+      }
+    },
+    "spacing": {
+      "type": "object",
+      "description": "Grouped spacing configuration (alternative to flat rank_spacing/node_spacing)",
+      "properties": {
+        "rank": { "type": "integer", "description": "Vertical gap between ranks in pixels" },
+        "node": { "type": "integer", "description": "Horizontal gap between sibling nodes in pixels" },
+        "group_gap_x": { "type": "number", "description": "Horizontal gap between group containers in pixels" },
+        "group_gap_y": { "type": "number", "description": "Vertical gap between group containers in pixels" }
+      }
+    },
+    "node_styles": {
+      "type": "object",
+      "description": "Named, reusable node style presets keyed by name; a node opts in via `class: <name>`",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "color": { "type": "string" },
+          "technology": { "type": "string" },
+          "language": { "type": "string" },
+          "db_type": { "type": "string" },
+          "icon": { "type": "string" },
+          "width": { "type": "number" },
+          "height": { "type": "number" },
+          "provider": { "type": "string" },
+          "style_extra": { "type": "string" }
+        }
+      }
+    },
+    "edge_styles": {
+      "type": "object",
+      "description": "Named, reusable edge style presets keyed by name; an edge opts in via `class: <name>`",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "edge_style": { "type": "string" },
+          "color": { "type": "string" },
+          "width": { "type": "number" },
+          "line_style": { "type": "string" },
+          "head": { "type": "string" },
+          "tail": { "type": "string" },
+          "style_extra": { "type": "string" }
+        }
+      }
+    },
     "groups": {
       "type": "array",
       "description": "Visual container groups / swimlanes",
@@ -634,6 +1038,13 @@ const JSON_SCHEMA: &str = r#"{
             "type": "string",
             "description": "Explicit icon key override (e.g. rust, postgres, redis, kafka, user)"
           },
+          "color": { "type": "string", "description": "Custom accent/border color override, e.g. #ef4444" },
+          "width": { "type": "number", "description": "Explicit width in pixels, skips automatic sizing" },
+          "height": { "type": "number", "description": "Explicit height in pixels, skips automatic sizing" },
+          "provider": { "type": "string", "enum": ["aws", "gcp", "azure"], "description": "Cloud provider hint for icon/shape selection" },
+          "class": { "type": "string", "description": "Named style preset to inherit from (see node_styles)" },
+          "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" },
+          "link": { "type": "string", "description": "URL making the rendered shape clickable (draw.io only)" },
           "fields": {
             "type": "array",
             "items": { "type": "string" },
@@ -664,7 +1075,10 @@ const JSON_SCHEMA: &str = r#"{
             "default": "flow",
             "description": "Visual connector style with semantic arrowheads (ER crow's foot, UML markers, async dashed)"
           },
-          "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" }
+          "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" },
+          "step": { "type": "integer", "description": "Explicit flow sequence number, overrides declaration-order auto-numbering" },
+          "class": { "type": "string", "description": "Named style preset to inherit from (see edge_styles)" },
+          "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" }
         }
       }
     }
@@ -792,8 +1206,11 @@ edges:
 "##;
         let payload = DiagramPayload::from_yaml(yaml).expect("should parse flexible aliases");
         assert_eq!(payload.title.as_deref(), Some("Flexible Architecture"));
-        assert_eq!(payload.description.as_deref(), Some("LLM-friendly aliases test"));
-        assert_eq!(payload.resolved_direction(), Some(crate::layout::LayoutDirection::LeftToRight));
+        assert_eq!(
+            payload.description.as_deref(),
+            Some("LLM-friendly aliases test")
+        );
+        assert_eq!(payload.resolved_direction(), Some(Direction::LeftToRight));
         assert_eq!(payload.rank_spacing, Some(50));
         assert_eq!(payload.node_spacing, Some(35));
         assert_eq!(payload.groups[0].label, "Cluster A");
@@ -801,14 +1218,20 @@ edges:
         assert_eq!(payload.groups[0].nodes, vec!["n1", "n2"]);
         assert_eq!(payload.nodes[0].node_type, "proxy");
         assert_eq!(payload.nodes[0].resolved_label(), "API Proxy\n(Kong)");
-        assert_eq!(payload.nodes[0].metadata.as_deref(), Some("Routes external traffic"));
+        assert_eq!(
+            payload.nodes[0].metadata.as_deref(),
+            Some("Routes external traffic")
+        );
         assert_eq!(payload.nodes[1].node_type, "database");
         assert_eq!(payload.edges[0].from, "n1");
         assert_eq!(payload.edges[0].to, "n2");
         assert_eq!(payload.edges[0].resolved_style().as_deref(), Some("flow"));
         assert_eq!(payload.edges[1].from, "n2");
         assert_eq!(payload.edges[1].to, "n1");
-        assert_eq!(payload.edges[1].resolved_style().as_deref(), Some("bidirectional"));
+        assert_eq!(
+            payload.edges[1].resolved_style().as_deref(),
+            Some("bidirectional")
+        );
     }
 
     #[test]
@@ -818,6 +1241,8 @@ edges:
         assert_eq!(payload.nodes.len(), 6);
         assert_eq!(payload.edges.len(), 5);
         assert_eq!(payload.groups.len(), 2);
+        assert!(payload.is_numbered());
+        assert_eq!(payload.node_styles.len(), 1);
     }
 
     #[test]
@@ -867,6 +1292,238 @@ edges:
         assert_eq!(er_payload.resolved_diagram_type(), "er");
         assert_eq!(er_payload.nodes[0].resolved_fields().len(), 2);
         assert_eq!(er_payload.nodes[1].resolved_fields().len(), 2);
-        assert_eq!(er_payload.edges[0].resolved_style().as_deref(), Some("one_to_many"));
+        assert_eq!(
+            er_payload.edges[0].resolved_style().as_deref(),
+            Some("one_to_many")
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase A: style presets, escape hatches, canvas/spacing, numbering
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_node_style_preset_fills_gaps_but_not_explicit_fields() {
+        let yaml = r##"
+node_styles:
+  critical:
+    color: "#ef4444"
+    technology: "Preset Tech"
+    style_extra: "strokeWidth=3;"
+nodes:
+  - id: n1
+    label: "A"
+    class: critical
+  - id: n2
+    label: "B"
+    class: critical
+    color: "#000000"
+edges: []
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let n1 = payload.effective_node(&payload.nodes[0]);
+        assert_eq!(n1.color.as_deref(), Some("#ef4444"));
+        assert_eq!(n1.technology.as_deref(), Some("Preset Tech"));
+        assert_eq!(n1.style_extra.as_deref(), Some("strokeWidth=3;"));
+
+        // n2 explicitly set color, so the preset must not override it.
+        let n2 = payload.effective_node(&payload.nodes[1]);
+        assert_eq!(n2.color.as_deref(), Some("#000000"));
+        assert_eq!(n2.technology.as_deref(), Some("Preset Tech"));
+    }
+
+    #[test]
+    fn test_unknown_style_class_is_a_no_op() {
+        let yaml = r#"
+nodes:
+  - id: n1
+    label: "A"
+    class: does_not_exist
+edges: []
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let n1 = payload.effective_node(&payload.nodes[0]);
+        assert_eq!(n1.color, None);
+    }
+
+    #[test]
+    fn test_edge_style_preset_resolution() {
+        let yaml = r##"
+edge_styles:
+  hot_path:
+    edge_style: async
+    color: "#f97316"
+nodes:
+  - id: n1
+    label: "A"
+  - id: n2
+    label: "B"
+edges:
+  - from: n1
+    to: n2
+    class: hot_path
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let e = payload.effective_edge(&payload.edges[0]);
+        assert_eq!(e.edge_style.as_deref(), Some("async"));
+        assert_eq!(e.color.as_deref(), Some("#f97316"));
+    }
+
+    #[test]
+    fn test_canvas_and_spacing_config_parse() {
+        let yaml = r##"
+canvas:
+  margin: 40
+  background: "#111111"
+spacing:
+  rank: 70
+  node: 30
+  group_gap_x: 80
+  group_gap_y: 90
+numbered: true
+nodes:
+  - id: n1
+    label: "A"
+edges: []
+"##;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        assert!(payload.is_numbered());
+        let canvas = payload.canvas.expect("canvas should parse");
+        assert_eq!(canvas.margin, Some(40.0));
+        assert_eq!(canvas.background.as_deref(), Some("#111111"));
+        let spacing = payload.spacing.expect("spacing should parse");
+        assert_eq!(spacing.rank, Some(70));
+        assert_eq!(spacing.node, Some(30));
+        assert_eq!(spacing.group_gap_x, Some(80.0));
+        assert_eq!(spacing.group_gap_y, Some(90.0));
+    }
+
+    #[test]
+    fn test_numbered_defaults_false() {
+        let payload = DiagramPayload::default();
+        assert!(!payload.is_numbered());
+    }
+
+    #[test]
+    fn test_node_width_height_provider_link_style_extra() {
+        let yaml = r#"
+nodes:
+  - id: n1
+    label: "Lambda"
+    type: function
+    provider: aws
+    width: 200
+    height: 80
+    style_extra: "opacity=60;"
+    link: "https://example.com"
+edges: []
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let n = &payload.nodes[0];
+        assert_eq!(n.provider.as_deref(), Some("aws"));
+        assert_eq!(n.width, Some(200.0));
+        assert_eq!(n.height, Some(80.0));
+        assert_eq!(n.style_extra.as_deref(), Some("opacity=60;"));
+        assert_eq!(n.link.as_deref(), Some("https://example.com"));
+    }
+
+    #[test]
+    fn test_edge_step_override() {
+        let yaml = r#"
+nodes:
+  - id: n1
+    label: "A"
+  - id: n2
+    label: "B"
+edges:
+  - from: n1
+    to: n2
+    step: 5
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(payload.edges[0].step, Some(5));
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase G: edge cases
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_unicode_and_emoji_labels_round_trip() {
+        let yaml = r#"
+nodes:
+  - id: n1
+    label: "支付服务 💳 → Ürün Servisi"
+edges: []
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(payload.nodes[0].label, "支付服务 💳 → Ürün Servisi");
+        assert_eq!(
+            payload.nodes[0].resolved_label(),
+            "支付服务 💳 → Ürün Servisi"
+        );
+    }
+
+    #[test]
+    fn test_very_long_unbroken_label_does_not_panic() {
+        let long_word = "a".repeat(5000);
+        let payload = DiagramPayload {
+            nodes: vec![NodeDef {
+                id: "n1".into(),
+                label: long_word.clone(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert_eq!(payload.nodes[0].resolved_label(), long_word);
+    }
+
+    #[test]
+    fn test_unknown_top_level_keys_are_ignored_not_errors() {
+        let yaml = r#"
+this_key_does_not_exist: true
+another_bogus_field:
+  nested: 1
+nodes:
+  - id: n1
+    label: "A"
+edges: []
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).expect("unknown keys must not error");
+        assert_eq!(payload.nodes.len(), 1);
+    }
+
+    #[test]
+    fn test_zero_and_negative_spacing_values_parse() {
+        // The schema itself doesn't clamp — it's the layout engine's job to behave sanely
+        // with degenerate config; the schema layer should at least not reject the input.
+        let yaml = r#"
+rank_spacing: 0
+node_spacing: 0
+nodes:
+  - id: n1
+    label: "A"
+edges: []
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(payload.rank_spacing, Some(0));
+        assert_eq!(payload.node_spacing, Some(0));
+    }
+
+    #[test]
+    fn test_missing_required_node_id_is_an_error() {
+        let yaml = r#"
+nodes:
+  - label: "No id field"
+edges: []
+"#;
+        assert!(DiagramPayload::from_yaml(yaml).is_err());
+    }
+
+    #[test]
+    fn test_empty_nodes_and_edges_is_valid() {
+        let payload = DiagramPayload::from_yaml("nodes: []\nedges: []\n").unwrap();
+        assert!(payload.nodes.is_empty());
+        assert!(payload.edges.is_empty());
     }
 }

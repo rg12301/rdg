@@ -26,6 +26,34 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 | Choose semantic types | Map types to draw.io styles |
 | Emit compact YAML | Serialise strict mxfile XML or SVG |
 
+### What's new
+
+- **Topology-dispatched layout**: `rdg` inspects each input graph (cyclicity, edge
+  density, compound/nested group structure, connected components) and automatically
+  picks between three layout frameworks — the original Sugiyama layered layout, a
+  Barnes-Hut force-directed engine, and an fCoSE-style compound spring embedder — plus
+  either a fixed corridor router or a visibility-graph A* router for edges, based on
+  how obstacle-dense the diagram is. `--layout auto` (the default) reports its choice
+  on stderr; `--layout sugiyama|force|fcose` forces one explicitly. See
+  [`crates/rdg-dispatch`](crates/rdg-dispatch) for the decision logic.
+- **Self-review**: every render runs a deterministic geometry check (overlaps, edges
+  cutting through nodes, an explicit size too small for its content, a lopsided canvas)
+  and retries with wider spacing before writing anything; `--strict` turns unresolved
+  anomalies into a non-zero exit code for CI/agent pipelines.
+- **Real brand logos**: ~60 languages/clouds/databases/frameworks now use vendored
+  [Simple Icons](https://simpleicons.org) artwork (CC0) instead of hand-drawn
+  approximations — see [`crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md`](crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md).
+- **Flow numbering**: `numbered: true` puts a sequence badge (①②③…) on each edge in
+  declaration order, so a reader can trace the flow.
+- **Reusable style presets**: define a named `node_styles`/`edge_styles` preset once,
+  reference it from any node/edge via `class:` instead of repeating the same overrides.
+- **Chain straightening**: a lightweight coordinate-alignment pass keeps simple chains
+  vertically/horizontally aligned instead of zigzagging, and centers a node over its
+  children's span.
+- **More granular control**: per-node `color`/`width`/`height`/`provider`/`link`
+  overrides, a draw.io-only `style_extra` raw-style escape hatch, and `canvas`/`spacing`
+  config objects for margin and gap tuning.
+
 ---
 
 ## Architecture
@@ -46,8 +74,9 @@ rdg CLI (--input / stdin)
     │
     ├─► Schema Parser    (serde_yaml → DiagramPayload)
     ├─► Graph Builder    (petgraph StableDiGraph + FAS cycle breaking)
-    ├─► Layout Engine    (layout-rs Sugiyama framework)
-    └─► Renderer
+    ├─► Layout Engine    (deterministic layered layout: topological ranking,
+    │                     barycentric crossing minimisation, compound group grid)
+    └─► Renderer (shared style/routing core + two backends)
             ├─► draw.io XML  (.drawio)
             └─► SVG          (.svg)
 ```
@@ -58,14 +87,18 @@ rdg CLI (--input / stdin)
 
 > Source: [`docs/lld.yaml`](docs/lld.yaml) — generated with `rdg --input docs/lld.yaml --output docs/lld.svg`
 
-**Module breakdown:**
+**Crate breakdown** (`rdg` is a Cargo workspace, `crates/*`):
 
-| Module | File | Responsibility |
-|---|---|---|
-| `schema` | `src/schema.rs` | `serde` structs for YAML input: `DiagramPayload`, `NodeDef`, `EdgeDef` |
-| `graph` | `src/graph.rs` | Build `StableDiGraph<NodeData, EdgeData>`; greedy DFS Feedback Arc Set cycle-breaker |
-| `layout` | `src/layout.rs` | Run layout-rs Sugiyama engine; extract `Position::bbox()` per node; topo-sort fallback |
-| `render` | `src/render.rs` | `quick-xml` Writer for mxfile XML; hand-rolled SVG; semantic type → style mapping |
+| Crate | Responsibility |
+|---|---|
+| `rdg-schema` | `serde` structs for YAML input: `DiagramPayload`, `NodeDef`, `EdgeDef` |
+| `rdg-graph` | Build `StableDiGraph<NodeData, EdgeData>`; Eades–Lin–Smyth greedy Feedback Arc Set cycle-breaker |
+| `rdg-layout` | Deterministic layered layout: topological ranking, barycentric crossing minimisation, compound 2D group grid placement |
+| `rdg-icons` | Built-in flat vector icons for languages/databases; language & DB engine detection heuristics |
+| `rdg-render-core` | Style/typography/routing shared by both render backends, so they can't drift apart on what a node type or edge style means |
+| `rdg-render-drawio` | draw.io (`mxfile`) XML backend |
+| `rdg-render-svg` | SVG backend |
+| `rdg-cli` | The `rdg` binary: CLI parsing, I/O, ties the pipeline together |
 
 ---
 
@@ -167,10 +200,12 @@ rdg [OPTIONS]
 Options:
   -i, --input <FILE>            YAML input file (omit or use - for stdin)
   -o, --output <FILE>           Output path; extension selects format [default: output.drawio]
-  -l, --layout <LAYOUT>         sugiyama | orthogonal | organic [default: sugiyama]
+  -l, --layout <LAYOUT>         auto | sugiyama | force | fcose [default: auto]
   -t, --theme <THEME>           standard | aws | azure [default: standard]
       --rank-spacing <N>        Vertical gap between layers in px [default: 60]
       --node-spacing <N>        Horizontal gap between nodes in px [default: 40]
+      --strict                  Exit non-zero if self-review anomalies remain after retrying
+      --svg-engine <ENGINE>     auto | drawio | native — SVG export engine [default: auto]
   -h, --help                    Print full LLM usage guide
   -V, --version                 Print version
 ```

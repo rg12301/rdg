@@ -1,0 +1,14 @@
+[package]
+name = "rdg-dispatch"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rdg-graph = { workspace = true }
+rdg-layout = { workspace = true }
+petgraph = { workspace = true }
+
+[dev-dependencies]
+rdg-schema = { workspace = true }

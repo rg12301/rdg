@@ -1,0 +1,10 @@
+[package]
+name = "rdg-icons"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Built-in flat vector icons for languages, database engines, and actors, used by rdg's render backends."
+
+[dependencies]
+base64 = { workspace = true }

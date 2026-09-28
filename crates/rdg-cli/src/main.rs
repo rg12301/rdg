@@ -1,7 +1,8 @@
 //! `rdg` (Render Diagram) — binary entry point.
 //!
 //! Parses CLI arguments, reads the YAML payload, runs the pipeline, and writes
-//! the output file. All heavy lifting is in the `rdg` library crate.
+//! the output file. All heavy lifting is in the `rdg-schema`/`rdg-graph`/`rdg-layout`/
+//! `rdg-render-drawio`/`rdg-render-svg` library crates.
 
 use std::fs;
 use std::io::Read;
@@ -10,12 +11,12 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 
-use rdg::{
-    graph::build_graph,
-    layout::{compute_layout, LayoutConfig},
-    render::{render_drawio, render_svg},
-    schema::DiagramPayload,
-};
+use rdg_graph::build_graph;
+use rdg_layout::{DesignTokens, LayoutConfig};
+use rdg_render_core::review::compute_reviewed_layout;
+use rdg_render_drawio::render_drawio;
+use rdg_render_svg::render_svg;
+use rdg_schema::DiagramPayload;
 
 // ---------------------------------------------------------------------------
 // Long help text — LLM-optimised
@@ -198,18 +199,24 @@ OUTPUT FORMATS — extension controls format
 LAYOUT ALGORITHMS
 ─────────────────────────────────────────────────────────────────────────────
 
-  sugiyama  (default) Hierarchical top-to-bottom DAG layout using the
-                      Sugiyama framework. Best for: flowcharts, pipelines,
-                      data-flow diagrams, system architectures, CI/CD.
-                      Cycles are auto-broken (reversed edges are marked).
+  auto      (default) A topology analyzer inspects the input graph (cycles,
+                      edge density, compound/nested group structure, connected
+                      components) and dispatches to whichever engine below
+                      fits — a one-line summary is printed to stderr.
 
-  orthogonal          Right-angled grid routing. Best for: UML class diagrams,
-                      ER diagrams, network topology. (Falls back to sugiyama
-                      in current release.)
+  sugiyama            Hierarchical top-to-bottom DAG layout. Best for:
+                      flowcharts, pipelines, data-flow diagrams, system
+                      architectures, CI/CD. Cycles are auto-broken (reversed
+                      edges are marked).
 
-  organic             Force-directed layout. Best for: dense, unstructured
-                      networks, social graphs, dependency webs. (Falls back
-                      to sugiyama in current release.)
+  force               Barnes-Hut force-directed layout. Best for: dense or
+                      very large graphs, social graphs, dependency webs.
+
+  fcose               Compound spring embedder. Best for: diagrams with
+                      visual groups or disconnected components.
+
+  Edge routing (a fixed corridor heuristic vs. a visibility-graph A* search)
+  is chosen independently of --layout, based on obstacle density.
 
 ─────────────────────────────────────────────────────────────────────────────
 QUICKSTART EXAMPLES
@@ -337,37 +344,53 @@ struct Cli {
     )]
     output: String,
 
-    /// Spatial layout algorithm (sugiyama, orthogonal, organic).
+    /// Layout framework: auto (topology-dispatched), sugiyama, force, or fcose.
     #[arg(
         short,
         long,
         value_enum,
-        default_value_t = LayoutEngine::Sugiyama,
-        help = "Spatial layout algorithm (sugiyama, orthogonal, organic)",
-        long_help = "Spatial layout algorithm used to compute coordinates.\n\
+        default_value_t = LayoutEngine::Auto,
+        help = "Layout framework (auto, sugiyama, force, fcose)",
+        long_help = "Which layout framework computes node coordinates.\n\
                      \n\
                      Available engines:\n\
                      \n\
-                       sugiyama   (Default, Recommended)\n\
-                                  Layered hierarchical DAG layout implementing:\n\
-                                  1. Cycle breaking: Greedy Feedback Arc Set (FAS)\n\
-                                     reverses back-edges to guarantee a valid DAG.\n\
-                                  2. Layer assignment: Longest-path topological ranking.\n\
-                                  3. Crossing minimization: 3-pass alternating barycentric\n\
-                                     median heuristics with adjacent transpositions.\n\
-                                  4. 2D Compound Quotient Layout: Resolves inter-group\n\
-                                     dependencies using grid search to optimize canvas\n\
-                                     aspect ratio close to 1.0 (squarish canvas).\n\
-                                  5. Compact whitespace normalization: Eliminates dead\n\
-                                     canvas margins and centers ranks.\n\
+                       auto      (Default, Recommended)\n\
+                                 Runs a topology analyzer over the input graph (cyclicity,\n\
+                                 edge density, compound/nested group structure, connected\n\
+                                 components) and dispatches to whichever of the three engines\n\
+                                 below fits that shape best. A one-line summary of the choice\n\
+                                 and why is printed to stderr. This is what most diagrams\n\
+                                 should use — the other three values are for forcing a\n\
+                                 specific engine regardless of what the analyzer would pick.\n\
                      \n\
-                       orthogonal Right-angled orthogonal grid routing. Ideal for UML\n\
-                                  class diagrams and ER schemas. (Reserved for v2.0;\n\
-                                  currently falls back to Sugiyama.)\n\
+                       sugiyama  Layered hierarchical DAG layout implementing:\n\
+                                 1. Cycle breaking: Greedy Feedback Arc Set (FAS)\n\
+                                    reverses back-edges to guarantee a valid DAG.\n\
+                                 2. Layer assignment: Longest-path topological ranking.\n\
+                                 3. Crossing minimization: 3-pass alternating barycentric\n\
+                                    median heuristics with adjacent transpositions.\n\
+                                 4. 2D Compound Quotient Layout: Resolves inter-group\n\
+                                    dependencies using grid search to optimize canvas\n\
+                                    aspect ratio close to 1.0 (squarish canvas).\n\
+                                 5. Compact whitespace normalization: Eliminates dead\n\
+                                    canvas margins and centers ranks.\n\
+                                 Best for: dependency DAGs and chronological process flows.\n\
                      \n\
-                       organic    Force-directed spring electrical embedder for unstructured\n\
-                                  graphs and social networks. (Reserved for v2.0;\n\
-                                  currently falls back to Sugiyama.)"
+                       force     Barnes-Hut force-directed layout (O(N log N) repulsion).\n\
+                                 Best for: dense or very large graphs that don't have a clean\n\
+                                 hierarchical shape.\n\
+                     \n\
+                       fcose     Compound spring embedder: spectral draft layout + physical\n\
+                                 relaxation, with grouped nodes pulled toward each other.\n\
+                                 Best for: diagrams with visual groups or disconnected\n\
+                                 components.\n\
+                     \n\
+                     Edge routing is chosen independently of this flag, based on how\n\
+                     obstacle-dense the diagram is: a cheap corridor heuristic for small/\n\
+                     sparse diagrams, or a visibility-graph A* search (penalizing bends and\n\
+                     obstacle proximity) once there are enough nodes that global routing\n\
+                     awareness actually pays for itself."
     )]
     layout: LayoutEngine,
 
@@ -398,42 +421,46 @@ struct Cli {
     )]
     theme: String,
 
-    /// Vertical gap between successive ranks in pixels (default: 44).
+    /// Vertical gap between successive ranks in pixels (default: auto, proportional
+    /// to node size — see `--design-config`'s `rank_spacing_fraction`).
     #[arg(
         long,
-        default_value_t = 44,
         value_name = "PIXELS",
-        help = "Vertical gap between successive ranks in pixels (default: 44)",
+        help = "Vertical gap between successive ranks in pixels (default: auto, scales with node size)",
         long_help = "Gap in pixels between successive layers (ranks) of nodes.\n\
                      \n\
                      • In top-to-bottom (tb) mode, this controls vertical distance between ranks.\n\
                      • In left-to-right (lr) mode, this controls horizontal distance between columns.\n\
                      \n\
-                     Guidelines:\n\
-                       28–36 px  Compact layout (dashboards, dense architectures)\n\
-                       44 px     Default balanced layout (expert hand-drawn feel)\n\
-                       60–80 px  Roomy layout (multi-line edge labels, long routing spans)\n\
+                     Left unset (the default), this is computed at runtime as this diagram's own\n\
+                     average node size times `rank_spacing_fraction` (a `--design-config` token,\n\
+                     default 0.7) — bigger boxes automatically get proportionally more room, and\n\
+                     retuning overall compactness is one fraction rather than a pixel count tied to\n\
+                     whatever node size this particular diagram happens to have.\n\
+                     \n\
+                     Passing this flag pins an exact, non-proportional pixel value instead.\n\
                      \n\
                      Note: Can also be specified in YAML via `rank_spacing: 60`."
     )]
-    rank_spacing: u32,
+    rank_spacing: Option<u32>,
 
-    /// Horizontal gap between sibling nodes on the same rank (default: 28).
+    /// Horizontal gap between sibling nodes on the same rank (default: auto,
+    /// proportional to node size — see `--design-config`'s `node_spacing_fraction`).
     #[arg(
         long,
-        default_value_t = 28,
         value_name = "PIXELS",
-        help = "Horizontal gap between sibling nodes on the same rank (default: 28)",
+        help = "Horizontal gap between sibling nodes on the same rank (default: auto, scales with node size)",
         long_help = "Clearance in pixels between sibling nodes sharing the same rank.\n\
                      \n\
-                     Guidelines:\n\
-                       18–24 px  Tight clustering for compact diagrams\n\
-                       28 px     Default balanced clearance\n\
-                       40–50 px  Wide spacing to prevent edge routing congestion\n\
+                     Left unset (the default), this is computed at runtime as this diagram's own\n\
+                     average node size times `node_spacing_fraction` (a `--design-config` token,\n\
+                     default 0.4) — the same proportional reasoning as `--rank-spacing`.\n\
+                     \n\
+                     Passing this flag pins an exact, non-proportional pixel value instead.\n\
                      \n\
                      Note: Can also be specified in YAML via `node_spacing: 36`."
     )]
-    node_spacing: u32,
+    node_spacing: Option<u32>,
 
     /// Diagram flow direction (tb, lr).
     #[arg(
@@ -504,6 +531,59 @@ struct Cli {
         help = "SVG export engine: 'auto' (draw.io CLI if available, else native), 'drawio', or 'native'"
     )]
     svg_engine: String,
+
+    /// Exit non-zero if geometric anomalies (overlaps, edges cutting through nodes, an
+    /// explicit size too small for its content, an unreadable aspect ratio) remain after
+    /// rdg's self-review retry budget is exhausted. Off by default: rdg always writes its
+    /// best attempt regardless, this flag only controls whether that's treated as failure.
+    #[arg(
+        long,
+        help = "Exit non-zero if self-review anomalies remain after the retry budget",
+        long_help = "By default rdg auto-retries layout (wider spacing) up to a few times \
+                     when it detects geometric anomalies — overlapping nodes, an edge cutting \
+                     through an unrelated node, an explicit width/height too small for its \
+                     content, or a canvas aspect ratio too lopsided to read as a diagram — \
+                     and always writes its best (fewest-anomaly) attempt either way, with a \
+                     summary on stderr.\n\
+                     \n\
+                     --strict changes only the exit code: if anomalies remain after the \
+                     retry budget, rdg exits 1 instead of 0, so a CI or agent pipeline can \
+                     hard-fail instead of silently shipping an imperfect diagram. Some \
+                     anomaly kinds (an explicit size override, an extreme aspect ratio) \
+                     aren't fixable by retrying spacing alone — they need a YAML change, \
+                     which is exactly what a --strict failure here is telling you to make."
+    )]
+    strict: bool,
+
+    /// Path to a design-tokens YAML file overriding rdg's base spacing/typography/
+    /// threshold tokens, without recompiling. See `DesignTokens` in `rdg-layout` for
+    /// every overridable field and its default.
+    #[arg(
+        long,
+        value_name = "FILE",
+        help = "Path to a design-tokens YAML file (base spacing/typography/threshold overrides)",
+        long_help = "Nearly every spacing, sizing, and threshold decision rdg makes — how \
+                     much clearance to leave between two boxes that just avoided overlapping, \
+                     how far a flow-numbering badge sits from its edge, the density above which \
+                     a graph gets force-directed layout instead of Sugiyama, and so on — derives \
+                     at runtime from a small set of base design tokens (a spacing unit, a font \
+                     size, a couple of ratios, a couple of algorithm-quality knobs), not from \
+                     independent hardcoded pixel values. Every one of those tokens has a sane \
+                     built-in default, and every one is overridable here without a rebuild.\n\
+                     \n\
+                     Pass a YAML file with any subset of fields to override — omitted fields \
+                     keep their default:\n\
+                     \n\
+                       unit: 10.0              # base spacing unit (default 8.0)\n\
+                       font_size: 13.0          # base body font size (default 12.0)\n\
+                       overlap_clearance_units: 3.0   # breathing room after resolving an overlap\n\
+                     \n\
+                     Usage:\n\
+                       rdg -i diagram.yaml -o out.svg --design-config spacious.yaml\n\
+                     \n\
+                     Field names and defaults are documented on `rdg_layout::DesignTokens`."
+    )]
+    design_config: Option<String>,
 }
 
 /// Diagram flow direction.
@@ -515,18 +595,32 @@ enum CliDirection {
     Lr,
 }
 
-/// Layout algorithm to use for spatial positioning.
-#[derive(ValueEnum, Clone, Debug)]
+/// Layout framework to use for spatial positioning.
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 enum LayoutEngine {
+    /// Topology-dispatched: let `rdg_dispatch::dispatch` pick the framework.
+    Auto,
     /// Hierarchical Sugiyama framework for DAGs — top-to-bottom flow.
     /// Automatically breaks cycles using a greedy Feedback Arc Set.
     Sugiyama,
-    /// Orthogonal right-angled grid routing for UML/ER diagrams.
-    /// (Reserved — currently falls back to Sugiyama.)
-    Orthogonal,
-    /// Force-directed layout for dense unstructured networks.
-    /// (Reserved — currently falls back to Sugiyama.)
-    Organic,
+    /// Barnes-Hut force-directed layout for dense or massive graphs.
+    Force,
+    /// fCoSE-style compound spring embedder for nested/disconnected structure.
+    #[value(name = "fcose")]
+    FCose,
+}
+
+impl LayoutEngine {
+    /// The forced framework this flag value maps to, or `None` for `Auto` (meaning:
+    /// let the topology dispatcher's own choice stand).
+    fn as_framework(&self) -> Option<rdg_dispatch::LayoutFramework> {
+        match self {
+            LayoutEngine::Auto => None,
+            LayoutEngine::Sugiyama => Some(rdg_dispatch::LayoutFramework::Sugiyama),
+            LayoutEngine::Force => Some(rdg_dispatch::LayoutFramework::ForceDirected),
+            LayoutEngine::FCose => Some(rdg_dispatch::LayoutFramework::FCose),
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -560,43 +654,134 @@ fn main() -> Result<()> {
     };
 
     // --- 2. Deserialise payload ---------------------------------------------
-    let payload = DiagramPayload::from_yaml(&yaml)
-        .context("YAML payload does not match the rdg schema — run `rdg --help` or `rdg --example`")?;
+    let payload = DiagramPayload::from_yaml(&yaml).context(
+        "YAML payload does not match the rdg schema — run `rdg --help` or `rdg --example`",
+    )?;
 
     // Priority: YAML payload > CLI flag
     let theme = payload.theme.as_deref().unwrap_or(&cli.theme);
 
-    let direction = payload.resolved_direction().unwrap_or(match cli.direction {
-        CliDirection::Tb => rdg::layout::LayoutDirection::TopToBottom,
-        CliDirection::Lr => rdg::layout::LayoutDirection::LeftToRight,
-    });
+    // `rdg-schema`'s `Direction` has no dependency on `rdg-layout` (to avoid a crate
+    // cycle), so the CLI is what maps between the schema's and the layout engine's
+    // otherwise-identical direction types.
+    let cli_direction = match cli.direction {
+        CliDirection::Tb => rdg_layout::LayoutDirection::TopToBottom,
+        CliDirection::Lr => rdg_layout::LayoutDirection::LeftToRight,
+    };
+    let direction = match payload.resolved_direction() {
+        Some(rdg_schema::Direction::TopToBottom) => rdg_layout::LayoutDirection::TopToBottom,
+        Some(rdg_schema::Direction::LeftToRight) => rdg_layout::LayoutDirection::LeftToRight,
+        None => cli_direction,
+    };
 
-    let rank_spacing = payload.rank_spacing.unwrap_or(cli.rank_spacing);
-    let node_spacing = payload.node_spacing.unwrap_or(cli.node_spacing);
+    // Base design tokens: built-in defaults, optionally overridden wholesale by
+    // `--design-config` (a YAML file setting any subset of `DesignTokens`'s fields —
+    // see that struct's own docs). This is the one thing in the pipeline read from an
+    // external file rather than computed; everything else derives from it.
+    let tokens = load_design_tokens(cli.design_config.as_deref())?;
 
     // --- 3. Build petgraph --------------------------------------------------
+    // Moved ahead of the spacing block below: computing a proportional
+    // `rank_spacing`/`node_spacing` default needs this diagram's own node sizes,
+    // which needs the compiled graph. `build_graph` only depends on `payload`, so
+    // nothing else here needed to move with it.
     let compiled = build_graph(&payload)?;
     if compiled.had_cycles {
-        eprintln!(
-            "⚠  Cycles detected in input graph — automatically broken via Feedback Arc Set."
-        );
+        eprintln!("⚠  Cycles detected in input graph — automatically broken via Feedback Arc Set.");
     }
 
-    // --- 4. Layout ----------------------------------------------------------
+    // --- Spacing: proportional by default, explicit override wins ------------
+    // `rank_spacing`/`node_spacing`, when neither a YAML nor CLI value is given, are
+    // computed here from this diagram's own average node size rather than a flat
+    // pixel constant unrelated to it — see the CLI flags' own help text and
+    // `DesignTokens::rank_spacing_fraction`/`node_spacing_fraction`.
+    let default_node_w = LayoutConfig::default().node_width;
+    let default_node_h = LayoutConfig::default().node_height;
+    let (avg_node_w, avg_node_h) =
+        rdg_layout::estimate_average_node_size(&compiled, default_node_w, default_node_h, &tokens);
+    // rank_spacing runs along the flow direction (vertical in tb, horizontal in lr);
+    // node_spacing runs across it — the proportion each uses swaps with direction,
+    // same as the layout engines' own axis handling.
+    let (along_dim, across_dim) = match direction {
+        rdg_layout::LayoutDirection::TopToBottom => (avg_node_h, avg_node_w),
+        rdg_layout::LayoutDirection::LeftToRight => (avg_node_w, avg_node_h),
+    };
+    let auto_rank_spacing = ((along_dim * tokens.rank_spacing_fraction).round() as u32).max(4);
+    let auto_node_spacing = ((across_dim * tokens.node_spacing_fraction).round() as u32).max(4);
+
+    // Flat `rank_spacing`/`node_spacing` (YAML or CLI flag) win over the grouped
+    // `spacing.rank`/`spacing.node` object, which wins over the proportional default.
+    let spacing = payload.spacing.as_ref();
+    let rank_spacing = payload
+        .rank_spacing
+        .or_else(|| spacing.and_then(|s| s.rank))
+        .or(cli.rank_spacing)
+        .unwrap_or(auto_rank_spacing);
+    let node_spacing = payload
+        .node_spacing
+        .or_else(|| spacing.and_then(|s| s.node))
+        .or(cli.node_spacing)
+        .unwrap_or(auto_node_spacing);
+    let group_gap_x = spacing.and_then(|s| s.group_gap_x).unwrap_or(tokens.group_gap());
+    let group_gap_y = spacing.and_then(|s| s.group_gap_y).unwrap_or(tokens.group_gap());
+    let canvas = payload.canvas.as_ref();
+    let margin = canvas.and_then(|c| c.margin);
+    let margin_x = margin.unwrap_or(tokens.margin_x());
+    let margin_y = margin.unwrap_or(tokens.margin_y());
+    let background = canvas.and_then(|c| c.background.as_deref());
+
+    // --- 4. Topology dispatch + layout, self-reviewed ------------------------
+    let topology = rdg_dispatch::analyze(&compiled, &tokens);
+    let mut decision = rdg_dispatch::dispatch(&topology, &tokens);
+    if let Some(forced) = cli.layout.as_framework() {
+        decision.framework = forced;
+    }
+    if compiled.diagram_type != "sequence" {
+        report_dispatch(&decision, cli.layout == LayoutEngine::Auto);
+    }
+
     let layout_config = LayoutConfig {
         rank_spacing,
         node_spacing,
         direction,
+        margin_x,
+        margin_y,
+        group_gap_x,
+        group_gap_y,
+        tokens,
         ..LayoutConfig::default()
     };
-    let layout_result = compute_layout(&compiled, &layout_config)?;
+    let max_passes = layout_config.tokens.max_review_passes;
+    let reviewed = compute_reviewed_layout(&compiled, &layout_config, max_passes, &decision)
+        .context("layout computation failed")?;
+    report_review(&reviewed);
+    let remaining_anomalies = reviewed.remaining_anomalies(&compiled, &layout_config.tokens);
+    if std::env::var("RDG_DEBUG_ANOMALIES").is_ok() {
+        for a in &remaining_anomalies {
+            eprintln!("  [{:?}] {}", a.kind, a.description);
+        }
+    }
+    let layout_result = &reviewed.layout;
+    let edge_plans = &reviewed.edge_plans;
+    if std::env::var("RDG_DEBUG_SPACING").is_ok() {
+        let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans);
+        let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
+        eprintln!(
+            "spacing: arrow={} node_gap={} port_pitch={}  [arrow: {}; pitch: {}]",
+            fmt(m.min_arrow_len),
+            fmt(m.min_node_gap),
+            fmt(m.min_port_pitch),
+            m.min_arrow_edge.as_deref().unwrap_or("-"),
+            m.min_pitch_face.as_deref().unwrap_or("-")
+        );
+    }
 
     // --- 5. Render ----------------------------------------------------------
     let output_path = Path::new(&cli.output);
     let is_svg = output_path.extension().and_then(|e| e.to_str()) == Some("svg");
 
     if is_svg {
-        let drawio_xml = render_drawio(&compiled, &layout_result, theme)
+        let drawio_xml = render_drawio(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
             .context("draw.io XML rendering failed")?;
 
         let mut rendered_exact_drawio = false;
@@ -608,9 +793,11 @@ fn main() -> Result<()> {
 
         if !rendered_exact_drawio {
             if cli.svg_engine == "drawio" {
-                anyhow::bail!("Exact draw.io export was requested (--svg-engine=drawio), but drawio CLI is not installed or failed");
+                anyhow::bail!(
+                    "Exact draw.io export was requested (--svg-engine=drawio), but drawio CLI is not installed or failed"
+                );
             }
-            let svg_content = render_svg(&compiled, &layout_result, theme)
+            let svg_content = render_svg(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
                 .context("SVG rendering failed")?;
             fs::write(&cli.output, svg_content)
                 .with_context(|| format!("failed to write output to '{}'", cli.output))?;
@@ -618,14 +805,108 @@ fn main() -> Result<()> {
             eprintln!("✓ Rendered exact draw.io SVG export via drawio CLI");
         }
     } else {
-        let content = render_drawio(&compiled, &layout_result, theme)
+        let content = render_drawio(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
             .context("draw.io XML rendering failed")?;
         fs::write(&cli.output, content)
             .with_context(|| format!("failed to write output to '{}'", cli.output))?;
     }
 
     eprintln!("✓ Diagram written to {}", cli.output);
+
+    if cli.strict && !remaining_anomalies.is_empty() {
+        std::process::exit(1);
+    }
     Ok(())
+}
+
+/// Loads [`DesignTokens`] from `path` if given, falling back to built-in defaults
+/// otherwise. The file only needs to set the fields it wants to override — every
+/// field is independently defaulted (`#[serde(default)]` on the struct), so e.g. a
+/// file containing just `unit: 10.0` overrides the spacing scale while every other
+/// token (font size, thresholds, algorithm budgets, ...) keeps its default.
+fn load_design_tokens(path: Option<&str>) -> Result<DesignTokens> {
+    let Some(path) = path else {
+        return Ok(DesignTokens::default());
+    };
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("failed to read design-tokens file '{path}'"))?;
+    serde_yaml::from_str(&content)
+        .with_context(|| format!("failed to parse design-tokens file '{path}' as YAML"))
+}
+
+/// Prints a one-line stderr summary of the topology dispatcher's choice: the framework,
+/// its complexity estimate, and the deciding metric(s). Silent when the user explicitly
+/// forced a framework via `--layout` — there's nothing to report in that case, the
+/// choice was theirs, not the analyzer's.
+fn report_dispatch(decision: &rdg_dispatch::AlgorithmDecision, was_auto: bool) {
+    if !was_auto {
+        return;
+    }
+    let framework = match decision.framework {
+        rdg_dispatch::LayoutFramework::Sugiyama => "sugiyama",
+        rdg_dispatch::LayoutFramework::ForceDirected => "force-directed",
+        rdg_dispatch::LayoutFramework::FCose => "fcose",
+    };
+    let routing = match decision.routing.algorithm {
+        rdg_dispatch::RoutingAlgorithm::CornerHeuristic => "corner heuristic",
+        rdg_dispatch::RoutingAlgorithm::VisibilityGraphAStar => "visibility-graph A*",
+    };
+    eprintln!(
+        "→  dispatch: {framework} ({}), routing: {routing} — {}",
+        decision.complexity_estimate,
+        decision.preprocessing_steps.join("; ")
+    );
+}
+
+/// Prints a concise stderr summary of the self-review retry loop: nothing at all for a
+/// clean first pass, one line per retry otherwise, and a final resolved/remaining summary.
+fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout) {
+    if reviewed.passes.len() == 1 && reviewed.passes[0].anomaly_count == 0 {
+        return;
+    }
+    for pass in &reviewed.passes {
+        if pass.anomaly_count > 0 {
+            eprintln!(
+                "⚠  pass {}: {} anomal{} detected (rank_spacing={}, node_spacing={}){}",
+                pass.attempt,
+                pass.anomaly_count,
+                if pass.anomaly_count == 1 { "y" } else { "ies" },
+                pass.rank_spacing,
+                pass.node_spacing,
+                if pass.attempt < reviewed.passes.len() as u32 {
+                    " — retrying with wider spacing"
+                } else {
+                    ""
+                },
+            );
+        }
+    }
+    // The layout `rdg` actually writes is whichever pass had the *fewest* anomalies,
+    // not necessarily the last one — widening spacing helps a layered Sugiyama layout
+    // almost monotonically, but for the force-directed/fCoSE engines a wider spacing
+    // scale can just as easily make crossings worse, so later passes aren't guaranteed
+    // to improve on earlier ones. Reporting `passes.last()` here would describe a pass
+    // whose result was silently discarded — this must match what `remaining_anomalies`
+    // (and thus `--strict`) actually sees.
+    let best_count = reviewed
+        .passes
+        .iter()
+        .map(|p| p.anomaly_count)
+        .min()
+        .expect("at least one pass always runs");
+    if best_count == 0 {
+        if reviewed.passes.len() > 1 {
+            eprintln!("✓  resolved after {} pass(es)", reviewed.passes.len());
+        }
+    } else {
+        eprintln!(
+            "✗  {} anomal{} {} in the best attempt tried ({} pass(es)) — writing it anyway",
+            best_count,
+            if best_count == 1 { "y" } else { "ies" },
+            if best_count == 1 { "remains" } else { "remain" },
+            reviewed.passes.len(),
+        );
+    }
 }
 
 /// Attempts to export exact draw.io SVG using the drawio desktop CLI if available in PATH or Applications.
@@ -674,8 +955,41 @@ fn try_export_svg_via_drawio_cli(drawio_xml: &str, output_path: &Path, theme: &s
     let _ = fs::remove_file(&temp_path);
 
     if exported {
+        strip_svg_unsupported_fallback(output_path);
         Some(())
     } else {
         None
     }
+}
+
+/// The draw.io CLI always appends a `<switch>` fallback to its SVG export — a link
+/// reading "Text is not SVG - cannot display", meant for viewers that don't support
+/// the `requiredFeatures` primary branch. Real browsers (this output's actual target
+/// per rdg's own docs: "embed in docs, Markdown, HTML") satisfy that feature check and
+/// never show it, but several common non-browser SVG consumers — librsvg-based tools
+/// (`rsvg-convert`, GNOME's thumbnailer) among them — evaluate it differently and
+/// render the fallback text as visible on-canvas content instead, confirmed directly
+/// while visually reviewing rendered sample diagrams. rdg's own content never needs
+/// that fallback (it's plain rects/paths/text, not the HTML-label case the check
+/// exists for), so it's dead weight at best and a rendering artifact at worst —
+/// stripped here rather than left for every downstream viewer to handle differently.
+/// Best-effort: a failure to re-read/rewrite the file just leaves draw.io's own output
+/// as-is, no different from before this post-processing step existed.
+fn strip_svg_unsupported_fallback(output_path: &Path) {
+    let Ok(svg) = fs::read_to_string(output_path) else {
+        return;
+    };
+    const MARKER: &str = "<switch><g requiredFeatures=";
+    const CLOSE: &str = "</switch>";
+    let Some(start) = svg.find(MARKER) else {
+        return;
+    };
+    let Some(close_rel) = svg[start..].find(CLOSE) else {
+        return;
+    };
+    let end = start + close_rel + CLOSE.len();
+    let mut cleaned = String::with_capacity(svg.len() - (end - start));
+    cleaned.push_str(&svg[..start]);
+    cleaned.push_str(&svg[end..]);
+    let _ = fs::write(output_path, cleaned);
 }

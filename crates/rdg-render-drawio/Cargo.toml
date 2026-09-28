@@ -1,0 +1,19 @@
+[package]
+name = "rdg-render-drawio"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "draw.io (mxfile) XML rendering backend for rdg."
+
+[dependencies]
+rdg-graph = { workspace = true }
+rdg-layout = { workspace = true }
+rdg-icons = { workspace = true }
+rdg-render-core = { workspace = true }
+anyhow = { workspace = true }
+quick-xml = { workspace = true }
+petgraph = { workspace = true }
+
+[dev-dependencies]
+rdg-schema = { workspace = true }

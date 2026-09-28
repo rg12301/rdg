@@ -1,0 +1,15 @@
+[package]
+name = "rdg-layout"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Deterministic layered graph layout (Sugiyama-style + compound group placement) for rdg."
+
+[dependencies]
+rdg-graph = { workspace = true }
+rdg-schema = { workspace = true }
+anyhow = { workspace = true }
+petgraph = { workspace = true }
+nalgebra = { workspace = true }
+serde = { workspace = true }

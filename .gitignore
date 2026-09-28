@@ -1,2 +1,16 @@
 /target
 Cargo.lock
+
+# graphify knowledge-graph output (rebuilt locally by its git hooks)
+graphify-out/
+
+# Claude Code local state (per-user settings, worktrees)
+.claude/settings.local.json
+.claude/worktrees/
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
