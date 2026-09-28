@@ -1,0 +1,74 @@
+diagram_type: flowchart
+theme: standard
+title: "Food Delivery Order Flow"
+numbered: true
+nodes:
+  - id: start
+    label: "Order Placed"
+    type: start
+  - id: validate
+    label: "Validate Cart & Address"
+    type: decision
+  - id: payment
+    label: "Process Payment"
+    type: service
+  - id: notify_restaurant
+    label: "Notify Restaurant"
+    type: function
+  - id: prepare
+    label: "Restaurant Prepares Order"
+    type: server
+  - id: assign_de
+    label: "Assign Delivery Partner"
+    type: function
+  - id: pickup
+    label: "Partner Picks Up Order"
+    type: server
+  - id: enroute
+    label: "En Route to Customer"
+    type: server
+  - id: delivered
+    label: "Order Delivered"
+    type: end
+  - id: payment_failed
+    label: "Payment Failed"
+    type: end
+  - id: refund
+    label: "Refund Initiated"
+    type: function
+edges:
+  - from: start
+    to: validate
+    step: 1
+  - from: validate
+    to: payment
+    label: "valid"
+    step: 2
+  - from: payment
+    to: notify_restaurant
+    label: "success"
+    step: 3
+  - from: payment
+    to: payment_failed
+    label: "declined"
+    step: 3
+    edge_style: error
+  - from: payment_failed
+    to: refund
+    step: 4
+    edge_style: error
+  - from: notify_restaurant
+    to: prepare
+    step: 4
+  - from: prepare
+    to: assign_de
+    step: 5
+  - from: assign_de
+    to: pickup
+    step: 6
+  - from: pickup
+    to: enroute
+    step: 7
+  - from: enroute
+    to: delivered
+    step: 8

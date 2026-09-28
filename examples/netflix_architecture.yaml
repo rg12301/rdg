@@ -1,0 +1,112 @@
+diagram_type: architecture
+theme: standard
+title: "Netflix-style Streaming Platform (Disconnected Subsystems)"
+groups:
+  - id: grp_playback
+    label: "Playback Path"
+    color: "#dc2626"
+    nodes: [device, open_connect, playback_svc, license_svc, cdn_cache]
+  - id: grp_billing
+    label: "Billing & Subscription"
+    color: "#059669"
+    nodes: [billing_svc, payment_gw, billing_db, dunning_worker]
+  - id: grp_content
+    label: "Content Operations"
+    color: "#7c3aed"
+    nodes: [ingest_svc, encoder_farm, catalog_db, cms]
+nodes:
+  - id: device
+    label: "TV / Mobile Device"
+    type: client
+  - id: open_connect
+    label: "Open Connect Appliance"
+    type: proxy
+    metadata: "ISP-embedded CDN node"
+  - id: playback_svc
+    label: "Playback Service"
+    type: service
+    language: java
+  - id: license_svc
+    label: "DRM License Service"
+    type: service
+    language: cpp
+  - id: cdn_cache
+    label: "Segment Cache"
+    type: cache
+    db_type: redis
+  - id: billing_svc
+    label: "Billing Service"
+    type: service
+    language: kotlin
+  - id: payment_gw
+    label: "Payment Gateway"
+    type: gateway
+  - id: billing_db
+    label: "subscriptions"
+    type: table
+    db_type: postgres
+    fields:
+      - "id: UUID [PK]"
+      - "plan: TEXT"
+      - "renews_at: TIMESTAMP"
+  - id: dunning_worker
+    label: "Dunning Worker"
+    type: function
+  - id: ingest_svc
+    label: "Content Ingest Service"
+    type: service
+    language: python
+  - id: encoder_farm
+    label: "Encoder Farm"
+    type: server
+  - id: catalog_db
+    label: "catalog"
+    type: table
+    db_type: mysql
+    fields:
+      - "title_id: UUID [PK]"
+      - "genre: TEXT"
+  - id: cms
+    label: "Content Management System"
+    type: server
+edges:
+  - from: device
+    to: open_connect
+    label: "HTTPS segment fetch"
+  - from: device
+    to: playback_svc
+    label: "gRPC manifest req"
+  - from: playback_svc
+    to: license_svc
+    label: "gRPC"
+  - from: playback_svc
+    to: cdn_cache
+    label: "GET manifest"
+  - from: open_connect
+    to: cdn_cache
+    label: "origin pull"
+  - from: billing_svc
+    to: payment_gw
+    label: "charge"
+  - from: billing_svc
+    to: billing_db
+    label: "SQL"
+  - from: dunning_worker
+    to: billing_db
+    label: "SQL retry"
+  - from: dunning_worker
+    to: payment_gw
+    label: "retry charge"
+  - from: ingest_svc
+    to: encoder_farm
+    label: "submit job"
+    edge_style: async
+  - from: encoder_farm
+    to: catalog_db
+    label: "SQL update"
+  - from: cms
+    to: catalog_db
+    label: "SQL"
+  - from: cms
+    to: ingest_svc
+    label: "trigger ingest"

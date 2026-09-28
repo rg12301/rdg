@@ -1,0 +1,78 @@
+diagram_type: sequence
+theme: standard
+title: "OAuth 2.0 Authorization Code Flow"
+nodes:
+  - id: user
+    label: "User"
+    type: client
+  - id: browser
+    label: "Browser"
+    type: client
+  - id: app
+    label: "Client App"
+    type: server
+  - id: authz
+    label: "Authorization Server"
+    type: service
+  - id: resource
+    label: "Resource Server"
+    type: service
+edges:
+  - from: user
+    to: browser
+    label: "click login"
+    step: 1
+  - from: browser
+    to: app
+    label: "GET /login"
+    step: 2
+  - from: app
+    to: browser
+    label: "302 redirect to authz"
+    step: 3
+    edge_style: reply
+  - from: browser
+    to: authz
+    label: "GET /authorize"
+    step: 4
+  - from: authz
+    to: browser
+    label: "login form"
+    step: 5
+    edge_style: reply
+  - from: browser
+    to: authz
+    label: "POST credentials"
+    step: 6
+  - from: authz
+    to: browser
+    label: "302 redirect w/ code"
+    step: 7
+    edge_style: reply
+  - from: browser
+    to: app
+    label: "GET /callback?code=..."
+    step: 8
+  - from: app
+    to: authz
+    label: "POST /token (code)"
+    step: 9
+  - from: authz
+    to: app
+    label: "access_token + refresh_token"
+    step: 10
+    edge_style: reply
+  - from: app
+    to: resource
+    label: "GET /api/data (bearer token)"
+    step: 11
+  - from: resource
+    to: app
+    label: "200 OK + data"
+    step: 12
+    edge_style: reply
+  - from: app
+    to: browser
+    label: "render page"
+    step: 13
+    edge_style: reply

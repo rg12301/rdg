@@ -1,175 +1,230 @@
 diagram_type: flowchart
 theme: standard
 title: "Low-Level Design Architecture"
-description: "Deterministic Compilation Pipeline (Ingestion → Schema → IR → Layout → Render)"
+description: "Deterministic Compilation Pipeline (Ingestion → Schema → IR → Layout → Core → Render)"
+spacing:
+  rank: 48
+  node: 36
+  group_gap_x: 64.0
+  group_gap_y: 64.0
 groups:
   - id: grp_cli
-    label: "CLI & Ingestion"
+    label: "crates/rdg-cli (CLI & Ingestion)"
     color: "#64748b"
-    nodes: ["cli_args", "stdin_file"]
+    nodes: ["cli_args", "input_loader"]
   - id: grp_schema
-    label: "Schema Layer"
+    label: "crates/rdg-schema (Schema & Presets)"
     color: "#0284c7"
-    nodes: ["diagram_payload", "node_def", "edge_def"]
+    nodes: ["payload_parser", "style_presets"]
   - id: grp_graph
-    label: "Graph IR Layer"
+    label: "crates/rdg-graph (Graph IR & Cycle Breaking)"
     color: "#059669"
-    nodes: ["stable_graph", "node_data", "edge_data", "fas", "compiled_graph"]
+    nodes: ["graph_builder", "fas_breaker"]
   - id: grp_layout
-    label: "Layout Engine"
+    label: "crates/rdg-layout (Hierarchical Layout Engine)"
     color: "#d97706"
-    nodes: ["layout_config", "visual_graph", "topo_fallback", "layout_result"]
-  - id: grp_render
-    label: "Rendering Layer"
+    nodes: ["sugiyama", "compound_grid", "straightening"]
+  - id: grp_core
+    label: "crates/rdg-render-core & rdg-icons (Routing & Style)"
     color: "#7c3aed"
-    nodes: ["style_fn", "xml_writer", "svg_writer", "drawio_out", "svg_out"]
+    nodes: ["icon_engine", "routing_engine", "review_loop"]
+  - id: grp_drawio
+    label: "crates/rdg-render-drawio"
+    color: "#2563eb"
+    nodes: ["drawio_backend", "out_drawio"]
+  - id: grp_svg
+    label: "crates/rdg-render-svg"
+    color: "#db2777"
+    nodes: ["svg_backend", "out_svg"]
 nodes:
   - id: cli_args
     label: "`clap::Cli`\n(CLI Arguments)"
     type: proxy
-    metadata: "--input, --output, --layout, --theme, --rank-spacing, --node-spacing"
-  - id: stdin_file
-    label: "stdin / File\n(YAML Source)"
+    language: rust
+    technology: "clap 4.6"
+    metadata: "--input, --output, --layout, --theme, --direction, --strict, --svg-engine"
+
+  - id: input_loader
+    label: "Input Ingestion\n(stdin / File)"
     type: queue
-    metadata: "Read via std::io::stdin or std::fs::read_to_string"
-  - id: diagram_payload
-    label: "`schema::`\n`DiagramPayload`"
+    language: rust
+    technology: "std::io"
+    metadata: "Reads YAML payload from stdin or file path"
+
+  - id: payload_parser
+    label: "`DiagramPayload`\n(Schema Validator)"
     type: server
-    metadata: "serde_yaml::from_str → DiagramPayload { diagram_type, theme, nodes: Vec<NodeDef>, edges: Vec<EdgeDef> }"
-  - id: node_def
-    label: "`schema::NodeDef`\n{ id, label, type, meta }"
+    language: rust
+    technology: "serde_yaml 0.9"
+    metadata: "Deserializes YAML into typed DiagramPayload with validation"
+
+  - id: style_presets
+    label: "Preset Resolver\n(`node_styles` / `edge_styles`)"
     type: server
-    metadata: "node_type renamed from 'type' via #[serde(rename)]"
-  - id: edge_def
-    label: "`schema::EdgeDef`\n{ from, to, label }"
+    language: rust
+    technology: "HashMap"
+    metadata: "Fills styling gaps from class presets into NodeDef and EdgeDef"
+
+  - id: graph_builder
+    label: "Graph Builder\n(`StableDiGraph`)"
     type: server
-    metadata: "Directed edge between two node IDs"
-  - id: stable_graph
-    label: "`petgraph::`\n`StableDiGraph`"
-    type: database
-    metadata: "StableDiGraph<NodeData, EdgeData> — stable indices survive dummy-node insertion"
-  - id: node_data
-    label: "`graph::NodeData`\n{ id, label, type, meta }"
-    type: server
-    metadata: "Stored at each graph node index"
-  - id: edge_data
-    label: "`graph::EdgeData`\n{ label, reversed }"
-    type: server
-    metadata: "reversed=true when edge was flipped by FAS"
-  - id: fas
+    language: rust
+    technology: "petgraph 0.6"
+    metadata: "Constructs StableDiGraph<NodeData, EdgeData> preserving node mappings"
+
+  - id: fas_breaker
     label: "FAS Cycle Breaker\n(DFS Back-edge Reversal)"
     type: decision
-    metadata: "Greedy Feedback Arc Set: reverses back-edges found in DFS traversal to make graph acyclic"
-  - id: compiled_graph
-    label: "`graph::`\n`CompiledGraph`"
-    type: database
-    metadata: "{ graph: StableDiGraph, node_map: HashMap<String,NodeIndex>, had_cycles: bool }"
-  - id: layout_config
-    label: "`layout::LayoutConfig`\n{ rank_spacing, node_spacing }"
+    language: rust
+    technology: "ELS Greedy FAS"
+    metadata: "Detects cycles and reverses back-edges to produce an acyclic DAG"
+
+  - id: sugiyama
+    label: "Sugiyama Hierarchy\n(Ranking & Crossing Min)"
     type: server
-    metadata: "Driven by --rank-spacing and --node-spacing CLI flags"
-  - id: visual_graph
-    label: "`layout-rs`\n`VisualGraph`\n(Sugiyama Engine)"
+    language: rust
+    technology: "Barycentric Median"
+    metadata: "Longest-path topological ranking + 3-pass alternating barycentric crossing minimization"
+
+  - id: compound_grid
+    label: "Compound Placer\n(2D Group Quotient Grid)"
     type: server
-    metadata: "layout::topo::layout::VisualGraph — runs hierarchical Sugiyama layout algorithm"
-  - id: topo_fallback
-    label: "Topo-sort Fallback\n(Longest-path Ranking)"
+    language: rust
+    technology: "Grid Search"
+    metadata: "Optimizes container layout to achieve a squarish aspect ratio close to 1.0"
+
+  - id: straightening
+    label: "Chain Straightener\n(Alignment & Centering)"
+    type: server
+    language: rust
+    technology: "Rank Balancing"
+    metadata: "Aligns straight chains and centers sibling nodes within each rank"
+
+  - id: icon_engine
+    label: "Brand Icon Badges\n(Simple Icons & Engine Detection)"
+    type: server
+    language: rust
+    technology: "60+ SVG Icons"
+    metadata: "Vendored Simple Icons SVGs and heuristic language/database detection"
+
+  - id: routing_engine
+    label: "Obstacle Router\n(Orthogonal Waypoints)"
+    type: server
+    language: rust
+    technology: "AABB Bypass"
+    metadata: "Shortest-distance face selection, 24px clearance stubs, obstacle avoidance"
+
+  - id: review_loop
+    label: "Self-Review Validator\n(Geometry Linter & Retry)"
     type: decision
-    metadata: "Pure-Rust fallback: petgraph::algo::toposort + longest-path layer assignment"
-  - id: layout_result
-    label: "`layout::LayoutResult`\n{ positions: HashMap }"
+    language: rust
+    technology: "Auto-Retry Loop"
+    metadata: "Checks for node overlaps, edges through nodes, and retries with wider spacing"
+
+  - id: drawio_backend
+    label: "draw.io XML Backend\n(`quick-xml` mxfile)"
+    type: server
+    language: rust
+    technology: "quick-xml 0.36"
+    metadata: "Strict uncompressed mxfile format, HTML labels, jumpStyle=arc"
+
+  - id: out_drawio
+    label: "`output.drawio`\n(draw.io XML)"
     type: database
-    metadata: "NodeLayout { x, y, width, height } for every node"
-  - id: style_fn
-    label: "`render::style_for_type`\n(Type → Style String)"
+    metadata: "Uncompressed mxfile. Open in draw.io desktop or diagrams.net"
+
+  - id: svg_backend
+    label: "SVG Backend\n(Native + Headless CLI)"
     type: server
-    metadata: "Maps proxy/database/server/queue/cache/function/client/decision → mxCell style attr"
-  - id: xml_writer
-    label: "`quick-xml` Writer\n(draw.io XML)"
-    type: server
-    metadata: "Writes <?xml><mxfile><diagram><mxGraphModel><root> with mandatory id=0, id=1 stubs"
-  - id: svg_writer
-    label: "`quick-xml` Writer\n(SVG Graphics)"
-    type: server
-    metadata: "Writes <svg> with <rect> nodes, <line> edges, <text> labels"
-  - id: drawio_out
-    label: "`output.drawio`\n(mxfile XML)"
-    type: database
-    metadata: "Uncompressed. Open in draw.io desktop or diagrams.net"
-  - id: svg_out
+    language: rust
+    technology: "svg 0.17 + drawio"
+    metadata: "Elevated drop-shadow cards, rounded fillet paths, exact drawio export"
+
+  - id: out_svg
     label: "`output.svg`\n(SVG Graphics)"
     type: database
-    metadata: "Embed in Markdown, HTML, Notion, Confluence"
+    metadata: "Embeddable in Markdown, HTML, Notion, Confluence"
+
 edges:
   - from: cli_args
-    to: stdin_file
-    label: "--input / stdin"
-  - from: stdin_file
-    to: diagram_payload
-    label: "serde_yaml::from_str"
-  - from: diagram_payload
-    to: node_def
-    label: "nodes[]"
-  - from: diagram_payload
-    to: edge_def
-    label: "edges[]"
-  - from: node_def
-    to: stable_graph
-    label: "add_node → NodeData"
-  - from: edge_def
-    to: stable_graph
-    label: "add_edge → EdgeData"
-  - from: stable_graph
-    to: node_data
-    label: "stores"
-  - from: stable_graph
-    to: edge_data
-    label: "stores"
-  - from: stable_graph
-    to: fas
+    to: input_loader
+    label: "args"
+    edge_style: flow
+
+  - from: input_loader
+    to: payload_parser
+    label: "raw YAML"
+    edge_style: flow
+
+  - from: payload_parser
+    to: style_presets
+    label: "classes"
+    edge_style: data
+
+  - from: style_presets
+    to: graph_builder
+    label: "NodeDef / EdgeDef"
+    edge_style: data
+
+  - from: graph_builder
+    to: fas_breaker
     label: "is_cyclic_directed?"
-  - from: fas
-    to: compiled_graph
-    label: "acyclic graph"
-  - from: cli_args
-    to: layout_config
-    label: "--rank-spacing / --node-spacing"
-  - from: compiled_graph
-    to: visual_graph
-    label: "add nodes + edges"
-  - from: layout_config
-    to: visual_graph
-    label: "node size / spacing"
-  - from: visual_graph
-    to: topo_fallback
-    label: "on error"
-  - from: visual_graph
-    to: layout_result
-    label: "vg.pos(handle).bbox()"
-  - from: topo_fallback
-    to: layout_result
-    label: "layer × spacing"
-  - from: compiled_graph
-    to: style_fn
-    label: "node_type"
-  - from: style_fn
-    to: xml_writer
-    label: "style string"
-  - from: layout_result
-    to: xml_writer
-    label: "x, y, w, h"
-  - from: layout_result
-    to: svg_writer
-    label: "x, y, w, h"
-  - from: compiled_graph
-    to: xml_writer
-    label: "node/edge data"
-  - from: compiled_graph
-    to: svg_writer
-    label: "node/edge data"
-  - from: xml_writer
-    to: drawio_out
-    label: "write"
-  - from: svg_writer
-    to: svg_out
-    label: "write"
+    edge_style: flow
+
+  - from: fas_breaker
+    to: sugiyama
+    label: "acyclic CompiledGraph"
+    edge_style: data
+
+  - from: sugiyama
+    to: compound_grid
+    label: "ranked ranks"
+    edge_style: data
+
+  - from: compound_grid
+    to: straightening
+    label: "2D grid"
+    edge_style: data
+
+  - from: straightening
+    to: routing_engine
+    label: "NodeLayout"
+    edge_style: data
+
+  - from: icon_engine
+    to: routing_engine
+    label: "icon badges"
+    edge_style: data
+
+  - from: routing_engine
+    to: review_loop
+    label: "EdgeRoutingPlan"
+    edge_style: flow
+
+  - from: review_loop
+    to: drawio_backend
+    label: "pass: clean"
+    edge_style: flow
+    source_port: bottom
+    target_port: top
+
+  - from: review_loop
+    to: svg_backend
+    label: "pass: clean"
+    edge_style: flow
+    source_port: bottom
+    target_port: top
+
+  - from: drawio_backend
+    to: out_drawio
+    label: "write XML"
+    edge_style: flow
+    source_port: bottom
+    target_port: top
+
+  - from: svg_backend
+    to: out_svg
+    label: "write SVG"
+    edge_style: flow
+    source_port: bottom
+    target_port: top

@@ -1,0 +1,51 @@
+diagram_type: flowchart
+theme: standard
+title: "Social Follower Graph (Dense)"
+nodes:
+  - id: alice
+    label: "Alice"
+    type: client
+  - id: bob
+    label: "Bob"
+    type: client
+  - id: carol
+    label: "Carol"
+    type: client
+  - id: dave
+    label: "Dave"
+    type: client
+  - id: erin
+    label: "Erin"
+    type: client
+  - id: frank
+    label: "Frank"
+    type: client
+  - id: grace
+    label: "Grace"
+    type: client
+  - id: heidi
+    label: "Heidi"
+    type: client
+edges:
+  - {from: alice, to: bob}
+  - {from: alice, to: carol}
+  - {from: alice, to: dave}
+  - {from: bob, to: alice}
+  - {from: bob, to: carol}
+  - {from: bob, to: erin}
+  - {from: carol, to: dave}
+  - {from: carol, to: frank}
+  - {from: dave, to: erin}
+  - {from: dave, to: grace}
+  - {from: erin, to: frank}
+  - {from: erin, to: heidi}
+  - {from: frank, to: grace}
+  - {from: frank, to: alice}
+  - {from: grace, to: heidi}
+  - {from: grace, to: bob}
+  - {from: heidi, to: alice}
+  - {from: heidi, to: carol}
+  - {from: alice, to: erin}
+  - {from: bob, to: grace}
+  - {from: carol, to: heidi}
+  - {from: dave, to: frank}

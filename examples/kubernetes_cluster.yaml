@@ -1,0 +1,106 @@
+diagram_type: architecture
+theme: standard
+title: "Kubernetes Cluster Topology"
+groups:
+  - id: grp_ingress
+    label: "ingress-nginx namespace"
+    color: "#0284c7"
+    nodes: [ingress_ctrl, cert_manager]
+  - id: grp_app
+    label: "app namespace"
+    color: "#059669"
+    nodes: [frontend_pod, api_pod, worker_pod, hpa]
+  - id: grp_data
+    label: "data namespace"
+    color: "#7c3aed"
+    nodes: [postgres_sts, redis_sts, pvc]
+  - id: grp_platform
+    label: "kube-system namespace"
+    color: "#64748b"
+    nodes: [coredns, kube_proxy, etcd]
+nodes:
+  - id: ingress_ctrl
+    label: "Ingress Controller"
+    type: gateway
+  - id: cert_manager
+    label: "cert-manager"
+    type: function
+  - id: frontend_pod
+    label: "frontend Deployment"
+    type: server
+    language: typescript
+  - id: api_pod
+    label: "api Deployment"
+    type: service
+    language: go
+  - id: worker_pod
+    label: "worker Deployment"
+    type: server
+    language: python
+  - id: hpa
+    label: "HorizontalPodAutoscaler"
+    type: function
+  - id: postgres_sts
+    label: "postgres StatefulSet"
+    type: database
+    db_type: postgres
+  - id: redis_sts
+    label: "redis StatefulSet"
+    type: cache
+    db_type: redis
+  - id: pvc
+    label: "PersistentVolumeClaim"
+    type: storage
+  - id: coredns
+    label: "CoreDNS"
+    type: server
+  - id: kube_proxy
+    label: "kube-proxy"
+    type: server
+  - id: etcd
+    label: "etcd"
+    type: database
+edges:
+  - from: ingress_ctrl
+    to: frontend_pod
+    label: "HTTP"
+  - from: ingress_ctrl
+    to: api_pod
+    label: "HTTP"
+  - from: cert_manager
+    to: ingress_ctrl
+    label: "TLS cert"
+  - from: frontend_pod
+    to: api_pod
+    label: "REST"
+  - from: api_pod
+    to: worker_pod
+    label: "enqueue job"
+    edge_style: async
+  - from: api_pod
+    to: postgres_sts
+    label: "SQL"
+  - from: api_pod
+    to: redis_sts
+    label: "GET/SET"
+  - from: worker_pod
+    to: postgres_sts
+    label: "SQL"
+  - from: postgres_sts
+    to: pvc
+    label: "mount"
+  - from: hpa
+    to: api_pod
+    label: "scale signal"
+  - from: hpa
+    to: worker_pod
+    label: "scale signal"
+  - from: coredns
+    to: api_pod
+    label: "DNS resolve"
+  - from: kube_proxy
+    to: api_pod
+    label: "svc routing"
+  - from: etcd
+    to: kube_proxy
+    label: "watch"

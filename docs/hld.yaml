@@ -2,6 +2,11 @@ diagram_type: flowchart
 theme: standard
 title: "High-Level System Design"
 description: "AI Semantic Generation to Deterministic Graph Compilation"
+spacing:
+  rank: 52
+  node: 36
+  group_gap_x: 64.0
+  group_gap_y: 64.0
 groups:
   - id: grp_client
     label: "Client / Prompt Layer"
@@ -27,23 +32,33 @@ nodes:
   - id: rdg
     label: "`rdg` CLI\n(Compiler)"
     type: proxy
+    language: rust
+    technology: "Rust 1.85+"
     metadata: "rdg --input diagram.yaml --output out.drawio"
   - id: schema
     label: "Schema Parser\n(`serde_yaml`)"
     type: server
+    language: rust
+    technology: "serde_yaml"
     metadata: "serde_yaml → DiagramPayload struct"
   - id: graph
     label: "Graph Builder\n(`petgraph` + FAS)"
     type: server
+    language: rust
+    technology: "petgraph"
     metadata: "petgraph StableDiGraph + ELS FAS cycle breaker"
   - id: layout
     label: "Layout Engine\n(2D Grid Search)"
     type: server
+    language: rust
+    technology: "Sugiyama DAG"
     metadata: "Sugiyama framework + Crossing Minimisation"
   - id: renderer
-    label: "Renderer\n(`quick-xml`)"
+    label: "Renderer Core\n(draw.io + SVG)"
     type: server
-    metadata: "quick-xml mxfile writer or SVG writer"
+    language: rust
+    technology: "quick-xml + svg"
+    metadata: "draw.io mxfile writer or native SVG writer"
   - id: drawio
     label: "`output.drawio`\n(draw.io XML)"
     type: database
@@ -81,7 +96,11 @@ edges:
     to: drawio
     label: ".drawio"
     edge_style: flow
+    source_port: bottom
+    target_port: top
   - from: renderer
     to: svg
     label: ".svg"
     edge_style: flow
+    source_port: bottom
+    target_port: top

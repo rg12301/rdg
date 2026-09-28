@@ -1,0 +1,72 @@
+diagram_type: class
+theme: standard
+title: "Payment Processing Domain Model"
+nodes:
+  - id: payment_method
+    label: "PaymentMethod"
+    type: interface
+    fields:
+      - "+ charge(amount: Money): Result"
+      - "+ refund(txn: Transaction): Result"
+  - id: credit_card
+    label: "CreditCardPayment"
+    type: class
+    fields:
+      - "- cardNumber: String"
+      - "- expiry: Date"
+      - "+ charge(amount: Money): Result"
+  - id: wallet
+    label: "WalletPayment"
+    type: class
+    fields:
+      - "- walletId: UUID"
+      - "+ charge(amount: Money): Result"
+  - id: transaction
+    label: "Transaction"
+    type: class
+    fields:
+      - "- id: UUID"
+      - "- amount: Money"
+      - "- status: TransactionStatus"
+  - id: money
+    label: "Money"
+    type: class
+    fields:
+      - "- cents: Long"
+      - "- currency: Currency"
+  - id: payment_processor
+    label: "PaymentProcessor"
+    type: abstract_class
+    fields:
+      - "# validate(txn: Transaction): bool"
+      - "+ process(txn: Transaction): Result"
+  - id: stripe_processor
+    label: "StripeProcessor"
+    type: class
+    fields:
+      - "+ process(txn: Transaction): Result"
+edges:
+  - from: credit_card
+    to: payment_method
+    label: "implements"
+    edge_style: realization
+  - from: wallet
+    to: payment_method
+    label: "implements"
+    edge_style: realization
+  - from: stripe_processor
+    to: payment_processor
+    label: "extends"
+    edge_style: inheritance
+  - from: transaction
+    to: money
+    label: "has amount"
+    edge_style: composition
+  - from: payment_processor
+    to: transaction
+    label: "processes"
+    edge_style: dependency
+  - from: payment_method
+    to: transaction
+    label: "produces"
+    edge_style: dependency
