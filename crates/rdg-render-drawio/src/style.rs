@@ -8,7 +8,8 @@ fn pct(opacity: f64) -> u32 {
     (opacity.clamp(0.0, 1.0) * 100.0).round() as u32
 }
 
-/// A node's style. `label_top` is where an icon node's label starts (under its halo).
+/// A node's style. `label_top` is where a captioned node's caption starts (under its
+/// logo's halo or its marker shape).
 pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
     let f = &theme.font;
     let common = |fill: &str, opacity: f64, stroke: &str| {
@@ -24,8 +25,6 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
         )
     };
     let pad = "spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;";
-    // Markers draw their label underneath the (tiny) shape.
-    let below = "verticalLabelPosition=bottom;verticalAlign=top;whiteSpace=nowrap;";
     match look.shape.as_str() {
         "cylinder" => format!(
             "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size={cap};{}align=center;verticalAlign=middle;{pad}spacingTop={};",
@@ -38,12 +37,10 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
             "rhombus;{}align=center;verticalAlign=middle;spacingLeft=12;spacingRight=12;",
             common(&look.fill, look.fill_opacity, &look.stroke),
         ),
-        "start" => format!("ellipse;{}{below}", common(&look.fill, 1.0, &look.stroke)),
-        "end" => format!("shape=endState;{}{below}", common(&look.fill, 1.0, &look.stroke)),
-        "choice" => format!("rhombus;{}{below}", common(&look.fill, look.fill_opacity, &look.stroke)),
-        // Drawn as its logo: an invisible box; the logo is a child image cell, the
-        // label starts under the logo's halo.
-        "icon" => format!(
+        // Drawn as its mark with the caption underneath (a logo, or a start/end/choice
+        // marker): an invisible box; the mark is a child cell (see `marker_style`), the
+        // caption starts under it.
+        "icon" | "start" | "end" | "choice" => format!(
             "rounded=0;{}align=center;verticalAlign=top;spacingTop={label_top:.0};spacingBottom=0;spacingLeft=0;spacingRight=0;",
             common("none", 1.0, "none")
         ),
@@ -53,6 +50,23 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
             common(&look.fill, look.fill_opacity, &look.stroke)
         ),
     }
+}
+
+/// The shape of a start/end/choice marker, drawn as a child cell at the top of its
+/// node's (invisible) box.
+pub fn marker_style(look: &NodeLook) -> String {
+    let shape = match look.shape.as_str() {
+        "start" => "ellipse;",
+        "end" => "shape=endState;",
+        _ => "rhombus;",
+    };
+    format!(
+        "{shape}html=1;fillColor={};fillOpacity={};strokeColor={};strokeWidth={};connectable=0;editable=0;",
+        look.fill,
+        pct(look.fill_opacity),
+        look.stroke,
+        look.stroke_width,
+    )
 }
 
 /// A group container's style.

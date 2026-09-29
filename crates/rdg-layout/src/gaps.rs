@@ -28,20 +28,24 @@ pub(crate) fn rank_gaps(
     config: &LayoutConfig,
 ) -> Vec<f64> {
     let n_ranks = layer.values().copied().max().map_or(0, |m| m + 1);
+    let spans = compiled
+        .graph
+        .edge_references()
+        .filter_map(|e| Some((*layer.get(&e.source())?, *layer.get(&e.target())?)));
+    gaps_for_spans(n_ranks, spans, config)
+}
+
+/// Required gap after each of `n_ranks` ranks, given the `(rank, rank)` span of every
+/// edge between them.
+pub(crate) fn gaps_for_spans(n_ranks: usize, spans: impl IntoIterator<Item = (usize, usize)>, config: &LayoutConfig) -> Vec<f64> {
     let mut crossing = vec![0usize; n_ranks.saturating_sub(1)];
-    for e in compiled.graph.edge_references() {
-        let (Some(&a), Some(&b)) = (layer.get(&e.source()), layer.get(&e.target())) else {
-            continue;
-        };
+    for (a, b) in spans {
         let (lo, hi) = (a.min(b), a.max(b));
         for c in &mut crossing[lo..hi] {
             *c += 1;
         }
     }
-    crossing
-        .into_iter()
-        .map(|m| gap_for(m, config))
-        .collect()
+    crossing.into_iter().map(|m| gap_for(m, config)).collect()
 }
 
 /// Gap needed to carry `m` parallel edges: the configured spacing, the two-stub floor,

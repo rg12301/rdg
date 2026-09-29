@@ -185,69 +185,43 @@ pub(crate) fn layout_topological(
     })
 }
 
-/// 3-pass barycentric crossing minimisation heuristic.
+/// 3-pass median crossing minimisation over the compiled graph's nodes.
 pub(crate) fn minimise_crossings(layer_buckets: &mut [Vec<NodeIndex>], compiled: &CompiledGraph) {
-    use petgraph::Direction;
-
-    for _pass in 0..3 {
-        // Forward sweep: sort by median predecessor position
-        for i in 1..layer_buckets.len() {
-            let prev_pos: HashMap<NodeIndex, f64> = layer_buckets[i - 1]
-                .iter()
-                .enumerate()
-                .map(|(idx, &n)| (n, idx as f64))
-                .collect();
-
-            layer_buckets[i].sort_by(|&a, &b| {
-                let ma = median_neighbor_pos(a, &prev_pos, &compiled.graph, Direction::Incoming);
-                let mb = median_neighbor_pos(b, &prev_pos, &compiled.graph, Direction::Incoming);
-                ma.total_cmp(&mb)
-            });
-        }
-
-        // Backward sweep: sort by median successor position
-        let len = layer_buckets.len();
-        for i in (0..len.saturating_sub(1)).rev() {
-            let next_pos: HashMap<NodeIndex, f64> = layer_buckets[i + 1]
-                .iter()
-                .enumerate()
-                .map(|(idx, &n)| (n, idx as f64))
-                .collect();
-
-            layer_buckets[i].sort_by(|&a, &b| {
-                let ma = median_neighbor_pos(a, &next_pos, &compiled.graph, Direction::Outgoing);
-                let mb = median_neighbor_pos(b, &next_pos, &compiled.graph, Direction::Outgoing);
-                ma.total_cmp(&mb)
-            });
-        }
-    }
+    let edges: Vec<(NodeIndex, NodeIndex)> = compiled.graph.edge_indices().filter_map(|e| compiled.graph.edge_endpoints(e)).collect();
+    order_layers(layer_buckets, &edges);
 }
 
-fn median_neighbor_pos(
-    node: NodeIndex,
-    neighbor_positions: &HashMap<NodeIndex, f64>,
-    graph: &petgraph::stable_graph::StableDiGraph<rdg_graph::NodeData, rdg_graph::EdgeData>,
-    direction: petgraph::Direction,
-) -> f64 {
-    let mut positions: Vec<f64> = graph
-        .edges_directed(node, direction)
-        .filter_map(|e| {
-            let neighbor = match direction {
-                petgraph::Direction::Incoming => e.source(),
-                petgraph::Direction::Outgoing => e.target(),
-            };
-            neighbor_positions.get(&neighbor).copied()
-        })
-        .collect();
-
-    if positions.is_empty() {
-        return f64::MAX / 2.0;
+/// 3-pass median crossing minimisation: alternately sorts each layer by the median
+/// position of its neighbours in the layer above (forward) and below (backward).
+/// Items with no neighbour there keep their relative order (stable sort) at the end.
+pub(crate) fn order_layers<T: Copy + Eq + std::hash::Hash>(layer_buckets: &mut [Vec<T>], edges: &[(T, T)]) {
+    let mut preds: HashMap<T, Vec<T>> = HashMap::new();
+    let mut succs: HashMap<T, Vec<T>> = HashMap::new();
+    for &(a, b) in edges {
+        preds.entry(b).or_default().push(a);
+        succs.entry(a).or_default().push(b);
     }
-    // `total_cmp` (rather than `partial_cmp().unwrap()`) keeps this sort panic-free
-    // even if a future caller feeds through a NaN/Inf coordinate.
-    positions.sort_by(f64::total_cmp);
-    let mid = positions.len() / 2;
-    positions[mid]
+    let median = |item: T, positions: &HashMap<T, f64>, incoming: bool| -> f64 {
+        let neighbours = if incoming { preds.get(&item) } else { succs.get(&item) };
+        let mut ps: Vec<f64> = neighbours.into_iter().flatten().filter_map(|n| positions.get(n).copied()).collect();
+        if ps.is_empty() {
+            return f64::MAX / 2.0;
+        }
+        // `total_cmp` keeps this panic-free even on a NaN/Inf coordinate.
+        ps.sort_by(f64::total_cmp);
+        ps[ps.len() / 2]
+    };
+    let index_of = |layer: &[T]| -> HashMap<T, f64> { layer.iter().enumerate().map(|(i, &n)| (n, i as f64)).collect() };
+    for _pass in 0..3 {
+        for i in 1..layer_buckets.len() {
+            let prev = index_of(&layer_buckets[i - 1]);
+            layer_buckets[i].sort_by(|&a, &b| median(a, &prev, true).total_cmp(&median(b, &prev, true)));
+        }
+        for i in (0..layer_buckets.len().saturating_sub(1)).rev() {
+            let next = index_of(&layer_buckets[i + 1]);
+            layer_buckets[i].sort_by(|&a, &b| median(a, &next, false).total_cmp(&median(b, &next, false)));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

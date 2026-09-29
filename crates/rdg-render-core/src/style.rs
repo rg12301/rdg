@@ -31,10 +31,18 @@ pub enum Outline {
     Diamond,
     /// A cylinder whose top and bottom are elliptical caps `cap` px deep.
     Cylinder { cap: f64 },
-    /// A node drawn as its logo: a `size` px icon centred in an invisible `halo` px
-    /// circle (or square) at the top of the box, the label underneath. Arrows start and
-    /// end on the halo, not on the logo's own edge.
-    Icon { size: f64, halo: f64, circle: bool },
+    /// A `mark` px shape centred at the top of the box with the node's caption under it:
+    /// a logo node (its invisible halo) or a flowchart marker. Arrows start and end on
+    /// the mark; only the bottom face is the box's own (under the caption).
+    Captioned { mark: f64, shape: MarkShape },
+}
+
+/// Shape of a [`Outline::Captioned`] mark.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MarkShape {
+    Circle,
+    Square,
+    Diamond,
 }
 
 /// Default depth of a database cylinder's elliptical cap, px (themes set their own via
@@ -44,11 +52,18 @@ pub const CYLINDER_CAP: f64 = 8.0;
 /// Outline of a node as it is drawn: from its theme-resolved `shape` (see
 /// `crate::look::prepare_graph`), else from its type.
 pub fn outline_of(nd: &rdg_graph::NodeData, tokens: &rdg_layout::DesignTokens) -> Outline {
+    if let Some(mark) = rdg_layout::caption_mark(nd, tokens) {
+        let shape = match nd.shape.as_deref().or_else(|| rdg_layout::marker_shape(&nd.node_type)) {
+            Some("choice") => MarkShape::Diamond,
+            Some("icon") if !tokens.icon_halo_circle => MarkShape::Square,
+            _ => MarkShape::Circle,
+        };
+        return Outline::Captioned { mark, shape };
+    }
     match nd.shape.as_deref() {
         Some("cylinder") => Outline::Cylinder { cap: tokens.cylinder_cap },
-        Some("ellipse") | Some("start") | Some("end") => Outline::Ellipse,
-        Some("diamond") | Some("choice") => Outline::Diamond,
-        Some("icon") => Outline::Icon { size: tokens.icon_node_size, halo: tokens.icon_halo_size(), circle: tokens.icon_halo_circle },
+        Some("ellipse") => Outline::Ellipse,
+        Some("diamond") => Outline::Diamond,
         Some(_) => Outline::Rect,
         None => outline_for(&nd.node_type),
     }
@@ -58,15 +73,15 @@ pub fn outline_of(nd: &rdg_graph::NodeData, tokens: &rdg_layout::DesignTokens) -
 pub fn outline_for(node_type: &str) -> Outline {
     match node_type.to_ascii_lowercase().as_str() {
         "database" | "db" | "storage" | "table" | "entity" | "record" => Outline::Cylinder { cap: CYLINDER_CAP },
-        "queue" | "broker" | "bus" | "start" | "start_state" | "initial" | "initial_state" | "end" | "end_state"
-        | "final" | "final_state" => Outline::Ellipse,
-        "decision" | "condition" | "choice" | "branch" => Outline::Diamond,
+        "queue" | "broker" | "bus" => Outline::Ellipse,
+        "decision" | "condition" => Outline::Diamond,
         _ => Outline::Rect,
     }
 }
 
 /// Top-left of a logo node's logo, relative to the node's own top-left: centred in its
 /// halo at the top of the box. (Cards carry their icon inline before the title.)
+/// Markers use the same placement with `size == halo`.
 pub fn logo_offset(width: f64, size: f64, halo: f64) -> (f64, f64) {
     ((width - size) / 2.0, (halo - size) / 2.0)
 }

@@ -21,27 +21,33 @@ MINIMAL YAML
   title: \"Checkout Service\"              # optional banner; `description:` adds a subtitle
   direction: tb                          # tb (top-to-bottom, default) | lr
   numbered: true                         # optional: number edges 1,2,3… in declaration order
-  groups:                                # optional containers
+  groups:                                # optional containers; a group id in `nodes` nests it
+    - {id: platform, label: \"Platform\", nodes: [core, gateway]}
     - {id: core, label: \"Core Services\", nodes: [api, db]}
   nodes:
     - id: api                            # required, unique, no spaces
-      label: \"Order API\\nREST · Port 8080\" # first line = bold title, next lines = details
+      title: \"order-api-service\"        # bold heading, drawn as written (never split)
+      subtitle: \"REST · Port 8080\"       # muted line under it; `description:` for more
       type: service                      # see NODE TYPES
       technology: \"Axum\"                 # shown as [Axum]
       language: rust                     # icon (see `rdg --list-icons`)
     - {id: db, label: \"orders\", type: database, db_type: postgres}
+    - {id: gateway, label: \"Gateway\", type: proxy}
   edges:
-    - {from: api, to: db, label: \"SQL\", edge_style: data}
+    - {from: gateway, to: api}
+    - {from: api, to: db, label: \"SQL\", edge_style: data, step: 2a}   # branches: 2a, 2b, 2.1
 
-NODE FIELDS   id, label, type, category, display (card|icon), technology, language,
+NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type, category, display (card|icon), technology, language,
               db_type, icon, provider (aws|gcp), metadata (tooltip), fields (table rows /
               class members), color, width, height, link, class (a node_styles preset),
               style_extra (raw draw.io style)
 EDGE FIELDS   from, to, label, edge_style, color, width, line_style (solid|dashed|dotted),
-              head, tail, source_port / target_port (top|bottom|left|right), step,
+              head, tail, source_port / target_port (top|bottom|left|right),
+              step (3, or a branch: 3a, 3b, 3.1),
               class (an edge_styles preset), style_extra
 TOP LEVEL     title, description, diagram_type, direction, theme, legend, numbered,
-              groups, nodes, edges, node_styles, edge_styles, canvas {margin, background},
+              groups (id, label, nodes: node or group ids, parent), nodes, edges,
+              node_styles, edge_styles, canvas {margin, background},
               spacing {rank, node, group_gap_x, group_gap_y}
 Unknown keys are errors (with a did-you-mean), so a typo can't silently drop a field.
 
@@ -73,15 +79,21 @@ COLOUR = MEANING  Every node has a category (from its type, or `category:`): fro
 THEMES        --theme light|dark|mono-light|mono-dark|classic, or a theme YAML file.
               `rdg --guide theming` explains overriding any colour/font/size.
 
-LABEL TIPS    Split long text yourself with \\n — long single lines eat the whitespace
-              arrows need and push groups apart.
-              Edge labels: at most ~22 characters per line, at most 2 lines; name the
+NODE TEXT     Say what each part is: `title` (the name, bold, never split or restyled —
+              write service names whole, e.g. \"payments-bank-connector-service\"),
+              `subtitle` (one short muted line), `description` (muted text, wrapped
+              for you). `label` is a shorthand whose first line is the title and later
+              lines are details — do not use it to split a name across lines.
+LABEL TIPS    Edge labels: at most ~22 characters per line, at most 2 lines; name the
                 protocol or action (\"gRPC\", \"publish order\"). Good:
                 \"Verify Credentials\\n& User State\". Bad: \"Verify Credentials & User State\".
                 (Unsplit labels over 22 chars are wrapped onto two lines for you.)
-              Node labels: a short title (≤ 22 chars) plus 1-2 detail lines of
-                ≤ 26 chars — \"auth-api-ext\\nPublic Auth APIs\\ncalled by Web & Mobile\".
-              Put long explanations in `metadata` (shown as a tooltip).
+              Node text: a title plus a subtitle or a 1-2 line description; put long
+                explanations in `metadata` (a tooltip, not drawn).
+NESTING       A group inside a group: list its id in the outer group's `nodes` (or set
+              `parent:`). Each container is sized around everything inside it.
+BRANCHES      With `numbered: true`, `step: 3a` / `3b` (or `3.1`, `3.2`) marks parallel
+              or alternative paths; unnumbered edges continue after the last step.
 
 EXIT CODES    0 written (warnings may be printed)   1 invalid input or failure
               With --strict, also 1 when layout anomalies remain.
@@ -198,8 +210,12 @@ Top level
 
 Node
   id                            required, unique across nodes and groups
-  label                         text; line 1 = title, further lines = details
-  title (name), subtitle        alternative to label: title + one detail line
+  title (name)                  bold heading, drawn exactly as written (wraps only at
+                                spaces; `\\n` forces a break); never demoted to detail
+  subtitle (sub_label, detail)  a short muted line under the title
+  description (desc, body)      muted body text, wrapped to the card
+  label                         shorthand: line 1 = title, further lines = details
+                                (ignored when `title` is set)
   type (kind, shape)            see --guide nodes
   category                      colour by meaning: frontend, backend, database,
                                 messagebus, cloud, security, external, neutral
@@ -209,7 +225,7 @@ Node
   db_type (engine, db)          database icon: postgres, mysql, redis, mongodb, kafka, …
   icon (logo, badge)            any key from `rdg --list-icons`
   provider (cloud)              aws | gcp
-  metadata (tooltip, desc)      hover text
+  metadata (tooltip)            hover text (not drawn)
   fields (columns, attributes)  rows for table/entity/class cards
   color (stroke, accent)        border colour override, \"#hex\" — replaces the
                                 category colour; avoid unless the colour means something
@@ -227,11 +243,13 @@ Edge
   color, width, line_style      stroke overrides; line_style: solid | dashed | dotted
   head, tail                    arrowhead overrides (draw.io marker names, e.g. open, block, none)
   source_port, target_port      force the face: top | bottom | left | right
-  step (order, sequence)        explicit number for `numbered: true`
+  step (order, sequence)        badge text: 3, or a branch 3a / 3b / 3.1 (≤ 6 chars);
+                                later unnumbered edges continue from its number
   class (preset), style_extra
 
 Group
-  id, label (title, name), nodes (members, node_ids), category, color, language, icon
+  id, label (title, name), nodes (members, node_ids: node ids and nested group ids),
+  parent (in, inside: the enclosing group's id), category, color, language, icon
 ";
 
 const NODES: &str = "\
@@ -248,17 +266,21 @@ Types → category (colour) and shape, in the default theme
   external | third_party                            external     card
   decision | condition                                           diamond
   Any node can set `category:`; themes can remap types and shapes.
-  start, end, choice             small markers (label drawn below)
+  start, end, choice             small markers, caption (title/subtitle) underneath
   class | interface | abstract_class | struct   UML card with `fields`
   participant | actor            sequence-diagram participants
   anything else                  neutral card (rdg --check warns)
 
-Labels
-  The first line of `label` is the bold title; later lines (split with \\n) are
-  smaller detail lines. Lines in (parentheses) or [brackets] are always details.
-  rdg sizes every node to fit its text; set width/height only when you must.
-  Keep the title ≤ 22 chars and each detail line ≤ 26; split longer text with \\n
-  yourself. Lines that are still too long are wrapped into balanced lines.
+Text
+  title / subtitle / description state each part's role, and rdg draws them as
+  given: the title bold (all of it — a long unbreakable name widens the card
+  instead of being cut), the subtitle and description muted and wrapped.
+    - {id: bank, title: \"payments-bank-connector-service\", subtitle: \"Go\",
+       description: \"Partner bank APIs · payouts · enquiries\"}
+  `label` is a shorthand: its first line is the title, later lines (split with \\n)
+  are details; lines in (parentheses) or [brackets] are always details, and a line
+  starting or ending with -, _, ., / or :: continues the title. rdg sizes every node
+  to fit its text; set width/height only when you must.
 
 Icons
   Chosen from, in order: `icon`, `language`, `db_type`, `provider`, then a language
@@ -289,7 +311,9 @@ Placement (automatic)
   faces, with few bends and crossings; parallel arrows get separate lanes. Labels are
   placed beside a clear straight stretch of their arrow, wrapped onto two lines when
   that fits better. `numbered: true` puts a step badge beside each arrow near its
-  start (numbering follows declaration order unless an edge sets `step`).
+  start. Numbering follows declaration order; `step:` sets a badge explicitly — a
+  number, or a branch of one (`3a`, `3b`, `3.1`) for parallel or alternative paths
+  — and the edges after it continue from its number (after 3a, 3b comes 4).
 
 Overrides
   source_port / target_port: top | bottom | left | right — pin an end to one face.
@@ -301,14 +325,23 @@ GROUPS
 
   groups:
     - {id: data, label: \"Data Tier\", nodes: [db, cache]}
+    - {id: backend, label: \"Backend\", nodes: [api, data]}     # `data` nests inside
+    - {id: jobs, label: \"Jobs\", parent: backend, nodes: [cron]}  # or say `parent:`
 
 Containers are drawn neutral so the colours of the nodes inside them keep their
 meaning. Set `category:` on a group only when everything in it is one kind (it is
 then tinted in that category's colour); avoid `color:` (--check warns).
-Each node belongs to at most one group. Groups are arranged in rows by the flow
-between them: a group sits below the groups that feed it, groups that call each
-other both ways share a row, and a row that gets too wide wraps. Within a row, each
-group slides toward what it connects to, so arrows between tiers stay short.
+Groups nest to any depth: list a group's id among another group's `nodes`, or set
+its `parent:`. A group whose nodes are all listed by a bigger group too is taken to
+be nested in it. Each node belongs to one group (the innermost that lists it); a
+node listed by two groups that don't nest stays in the first (--check warns).
+Every container is sized around everything inside it — its nodes, its inner
+groups and their titles — and is never narrower than its own title.
+Groups are arranged in tiers by the flow between them: a group sits below (or,
+with `direction: lr`, right of) the groups that feed it, groups that call each
+other both ways share a tier, and a tier that gets too wide wraps. Within a tier,
+each group slides toward what it connects to, so arrows between tiers stay short;
+inside a group, its nodes and inner groups are laid out the same way.
 Ungrouped nodes are placed the same way, without a container.
 `language`/`icon` on a group shows that icon on its title instead of on every member.
 ";

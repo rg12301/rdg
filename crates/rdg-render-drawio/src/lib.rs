@@ -13,7 +13,7 @@ mod html;
 mod sequence;
 mod style;
 
-pub use style::{edge_style, group_style, node_style};
+pub use style::{edge_style, group_style, marker_style, node_style};
 
 use anyhow::Result;
 use quick_xml::{
@@ -147,55 +147,23 @@ pub fn render_drawio(
     }
 
     // --- Group / Swimlane container cells -----------------------------------
-    let mut node_to_group_id: HashMap<String, String> = HashMap::new();
-    let mut group_origins: HashMap<String, (f64, f64)> = HashMap::new();
-
-    for group in &compiled.groups {
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
-        let mut found_count = 0;
-
-        for node_id in &group.nodes {
-            if let Some(&node_idx) = compiled.node_map.get(node_id) {
-                if let Some(nl) = layout.positions.get(&node_idx) {
-                    min_x = min_x.min(nl.x);
-                    min_y = min_y.min(nl.y);
-                    max_x = max_x.max(nl.x + nl.width);
-                    max_y = max_y.max(nl.y + nl.height);
-                    found_count += 1;
-                }
-            }
-        }
-
-        if found_count == 0 {
-            continue;
-        }
-
-        let pad_h = tokens.group_pad_for(max_x - min_x, max_y - min_y);
-        let pad_top = tokens.group_pad_top_for(max_x - min_x, max_y - min_y);
-        let pad_bot = pad_h;
-        let min_edge = tokens.px(1.25);
-
-        let gx = (min_x - pad_h).max(min_edge);
-        let gy = (min_y - pad_top).max(min_edge);
-        let gw = (max_x - min_x) + (pad_h * 2.0);
-        let gh = (max_y - min_y) + pad_top + pad_bot;
-
-        group_origins.insert(group.id.clone(), (gx, gy));
-        for nid in &group.nodes {
-            node_to_group_id.insert(nid.clone(), group.id.clone());
-        }
-
+    // Outer groups first; each cell sits in its enclosing group's cell (draw.io
+    // coordinates are relative to the parent), so moving a group moves what's inside.
+    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    // A group's cell id and absolute top-left, for the cells placed inside it.
+    let cell_of = |g: usize| rects[g].map(|(x, y, _, _)| (compiled.groups[g].id.as_str(), (x.round(), y.round())));
+    let parent_of = |g: Option<usize>| g.and_then(cell_of).unwrap_or(("1", (0.0, 0.0)));
+    for gi in compiled.group_tree.outer_first() {
+        let (group, Some((gx, gy, gw, gh))) = (&compiled.groups[gi], rects[gi]) else { continue };
+        let (parent_id, (px, py)) = parent_of(compiled.group_tree.parent[gi]);
         let look = group_look(theme, group);
         let style_owned = group_style(theme, &look);
-        let group_style = style_owned.as_str();
         let group_value = match group.resolved_icon().and_then(|k| rdg_icons::icon_as_data_uri(&k, theme.icon_style())) {
             Some(uri) => format!(
-                "<img src=\"{uri}\" width=\"{s}\" height=\"{s}\" style=\"vertical-align:middle;margin-right:6px;\"/>{}",
+                "<img src=\"{uri}\" width=\"{s}\" height=\"{s}\" style=\"vertical-align:middle;margin-right:{gap}px;\"/>{}",
                 look.title,
-                s = theme.font.group_title_size + 4.0
+                s = rdg_layout::groups::group_icon_size(tokens).0,
+                gap = rdg_layout::groups::group_icon_size(tokens).1,
             ),
             None => look.title.clone(),
         };
@@ -203,14 +171,14 @@ pub fn render_drawio(
         let mut g_cell = BytesStart::new("mxCell");
         g_cell.push_attribute(("id", group.id.as_str()));
         g_cell.push_attribute(("value", group_value.as_str()));
-        g_cell.push_attribute(("style", group_style));
+        g_cell.push_attribute(("style", style_owned.as_str()));
         g_cell.push_attribute(("vertex", "1"));
-        g_cell.push_attribute(("parent", "1"));
+        g_cell.push_attribute(("parent", parent_id));
         w.write_event(Event::Start(g_cell))?;
 
         let mut g_geo = BytesStart::new("mxGeometry");
-        g_geo.push_attribute(("x", gx.round().to_string().as_str()));
-        g_geo.push_attribute(("y", gy.round().to_string().as_str()));
+        g_geo.push_attribute(("x", (gx.round() - px).to_string().as_str()));
+        g_geo.push_attribute(("y", (gy.round() - py).to_string().as_str()));
         g_geo.push_attribute(("width", gw.round().to_string().as_str()));
         g_geo.push_attribute(("height", gh.round().to_string().as_str()));
         g_geo.push_attribute(("as", "geometry"));
@@ -235,14 +203,16 @@ pub fn render_drawio(
         let boxed = matches!(look.shape.as_str(), "card" | "cylinder" | "ellipse" | "diamond");
         let inline_icon = node_data.icon.as_deref().filter(|_| node_data.fields.is_empty() && boxed);
         let halo = tokens.icon_halo_size();
-        let mut style = node_style(theme, &look, halo + tokens.px(0.25));
+        // Logo nodes and markers: the mark on top, the caption from under it.
+        let mark = rdg_layout::caption_mark(node_data, tokens);
+        let mut style = node_style(theme, &look, mark.unwrap_or(0.0) + rdg_layout::caption_gap(tokens));
 
         // Build HTML label: title line + detail lines, typography, code spans.
         let html_value = if !node_data.fields.is_empty() {
             style.push_str("spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;");
-            format_html_table_or_class(&node_data.label, &node_data.fields, theme, &look, &node_data.node_type)
+            format_html_table_or_class(node_data.heading(), &node_data.fields, theme, &look, &node_data.node_type)
         } else {
-            format_html_label_with_details(&node_data.label, theme, &look, node_data.technology.as_deref(), tokens, inline_icon)
+            format_html_label_with_details(node_data, theme, &look, tokens, inline_icon)
         };
 
         // `style_extra` is a raw draw.io style fragment appended verbatim, for whatever
@@ -251,12 +221,8 @@ pub fn render_drawio(
             style.push_str(extra);
         }
 
-        let (parent_id, rel_x, rel_y) = if let Some(gid) = node_to_group_id.get(&node_data.id) {
-            let (gx, gy) = group_origins[gid];
-            (gid.as_str(), nl.x - gx, nl.y - gy)
-        } else {
-            ("1", nl.x, nl.y)
-        };
+        let (parent_id, (px, py)) = parent_of(compiled.group_of(node_idx));
+        let (rel_x, rel_y) = (nl.x - px, nl.y - py);
 
         // A `link` makes the shape clickable in draw.io, represented by wrapping the
         // (now id/value-less) mxCell in a <UserObject id=".." label=".." link="..">, exactly
@@ -300,6 +266,10 @@ pub fn render_drawio(
             w.write_event(Event::End(BytesEnd::new("UserObject")))?;
         }
 
+        // A marker's shape, centred at the top of its box above the caption.
+        if let (Some(m), false) = (mark, is_icon_node) {
+            write_child(&mut w, &format!("{}_mark", node_data.id), &marker_style(&look), &node_data.id, ((nl.width - m) / 2.0, 0.0, m, m))?;
+        }
         // An icon node's logo, centred in its halo at the top of the box (a card's icon
         // is inline in its label, above).
         if is_icon_node {
@@ -352,38 +322,18 @@ pub fn render_drawio(
         let dst_side = plan.map_or(Side::Top, |p| p.dst_side);
         let waypoints = plan.map_or(&[][..], |p| p.waypoints.as_slice());
 
-        // Start/end/choice markers are tiny fixed-size shapes (see
-        // `estimate_node_size_inner`) whose label now renders *below* the shape's own
-        // geometry (`verticalLabelPosition=bottom` in `style.rs`) rather than inside
-        // it. draw.io computes `exitX`/`exitY` purely from the source cell's own box,
-        // so a plain `exitDy=0` starts the edge exactly at the box's bottom edge —
-        // right where that external label sits — and the line was drawn straight
-        // through the label text. `exitDy` is a pixel offset draw.io adds on top of
-        // the percentage anchor specifically for cases like this; nudging it down by
-        // the label's approximate line height clears the text instead of crossing it.
-        // A real-fixture re-render (the flowchart samples' start-node outgoing edges)
-        // surfaced this directly once the label-outside-the-shape fix landed.
-        let (exit_s_idx, _) = if edge_data.reversed { (dst, src) } else { (src, dst) };
-        let exit_is_marker = matches!(
-            compiled.graph[exit_s_idx].node_type.to_ascii_lowercase().as_str(),
-            "start" | "start_state" | "initial" | "initial_state" |
-            "end" | "end_state" | "final" | "final_state" |
-            "choice" | "branch"
-        );
-        let marker_bottom_exit = exit_is_marker && src_side == Side::Bottom;
-        let exit_perimeter = if marker_bottom_exit { "exitPerimeter=0;" } else { "" };
-        let marker_exit_y = if marker_bottom_exit { tokens.marker_label_clearance_ratio } else { 1.0 };
-
-        // Exact attachment on the drawn outline (ellipse, cylinder cap, diamond), as
-        // relative coordinates with perimeter projection off — draw.io would otherwise
-        // project a bounding-box point toward the centre, landing it off the face normal.
+        // Exact attachment on the drawn outline (ellipse, cylinder cap, diamond, a
+        // captioned node's mark), as relative coordinates with perimeter projection off —
+        // draw.io would otherwise project a bounding-box point toward the centre, landing
+        // it off the face normal.
         let rel = |nl: &rdg_layout::NodeLayout, (px, py): (f64, f64)| ((px - nl.x) / nl.width, (py - nl.y) / nl.height);
-        let exit_attr = match (layout.positions.get(&exit_s_idx), marker_bottom_exit) {
-            (Some(nl), false) => {
+        let exit_s_idx = if edge_data.reversed { dst } else { src };
+        let exit_attr = match layout.positions.get(&exit_s_idx) {
+            Some(nl) => {
                 let (ex, ey) = rel(nl, rdg_render_core::routing::node_attach_point(compiled, exit_s_idx, nl, src_side, port_frac, tokens));
                 format!("exitX={ex:.5};exitY={ey:.5};exitDx=0;exitDy=0;exitPerimeter=0;")
             }
-            _ => format!("exitX={port_frac:.5};exitY={marker_exit_y:.1};exitDx=0;exitDy=0;{exit_perimeter}"),
+            None => format!("exitX={port_frac:.5};exitY=1.0;exitDx=0;exitDy=0;"),
         };
         let entry_s_idx = if edge_data.reversed { src } else { dst };
         let entry_attr = match layout.positions.get(&entry_s_idx) {
@@ -396,7 +346,7 @@ pub fn render_drawio(
 
         // Flow-numbering badge: a small floating circle beside the line near its source,
         // when this edge has a resolved `step` (i.e. the diagram opted into `numbered: true`).
-        if let (Some(step), Some(&(bx, by))) = (edge_data.step, annotations.badges.get(&edge_idx)) {
+        if let (Some(step), Some(&(bx, by))) = (edge_data.step.as_deref(), annotations.badges.get(&edge_idx)) {
             write_step_badge(&mut w, &edge_id, step, bx, by, theme, tokens)?;
         }
 
@@ -598,33 +548,34 @@ pub(crate) fn write_legend<W: std::io::Write>(
 fn write_step_badge<W: std::io::Write>(
     w: &mut Writer<W>,
     edge_id: &str,
-    step: u32,
+    step: &str,
     x: f64,
     y: f64,
     theme: &Theme,
     tokens: &DesignTokens,
 ) -> Result<()> {
-    let size = 2.0 * tokens.badge_radius;
+    // A circle, or a pill for a longer step (`16a`).
+    let (bw, bh) = rdg_render_core::annotate::badge_size(step, tokens);
     let b = &theme.badge;
     let style = format!(
-        "ellipse;whiteSpace=wrap;html=1;fillColor={};strokeColor=none;fontColor={};fontSize={};fontStyle=1;fontFamily={};",
+        "rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor={};strokeColor=none;fontColor={};fontSize={};fontStyle=1;fontFamily={};spacing=0;",
         b.fill, b.text, theme.font.badge_size, theme.font.family
     );
 
     let mut cell = BytesStart::new("mxCell");
     let id = format!("step_{edge_id}");
     cell.push_attribute(("id", id.as_str()));
-    cell.push_attribute(("value", step.to_string().as_str()));
+    cell.push_attribute(("value", step));
     cell.push_attribute(("style", style.as_str()));
     cell.push_attribute(("vertex", "1"));
     cell.push_attribute(("parent", "1"));
     w.write_event(Event::Start(cell))?;
 
     let mut geo = BytesStart::new("mxGeometry");
-    geo.push_attribute(("x", (x - size / 2.0).round().to_string().as_str()));
-    geo.push_attribute(("y", (y - size / 2.0).round().to_string().as_str()));
-    geo.push_attribute(("width", size.to_string().as_str()));
-    geo.push_attribute(("height", size.to_string().as_str()));
+    geo.push_attribute(("x", (x - bw / 2.0).round().to_string().as_str()));
+    geo.push_attribute(("y", (y - bh / 2.0).round().to_string().as_str()));
+    geo.push_attribute(("width", bw.to_string().as_str()));
+    geo.push_attribute(("height", bh.to_string().as_str()));
     geo.push_attribute(("as", "geometry"));
     w.write_event(Event::Empty(geo))?;
 

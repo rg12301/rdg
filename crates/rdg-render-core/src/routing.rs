@@ -60,7 +60,7 @@ pub fn port_point(nl: &NodeLayout, side: Side, port_frac: f64) -> (f64, f64) {
 /// normal onto the curve for round shapes, so arrows touch an ellipse or a cylinder cap
 /// instead of stopping in the empty corner of its bounding box.
 pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side, port_frac: f64) -> (f64, f64) {
-    use crate::style::Outline;
+    use crate::style::{MarkShape, Outline};
     let (x, y) = port_point(nl, side, port_frac);
     let (rx, ry) = (nl.width / 2.0, nl.height / 2.0);
     let (cx, cy) = (nl.x + rx, nl.y + ry);
@@ -78,20 +78,28 @@ pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side,
         (Outline::Diamond, _) => rx * t.abs(),
         (Outline::Cylinder { cap }, Side::Top | Side::Bottom) => cap * (1.0 - (1.0 - t * t).sqrt()),
         (Outline::Cylinder { .. }, _) => 0.0,
-        // The halo is centred at the top: the sides and the top meet it (on the circle,
-        // when round), the bottom meets the box under the label.
-        (Outline::Icon { halo, circle, .. }, Side::Left | Side::Right) => {
-            let r = halo / 2.0;
+        // The mark is centred at the top: the sides and the top meet it (on its curve or
+        // slant), the bottom meets the box under the caption.
+        (Outline::Captioned { mark, shape }, Side::Left | Side::Right) => {
+            let r = mark / 2.0;
             let dy = (y - (nl.y + r)).abs().min(r);
-            let reach = if circle { (r * r - dy * dy).sqrt() } else { r };
+            let reach = match shape {
+                MarkShape::Circle => (r * r - dy * dy).sqrt(),
+                MarkShape::Square => r,
+                MarkShape::Diamond => r - dy,
+            };
             (rx - reach).max(0.0)
         }
-        (Outline::Icon { halo, circle, .. }, Side::Top) => {
-            let r = halo / 2.0;
+        (Outline::Captioned { mark, shape }, Side::Top) => {
+            let r = mark / 2.0;
             let dx = (x - cx).abs().min(r);
-            if circle { r - (r * r - dx * dx).sqrt() } else { 0.0 }
+            match shape {
+                MarkShape::Circle => r - (r * r - dx * dx).sqrt(),
+                MarkShape::Square => 0.0,
+                MarkShape::Diamond => dx,
+            }
         }
-        (Outline::Icon { .. }, Side::Bottom) => 0.0,
+        (Outline::Captioned { .. }, Side::Bottom) => 0.0,
     };
     match side {
         Side::Top => (x, y + depth),
@@ -375,58 +383,28 @@ pub struct GroupTitleZone {
     pub node_ids: std::collections::HashSet<String>,
 }
 
-/// Computes the group title avoidance zones from compiled groups and layout positions.
+/// Each group's title box (see [`rdg_layout::groups::group_title_rect`]) with the ids of
+/// every node inside the group, nested groups included.
 pub fn compute_group_title_zones(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     tokens: &DesignTokens,
 ) -> Vec<GroupTitleZone> {
-    let mut zones = Vec::new();
-    for group in &compiled.groups {
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
-        let mut found_count = 0;
-
-        for node_id in &group.nodes {
-            if let Some(&node_idx) = compiled.node_map.get(node_id) {
-                if let Some(nl) = layout.positions.get(&node_idx) {
-                    min_x = min_x.min(nl.x);
-                    min_y = min_y.min(nl.y);
-                    max_x = max_x.max(nl.x + nl.width);
-                    max_y = max_y.max(nl.y + nl.height);
-                    found_count += 1;
-                }
-            }
-        }
-
-        if found_count == 0 {
-            continue;
-        }
-
-        let pad_h = tokens.group_pad_for(max_x - min_x, max_y - min_y);
-        let pad_top = tokens.group_pad_top_for(max_x - min_x, max_y - min_y);
-        let min_edge = tokens.px(1.25);
-        let gx = (min_x - pad_h).max(min_edge);
-        let gy = (min_y - pad_top).max(min_edge);
-        // Just the title text as drawn (inset `px(1.5)` from the left, `px(1)` from the
-        // top) plus a small margin — a band any wider or taller would wall off the top
-        // faces of the nodes sitting under it.
-        let title_font = tokens.group_title_font_size;
-        let icon_w = if group.resolved_icon().is_some() { title_font + tokens.px(1.0) } else { 0.0 };
-        let title_w = group.label.chars().count() as f64 * tokens.char_width(title_font) + icon_w + tokens.px(2.5);
-        let title_h = tokens.px(1.0) + tokens.line_height(title_font) + tokens.px(1.25);
-
-        zones.push(GroupTitleZone {
-            min_x: gx,
-            max_x: gx + title_w,
-            min_y: gy,
-            max_y: gy + title_h,
-            node_ids: group.nodes.iter().cloned().collect(),
-        });
-    }
-    zones
+    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    rects
+        .iter()
+        .enumerate()
+        .filter_map(|(g, r)| {
+            let (x, y, w, h) = rdg_layout::groups::group_title_rect(&compiled.groups[g], (*r)?, tokens);
+            Some(GroupTitleZone {
+                min_x: x,
+                max_x: x + w,
+                min_y: y,
+                max_y: y + h,
+                node_ids: compiled.nodes_within(g).into_iter().map(|n| compiled.graph[n].id.clone()).collect(),
+            })
+        })
+        .collect()
 }
 
 /// Determines the exit side and entry side for an edge, evaluating Euclidean face distance

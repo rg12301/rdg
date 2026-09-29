@@ -601,19 +601,6 @@ impl<'a> Polisher<'a> {
         edge_full_path(self.compiled, self.layout, e, plan)
     }
 
-    /// Edges that end at a start/end/choice marker are drawn with a render-time endpoint
-    /// shift the plan doesn't know about, so their geometry isn't safe to edit here.
-    fn touches_marker(&self, e: EdgeIndex) -> bool {
-        let Some((s, d, _, _)) = self.endpoints(e) else { return true };
-        [s, d].iter().any(|&n| {
-            matches!(
-                self.compiled.graph[n].node_type.to_ascii_lowercase().as_str(),
-                "start" | "start_state" | "initial" | "initial_state" | "end" | "end_state"
-                    | "final" | "final_state" | "choice" | "branch"
-            )
-        })
-    }
-
     /// Re-routes `e` with the given ports, keeping its faces and corridor hints.
     fn rerouted(&self, e: EdgeIndex, base: &EdgeRoutingPlan, exit: f64, entry: f64) -> Option<EdgeRoutingPlan> {
         self.rerouted_on(e, base, (base.src_side, exit), (base.dst_side, entry))
@@ -799,9 +786,6 @@ impl<'a> Polisher<'a> {
 
     /// Tries to remove the crossing between `a` and `b`. Returns whether a fix was committed.
     fn try_fix_crossing(&mut self, a: EdgeIndex, b: EdgeIndex) -> bool {
-        if self.touches_marker(a) || self.touches_marker(b) {
-            return false;
-        }
         let (Some(pa), Some(pb)) = (self.paths.get(&a).cloned(), self.paths.get(&b).cloned()) else { return false };
         let cur = self.score_with(&HashMap::from([(a, pa), (b, pb)]));
         let debug = std::env::var("RDG_DEBUG_POLISH").is_ok();
@@ -854,9 +838,6 @@ impl<'a> Polisher<'a> {
 
     /// Tries to remove one micro-jog on `e`. Returns whether a fix was committed.
     fn try_fix_micro_jog(&mut self, e: EdgeIndex) -> bool {
-        if self.touches_marker(e) {
-            return false;
-        }
         let Some(old_plan) = self.plans.get(&e).cloned() else { return false };
         let Some(cur_path) = self.paths.get(&e).cloned() else { return false };
         let sp = simplified(&cur_path);

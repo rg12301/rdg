@@ -197,7 +197,7 @@ mv rdg ~/.local/bin/
 
 ```bash
 rdg --version
-# rdg 1.1.1
+# rdg 1.2.0
 
 rdg --help
 # Prints the full LLM-friendly usage guide
@@ -213,13 +213,18 @@ rdg --help
 diagram_type: flowchart        # required — logical category
 theme: light                   # optional — built-in name, or a mapping that overrides one
 legend: true                   # optional — list the colour categories used
-groups:                        # optional — visual containers
+numbered: true                 # optional — step badges on the edges
+groups:                        # optional — visual containers, nestable
   - id: g1
     label: "Ingestion Tier"
-    nodes: [n1, n2]
+    nodes: [n1, g2]            # node ids, and group ids to nest (or `parent:` on the inner one)
+  - id: g2
+    label: "Storage"
+    nodes: [n2]
 nodes:
   - id: n1                     # required — unique, short, no spaces
-    label: "API Gateway\nv2.4" # required — bold title + detail lines
+    title: "api-gateway"       # bold heading, drawn exactly as written
+    subtitle: "v2.4"           # optional muted line; `description:` for longer text
     type: gateway              # optional — picks category, shape and glyph
   - id: n2
     label: "orders"
@@ -231,7 +236,11 @@ edges:
     to: n2                     # target node id
     label: "SQL queries"       # optional edge label
     edge_style: data           # optional: flow | async | data | auth | error | bidirectional | ...
+    step: 2a                   # optional — badge text; branches 2a / 2b / 2.1, later edges continue at 3
 ```
+
+`label: "API Gateway\nv2.4"` is a shorthand for `title` + details (first line bold, later
+lines muted); use the explicit fields when the name itself is long or hyphenated.
 
 ### Theming
 

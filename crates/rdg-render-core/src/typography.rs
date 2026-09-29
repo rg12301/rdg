@@ -1,8 +1,8 @@
 //! Format-agnostic inline typography: subscript/superscript glyph mapping, LaTeX-to-Unicode,
 //! and Markdown-ish inline span parsing (`` `code` ``, `**bold**`, `*italic*`, …).
 //!
-//! Both render backends consume [`parse_inline_spans`] and [`wrap_and_classify_label`] and
-//! encode the resulting [`StyledSpan`]s into their own markup (draw.io HTML tags vs SVG
+//! Both render backends take node text from [`rdg_layout::node_lines`], run each line through
+//! [`parse_inline_spans`] and encode the resulting [`StyledSpan`]s into their own markup (draw.io HTML tags vs SVG
 //! `<tspan>` attributes).
 
 /// Maps ASCII digits and signs to Unicode subscript glyphs.
@@ -417,22 +417,6 @@ pub fn parse_inline_spans(input: &str) -> Vec<StyledSpan> {
     spans
 }
 
-/// A line classified as either a title line or a muted subtitle line.
-#[derive(Debug, Clone)]
-pub struct ProcessedLine {
-    pub text: String,
-    pub is_subtitle: bool,
-}
-
-/// Wraps label into lines and classifies each line — see [`rdg_layout::classify_label`],
-/// which the layout engine's size estimate uses too, so the box fits what is drawn.
-pub fn wrap_and_classify_label(label: &str, max_chars: usize) -> Vec<ProcessedLine> {
-    rdg_layout::classify_label(label, max_chars)
-        .into_iter()
-        .map(|l| ProcessedLine { text: l.text, is_subtitle: l.is_subtitle })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -458,22 +442,5 @@ mod tests {
     fn test_subscript_superscript() {
         assert_eq!(to_subscript("2"), "₂");
         assert_eq!(to_superscript("2"), "²");
-    }
-
-    #[test]
-    fn test_first_line_is_title_later_lines_are_details() {
-        let lines = wrap_and_classify_label("auth-api-ext\nPublic Auth API\nPort 4000", 40);
-        assert_eq!(lines.iter().map(|l| l.is_subtitle).collect::<Vec<_>>(), vec![false, true, true]);
-        // A title that visibly continues keeps its next line.
-        let lines = wrap_and_classify_label("petgraph::\nStableDiGraph\nthe graph store", 40);
-        assert_eq!(lines.iter().map(|l| l.is_subtitle).collect::<Vec<_>>(), vec![false, false, true]);
-    }
-
-    #[test]
-    fn test_wrap_and_classify_label_marks_parenthesized_as_subtitle() {
-        let lines = wrap_and_classify_label("Title\n(subtitle)", 40);
-        assert_eq!(lines.len(), 2);
-        assert!(!lines[0].is_subtitle);
-        assert!(lines[1].is_subtitle);
     }
 }

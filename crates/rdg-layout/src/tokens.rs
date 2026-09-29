@@ -97,8 +97,10 @@ pub struct DesignTokens {
     pub seq_activation_width: f64,
     /// Note text wraps at this many characters.
     pub seq_note_wrap_chars: usize,
-    /// Flow-number badge radius, px.
+    /// Flow-number badge radius, px (a longer step label widens it into a pill).
     pub badge_radius: f64,
+    /// Font size of the flow-number badge's text.
+    pub badge_font_size: f64,
     /// Depth of a database cylinder's elliptical cap, px.
     pub cylinder_cap: f64,
 
@@ -212,16 +214,6 @@ pub struct DesignTokens {
     pub end_marker_units: f64,
     /// Diameter of a choice/branch marker, as a multiple of [`Self::unit`].
     pub choice_marker_units: f64,
-    /// How far past its own edge a tiny marker shape's `exitY` connection point is
-    /// pushed, as a multiple of the marker's *own* height (not [`Self::unit`] — this
-    /// is a proportion of the shape it belongs to, exactly the "relative, not
-    /// pixel" case: a bigger marker token should still clear its own label without
-    /// this ratio needing to change). `2.0` means "one full marker-height past the
-    /// far edge", which is what actually clears the external label rendered below a
-    /// start/end/choice marker — see `rdg-render-drawio`'s `style.rs` doc comment for
-    /// why draw.io needs this expressed as an extrapolated `exitY` fraction rather
-    /// than a literal pixel offset.
-    pub marker_label_clearance_ratio: f64,
 
     // -- Layout quality / algorithm budget ---------------------------------------------
     /// Self-review retry budget: how many times [`compute_reviewed_layout`] (in
@@ -305,6 +297,7 @@ impl Default for DesignTokens {
             seq_activation_width: 10.0,
             seq_note_wrap_chars: 32,
             badge_radius: 9.0,
+            badge_font_size: 9.0,
             cylinder_cap: 8.0,
 
             unit: 8.0,
@@ -335,7 +328,6 @@ impl Default for DesignTokens {
             start_marker_units: 3.5,
             end_marker_units: 4.0,
             choice_marker_units: 4.5,
-            marker_label_clearance_ratio: 2.0,
 
             max_review_passes: 3,
             retry_spacing_factor: 1.25,

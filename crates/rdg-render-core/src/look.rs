@@ -7,15 +7,7 @@ use rdg_schema::GroupDef;
 
 use crate::theme::{ResolvedEdge, Theme, split_alpha};
 
-/// Flowchart marker types (small fixed shapes with their label drawn underneath).
-pub fn marker_shape(node_type: &str) -> Option<&'static str> {
-    match node_type.to_ascii_lowercase().as_str() {
-        "start" | "start_state" | "initial" | "initial_state" => Some("start"),
-        "end" | "end_state" | "final" | "final_state" => Some("end"),
-        "choice" | "branch" => Some("choice"),
-        _ => None,
-    }
-}
+pub use rdg_layout::marker_shape;
 
 /// Resolves, once and before layout, everything about each node that depends on the
 /// theme and changes its geometry: its category, its shape (including whether it is

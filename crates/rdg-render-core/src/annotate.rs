@@ -67,7 +67,7 @@ impl LabelSpot {
 #[derive(Debug, Clone, Default)]
 pub struct EdgeAnnotations {
     pub labels: HashMap<EdgeIndex, LabelSpot>,
-    /// Badge centre per numbered edge.
+    /// Badge centre per numbered edge (its size: [`badge_size`] of the edge's `step`).
     pub badges: HashMap<EdgeIndex, Pt>,
 }
 
@@ -120,18 +120,21 @@ fn wrapped_in_three(text: &str) -> Option<String> {
     (lines.len() == 3).then(|| lines.join("\n"))
 }
 
-/// Start/end/choice markers draw their label *below* the shape, so edges leave from
-/// further down (draw.io `exitY`, SVG `marker_clearance`).
-pub fn is_marker_type(node_type: &str) -> bool {
-    matches!(
-        node_type.to_ascii_lowercase().as_str(),
-        "start" | "start_state" | "initial" | "initial_state" | "end" | "end_state" | "final" | "final_state"
-            | "choice" | "branch"
-    )
+/// Size of a flow-step badge: a circle for one or two characters, a pill as wide as
+/// the text beyond that (`16a`, `3.1`).
+pub fn badge_size(step: &str, tokens: &DesignTokens) -> (f64, f64) {
+    let d = 2.0 * tokens.badge_radius;
+    let text_w = step.chars().count() as f64 * tokens.char_width(tokens.badge_font_size) + tokens.badge_radius;
+    (d.max(text_w.ceil()), d)
+}
+
+/// Sort key putting steps in reading order: by number, then branch (`3` < `3a` < `3b` < `4`).
+fn step_order(step: &str) -> (u32, String) {
+    (rdg_schema::step_major(step).unwrap_or(u32::MAX), step.to_string())
 }
 
 /// The polyline an edge is drawn along: source port, waypoints, destination port — the
-/// same points both backends draw (including the marker-exit push-down).
+/// same points both backends draw.
 pub fn edge_polyline(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
@@ -143,13 +146,7 @@ pub fn edge_polyline(
     let src_side = plan.map_or(Side::Bottom, |p| p.src_side);
     let dst_side = plan.map_or(Side::Top, |p| p.dst_side);
     let exit = plan.map_or(0.5, |p| p.exit_port);
-    let (x1, y1) = if src_side == Side::Bottom && is_marker_type(&compiled.graph[s_idx].node_type) {
-        // Pushed down past the marker's own label (bounding-box point, as drawn).
-        let (x, y) = crate::routing::port_point(src_nl, src_side, exit);
-        (x, y + src_nl.height * (tokens.marker_label_clearance_ratio - 1.0))
-    } else {
-        node_attach_point(compiled, s_idx, src_nl, src_side, exit, tokens)
-    };
+    let (x1, y1) = node_attach_point(compiled, s_idx, src_nl, src_side, exit, tokens);
     let p2 = node_attach_point(compiled, d_idx, dst_nl, dst_side, plan.map_or(0.5, |p| p.entry_port), tokens);
     let mut pts = vec![(x1, y1)];
     pts.extend(plan.map_or(&[][..], |p| p.waypoints.as_slice()).iter().copied());
@@ -313,45 +310,42 @@ pub fn place_edge_annotations(
     for n in node_ids {
         let nl = &layout.positions[&n];
         nodes.push((nl.x, nl.y, nl.width, nl.height));
-        // Brand/tech icon straddling the card's top-left corner (22px, see backends).
-        if compiled.graph[n].icon.is_some() {
-            nodes.push((nl.x - 11.0, nl.y - 11.0, 22.0, 22.0));
-        }
     }
     let titles = crate::routing::compute_group_title_zones(compiled, layout, tokens)
         .iter()
         .map(|t| (t.min_x, t.min_y, t.max_x - t.min_x, t.max_y - t.min_y))
         .collect();
     let mut borders = Vec::new();
-    for (x, y, w, h) in crate::canvas::group_rects(compiled, layout, tokens) {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
         let (a, b, c, d) = ((x, y), (x + w, y), (x + w, y + h), (x, y + h));
         borders.extend([(a, b), (b, c), (c, d), (d, a)]);
     }
     let mut scene = Scene { nodes, titles, borders, paths, placed: Vec::new() };
 
     // --- Badges ---------------------------------------------------------------
-    let mut numbered: Vec<(u32, usize)> = scene
+    let mut numbered: Vec<((u32, String), usize)> = scene
         .paths
         .iter()
         .enumerate()
-        .filter_map(|(i, (e, _))| compiled.graph[*e].step.map(|s| (s, i)))
+        .filter_map(|(i, (e, _))| compiled.graph[*e].step.as_deref().map(|s| (step_order(s), i)))
         .collect();
     numbered.sort();
-    for (_, i) in numbered {
+    for ((_, step), i) in numbered {
         let (edge_idx, path) = scene.paths[i].clone();
         let total = path_len(&path);
-        let r = tokens.badge_radius;
-        let off = r + 5.0;
+        let (bw, bh) = badge_size(&step, tokens);
+        let badge = |c: Pt| (c.0 - bw / 2.0, c.1 - bh / 2.0, bw, bh);
         let d_max = (total * 0.5).clamp(16.0, 96.0);
         let mut best: Option<(f64, Pt)> = None;
         let mut d = 16.0;
         while d <= d_max + 1e-9 {
             let (p, dir, _) = point_at(&path, d.min(total));
+            // Beside the line: half the badge's extent across it, plus a little air.
+            let off = if dir.0.abs() >= dir.1.abs() { bh / 2.0 } else { bw / 2.0 } + 5.0;
             // Right-hand side of travel first (screen coords, y down) — a stable tie-break.
             for (k, sign) in [(0.0, 1.0), (3.0, -1.0)] {
                 let c = (p.0 - dir.1 * off * sign, p.1 + dir.0 * off * sign);
-                let rect = (c.0 - r, c.1 - r, 2.0 * r, 2.0 * r);
-                let cost = scene.cost(rect, edge_idx, false, 0.0) + d * 0.6 + k;
+                let cost = scene.cost(badge(c), edge_idx, false, 0.0) + d * 0.6 + k;
                 if best.is_none_or(|(b, _)| cost < b - 1e-9) {
                     best = Some((cost, c));
                 }
@@ -359,7 +353,7 @@ pub fn place_edge_annotations(
             d += 6.0;
         }
         if let Some((_, c)) = best {
-            scene.placed.push((edge_idx, false, (c.0 - r, c.1 - r, 2.0 * r, 2.0 * r)));
+            scene.placed.push((edge_idx, false, badge(c)));
             out.badges.insert(edge_idx, c);
         }
     }
@@ -542,8 +536,8 @@ mod tests {
             let path = edge_polyline(&c, &l, e, p.get(&e), &t).unwrap();
             let lr = ann.labels[&e].rect();
             let b = ann.badges[&e];
-            let r = t.badge_radius;
-            let br = (b.0 - r, b.1 - r, 2.0 * r, 2.0 * r);
+            let (bw, bh) = badge_size(c.graph[e].step.as_deref().unwrap(), &t);
+            let br = (b.0 - bw / 2.0, b.1 - bh / 2.0, bw, bh);
             for w in path.windows(2) {
                 assert_eq!(clip_len(w[0], w[1], lr), 0.0, "label on its own line");
                 assert_eq!(clip_len(w[0], w[1], br), 0.0, "badge on its own line");

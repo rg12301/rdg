@@ -80,20 +80,62 @@ pub struct LabelLine {
 /// more text per line.
 pub const SUBTITLE_WRAP_FACTOR: f64 = 1.25;
 
+/// Tokens that join a name split across lines (`petgraph::` / `StableDiGraph`,
+/// `payments-bank` / `-connector-service`).
+const NAME_JOINERS: [&str; 5] = ["::", ".", "/", "-", "_"];
+
+/// Whether `line` continues a name from the line before it: it starts with a joiner
+/// (but isn't a `- ` bullet or an `...` ellipsis).
+fn continues_name(line: &str) -> bool {
+    NAME_JOINERS.iter().any(|t| line.starts_with(t)) && !line.starts_with("- ") && !line.starts_with("..")
+}
+
+/// A node's text as drawn, wrapped and classified: its explicit title / subtitle /
+/// description when it has them (see [`explicit_lines`]), else its `label` through
+/// [`classify_label`]. The one place sizing and both renderers get node text from.
+pub fn node_lines(nd: &rdg_graph::NodeData, max_chars: usize) -> Vec<LabelLine> {
+    match &nd.text {
+        Some(t) => explicit_lines(t, max_chars),
+        None => classify_label(&nd.label, max_chars),
+    }
+}
+
+/// Lines for text whose roles the author stated: every title line bold (wrapped only at
+/// spaces, so a name is never split), then the subtitle and description as muted
+/// lines wrapped at [`SUBTITLE_WRAP_FACTOR`] × `max_chars`. `\n` breaks a line anywhere.
+pub fn explicit_lines(text: &rdg_schema::NodeText, max_chars: usize) -> Vec<LabelLine> {
+    let sub_chars = ((max_chars as f64) * SUBTITLE_WRAP_FACTOR).round() as usize;
+    let mut out = Vec::new();
+    let mut push = |s: &str, is_subtitle: bool, chars: usize| {
+        for raw in s.split('\n').map(str::trim).filter(|l| !l.is_empty()) {
+            out.extend(wrap_label(raw, chars).into_iter().map(|text| LabelLine { text, is_subtitle }));
+        }
+    };
+    push(&text.title, false, max_chars);
+    for detail in [&text.subtitle, &text.description].into_iter().flatten() {
+        push(detail, true, sub_chars);
+    }
+    out
+}
+
 /// Splits a node label into wrapped, classified lines.
 ///
 /// The first explicit line is the title (bold); every later explicit line is a muted
 /// detail line — `"auth-api-ext\nPublic Auth API\nPort 4000"` reads as a name and two
-/// facts about it, the hierarchy a person gives such a card by hand. A title that
-/// visibly continues onto the next line (ending in `::`, `.`, `/`, `-` or `_`, as in
-/// `petgraph::\nStableDiGraph`) keeps that line in the title. Parenthesised,
-/// bracketed or braced lines (`(subtitle)`, `[detail]`, `{fields}`) are always detail
-/// lines, even first. Title lines wrap at `max_chars`, detail lines at
-/// [`SUBTITLE_WRAP_FACTOR`] times that.
+/// facts about it, the hierarchy a person gives such a card by hand. A name split
+/// across lines stays in the title: a line ending in `::`, `.`, `/`, `-` or `_`
+/// (`petgraph::\nStableDiGraph`), or the next line starting with one
+/// (`payments-bank\n-connector-service`). Parenthesised, bracketed or braced lines
+/// (`(subtitle)`, `[detail]`, `{fields}`) are always detail lines, even first. Title
+/// lines wrap at `max_chars`, detail lines at [`SUBTITLE_WRAP_FACTOR`] times that.
+/// Authors who want exact roles use `title` / `subtitle` / `description` instead
+/// (see [`explicit_lines`]).
 pub fn classify_label(label: &str, max_chars: usize) -> Vec<LabelLine> {
     let mut out = Vec::new();
     let mut in_block = false;
-    let mut title_open = true; // still inside the title (first explicit line or its continuation)
+    // Still inside the title: the first line, or a line its predecessor ran into.
+    let mut title_open = true;
+    let mut after_title = false; // the previous line was a title line
     let sub_chars = ((max_chars as f64) * SUBTITLE_WRAP_FACTOR).round() as usize;
     for raw in label.split('\n') {
         let trimmed = raw.trim();
@@ -118,12 +160,9 @@ pub fn classify_label(label: &str, max_chars: usize) -> Vec<LabelLine> {
         } else {
             false
         };
-        let is_sub = bracketed || !title_open;
-        if !is_sub {
-            title_open = ["::", ".", "/", "-", "_"].iter().any(|t| c.ends_with(t));
-        } else {
-            title_open = false;
-        }
+        let is_sub = bracketed || !(title_open || (after_title && continues_name(c)));
+        title_open = !is_sub && NAME_JOINERS.iter().any(|t| c.ends_with(t));
+        after_title = !is_sub;
         for line in wrap_label(trimmed, if is_sub { sub_chars } else { max_chars }) {
             out.push(LabelLine { text: line, is_subtitle: is_sub });
         }
@@ -200,6 +239,60 @@ pub fn strip_markdown_tokens(text: &str) -> String {
     out
 }
 
+/// Wrap width for a node's title lines: narrower in a diamond, whose text must fit the
+/// rhombus's inscribed rectangle.
+pub fn wrap_chars_for(nd: &rdg_graph::NodeData, tokens: &DesignTokens) -> usize {
+    let diamond = match nd.shape.as_deref() {
+        Some(shape) => shape == "diamond",
+        None => is_diamond_type(&nd.node_type.to_ascii_lowercase()),
+    };
+    if diamond { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal }
+}
+
+fn is_diamond_type(lower_type: &str) -> bool {
+    matches!(lower_type, "decision" | "condition" | "cache" | "redis" | "memcache")
+}
+
+/// Flowchart marker drawn as a small fixed shape with its caption underneath: `start`,
+/// `end` or `choice`, from a node's type.
+pub fn marker_shape(node_type: &str) -> Option<&'static str> {
+    match node_type.to_ascii_lowercase().as_str() {
+        "start" | "start_state" | "initial" | "initial_state" => Some("start"),
+        "end" | "end_state" | "final" | "final_state" => Some("end"),
+        "choice" | "branch" => Some("choice"),
+        _ => None,
+    }
+}
+
+/// Box size for node `nd` as drawn: its text from [`node_lines`] (so explicit titles are
+/// measured the way they are drawn), its shape, fields, technology line and inline icon.
+/// Explicit `width` / `height` win per axis. Markers and logo nodes, whose caption sits
+/// under their mark, are sized by the layout (`layout_node_size`), not here.
+pub fn estimate_node_box(nd: &rdg_graph::NodeData, has_icon: bool, min_width: f64, min_height: f64, tokens: &DesignTokens) -> (f64, f64) {
+    let lines = node_lines(nd, wrap_chars_for(nd, tokens));
+    let tech = nd.technology.as_deref().filter(|t| !nd.label.contains(t));
+    // Geometry follows the shape the theme resolved: a `cache` drawn as a card is sized
+    // as a card, not as the diamond its type would otherwise suggest.
+    let geometry = match nd.shape.as_deref() {
+        Some("diamond") => "decision",
+        Some("cylinder") if nd.fields.is_empty() => "database",
+        Some("ellipse") => "queue",
+        Some("card") if nd.fields.is_empty() => "default",
+        _ => nd.node_type.as_str(),
+    };
+    let est = || estimate_from_lines(&lines, &nd.label, geometry, &nd.fields, tech, has_icon, min_width, min_height, tokens);
+    explicit_or(nd.width, nd.height, est)
+}
+
+/// `explicit_width`/`explicit_height` where given (floored at 10px), else `estimate`'s.
+fn explicit_or(explicit_width: Option<f64>, explicit_height: Option<f64>, estimate: impl FnOnce() -> (f64, f64)) -> (f64, f64) {
+    if let (Some(w), Some(h)) = (explicit_width, explicit_height) {
+        return (w.max(10.0), h.max(10.0));
+    }
+    let (w, h) = estimate();
+    (explicit_width.map_or(w, |w| w.max(10.0)), explicit_height.map_or(h, |h| h.max(10.0)))
+}
+
 /// Dynamically estimate the width and height of a node based on its label and shape.
 pub fn estimate_node_size(
     label: &str,
@@ -208,7 +301,7 @@ pub fn estimate_node_size(
     min_height: f64,
     tokens: &DesignTokens,
 ) -> (f64, f64) {
-    estimate_node_size_inner(label, node_type, &[], None, false, min_width, min_height, tokens)
+    estimate_node_size_with_details(label, node_type, &[], None, false, min_width, min_height, None, None, tokens)
 }
 
 /// Dynamically estimate the width and height of a node based on its label, shape, and fields.
@@ -227,18 +320,7 @@ pub fn estimate_node_size_with_fields(
     explicit_height: Option<f64>,
     tokens: &DesignTokens,
 ) -> (f64, f64) {
-    estimate_node_size_with_details(
-        label,
-        node_type,
-        fields,
-        None,
-        false,
-        min_width,
-        min_height,
-        explicit_width,
-        explicit_height,
-        tokens,
-    )
+    estimate_node_size_with_details(label, node_type, fields, None, false, min_width, min_height, explicit_width, explicit_height, tokens)
 }
 
 /// Dynamically estimate the width and height of a node based on its label, shape, fields,
@@ -256,21 +338,17 @@ pub fn estimate_node_size_with_details(
     explicit_height: Option<f64>,
     tokens: &DesignTokens,
 ) -> (f64, f64) {
-    if let (Some(w), Some(h)) = (explicit_width, explicit_height) {
-        return (w.max(10.0), h.max(10.0));
-    }
-
-    let (est_w, est_h) = estimate_node_size_inner(
-        label, node_type, fields, technology, has_icon, min_width, min_height, tokens,
-    );
-    (
-        explicit_width.map_or(est_w, |w| w.max(10.0)),
-        explicit_height.map_or(est_h, |h| h.max(10.0)),
-    )
+    explicit_or(explicit_width, explicit_height, || {
+        let chars = if is_diamond_type(&node_type.to_ascii_lowercase()) { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal };
+        let tech = technology.filter(|t| !label.contains(t));
+        estimate_from_lines(&classify_label(label, chars), label, node_type, fields, tech, has_icon, min_width, min_height, tokens)
+    })
 }
 
+/// Size for already-classified `lines` (the title of a table/class card is `label`).
 #[allow(clippy::too_many_arguments)]
-fn estimate_node_size_inner(
+fn estimate_from_lines(
+    lines: &[LabelLine],
     label: &str,
     node_type: &str,
     fields: &[String],
@@ -281,30 +359,15 @@ fn estimate_node_size_inner(
     tokens: &DesignTokens,
 ) -> (f64, f64) {
     let lower_type = node_type.to_ascii_lowercase();
-    match lower_type.as_str() {
-        "start" | "start_state" | "initial" | "initial_state" => {
-            let d = tokens.start_marker_size();
-            return (d, d);
-        }
-        "end" | "end_state" | "final" | "final_state" => {
-            let d = tokens.end_marker_size();
-            return (d, d);
-        }
-        "choice" | "branch" => {
-            let d = tokens.choice_marker_size();
-            return (d, d);
-        }
-        _ => {}
+    match marker_shape(&lower_type) {
+        Some("start") => return (tokens.start_marker_size(), tokens.start_marker_size()),
+        Some("end") => return (tokens.end_marker_size(), tokens.end_marker_size()),
+        Some(_) => return (tokens.choice_marker_size(), tokens.choice_marker_size()),
+        None => {}
     }
 
-    let is_table = matches!(
-        lower_type.as_str(),
-        "table" | "entity" | "record" | "schema"
-    );
-    let is_class = matches!(
-        lower_type.as_str(),
-        "class" | "interface" | "abstract_class" | "struct"
-    );
+    let is_table = matches!(lower_type.as_str(), "table" | "entity" | "record" | "schema");
+    let is_class = matches!(lower_type.as_str(), "class" | "interface" | "abstract_class" | "struct");
 
     // A field row needs to fit one line of field text plus a little breathing room;
     // the table variant's header additionally needs headroom for the cylinder's top
@@ -330,38 +393,31 @@ fn estimate_node_size_inner(
         return (snap(width, tokens), snap(height, tokens));
     }
 
-    let is_diamond = matches!(
-        lower_type.as_str(),
-        "decision" | "condition" | "cache" | "redis" | "memcache"
-    );
+    let is_diamond = is_diamond_type(&lower_type);
     let is_db = matches!(lower_type.as_str(), "database" | "db" | "storage");
     let is_ellipse = matches!(lower_type.as_str(), "queue" | "broker" | "bus" | "topic");
 
-    let max_line_chars = if is_diamond { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal };
-    // Same classification the renderers draw with: title lines at the body font, detail
-    // lines at the smaller subtitle font (see `classify_label`).
-    let lines = classify_label(label, max_line_chars);
+    // Title lines at the body font, detail lines at the smaller subtitle font.
     let sub_font = tokens.detail_font_size;
     let line_w = |text: &str, sub: bool| {
         strip_markdown_tokens(text).chars().count() as f64 * tokens.char_width(if sub { sub_font } else { tokens.font_size })
     };
     // An icon sits inline before the first line (the title), widening only that line.
     let reserve = if has_icon { tokens.icon_reserve } else { 0.0 };
-    let mut text_w = lines
-        .iter()
-        .enumerate()
-        .map(|(i, l)| line_w(&l.text, l.is_subtitle) + if i == 0 { reserve } else { 0.0 })
-        .fold(0.0, f64::max);
+    let first_w = |i: usize| if i == 0 { reserve } else { 0.0 };
+    let mut text_w = lines.iter().enumerate().map(|(i, l)| line_w(&l.text, l.is_subtitle) + first_w(i)).fold(0.0, f64::max);
+    // Title lines are wrapped at spaces only, so one wider than the cap is an unbreakable
+    // name: the card grows to fit it rather than letting it run past the border.
+    let title_w = lines.iter().enumerate().filter(|(_, l)| !l.is_subtitle).map(|(i, l)| line_w(&l.text, false) + first_w(i)).fold(0.0, f64::max);
 
     let mut line_count = lines.len();
     if let Some(tech) = technology {
-        if !label.contains(tech) {
-            line_count += 1;
-            text_w = text_w.max(line_w(&format!("[{tech}]"), true));
-        }
+        line_count += 1;
+        text_w = text_w.max(line_w(&format!("[{tech}]"), true));
     }
 
-    let mut width = (text_w + tokens.px(2.5)).max(min_width).min(tokens.px(32.5) + reserve);
+    let pad = tokens.px(2.5);
+    let mut width = (text_w + pad).max(min_width).min(tokens.px(32.5) + reserve).max(title_w + pad);
 
     // First line at full line height, subsequent lines (subtitles) a touch smaller,
     // plus vertical padding.
@@ -403,4 +459,75 @@ fn estimate_node_size_inner(
 fn snap(value: f64, tokens: &DesignTokens) -> f64 {
     let grid = tokens.unit / 0.8;
     (value / grid).ceil() * grid
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn roles(lines: &[LabelLine]) -> Vec<bool> {
+        lines.iter().map(|l| l.is_subtitle).collect()
+    }
+
+    #[test]
+    fn first_line_is_title_later_lines_are_details() {
+        assert_eq!(roles(&classify_label("auth-api-ext\nPublic Auth API\nPort 4000", 40)), [false, true, true]);
+        assert_eq!(roles(&classify_label("Title\n(subtitle)", 40)), [false, true]);
+    }
+
+    #[test]
+    fn a_name_split_across_lines_stays_in_the_title() {
+        // Trailing joiner…
+        assert_eq!(roles(&classify_label("petgraph::\nStableDiGraph\nthe graph store", 40)), [false, false, true]);
+        // …or leading one: the second half of `payments-bank-connector-service` is not
+        // a detail line.
+        assert_eq!(roles(&classify_label("payments-bank\n-connector-service\n[Go]", 40)), [false, false, true]);
+        // A `- ` bullet is a detail, not a continuation.
+        assert_eq!(roles(&classify_label("Queue\n- retries", 40)), [false, true]);
+    }
+
+    #[test]
+    fn explicit_title_is_never_split_or_demoted() {
+        let text = rdg_schema::NodeText {
+            title: "payments-bank-connector-service".into(),
+            subtitle: Some("Go".into()),
+            description: Some("Talks to every partner bank over their own APIs".into()),
+        };
+        let lines = explicit_lines(&text, 22);
+        assert_eq!(lines[0], LabelLine { text: "payments-bank-connector-service".into(), is_subtitle: false });
+        assert!(lines[1..].iter().all(|l| l.is_subtitle), "{lines:?}");
+        assert!(lines.len() >= 4, "the description wraps: {lines:?}");
+        // A multi-word title wraps at spaces and every line stays bold.
+        let lines = explicit_lines(&rdg_schema::NodeText { title: "Choose identity verification method".into(), ..Default::default() }, 14);
+        assert!(lines.len() > 1 && lines.iter().all(|l| !l.is_subtitle), "{lines:?}");
+    }
+
+    #[test]
+    fn card_grows_to_fit_an_unbreakable_title() {
+        let tokens = DesignTokens::default();
+        let long = "x".repeat(60);
+        let nd = rdg_graph::NodeData {
+            text: Some(rdg_schema::NodeText { title: long.clone(), ..Default::default() }),
+            ..node_data(&long)
+        };
+        let (w, _) = estimate_node_box(&nd, false, 120.0, 44.0, &tokens);
+        assert!(w >= 60.0 * tokens.char_width(tokens.font_size), "width {w}");
+    }
+
+    #[test]
+    fn size_follows_the_resolved_shape_not_the_type() {
+        let tokens = DesignTokens::default();
+        let mut nd = node_data("Session cache");
+        nd.node_type = "cache".into();
+        let as_diamond = estimate_node_box(&nd, false, 120.0, 44.0, &tokens);
+        nd.shape = Some("card".into());
+        let as_card = estimate_node_box(&nd, false, 120.0, 44.0, &tokens);
+        assert!(as_card.0 < as_diamond.0, "a cache drawn as a card is sized as one: {as_card:?} vs {as_diamond:?}");
+    }
+
+    fn node_data(label: &str) -> rdg_graph::NodeData {
+        let payload = rdg_schema::DiagramPayload::from_yaml(&format!("nodes: [{{id: n, label: {label:?}}}]")).unwrap();
+        let g = rdg_graph::build_graph(&payload).unwrap();
+        g.graph[g.node_map["n"]].clone()
+    }
 }

@@ -47,19 +47,19 @@ edges:
   - from: payment
     to: notify_restaurant
     label: "success"
-    step: 3
+    step: 3a
   - from: payment
     to: payment_failed
     label: "declined"
-    step: 3
+    step: 3b
     edge_style: error
   - from: payment_failed
     to: refund
-    step: 4
+    step: 4b
     edge_style: error
   - from: notify_restaurant
     to: prepare
-    step: 4
+    step: 4a
   - from: prepare
     to: assign_de
     step: 5

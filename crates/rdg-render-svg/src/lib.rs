@@ -23,7 +23,7 @@ use rdg_render_core::frame::Align;
 use rdg_render_core::look::{LegendItem, NodeLook, edge_look, group_look, legend_heading_width, legend_row_width, legend_rows, node_look};
 use rdg_render_core::routing::EdgeRoutingPlan;
 use rdg_render_core::theme::{ResolvedEdge, Theme};
-use rdg_render_core::typography::{latex_to_unicode, parse_inline_spans, to_subscript, to_superscript, wrap_and_classify_label};
+use rdg_render_core::typography::{latex_to_unicode, parse_inline_spans, to_subscript, to_superscript};
 
 use path::build_orthogonal_svg_path;
 use sequence::render_sequence_svg;
@@ -266,15 +266,12 @@ pub fn render_svg(
         }
     }
 
-    // --- Groups ----------------------------------------------------------------------
-    let rects = rdg_render_core::canvas::group_rects(compiled, layout, tokens);
-    let mut gi = 0;
-    for group in &compiled.groups {
-        if !group.nodes.iter().any(|id| compiled.node_map.get(id).is_some_and(|i| layout.positions.contains_key(i))) {
-            continue;
-        }
-        let Some(&(gx, gy, gw, gh)) = rects.get(gi) else { break };
-        gi += 1;
+    // --- Groups: outer boxes first, so inner ones are drawn over them ---------------------
+    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    let (inset_x, inset_y) = rdg_layout::groups::group_title_inset(tokens);
+    let (icon_size, icon_gap) = rdg_layout::groups::group_icon_size(tokens);
+    for gi in compiled.group_tree.outer_first() {
+        let (group, Some((gx, gy, gw, gh))) = (&compiled.groups[gi], rects[gi]) else { continue };
         let look = group_look(theme, group);
         let mut attrs = vec![
             ("x", f1(gx)),
@@ -289,13 +286,12 @@ pub fn render_svg(
         ];
         attrs.extend(dash_attr(look.dash.as_deref()));
         el(&mut w, "rect", &attrs)?;
-        let mut tx = gx + 12.0;
-        let ty = gy + 8.0 + tokens.line_height(f.group_title_size) * 0.8;
+        let mut tx = gx + inset_x;
+        let ty = gy + inset_y + tokens.line_height(f.group_title_size) * 0.8;
         if let Some(icon) = group.resolved_icon() {
-            let s = f.group_title_size + 4.0;
-            if let Some(m) = rdg_icons::render_icon_svg(&icon, theme.icon_style(), tx, ty - s * 0.8, s, &format!("g{gi}-")) {
+            if let Some(m) = rdg_icons::render_icon_svg(&icon, theme.icon_style(), tx, ty - icon_size * 0.8, icon_size, &format!("g{gi}-")) {
                 w.write_event(Event::Text(BytesText::from_escaped(m)))?;
-                tx += s + 6.0;
+                tx += icon_size + icon_gap;
             }
         }
         text_el(
@@ -369,10 +365,16 @@ pub fn render_svg(
         }
     }
     for edge_idx in compiled.graph.edge_indices() {
-        let (Some(step), Some(&(bx, by))) = (compiled.graph[edge_idx].step, annotations.badges.get(&edge_idx)) else {
+        let (Some(step), Some(&(bx, by))) = (compiled.graph[edge_idx].step.as_deref(), annotations.badges.get(&edge_idx)) else {
             continue;
         };
-        el(&mut w, "circle", &[("cx", f1(bx)), ("cy", f1(by)), ("r", f1(tokens.badge_radius)), ("fill", theme.badge.fill.clone())])?;
+        // A circle, or a pill for a longer step (`16a`): same height, rounded ends.
+        let (bw, bh) = rdg_render_core::annotate::badge_size(step, tokens);
+        el(
+            &mut w,
+            "rect",
+            &[("x", f1(bx - bw / 2.0)), ("y", f1(by - bh / 2.0)), ("width", f1(bw)), ("height", f1(bh)), ("rx", f1(bh / 2.0)), ("fill", theme.badge.fill.clone())],
+        )?;
         text_el(
             &mut w,
             &[
@@ -383,7 +385,7 @@ pub fn render_svg(
                 ("font-weight", "bold".into()),
                 ("fill", theme.badge.text.clone()),
             ],
-            &step.to_string(),
+            step,
         )?;
     }
 
@@ -425,17 +427,25 @@ pub(crate) fn draw_node(
         a
     };
 
+    // A flowchart marker: its shape centred at the top of the box, the caption under it.
+    if let Some(mark) = rdg_layout::caption_mark(nd, tokens).filter(|_| look.shape != "icon") {
+        let (mcx, mcy, r) = (cx, nl.y + mark / 2.0, mark / 2.0);
+        match look.shape.as_str() {
+            "start" => el(w, "circle", &[("cx", f1(mcx)), ("cy", f1(mcy)), ("r", f1(r - 2.0)), ("fill", look.fill.clone())])?,
+            "end" => {
+                el(w, "circle", &[("cx", f1(mcx)), ("cy", f1(mcy)), ("r", f1(r - 1.0)), ("fill", "none".into()), ("stroke", look.stroke.clone()), ("stroke-width", "2".into())])?;
+                el(w, "circle", &[("cx", f1(mcx)), ("cy", f1(mcy)), ("r", f1(r - 6.0)), ("fill", look.fill.clone())])?;
+            }
+            _ => {
+                let d = format!("M {mcx:.1} {t:.1} L {rx:.1} {mcy:.1} L {mcx:.1} {b:.1} L {lx:.1} {mcy:.1} Z", t = nl.y, rx = mcx + r, b = nl.y + mark, lx = mcx - r);
+                el(w, "path", &paint(&[("d", d)]))?;
+            }
+        }
+        let top = nl.y + mark + rdg_layout::caption_gap(tokens);
+        return node_text(w, theme, tokens, nd, look, cx, top, None, None);
+    }
     match look.shape.as_str() {
-        "start" => {
-            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 2.0)), ("fill", look.fill.clone())])?;
-            return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
-        }
-        "end" => {
-            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 1.0)), ("fill", "none".into()), ("stroke", look.stroke.clone()), ("stroke-width", "2".into())])?;
-            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 6.0)), ("fill", look.fill.clone())])?;
-            return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
-        }
-        "choice" | "diamond" => {
+        "diamond" => {
             let d = format!(
                 "M {cx:.1} {t:.1} L {r:.1} {cy:.1} L {cx:.1} {b:.1} L {l:.1} {cy:.1} Z",
                 t = nl.y,
@@ -444,9 +454,6 @@ pub(crate) fn draw_node(
                 l = nl.x
             );
             el(w, "path", &paint(&[("d", d)]))?;
-            if look.shape == "choice" {
-                return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
-            }
         }
         "ellipse" => {
             el(w, "ellipse", &paint(&[("cx", f1(cx)), ("cy", f1(cy)), ("rx", f1(nl.width / 2.0)), ("ry", f1(nl.height / 2.0))]))?;
@@ -486,7 +493,7 @@ pub(crate) fn draw_node(
                     w.write_event(Event::Text(BytesText::from_escaped(m)))?;
                 }
             }
-            let top = nl.y + halo + tokens.px(0.25);
+            let top = nl.y + halo + rdg_layout::caption_gap(tokens);
             return node_text(w, theme, tokens, nd, look, cx, top, None, None);
         }
         _ => {
@@ -503,7 +510,7 @@ pub(crate) fn draw_node(
     }
     // Vertically centred in the box (a cylinder's body, below its cap); the icon sits
     // inline before the first line, the pair centred together.
-    let lines = wrap_and_classify_label(&nd.label, if look.shape == "diamond" { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal });
+    let lines = rdg_layout::node_lines(nd, rdg_layout::wrap_chars_for(nd, tokens));
     let tech = nd.technology.as_deref().filter(|t| !nd.label.contains(*t));
     let inline_icon = nd.icon.as_deref().filter(|k| rdg_icons::icon_document(k, theme.icon_style()).is_some());
     let text_h: f64 = lines
@@ -533,11 +540,11 @@ fn node_text(
     look: &NodeLook,
     cx: f64,
     top: f64,
-    lines: Option<Vec<rdg_render_core::typography::ProcessedLine>>,
+    lines: Option<Vec<rdg_layout::LabelLine>>,
     inline_icon: Option<(&str, usize)>,
 ) -> Result<()> {
     let f = &theme.font;
-    let lines = lines.unwrap_or_else(|| wrap_and_classify_label(&nd.label, tokens.wrap_chars_normal));
+    let lines = lines.unwrap_or_else(|| rdg_layout::node_lines(nd, tokens.wrap_chars_normal));
     let mut y = top;
     for (i, pl) in lines.iter().enumerate() {
         let size = if pl.is_subtitle { f.node_detail_size } else { f.node_title_size };
@@ -609,28 +616,6 @@ fn node_text(
     Ok(())
 }
 
-/// A marker's label, underneath it.
-fn label_below(w: &mut W, theme: &Theme, tokens: &DesignTokens, label: &str, cx: f64, top: f64, color: &str) -> Result<()> {
-    let size = theme.font.node_title_size;
-    let lh = tokens.line_height(size);
-    for (i, pl) in wrap_and_classify_label(label, tokens.wrap_chars_normal).iter().enumerate() {
-        let plain: String = parse_inline_spans(&pl.text).into_iter().map(|s| s.text).collect();
-        text_el(
-            w,
-            &[
-                ("x", f1(cx)),
-                ("y", f1(top + lh * (i as f64 + 0.93))),
-                ("text-anchor", "middle".into()),
-                ("font-size", format!("{size}")),
-                ("font-weight", "bold".into()),
-                ("fill", color.to_string()),
-            ],
-            &plain,
-        )?;
-    }
-    Ok(())
-}
-
 /// Table / class card body: name header, divider, one row per field.
 fn field_card(w: &mut W, theme: &Theme, nd: &NodeData, nl: &NodeLayout, look: &NodeLook) -> Result<()> {
     let f = &theme.font;
@@ -649,7 +634,7 @@ fn field_card(w: &mut W, theme: &Theme, nd: &NodeData, nl: &NodeLayout, look: &N
     if lower == "abstract_class" {
         title.push(("font-style", "italic".into()));
     }
-    text_el(w, &title, &nd.label)?;
+    text_el(w, &title, nd.heading())?;
     y += 8.0;
     el(w, "line", &[("x1", f1(nl.x)), ("y1", f1(y)), ("x2", f1(nl.x + nl.width)), ("y2", f1(y)), ("stroke", look.stroke.clone()), ("stroke-opacity", "0.4".into())])?;
     for (i, field) in nd.fields.iter().enumerate() {

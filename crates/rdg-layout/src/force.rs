@@ -41,7 +41,7 @@ pub fn compute_force_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> 
     hillclimb::refine(&mut positions, compiled, &config.tokens, &HashMap::new());
 
     let mut result = LayoutResult { positions, sequence_info: None };
-    normalize_positions(&mut result, config, !compiled.groups.is_empty(), compiled.title.is_some());
+    normalize_positions(&mut result, config, !compiled.groups.is_empty());
     Ok(result)
 }
 

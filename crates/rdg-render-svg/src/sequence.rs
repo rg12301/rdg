@@ -252,7 +252,7 @@ pub fn render_sequence_svg(
         let Some(nl) = layout.positions.get(&idx) else { continue };
         let look = node_look(theme, nd);
         if look.shape == "actor" {
-            draw_actor(&mut w, theme, tokens, &nd.label, nl.x + nl.width / 2.0, nl.y, &look.stroke, &look.title_color)?;
+            draw_actor(&mut w, theme, tokens, nd, nl.x + nl.width / 2.0, nl.y, &look.stroke, &look.title_color)?;
         } else {
             draw_node(&mut w, theme, tokens, nd, nl, &look, idx.index(), &shadow_attr)?;
         }
@@ -267,9 +267,9 @@ pub fn render_sequence_svg(
     String::from_utf8(buf).map_err(|e| anyhow::anyhow!("invalid UTF-8 in svg output: {e}"))
 }
 
-/// A stick figure in `ink`, its label (bold first line) underneath.
+/// A stick figure in `ink`, its caption (title bold, details muted) underneath.
 #[allow(clippy::too_many_arguments)]
-fn draw_actor(w: &mut W, theme: &Theme, tokens: &DesignTokens, label: &str, cx: f64, top: f64, ink: &str, text: &str) -> Result<()> {
+fn draw_actor(w: &mut W, theme: &Theme, tokens: &DesignTokens, nd: &rdg_graph::NodeData, cx: f64, top: f64, ink: &str, text: &str) -> Result<()> {
     let h = actor_figure_h(tokens) - tokens.px(0.5);
     let (r, neck, hip) = (h * 0.16, top + h * 0.32, top + h * 0.68);
     let d = format!(
@@ -285,7 +285,8 @@ fn draw_actor(w: &mut W, theme: &Theme, tokens: &DesignTokens, label: &str, cx: 
     el(w, "path", &[("d", d), ("fill", "none".into()), ("stroke", ink.to_string()), ("stroke-width", "1.75".into()), ("stroke-linecap", "round".into())])?;
     let fs = theme.font.node_title_size;
     let lh = tokens.line_height(fs);
-    for (i, line) in label.lines().enumerate() {
+    // The same lines the layout sized the caption for.
+    for (i, line) in rdg_layout::node_lines(nd, tokens.wrap_chars_normal).iter().enumerate() {
         text_el(
             w,
             &[
@@ -293,10 +294,10 @@ fn draw_actor(w: &mut W, theme: &Theme, tokens: &DesignTokens, label: &str, cx: 
                 ("y", f1(top + actor_figure_h(tokens) + lh * (i as f64 + 0.75))),
                 ("text-anchor", "middle".into()),
                 ("font-size", format!("{fs}")),
-                ("font-weight", if i == 0 { "bold" } else { "normal" }.into()),
+                ("font-weight", if line.is_subtitle { "normal" } else { "bold" }.into()),
                 ("fill", text.to_string()),
             ],
-            line,
+            &line.text,
         )?;
     }
     Ok(())

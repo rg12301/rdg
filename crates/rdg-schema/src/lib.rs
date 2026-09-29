@@ -257,6 +257,70 @@ impl SeqStep {
     }
 }
 
+/// A step label written as a number (`3`, and `3.1`, which YAML reads as a float) or a
+/// string (`"3b"`), kept as the text the author wrote.
+fn step_label<'de, D>(d: D) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Raw {
+        Int(u64),
+        Float(f64),
+        Text(String),
+    }
+    Ok(match Option::<Raw>::deserialize(d)? {
+        None => None,
+        Some(Raw::Int(n)) => Some(n.to_string()),
+        Some(Raw::Float(f)) => Some(f.to_string()),
+        Some(Raw::Text(s)) => Some(s.trim().to_string()).filter(|s| !s.is_empty()),
+    })
+}
+
+/// Why a step label is not usable, or `None` when it is: a number, optionally followed
+/// by a branch (`3a`, `3b`, `3.1`, `3.1a`), at most 6 characters so it fits its badge.
+pub fn step_label_problem(step: &str) -> Option<&'static str> {
+    let digits = step.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 {
+        return Some("a step must start with a number, e.g. `3`, `3a` or `3.1`");
+    }
+    if step.chars().count() > 6 {
+        return Some("a step label is at most 6 characters so it fits its badge");
+    }
+    if !step[digits..].chars().all(|c| c.is_ascii_alphanumeric() || c == '.') {
+        return Some("a step is a number with an optional branch, e.g. `3a` or `3.1`");
+    }
+    None
+}
+
+/// The leading number of a step label (`"12b"` → 12).
+pub fn step_major(step: &str) -> Option<u32> {
+    let digits: String = step.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
+}
+
+/// The badge text for each edge, in declaration order. An explicit `step` is used as
+/// written; an edge without one takes the number after the previous edge's (so after
+/// `3a`, `3b` comes `4`). Without `numbered: true` only explicit steps are shown.
+pub fn resolve_steps(edges: &[EdgeDef], numbered: bool) -> Vec<Option<String>> {
+    let mut last = 0u32;
+    edges
+        .iter()
+        .map(|e| match e.step.as_deref() {
+            Some(s) => {
+                last = step_major(s).unwrap_or(last);
+                Some(s.to_string())
+            }
+            None if numbered => {
+                last += 1;
+                Some(last.to_string())
+            }
+            None => None,
+        })
+        .collect()
+}
+
 /// Accepts one value or a list of them.
 fn one_or_many<'de, D, T>(d: D) -> std::result::Result<Vec<T>, D::Error>
 where
@@ -567,9 +631,14 @@ pub struct GroupDef {
     #[serde(default, alias = "border", alias = "fill", alias = "accent")]
     pub color: Option<String>,
 
-    /// List of node IDs contained in this group.
+    /// Members: node ids, and ids of groups nested inside this one.
     #[serde(default, alias = "members", alias = "node_ids")]
     pub nodes: Vec<String>,
+
+    /// Id of the group this one is drawn inside (same as listing this group's id in the
+    /// parent's `nodes`).
+    #[serde(default, alias = "in", alias = "inside")]
+    pub parent: Option<String>,
 
     /// Optional programming language or tech stack for the container (e.g. `rust`, `go`, `python`).
     /// When specified or detected, member nodes sharing this stack do not display redundant icons.
@@ -612,6 +681,203 @@ impl GroupDef {
             return Some(l);
         }
         None
+    }
+}
+
+/// How the groups nest and which nodes each one holds directly, resolved once from the
+/// YAML (see [`DiagramPayload::group_tree`]) so validation, layout and rendering agree.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct GroupTree {
+    /// Enclosing group of each group (indices into `groups`); `None` at the top level.
+    pub parent: Vec<Option<usize>>,
+    /// Node ids each group holds *directly* — a node listed by a group and by a group
+    /// nested in it belongs to the inner one.
+    pub nodes: Vec<Vec<String>>,
+    /// Structural problems met while resolving (unknown members are left to the caller).
+    pub issues: Vec<GroupIssue>,
+}
+
+/// A problem in how groups are declared.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupIssue {
+    /// Blocks rendering (else it's a warning).
+    pub error: bool,
+    /// YAML location, e.g. `groups[2].parent`.
+    pub path: String,
+    pub message: String,
+}
+
+impl GroupTree {
+    /// Groups directly inside group `g`, in declaration order.
+    pub fn children(&self, g: usize) -> impl Iterator<Item = usize> + '_ {
+        (0..self.parent.len()).filter(move |&c| self.parent[c] == Some(g))
+    }
+
+    /// Nesting depth of group `g` (0 at the top level).
+    pub fn depth(&self, g: usize) -> usize {
+        std::iter::successors(self.parent[g], |&p| self.parent[p]).count()
+    }
+
+    /// Whether `a` is `b` or encloses it (at any depth).
+    pub fn contains(&self, a: usize, b: usize) -> bool {
+        std::iter::successors(Some(b), |&p| self.parent[p]).any(|g| g == a)
+    }
+
+    /// Every group, each one before the groups nested in it (declaration order among
+    /// siblings) — the order containers are drawn in, so inner boxes land on top.
+    pub fn outer_first(&self) -> Vec<usize> {
+        let mut out = Vec::with_capacity(self.parent.len());
+        let mut stack: Vec<usize> = (0..self.parent.len()).filter(|&g| self.parent[g].is_none()).rev().collect();
+        while let Some(g) = stack.pop() {
+            out.push(g);
+            let kids: Vec<usize> = self.children(g).collect();
+            stack.extend(kids.into_iter().rev());
+        }
+        out
+    }
+}
+
+impl DiagramPayload {
+    /// Resolves group nesting and direct membership.
+    ///
+    /// A group is nested by naming its parent (`parent: outer`) or by listing its id in
+    /// the parent's `nodes`. A group that declares neither is placed inside the smallest
+    /// other group whose nodes include all of its own — how a writer who lists a node in
+    /// both an outer and an inner group means it. A node listed by groups that don't nest
+    /// stays in the first one (a warning).
+    pub fn group_tree(&self) -> GroupTree {
+        let n = self.groups.len();
+        let mut issues = Vec::new();
+        let mut index: HashMap<&str, usize> = HashMap::new();
+        for (i, g) in self.groups.iter().enumerate() {
+            index.entry(g.id.as_str()).or_insert(i);
+        }
+        let node_ids: std::collections::HashSet<&str> = self.nodes.iter().map(|n| n.id.as_str()).collect();
+
+        // --- Declared nesting: `parent:`, or a group id among another group's members ---
+        let mut parent: Vec<Option<usize>> = vec![None; n];
+        let mut declared_at: Vec<Option<String>> = vec![None; n];
+        let mut declare = |child: usize, p: usize, path: String, issues: &mut Vec<GroupIssue>| {
+            if child == p {
+                issues.push(GroupIssue { error: true, path, message: format!("group `{}` cannot contain itself", self.groups[child].id) });
+            } else if let Some(prev) = parent[child].filter(|&q| q != p) {
+                issues.push(GroupIssue {
+                    error: true,
+                    path,
+                    message: format!(
+                        "group `{}` is already inside `{}` ({}); a group has one parent",
+                        self.groups[child].id,
+                        self.groups[prev].id,
+                        declared_at[child].as_deref().unwrap_or("?")
+                    ),
+                });
+            } else {
+                parent[child] = Some(p);
+                declared_at[child] = Some(path);
+            }
+        };
+        for (i, g) in self.groups.iter().enumerate() {
+            if let Some(p) = g.parent.as_deref() {
+                match index.get(p) {
+                    Some(&pi) => declare(i, pi, format!("groups[{i}].parent"), &mut issues),
+                    None => issues.push(GroupIssue {
+                        error: true,
+                        path: format!("groups[{i}].parent"),
+                        message: format!("unknown group id `{p}`"),
+                    }),
+                }
+            }
+        }
+        for (i, g) in self.groups.iter().enumerate() {
+            for (j, m) in g.nodes.iter().enumerate() {
+                if let (Some(&c), false) = (index.get(m.as_str()), node_ids.contains(m.as_str())) {
+                    declare(c, i, format!("groups[{i}].nodes[{j}]"), &mut issues);
+                }
+            }
+        }
+        // A cycle (a inside b inside a) is cut where it closes.
+        for g in 0..n {
+            let mut seen = vec![false; n];
+            let mut cur = g;
+            while let Some(p) = parent[cur] {
+                if seen[p] {
+                    issues.push(GroupIssue {
+                        error: true,
+                        path: declared_at[cur].clone().unwrap_or_else(|| format!("groups[{cur}]")),
+                        message: format!("groups `{}` and `{}` are nested inside each other", self.groups[cur].id, self.groups[p].id),
+                    });
+                    parent[cur] = None;
+                    break;
+                }
+                seen[p] = true;
+                cur = p;
+            }
+        }
+
+        // --- Implied nesting: all of a group's nodes are listed by a bigger group --------
+        let listed = |g: usize| -> std::collections::HashSet<&str> {
+            self.groups[g].nodes.iter().map(String::as_str).filter(|m| node_ids.contains(m)).collect()
+        };
+        let own: Vec<_> = (0..n).map(listed).collect();
+        let tree = |parent: &[Option<usize>]| GroupTree { parent: parent.to_vec(), ..Default::default() };
+        let all_nodes = |parent: &[Option<usize>], g: usize| -> std::collections::HashSet<&str> {
+            let t = tree(parent);
+            (0..n).filter(|&d| t.contains(g, d)).flat_map(|d| own[d].iter().copied()).collect()
+        };
+        let declared = parent.clone();
+        for g in 0..n {
+            if declared[g].is_some() || index.get(self.groups[g].id.as_str()) != Some(&g) {
+                continue;
+            }
+            let mine = all_nodes(&declared, g);
+            if mine.is_empty() {
+                continue;
+            }
+            let t = tree(&declared);
+            parent[g] = (0..n)
+                .filter(|&o| o != g && !t.contains(g, o))
+                .map(|o| (o, all_nodes(&declared, o)))
+                .filter(|(_, theirs)| theirs.len() > mine.len() && mine.is_subset(theirs))
+                .min_by_key(|(o, theirs)| (theirs.len(), *o))
+                .map(|(o, _)| o);
+        }
+
+        // --- Direct membership: the innermost of the groups listing a node ------------
+        let t = tree(&parent);
+        let mut home: HashMap<&str, usize> = HashMap::new();
+        for (i, g) in self.groups.iter().enumerate() {
+            for (j, m) in g.nodes.iter().enumerate() {
+                if !node_ids.contains(m.as_str()) {
+                    continue;
+                }
+                match home.get(m.as_str()).copied() {
+                    None => {
+                        home.insert(m, i);
+                    }
+                    Some(h) if t.contains(h, i) => {
+                        home.insert(m, i);
+                    }
+                    Some(h) if t.contains(i, h) => {}
+                    Some(h) => issues.push(GroupIssue {
+                        error: false,
+                        path: format!("groups[{i}].nodes[{j}]"),
+                        message: format!(
+                            "node `{m}` is also in group `{}`, which is not nested with `{}`; it stays in `{}`",
+                            self.groups[h].id, g.id, self.groups[h].id
+                        ),
+                    }),
+                }
+            }
+        }
+        let mut nodes = vec![Vec::new(); n];
+        for (i, g) in self.groups.iter().enumerate() {
+            for m in &g.nodes {
+                if home.get(m.as_str()) == Some(&i) && !nodes[i].contains(m) {
+                    nodes[i].push(m.clone());
+                }
+            }
+        }
+        GroupTree { parent, nodes, issues }
     }
 }
 
@@ -676,17 +942,24 @@ pub struct NodeDef {
     /// Unique identifier used to reference this node in edges.
     pub id: String,
 
-    /// Human-readable label rendered inside the shape.
+    /// Shorthand text rendered inside the shape: the first line is the bold title,
+    /// later lines are muted detail lines (see `rdg --guide nodes`). For exact control
+    /// use `title` / `subtitle` / `description` instead.
     #[serde(default)]
     pub label: String,
 
-    /// Alternative to `label`: primary title line.
+    /// The bold heading, drawn exactly as written: never split into detail text,
+    /// wrapped only at spaces when too wide (`\n` forces a line break).
     #[serde(default, alias = "name")]
     pub title: Option<String>,
 
-    /// Optional subtitle line (rendered as muted text below the title).
+    /// A short muted line under the title (e.g. `ops dashboard`, `wallet`).
     #[serde(default, alias = "sub_label", alias = "detail")]
     pub subtitle: Option<String>,
+
+    /// Muted body text under the title/subtitle, wrapped to the card's width.
+    #[serde(default, alias = "desc", alias = "body")]
+    pub description: Option<String>,
 
     /// Semantic type used to select the draw.io style (e.g. `proxy`, `database`).
     #[serde(
@@ -698,8 +971,8 @@ pub struct NodeDef {
     )]
     pub node_type: String,
 
-    /// Optional free-text metadata (e.g. tooltip, annotation).
-    #[serde(default, alias = "description", alias = "desc", alias = "tooltip")]
+    /// Hover text (draw.io tooltip) — not drawn on the canvas.
+    #[serde(default, alias = "tooltip")]
     pub metadata: Option<String>,
 
     /// Optional list of table columns (for ER diagrams) or class attributes/methods (for UML Class diagrams).
@@ -779,6 +1052,7 @@ impl Default for NodeDef {
             label: String::new(),
             title: None,
             subtitle: None,
+            description: None,
             node_type: default_node_type(),
             metadata: None,
             fields: Vec::new(),
@@ -799,25 +1073,43 @@ impl Default for NodeDef {
     }
 }
 
+/// A node's text with its roles stated by the author: the bold title and the muted
+/// lines under it. Renderers draw it as given instead of guessing roles from line
+/// breaks (which is what `label` does).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct NodeText {
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub description: Option<String>,
+}
+
+fn non_blank(s: &Option<String>) -> Option<String> {
+    s.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
+}
+
 impl NodeDef {
-    /// Resolves the effective label for rendering.
-    ///
-    /// If `label` is non-empty, returns it.
-    /// If `title` is supplied, combines `title` and optional `subtitle`.
-    /// Otherwise falls back to `id`.
+    /// The node's text as one string (lines joined by `\n`): the explicit title,
+    /// subtitle and description when used, else `label`, else the id. Used where only
+    /// the words matter (icon/language detection, tooltips); drawing goes through
+    /// [`Self::text`].
     pub fn resolved_label(&self) -> String {
-        if !self.label.trim().is_empty() {
-            return self.label.clone();
+        match self.text() {
+            Some(t) => [Some(t.title), t.subtitle, t.description].into_iter().flatten().collect::<Vec<_>>().join("\n"),
+            None if !self.label.trim().is_empty() => self.label.clone(),
+            None => self.id.clone(),
         }
-        if let Some(t) = &self.title {
-            if let Some(sub) = &self.subtitle {
-                if !sub.trim().is_empty() {
-                    return format!("{t}\n({sub})");
-                }
-            }
-            return t.clone();
+    }
+
+    /// The explicit title / subtitle / description, when the node uses them. A node
+    /// with only a `subtitle` or `description` gets its `label` (or id) as the title.
+    pub fn text(&self) -> Option<NodeText> {
+        let (subtitle, description) = (non_blank(&self.subtitle), non_blank(&self.description));
+        let title = non_blank(&self.title);
+        if title.is_none() && subtitle.is_none() && description.is_none() {
+            return None;
         }
-        self.id.clone()
+        let title = title.or_else(|| non_blank(&Some(self.label.clone()))).unwrap_or_else(|| self.id.clone());
+        Some(NodeText { title, subtitle, description })
     }
 
     /// Returns the resolved list of fields (columns or class members).
@@ -1005,10 +1297,11 @@ pub struct EdgeDef {
     #[serde(default, alias = "dst_port", alias = "to_port", alias = "entry_port")]
     pub target_port: Option<String>,
 
-    /// Optional explicit flow sequence number (1-indexed), overriding the declaration-order
-    /// auto-numbering used when the diagram sets `numbered: true`.
-    #[serde(default, alias = "order", alias = "sequence")]
-    pub step: Option<u32>,
+    /// Explicit flow step shown in the edge's badge: a number (`3`) or a branch of one
+    /// (`3a`, `3b`, `3.1`). Edges without one continue from the previous step when the
+    /// diagram sets `numbered: true` (see [`resolve_steps`]).
+    #[serde(default, alias = "order", alias = "sequence", deserialize_with = "step_label")]
+    pub step: Option<String>,
 
     /// Optional named style preset to inherit from — see [`DiagramPayload::edge_styles`].
     #[serde(default, alias = "preset")]
@@ -1081,7 +1374,11 @@ groups:
 
   - id: grp_core
     label: "Core Services"
-    nodes: ["auth_svc", "order_svc", "order_queue", "inventory_db"]
+    nodes: ["auth_svc", "order_svc", "grp_data"]   # a group id nests that group inside
+
+  - id: grp_data
+    label: "Data"
+    nodes: ["order_queue", "inventory_db"]
 
 nodes:
   - id: client
@@ -1097,12 +1394,14 @@ nodes:
     metadata: "TLS termination, auth, and rate-limiting"
 
   - id: auth_svc
-    label: "Auth Service"
+    title: "auth-service"          # bold heading, drawn as written — never split
+    subtitle: "OAuth2 / JWT"       # short muted line under it
+    description: "Issues and verifies tokens for every client"   # muted, wrapped
     type: service
     category: security             # colour by meaning: frontend, backend, database, messagebus, cloud, security, external
     technology: "Go / Chi"
     language: "go"
-    metadata: "OAuth2 / JWT token issuer"
+    metadata: "Hover text: token issuer for web, mobile and partner apps"
 
   - id: order_svc
     label: "Order Service"
@@ -1137,11 +1436,13 @@ edges:
     to: auth_svc
     label: "POST /auth/verify"
     edge_style: flow
+    step: 2a                       # a branch: 2a and 2b leave the gateway side by side
 
   - from: api_gw
     to: order_svc
     label: "POST /orders"
     edge_style: flow
+    step: 2b                       # the next unnumbered edge continues at 3
 
   - from: order_svc
     to: order_queue
@@ -1270,12 +1571,13 @@ const JSON_SCHEMA: &str = r##"{
         "properties": {
           "id": { "type": "string", "description": "Unique container ID" },
           "label": { "type": "string", "description": "Group title banner" },
+          "parent": { "type": "string", "description": "Id of the group this one is drawn inside (same as listing this id in the parent's nodes)" },
           "color": { "type": "string", "description": "Border / accent hex color" },
           "category": { "type": "string", "description": "Semantic category (colour) of the container" },
           "nodes": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "List of node IDs enclosed inside this group"
+            "description": "Node ids, and ids of groups nested inside this one"
           }
         }
       }
@@ -1288,9 +1590,10 @@ const JSON_SCHEMA: &str = r##"{
         "required": ["id"],
         "properties": {
           "id": { "type": "string", "description": "Unique node identifier" },
-          "label": { "type": "string", "description": "Label text with optional \\n and inline markdown" },
-          "title": { "type": "string", "description": "Alternative to label: primary title line" },
-          "subtitle": { "type": "string", "description": "Alternative to label: secondary muted line" },
+          "title": { "type": "string", "description": "Bold heading, drawn exactly as written: never split into detail text, wrapped only at spaces" },
+          "subtitle": { "type": "string", "description": "Short muted line under the title" },
+          "description": { "type": "string", "description": "Muted body text under the title/subtitle, wrapped to the card" },
+          "label": { "type": "string", "description": "Shorthand for the text: first line = bold title, later lines (\\n) = muted details; ignored when title is set" },
           "type": {
             "type": "string",
             "default": "default",
@@ -1326,7 +1629,7 @@ const JSON_SCHEMA: &str = r##"{
             "items": { "type": "string" },
             "description": "Structured field rows (e.g. 'id: UUID [PK]', '+execute(): void')"
           },
-          "metadata": { "type": "string", "description": "Optional tooltip / annotation" }
+          "metadata": { "type": "string", "description": "Hover text (draw.io tooltip), not drawn" }
         }
       }
     },
@@ -1352,7 +1655,11 @@ const JSON_SCHEMA: &str = r##"{
             "description": "Visual connector style with semantic arrowheads (ER crow's foot, UML markers, async dashed)"
           },
           "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" },
-          "step": { "type": "integer", "description": "Explicit flow sequence number, overrides declaration-order auto-numbering" },
+          "step": {
+            "type": ["integer", "number", "string"],
+            "pattern": "^[0-9]+[0-9A-Za-z.]{0,5}$",
+            "description": "Badge text: a step number (3) or a branch of one (3a, 3b, 3.1), at most 6 characters. Later edges without a step continue from its number."
+          },
           "class": { "type": "string", "description": "Named style preset to inherit from (see edge_styles)" },
           "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" }
         }
@@ -1525,11 +1832,13 @@ edges:
         assert_eq!(payload.groups[0].color.as_deref(), Some("#38bdf8"));
         assert_eq!(payload.groups[0].nodes, vec!["n1", "n2"]);
         assert_eq!(payload.nodes[0].node_type, "proxy");
-        assert_eq!(payload.nodes[0].resolved_label(), "API Proxy\n(Kong)");
-        assert_eq!(
-            payload.nodes[0].metadata.as_deref(),
-            Some("Routes external traffic")
-        );
+        // Title, subtitle and description keep their roles, and nothing is added to them.
+        let text = payload.nodes[0].text().expect("explicit text");
+        assert_eq!(text.title, "API Proxy");
+        assert_eq!(text.subtitle.as_deref(), Some("Kong"));
+        assert_eq!(text.description.as_deref(), Some("Routes external traffic"));
+        assert_eq!(payload.nodes[0].resolved_label(), "API Proxy\nKong\nRoutes external traffic");
+        assert_eq!(payload.nodes[0].metadata, None, "description is drawn, not a tooltip");
         assert_eq!(payload.nodes[1].node_type, "database");
         assert_eq!(payload.edges[0].from, "n1");
         assert_eq!(payload.edges[0].to, "n2");
@@ -1548,7 +1857,9 @@ edges:
             .expect("reference example_yaml must deserialize cleanly");
         assert_eq!(payload.nodes.len(), 6);
         assert_eq!(payload.edges.len(), 5);
-        assert_eq!(payload.groups.len(), 2);
+        assert_eq!(payload.groups.len(), 3);
+        assert_eq!(payload.group_tree().parent, vec![None, None, Some(1)], "the example nests `grp_data` in `grp_core`");
+        assert!(payload.group_tree().issues.is_empty());
         assert!(payload.is_numbered());
         assert_eq!(payload.node_styles.len(), 1);
     }
@@ -1749,7 +2060,83 @@ edges:
     step: 5
 "#;
         let payload = DiagramPayload::from_yaml(yaml).unwrap();
-        assert_eq!(payload.edges[0].step, Some(5));
+        assert_eq!(payload.edges[0].step.as_deref(), Some("5"));
+    }
+
+    #[test]
+    fn test_branch_steps_parse_and_numbering_continues_after_them() {
+        let yaml = r#"
+numbered: true
+nodes: [{id: a}, {id: b}, {id: c}]
+edges:
+  - {from: a, to: b}
+  - {from: b, to: c}
+  - {from: c, to: a, step: 3a}
+  - {from: c, to: b, step: "3b"}
+  - {from: a, to: c, step: 3.1}
+  - {from: b, to: a}
+"#;
+        let payload = DiagramPayload::from_yaml(yaml).unwrap();
+        let steps = resolve_steps(&payload.edges, payload.is_numbered());
+        let steps: Vec<&str> = steps.iter().map(|s| s.as_deref().unwrap()).collect();
+        assert_eq!(steps, ["1", "2", "3a", "3b", "3.1", "4"]);
+        // Unnumbered diagrams show only the steps written out.
+        assert_eq!(resolve_steps(&payload.edges, false)[0], None);
+        assert_eq!(resolve_steps(&payload.edges, false)[2].as_deref(), Some("3a"));
+    }
+
+    #[test]
+    fn test_step_label_problems() {
+        for ok in ["3", "3a", "12b", "3.1", "3.1a"] {
+            assert_eq!(step_label_problem(ok), None, "{ok}");
+        }
+        for bad in ["a3", "3 b", "1234567", "3-b"] {
+            assert!(step_label_problem(bad).is_some(), "{bad}");
+        }
+    }
+
+    fn groups_yaml(groups: &str) -> DiagramPayload {
+        DiagramPayload::from_yaml(&format!("nodes: [{{id: a}}, {{id: b}}, {{id: c}}, {{id: d}}]\ngroups:\n{groups}")).unwrap()
+    }
+
+    #[test]
+    fn test_group_nesting_by_member_id_or_parent() {
+        let p = groups_yaml("  - {id: outer, label: O, nodes: [a, inner]}\n  - {id: inner, label: I, nodes: [b]}\n  - {id: deep, label: D, parent: inner, nodes: [c]}\n");
+        let t = p.group_tree();
+        assert_eq!(t.parent, vec![None, Some(0), Some(1)]);
+        assert_eq!(t.nodes, vec![vec!["a".to_string()], vec!["b".to_string()], vec!["c".to_string()]]);
+        assert!(t.issues.is_empty(), "{:?}", t.issues);
+        assert_eq!(t.outer_first(), vec![0, 1, 2]);
+        assert_eq!(t.depth(2), 2);
+        assert!(t.contains(0, 2) && !t.contains(2, 0));
+    }
+
+    #[test]
+    fn test_group_nesting_implied_by_listing_nodes_in_both() {
+        // How writers nest without saying so: the outer group lists every node, the
+        // inner one a subset. The inner group wins its nodes; no warning.
+        let p = groups_yaml("  - {id: outer, label: O, nodes: [a, b, c]}\n  - {id: inner, label: I, nodes: [b, c]}\n");
+        let t = p.group_tree();
+        assert_eq!(t.parent, vec![None, Some(0)]);
+        assert_eq!(t.nodes, vec![vec!["a".to_string()], vec!["b".to_string(), "c".to_string()]]);
+        assert!(t.issues.is_empty());
+    }
+
+    #[test]
+    fn test_group_overlap_and_cycles_are_reported() {
+        let p = groups_yaml("  - {id: x, label: X, nodes: [a, b]}\n  - {id: y, label: Y, nodes: [b, c]}\n");
+        let t = p.group_tree();
+        assert_eq!(t.parent, vec![None, None]);
+        assert_eq!(t.nodes[1], vec!["c".to_string()], "b stays in the first group");
+        assert!(t.issues.iter().any(|i| !i.error && i.path == "groups[1].nodes[0]"));
+
+        let p = groups_yaml("  - {id: x, label: X, nodes: [a, y]}\n  - {id: y, label: Y, nodes: [b, x]}\n");
+        let t = p.group_tree();
+        assert!(t.issues.iter().any(|i| i.error && i.message.contains("nested inside each other")));
+        assert!(t.parent.iter().any(Option::is_none), "the cycle is cut");
+
+        let p = groups_yaml("  - {id: x, label: X, parent: nope, nodes: [a]}\n");
+        assert!(p.group_tree().issues.iter().any(|i| i.error && i.path == "groups[0].parent"));
     }
 
     // -----------------------------------------------------------------------

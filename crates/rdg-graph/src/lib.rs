@@ -17,7 +17,7 @@ use petgraph::{
 };
 use std::collections::{HashMap, HashSet};
 
-use rdg_schema::{DiagramPayload, GroupDef};
+use rdg_schema::{DiagramPayload, GroupDef, GroupTree, NodeText};
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -28,8 +28,11 @@ use rdg_schema::{DiagramPayload, GroupDef};
 pub struct NodeData {
     /// Original user-supplied identifier.
     pub id: String,
-    /// Human-readable label.
+    /// The node's text as one string (see [`rdg_schema::NodeDef::resolved_label`]).
     pub label: String,
+    /// Title / subtitle / description as the author set them, when they did; drawn as
+    /// given. `None`: `label` is drawn, its lines classified by `rdg_layout::classify_label`.
+    pub text: Option<NodeText>,
     /// Semantic type string (maps to a draw.io style).
     pub node_type: String,
     /// Optional free-text annotation.
@@ -92,9 +95,9 @@ pub struct EdgeData {
     pub target_port: Option<String>,
     /// Optional raw draw.io style fragment appended verbatim (draw.io backend only).
     pub style_extra: Option<String>,
-    /// Resolved flow sequence number (1-indexed), set only when the diagram opted into
-    /// `numbered: true`; `None` means "don't draw a sequence badge for this edge."
-    pub step: Option<u32>,
+    /// Flow-step badge text (`3`, `3a`, `3.1`) — see [`rdg_schema::resolve_steps`];
+    /// `None` means no badge.
+    pub step: Option<String>,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -105,8 +108,13 @@ pub struct CompiledGraph {
     pub node_map: HashMap<String, NodeIndex>,
     /// `true` when at least one cycle was detected and broken.
     pub had_cycles: bool,
-    /// Optional visual groups / swimlanes.
+    /// Visual groups / swimlanes, as declared (`nodes` rewritten to the node ids each
+    /// group holds directly — see [`Self::group_tree`]).
     pub groups: Vec<GroupDef>,
+    /// How `groups` nest.
+    pub group_tree: GroupTree,
+    /// Nodes each group holds directly (inner groups' nodes excluded), in listed order.
+    pub group_nodes: Vec<Vec<NodeIndex>>,
     /// Optional diagram title banner.
     pub title: Option<String>,
     /// Optional diagram description / subtitle.
@@ -120,6 +128,29 @@ pub struct CompiledGraph {
     /// Sequence diagrams: the script in order (messages refer to graph edges). Built
     /// from `sequence:`, or from `edges` as a plain list of messages.
     pub sequence: Vec<SeqItem>,
+}
+
+impl NodeData {
+    /// The node's name: its explicit title, else its label (the header of a table or
+    /// class card, whose other lines are its fields).
+    pub fn heading(&self) -> &str {
+        self.text.as_ref().map_or(self.label.as_str(), |t| t.title.as_str())
+    }
+}
+
+impl CompiledGraph {
+    /// The group holding node `n` directly, if any.
+    pub fn group_of(&self, n: NodeIndex) -> Option<usize> {
+        self.group_nodes.iter().position(|ns| ns.contains(&n))
+    }
+
+    /// Every node inside group `g`, nested groups included.
+    pub fn nodes_within(&self, g: usize) -> Vec<NodeIndex> {
+        (0..self.groups.len())
+            .filter(|&d| self.group_tree.contains(g, d))
+            .flat_map(|d| self.group_nodes[d].iter().copied())
+            .collect()
+    }
 }
 
 /// One compiled step of a sequence diagram.
@@ -169,9 +200,13 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
     let diagram_type = payload.resolved_diagram_type().to_string();
     let is_sequence = diagram_type == "sequence";
 
-    // --- 1. Resolve container / group languages and icon inheritance ----------
+    // --- 1. Group nesting, then container languages and icon inheritance --------
+    let group_tree = payload.group_tree();
     let mut node_to_group_lang: HashMap<String, String> = HashMap::new();
     let mut compiled_groups = payload.groups.clone();
+    for (group, direct) in compiled_groups.iter_mut().zip(&group_tree.nodes) {
+        group.nodes = direct.clone();
+    }
 
     for group in &mut compiled_groups {
         let explicit_or_label_lang = group.resolved_language();
@@ -190,7 +225,9 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                         .and_then(|n| n.resolved_language())
                 })
                 .collect();
-            if !member_langs.is_empty() && member_langs.iter().all(|l| l == &member_langs[0]) {
+            // Only when *every* node in it is written in that language: one Ruby member
+            // among untyped ones doesn't make a Ruby group.
+            if !member_langs.is_empty() && member_langs.len() == group.nodes.len() && member_langs.iter().all(|l| l == &member_langs[0]) {
                 Some(member_langs[0].clone())
             } else {
                 None
@@ -232,6 +269,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         let data = NodeData {
             id: node_def.id.clone(),
             label: node_def.resolved_label(),
+            text: node_def.text(),
             node_type: node_def.node_type.clone(),
             metadata: node_def.metadata.clone(),
             fields: node_def.resolved_fields(),
@@ -255,7 +293,8 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
 
     // --- 2. Add edges -----------------------------------------------------------
     let numbered = payload.is_numbered();
-    for (decl_index, edge_def) in payload.edges.iter().enumerate() {
+    let steps = rdg_schema::resolve_steps(&payload.edges, numbered);
+    for (edge_def, step) in payload.edges.iter().zip(steps) {
         let edge_def = payload.effective_edge(edge_def);
         let src = node_map.get(&edge_def.from).copied().ok_or_else(|| {
             anyhow::anyhow!("edge references unknown source node id '{}'", edge_def.from)
@@ -263,13 +302,6 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         let dst = node_map.get(&edge_def.to).copied().ok_or_else(|| {
             anyhow::anyhow!("edge references unknown target node id '{}'", edge_def.to)
         })?;
-        // Only resolve a sequence number when the diagram opted in — an explicit `step`
-        // always wins, otherwise it's the 1-indexed declaration order.
-        let step = if numbered {
-            Some(edge_def.step.unwrap_or(decl_index as u32 + 1))
-        } else {
-            edge_def.step
-        };
         let e_idx = graph.add_edge(
             src,
             dst,
@@ -317,11 +349,18 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         false
     };
 
+    let group_nodes = group_tree
+        .nodes
+        .iter()
+        .map(|ids| ids.iter().filter_map(|id| node_map.get(id).copied()).collect())
+        .collect();
     Ok(CompiledGraph {
         graph,
         node_map,
         had_cycles,
         groups: compiled_groups,
+        group_tree,
+        group_nodes,
         title: payload.title.clone(),
         description: payload.description.clone(),
         diagram_type,
@@ -363,7 +402,7 @@ fn compile_steps(
                         source_port: None,
                         target_port: None,
                         style_extra: None,
-                        step: numbered.then_some(*counter),
+                        step: numbered.then(|| counter.to_string()),
                     },
                 );
                 edge_order.push(edge);
@@ -677,12 +716,12 @@ edges:
 "#;
         let payload = DiagramPayload::from_yaml(yaml).unwrap();
         let compiled = build_graph(&payload).unwrap();
-        let steps: Vec<Option<u32>> = compiled
+        let steps: Vec<Option<&str>> = compiled
             .edge_order
             .iter()
-            .map(|&idx| compiled.graph[idx].step)
+            .map(|&idx| compiled.graph[idx].step.as_deref())
             .collect();
-        assert_eq!(steps, vec![Some(1), Some(2)]);
+        assert_eq!(steps, vec![Some("1"), Some("2")]);
     }
 
     #[test]
@@ -708,7 +747,7 @@ edges:
 "#;
         let payload = DiagramPayload::from_yaml(yaml).unwrap();
         let compiled = build_graph(&payload).unwrap();
-        assert_eq!(compiled.graph[compiled.edge_order[0]].step, Some(42));
+        assert_eq!(compiled.graph[compiled.edge_order[0]].step.as_deref(), Some("42"));
     }
 
     #[test]

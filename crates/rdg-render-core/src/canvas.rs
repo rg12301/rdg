@@ -39,38 +39,8 @@ impl Bounds {
         self.max_x = self.max_x.max(x + w);
         self.max_y = self.max_y.max(y + h);
     }
-
-    fn is_empty(&self) -> bool {
-        self.min_x > self.max_x
-    }
 }
 
-
-/// A group container's drawn rectangle: member bounding box plus content-aware padding
-/// and the title header row.
-pub fn group_rects(
-    compiled: &CompiledGraph,
-    layout: &LayoutResult,
-    tokens: &DesignTokens,
-) -> Vec<(f64, f64, f64, f64)> {
-    let mut out = Vec::new();
-    for group in &compiled.groups {
-        let mut b = Bounds::empty();
-        for node_id in &group.nodes {
-            if let Some(nl) = compiled.node_map.get(node_id).and_then(|i| layout.positions.get(i)) {
-                b.add_rect(nl.x, nl.y, nl.width, nl.height);
-            }
-        }
-        if b.is_empty() {
-            continue;
-        }
-        let (cw, ch) = (b.max_x - b.min_x, b.max_y - b.min_y);
-        let pad = tokens.group_pad_for(cw, ch);
-        let pad_top = tokens.group_pad_top_for(cw, ch);
-        out.push((b.min_x - pad, b.min_y - pad_top, cw + pad * 2.0, ch + pad_top + pad));
-    }
-    out
-}
 
 /// Extent of everything drawn: node boxes, group containers, routed waypoints, edge
 /// label pills and flow badges (where [`crate::annotate`] places them). `None` when the
@@ -88,7 +58,7 @@ pub fn content_bounds(
     for nl in layout.positions.values() {
         b.add_rect(nl.x, nl.y, nl.width, nl.height);
     }
-    for (x, y, w, h) in group_rects(compiled, layout, tokens) {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
         b.add_rect(x, y, w, h);
     }
     for plan in edge_plans.values() {
@@ -103,9 +73,9 @@ pub fn content_bounds(
         let (x, y, w, h) = spot.rect();
         b.add_rect(x, y, w, h);
     }
-    let r = tokens.badge_radius;
-    for &(x, y) in ann.badges.values() {
-        b.add_rect(x - r, y - r, 2.0 * r, 2.0 * r);
+    for (&e, &(x, y)) in &ann.badges {
+        let (w, h) = crate::annotate::badge_size(compiled.graph[e].step.as_deref().unwrap_or_default(), tokens);
+        b.add_rect(x - w / 2.0, y - h / 2.0, w, h);
     }
     // (The title and legend are placed afterwards, into the white space this leaves —
     // see `crate::frame`.)

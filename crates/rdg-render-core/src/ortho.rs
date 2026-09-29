@@ -550,8 +550,9 @@ pub fn route_orthogonal(
     for tz in crate::routing::compute_group_title_zones(compiled, layout, tokens) {
         obstacles.push(Rect { x0: tz.min_x, y0: tz.min_y, x1: tz.max_x, y1: tz.max_y - tokens.px(0.5) });
     }
-    let groups: Vec<Rect> = crate::canvas::group_rects(compiled, layout, tokens)
+    let groups: Vec<Rect> = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens)
         .into_iter()
+        .flatten()
         .map(|(x, y, w, h)| Rect { x0: x, y0: y, x1: x + w, y1: y + h })
         .collect();
 
@@ -599,10 +600,10 @@ pub fn route_orthogonal(
                 crate::style::Outline::Cylinder { cap } if !horizontal_face => {
                     (((2.0 * cap + 6.0) / nl.height).max(0.15), (1.0 - (cap + 6.0) / nl.height).min(0.85))
                 }
-                crate::style::Outline::Icon { halo, .. } => {
-                    // The middle of the halo's face (where a circle is near-vertical /
-                    // near-horizontal); the bottom under the label keeps to its middle.
-                    let r = halo / 2.0;
+                crate::style::Outline::Captioned { mark, .. } => {
+                    // The middle of the mark's face (where a curve is near-vertical /
+                    // near-horizontal); the bottom under the caption keeps to its middle.
+                    let r = mark / 2.0;
                     match side {
                         Side::Left | Side::Right => (((r - 0.6 * r) / nl.height).max(0.02), ((r + 0.6 * r) / nl.height).min(0.95)),
                         Side::Top => {
@@ -774,8 +775,14 @@ pub fn route_orthogonal(
                 (true, Side::Left | Side::Right) | (false, Side::Top | Side::Bottom) => W_SIDE,
                 _ => 0.0,
             };
-            // An icon node's bottom face is under its label: a last resort.
-            let under_label = if side == Side::Bottom && compiled.graph[n].shape.as_deref() == Some("icon") { W_UNDER_LABEL } else { 0.0 };
+            // A captioned node's bottom face is under its caption: a last resort for a logo
+            // node; for a flowchart marker (a short caption, and the way the flow runs) worth
+            // one bend at most.
+            let under_label = match (side, crate::style::outline_of(&compiled.graph[n], tokens)) {
+                (Side::Bottom, crate::style::Outline::Captioned { .. }) if compiled.graph[n].shape.as_deref() == Some("icon") => W_UNDER_LABEL,
+                (Side::Bottom, crate::style::Outline::Captioned { .. }) => W_BEND,
+                _ => 0.0,
+            };
             for &(frac, port, gp) in face_pts.get(&(n, side)).map_or(&[][..], |v| v.as_slice()) {
                 let (Some(i), Some(j)) = (Grid::index_of(&router.grid.xs, gp.0), Grid::index_of(&router.grid.ys, gp.1)) else {
                     continue;

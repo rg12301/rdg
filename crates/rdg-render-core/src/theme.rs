@@ -530,6 +530,7 @@ impl Theme {
         t.seq_activation_width = self.sequence.activation.width;
         t.seq_note_wrap_chars = self.sequence.note.wrap_chars;
         t.badge_radius = self.badge.radius;
+        t.badge_font_size = self.font.badge_size;
         t.cylinder_cap = self.node.cylinder_cap;
     }
 }

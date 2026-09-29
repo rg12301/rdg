@@ -276,11 +276,12 @@ pub fn render_sequence_drawio(
                 "shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor={};strokeWidth=1.75;fontFamily={};fontSize={};fontColor={};fontStyle=1;spacingTop={};",
                 look.stroke, f.family, f.node_title_size, look.title_color, tokens.px(0.5) - 2.0
             );
-            write_vertex(&mut w, &nd.id, &esc(&nd.label).replace('\n', "<br/>"), &style, (nl.x + (nl.width - fw) / 2.0, nl.y, fw, fig))?;
+            let caption: Vec<String> = rdg_layout::node_lines(nd, tokens.wrap_chars_normal).iter().map(|l| esc(&l.text)).collect();
+            write_vertex(&mut w, &nd.id, &caption.join("<br/>"), &style, (nl.x + (nl.width - fw) / 2.0, nl.y, fw, fig))?;
             continue;
         }
         let style = node_style(theme, &look, 0.0);
-        let value = format_html_label_with_details(&nd.label, theme, &look, nd.technology.as_deref(), tokens, nd.icon.as_deref());
+        let value = format_html_label_with_details(nd, theme, &look, tokens, nd.icon.as_deref());
         write_vertex(&mut w, &nd.id, &value, &style, (nl.x, nl.y, nl.width, nl.height))?;
     }
 

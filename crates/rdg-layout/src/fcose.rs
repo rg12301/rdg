@@ -253,7 +253,7 @@ pub fn compute_fcose_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> 
     pack_components_into_grid(&mut positions, &components, config, !compiled.groups.is_empty());
 
     let mut result = LayoutResult { positions, sequence_info: None };
-    normalize_positions(&mut result, config, !compiled.groups.is_empty(), compiled.title.is_some());
+    normalize_positions(&mut result, config, !compiled.groups.is_empty());
     Ok(result)
 }
 

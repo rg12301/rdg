@@ -20,7 +20,7 @@ use petgraph::stable_graph::{EdgeIndex, NodeIndex};
 
 use rdg_graph::{CompiledGraph, NotePlacement, SeqItem};
 
-use crate::{DesignTokens, LayoutConfig, LayoutResult, NodeLayout, classify_label, estimate_node_size_with_details, wrap_label};
+use crate::{DesignTokens, LayoutConfig, LayoutResult, NodeLayout, estimate_node_box, node_lines, wrap_label};
 
 /// One message arrow.
 #[derive(Debug, Clone)]
@@ -154,7 +154,7 @@ impl Metrics {
 pub fn message_label_lines(compiled: &CompiledGraph, e: EdgeIndex) -> Vec<String> {
     let ed = &compiled.graph[e];
     let mut lines: Vec<String> = ed.label.as_deref().map(|l| l.lines().map(str::to_string).collect()).unwrap_or_default();
-    if let Some(n) = ed.step {
+    if let Some(n) = &ed.step {
         match lines.first_mut() {
             Some(first) => *first = format!("{n}. {first}"),
             None => lines.push(format!("{n}.")),
@@ -191,11 +191,11 @@ fn fragment_header_w(kind: &str, sections: &[(Option<String>, Vec<SeqItem>)], t:
 fn participant_size(compiled: &CompiledGraph, n: NodeIndex, t: &DesignTokens) -> (f64, f64) {
     let nd = &compiled.graph[n];
     if nd.shape.as_deref() == Some("actor") {
-        let lines = classify_label(&nd.label, t.wrap_chars_normal);
+        let lines = node_lines(nd, t.wrap_chars_normal);
         let w = lines.iter().map(|l| l.text.chars().count()).max().unwrap_or(0) as f64 * t.char_width(t.font_size);
         return ((w + t.px(1.0)).max(t.px(6.0)), actor_figure_h(t) + lines.len() as f64 * t.line_height(t.font_size));
     }
-    estimate_node_size_with_details(&nd.label, "default", &[], nd.technology.as_deref(), nd.icon.is_some(), t.px(12.0), t.px(5.0), nd.width, nd.height, t)
+    estimate_node_box(nd, nd.icon.is_some(), t.px(12.0), t.px(5.0), t)
 }
 
 /// Height of an actor's stick figure (the label goes under it).

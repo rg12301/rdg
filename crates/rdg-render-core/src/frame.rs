@@ -104,7 +104,7 @@ pub fn separation(tokens: &DesignTokens) -> f64 {
 /// Obstacles: everything the diagram draws, as rectangles (arrow segments as thin ones).
 fn obstacles(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens) -> Vec<Rect> {
     let mut out: Vec<Rect> = layout.positions.values().map(|n| (n.x, n.y, n.x + n.width, n.y + n.height)).collect();
-    for (x, y, w, h) in crate::canvas::group_rects(compiled, layout, tokens) {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
         out.push((x, y, x + w, y + h));
     }
     for &e in &compiled.edge_order {
@@ -119,9 +119,9 @@ fn obstacles(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<Ed
         let (x, y, w, h) = spot.rect();
         out.push((x, y, x + w, y + h));
     }
-    let r = tokens.badge_radius;
-    for &(x, y) in ann.badges.values() {
-        out.push((x - r, y - r, x + r, y + r));
+    for (&e, &(x, y)) in &ann.badges {
+        let (w, h) = crate::annotate::badge_size(compiled.graph[e].step.as_deref().unwrap_or_default(), tokens);
+        out.push((x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0));
     }
     out
 }

@@ -1,10 +1,11 @@
 //! draw.io HTML label builders (draw.io renders a node `value=` as HTML when `html=1`).
 //! Colours, fonts and sizes come from the theme via the node's resolved look.
 
+use rdg_graph::NodeData;
 use rdg_layout::DesignTokens;
 use rdg_render_core::look::NodeLook;
 use rdg_render_core::theme::Theme;
-use rdg_render_core::typography::{parse_inline_spans, wrap_and_classify_label};
+use rdg_render_core::typography::parse_inline_spans;
 
 /// `#rrggbb` + opacity → CSS `rgba(...)`.
 fn rgba(hex: &str, opacity: f64) -> String {
@@ -13,13 +14,12 @@ fn rgba(hex: &str, opacity: f64) -> String {
     format!("rgba({},{},{},{:.3})", c(0), c(2), c(4), opacity)
 }
 
-/// A node's label: the first line as the title, later lines as muted detail lines,
+/// A node's text (see [`rdg_layout::node_lines`]): title lines bold, detail lines muted,
 /// inline typography (`code`, **bold**, math, …) applied.
 ///
 /// `inline_icon`: an icon key drawn before the first line, the pair centred together.
-pub fn format_html_label(label: &str, theme: &Theme, look: &NodeLook, tokens: &DesignTokens, inline_icon: Option<&str>) -> String {
-    let max_chars = if look.shape == "diamond" { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal };
-    let lines = wrap_and_classify_label(label, max_chars);
+pub fn format_html_label(nd: &NodeData, theme: &Theme, look: &NodeLook, tokens: &DesignTokens, inline_icon: Option<&str>) -> String {
+    let lines = rdg_layout::node_lines(nd, rdg_layout::wrap_chars_for(nd, tokens));
     let mut html_lines = Vec::new();
     for pl in lines {
         let mut line_html = String::new();
@@ -88,17 +88,10 @@ fn detail_line(theme: &Theme, look: &NodeLook, html: &str) -> String {
     )
 }
 
-/// A node's label plus its `[technology]` detail line.
-pub fn format_html_label_with_details(
-    label: &str,
-    theme: &Theme,
-    look: &NodeLook,
-    tech: Option<&str>,
-    tokens: &DesignTokens,
-    inline_icon: Option<&str>,
-) -> String {
-    let mut result = format_html_label(label, theme, look, tokens, inline_icon);
-    if let Some(t) = tech.filter(|t| !label.contains(*t)) {
+/// A node's text plus its `[technology]` detail line.
+pub fn format_html_label_with_details(nd: &NodeData, theme: &Theme, look: &NodeLook, tokens: &DesignTokens, inline_icon: Option<&str>) -> String {
+    let mut result = format_html_label(nd, theme, look, tokens, inline_icon);
+    if let Some(t) = nd.technology.as_deref().filter(|t| !nd.label.contains(*t)) {
         result.push_str("<br/>");
         result.push_str(&detail_line(theme, look, &format!("[{t}]")));
     }

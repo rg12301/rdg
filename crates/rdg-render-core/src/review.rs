@@ -520,19 +520,10 @@ fn detect_label_overflow(
         if data.width.is_none() && data.height.is_none() {
             continue;
         }
-        let has_icon = data.icon.is_some() || data.language.is_some();
-        let (natural_w, natural_h) = rdg_layout::estimate_node_size_with_details(
-            &data.label,
-            &data.node_type,
-            &data.fields,
-            data.technology.as_deref(),
-            has_icon,
-            0.0,
-            0.0,
-            None,
-            None,
-            tokens,
-        );
+        // What the content needs with the override lifted — measured from the text as
+        // drawn (explicit title/description included) and the icon actually shown.
+        let free = rdg_graph::NodeData { width: None, height: None, ..data.clone() };
+        let (natural_w, natural_h) = rdg_layout::estimate_node_box(&free, data.icon.is_some(), 0.0, 0.0, tokens);
         if nl.width + 0.5 < natural_w || nl.height + 0.5 < natural_h {
             out.push(Anomaly {
                 kind: AnomalyKind::LabelOverflow,
@@ -647,7 +638,7 @@ pub fn spacing_metrics(
                 .count();
         }
     }
-    for (gx, gy, gw, gh) in crate::canvas::group_rects(compiled, layout, tokens) {
+    for (gx, gy, gw, gh) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
         let lines = [(true, gy, gx, gx + gw), (true, gy + gh, gx, gx + gw), (false, gx, gy, gy + gh), (false, gx + gw, gy, gy + gh)];
         for p in &paths {
             for w in p.windows(2) {

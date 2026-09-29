@@ -7,6 +7,7 @@ mod compound;
 mod fcose;
 mod force;
 mod gaps;
+pub mod groups;
 mod hillclimb;
 mod physics;
 mod sequence;
@@ -23,8 +24,9 @@ pub use sequence::{
 };
 pub use tokens::DesignTokens;
 pub use wrap::{
-    estimate_node_size, estimate_node_size_with_details, estimate_node_size_with_fields,
-    LabelLine, SUBTITLE_WRAP_FACTOR, classify_label, strip_markdown_tokens, wrap_label,
+    estimate_node_box, estimate_node_size, estimate_node_size_with_details, estimate_node_size_with_fields,
+    explicit_lines, marker_shape, node_lines, wrap_chars_for, LabelLine, SUBTITLE_WRAP_FACTOR, classify_label,
+    strip_markdown_tokens, wrap_label,
 };
 
 use anyhow::Result;
@@ -149,14 +151,13 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
         return compute_sequence_layout(compiled, config);
     }
 
-    let mut result =
-        if !compiled.groups.is_empty() && config.direction == LayoutDirection::TopToBottom {
-            compound::layout_compound(compiled, config)?
-        } else {
-            sugiyama::layout_topological(compiled, config)?
-        };
+    let mut result = if compiled.groups.is_empty() {
+        sugiyama::layout_topological(compiled, config)?
+    } else {
+        compound::layout_compound(compiled, config)?
+    };
 
-    normalize_positions(&mut result, config, !compiled.groups.is_empty(), compiled.title.is_some());
+    normalize_positions(&mut result, config, !compiled.groups.is_empty());
 
     Ok(result)
 }
@@ -167,12 +168,7 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
 /// land. Shared by every layout engine so none of them need to reason about margins
 /// themselves — they can place nodes anywhere (including negative coordinates, as the
 /// force-directed and fCoSE engines naturally do) and let this pass clean it up.
-pub(crate) fn normalize_positions(
-    result: &mut LayoutResult,
-    config: &LayoutConfig,
-    has_groups: bool,
-    has_title: bool,
-) {
+pub(crate) fn normalize_positions(result: &mut LayoutResult, config: &LayoutConfig, has_groups: bool) {
     if result.positions.is_empty() {
         return;
     }
@@ -182,10 +178,8 @@ pub(crate) fn normalize_positions(
     let max_x = result.positions.values().map(|nl| nl.x + nl.width).fold(f64::MIN, f64::max);
     let max_y = result.positions.values().map(|nl| nl.y + nl.height).fold(f64::MIN, f64::max);
 
-    // The title is placed after routing, into the diagram's white space (render-core's
-    // `frame`); nothing is reserved for it here.
-    let _ = has_title;
-    let title_offset_y = 0.0;
+    // (The title is placed after routing, into the diagram's white space — render-core's
+    // `frame` — so nothing is reserved for it here.)
     // A group's drawn padding is content-aware (`group_pad_for`) and never exceeds the
     // padding the *whole* diagram's bounding box would earn, so reserving that bound
     // guarantees no group container is drawn past the canvas margin. `finalize_canvas`
@@ -197,7 +191,7 @@ pub(crate) fn normalize_positions(
         (0.0, 0.0)
     };
     let target_min_x = config.margin_x + pad_x;
-    let target_min_y = config.margin_y + pad_top + title_offset_y;
+    let target_min_y = config.margin_y + pad_top;
 
     let dx = target_min_x - min_x;
     let dy = target_min_y - min_y;
@@ -223,44 +217,49 @@ pub(crate) fn layout_node_size(
     config: &LayoutConfig,
 ) -> (f64, f64) {
     let data = &compiled.graph[idx];
-    // A node drawn as its logo: the logo (in its halo) on top, the label underneath.
-    if data.shape.as_deref() == Some("icon") {
-        let t = &config.tokens;
-        let lines = classify_label(&data.label, t.wrap_chars_normal);
-        let line_w = |l: &LabelLine| {
-            let f = if l.is_subtitle { t.detail_font_size } else { t.font_size };
-            strip_markdown_tokens(&l.text).chars().count() as f64 * t.char_width(f)
-        };
-        let mut text_w = lines.iter().map(line_w).fold(0.0, f64::max);
-        let mut text_h: f64 = lines
-            .iter()
-            .map(|l| t.line_height(if l.is_subtitle { t.detail_font_size } else { t.font_size }))
-            .sum();
-        if let Some(tech) = data.technology.as_deref().filter(|tech| !data.label.contains(tech)) {
-            text_w = text_w.max((tech.chars().count() + 2) as f64 * t.char_width(t.detail_font_size));
-            text_h += t.line_height(t.detail_font_size);
-        }
-        // The halo (logo + padding, where arrows attach) on top, the label under it.
-        let halo = t.icon_halo_size();
-        let w = (text_w + t.px(1.0)).max(halo + t.px(1.0));
-        let h = halo + t.px(0.25) + text_h;
-        return grow_for_degree(compiled, idx, ((w / 4.0).ceil() * 4.0, (h / 4.0).ceil() * 4.0), config);
+    // A mark with its caption underneath: a logo node (the logo in its halo) or a
+    // flowchart marker. The box holds both, so groups, routing and labels all make room
+    // for the caption; arrows attach to the mark (see `rdg_render_core::style::Outline`).
+    if let Some(mark) = caption_mark(data, &config.tokens) {
+        let (w, h) = captioned_size(data, mark, &config.tokens);
+        return grow_for_degree(compiled, idx, (w, h), config);
     }
     // Only `icon` is drawn (a node's language can be shown on its group instead).
-    let has_icon = data.icon.is_some();
-    let (w, h) = estimate_node_size_with_details(
-        &data.label,
-        &data.node_type,
-        &data.fields,
-        data.technology.as_deref(),
-        has_icon,
-        config.node_width,
-        config.node_height,
-        data.width,
-        data.height,
-        &config.tokens,
-    );
+    let (w, h) = estimate_node_box(data, data.icon.is_some(), config.node_width, config.node_height, &config.tokens);
     grow_for_degree(compiled, idx, (w, h), config)
+}
+
+/// Size of the mark a node draws above its caption — a logo node's halo, or a
+/// flowchart marker's shape — or `None` for a node whose text sits inside its shape.
+pub fn caption_mark(nd: &rdg_graph::NodeData, tokens: &DesignTokens) -> Option<f64> {
+    match nd.shape.as_deref().or_else(|| marker_shape(&nd.node_type))? {
+        "icon" => Some(tokens.icon_halo_size()),
+        "start" => Some(tokens.start_marker_size()),
+        "end" => Some(tokens.end_marker_size()),
+        "choice" => Some(tokens.choice_marker_size()),
+        _ => None,
+    }
+}
+
+/// Gap between a mark and the caption under it.
+pub fn caption_gap(tokens: &DesignTokens) -> f64 {
+    tokens.px(0.25)
+}
+
+/// Box for a `mark`-sized shape with the node's caption lines (and technology line)
+/// underneath, rounded up to 4px.
+fn captioned_size(data: &rdg_graph::NodeData, mark: f64, t: &DesignTokens) -> (f64, f64) {
+    let lines = node_lines(data, t.wrap_chars_normal);
+    let font = |l: &LabelLine| if l.is_subtitle { t.detail_font_size } else { t.font_size };
+    let mut text_w = lines.iter().map(|l| strip_markdown_tokens(&l.text).chars().count() as f64 * t.char_width(font(l))).fold(0.0, f64::max);
+    let mut text_h: f64 = lines.iter().map(|l| t.line_height(font(l))).sum();
+    if let Some(tech) = data.technology.as_deref().filter(|tech| !data.label.contains(tech)) {
+        text_w = text_w.max((tech.chars().count() + 2) as f64 * t.char_width(t.detail_font_size));
+        text_h += t.line_height(t.detail_font_size);
+    }
+    let w = (text_w + t.px(1.0)).max(mark + t.px(1.0));
+    let h = mark + caption_gap(t) + text_h;
+    ((w / 4.0).ceil() * 4.0, (h / 4.0).ceil() * 4.0)
 }
 
 /// See [`layout_node_size`]. Rounded up to a multiple of 4 like the estimator's output.
@@ -316,8 +315,8 @@ pub(crate) fn ideal_edge_length(sizes: &HashMap<NodeIndex, (f64, f64)>, config: 
     (avg_diag + config.node_spacing as f64 + config.rank_spacing as f64).max(config.tokens.px(12.5))
 }
 
-/// Estimate every node's box size up front, honoring explicit `width`/`height`
-/// overrides. Shared by the force-directed and fCoSE engines, which (unlike
+/// Every node's box size up front ([`layout_node_size`]: captions, icons, explicit
+/// `width`/`height`, degree). Shared by the force-directed and fCoSE engines, which (unlike
 /// `sugiyama`/`compound`) need every node's final size before simulation starts
 /// rather than incrementally per-rank.
 pub(crate) fn compute_node_sizes(
@@ -327,20 +326,7 @@ pub(crate) fn compute_node_sizes(
     compiled
         .graph
         .node_indices()
-        .map(|idx| {
-            let data = &compiled.graph[idx];
-            let size = estimate_node_size_with_fields(
-                &data.label,
-                &data.node_type,
-                &data.fields,
-                config.node_width,
-                config.node_height,
-                data.width,
-                data.height,
-                &config.tokens,
-            );
-            (idx, grow_for_degree(compiled, idx, size, config))
-        })
+        .map(|idx| (idx, layout_node_size(compiled, idx, config)))
         .collect()
 }
 
@@ -359,17 +345,7 @@ pub fn estimate_average_node_size(
     let mut total_h = 0.0;
     let mut count = 0usize;
     for idx in compiled.graph.node_indices() {
-        let data = &compiled.graph[idx];
-        let (w, h) = estimate_node_size_with_fields(
-            &data.label,
-            &data.node_type,
-            &data.fields,
-            node_width,
-            node_height,
-            data.width,
-            data.height,
-            tokens,
-        );
+        let (w, h) = estimate_node_box(&compiled.graph[idx], false, node_width, node_height, tokens);
         total_w += w;
         total_h += h;
         count += 1;
@@ -718,5 +694,100 @@ edges:
             (min_y - 300.0).abs() < 0.5,
             "min_y should sit at the configured margin: {min_y}"
         );
+    }
+
+    /// Three levels of nesting plus a sibling group and an ungrouped node, wired
+    /// across the levels.
+    const NESTED: &str = r#"
+nodes:
+  - {id: web, label: Web app}
+  - {id: admin, label: Admin}
+  - {id: rails, label: Rails monolith}
+  - {id: legacy, label: Legacy handlers}
+  - {id: bff, label: payments-bff}
+  - {id: core, title: payments-core-service}
+  - {id: bank, title: payments-bank-connector-service}
+  - {id: partners, label: Bank partners}
+  - {id: done, type: end, title: Settled, subtitle: ledger updated}
+groups:
+  - {id: clients, label: Clients & ops, nodes: [web, admin]}
+  - {id: payments, label: Payments services, nodes: [monolith, bff, core, inner]}
+  - {id: monolith, label: Rails monolith, nodes: [rails, legacy]}
+  - {id: inner, label: Money movement, parent: payments, nodes: [bank, done]}
+edges:
+  - {from: web, to: rails}
+  - {from: rails, to: legacy}
+  - {from: rails, to: bff}
+  - {from: bff, to: core}
+  - {from: core, to: bank}
+  - {from: bank, to: partners}
+  - {from: partners, to: bank}
+  - {from: bank, to: done}
+  - {from: admin, to: core}
+"#;
+
+    fn assert_groups_contain_their_members(direction: LayoutDirection) {
+        let compiled = build_graph(&DiagramPayload::from_yaml(NESTED).unwrap()).unwrap();
+        let config = LayoutConfig { direction, ..LayoutConfig::default() };
+        let layout = compute_layout(&compiled, &config).unwrap();
+        let rects = groups::group_rects(&compiled, &layout.positions, &config.tokens);
+        let inside = |(x, y, w, h): groups::Rect, (ox, oy, ow, oh): groups::Rect| x >= ox - 0.5 && y >= oy - 0.5 && x + w <= ox + ow + 0.5 && y + h <= oy + oh + 0.5;
+        let overlap = |(x, y, w, h): groups::Rect, (ox, oy, ow, oh): groups::Rect| x < ox + ow && ox < x + w && y < oy + oh && oy < y + h;
+        let node_rect = |n: &NodeIndex| {
+            let nl = &layout.positions[n];
+            (nl.x, nl.y, nl.width, nl.height)
+        };
+        let tree = &compiled.group_tree;
+        for (g, r) in rects.iter().enumerate() {
+            let r = r.expect("every group holds something");
+            for n in compiled.nodes_within(g) {
+                assert!(inside(node_rect(&n), r), "{direction:?}: node {} outside group {}", compiled.graph[n].id, compiled.groups[g].id);
+            }
+            for c in tree.children(g) {
+                assert!(inside(rects[c].unwrap(), r), "{direction:?}: group {} outside {}", compiled.groups[c].id, compiled.groups[g].id);
+            }
+            // Nothing else may sit on or inside this box.
+            for n in compiled.graph.node_indices().filter(|n| !compiled.nodes_within(g).contains(n)) {
+                assert!(!overlap(node_rect(&n), r), "{direction:?}: node {} overlaps group {}", compiled.graph[n].id, compiled.groups[g].id);
+            }
+            for o in (0..rects.len()).filter(|&o| o != g && !tree.contains(g, o) && !tree.contains(o, g)) {
+                assert!(!overlap(rects[o].unwrap(), r), "{direction:?}: groups {} and {} overlap", compiled.groups[o].id, compiled.groups[g].id);
+            }
+        }
+    }
+
+    #[test]
+    fn test_nested_groups_contain_members_and_never_overlap_top_to_bottom() {
+        assert_groups_contain_their_members(LayoutDirection::TopToBottom);
+    }
+
+    #[test]
+    fn test_nested_groups_contain_members_and_never_overlap_left_to_right() {
+        assert_groups_contain_their_members(LayoutDirection::LeftToRight);
+    }
+
+    #[test]
+    fn test_marker_caption_is_part_of_its_box() {
+        let compiled = build_graph(&DiagramPayload::from_yaml(NESTED).unwrap()).unwrap();
+        let config = LayoutConfig::default();
+        let layout = compute_layout(&compiled, &config).unwrap();
+        let done = &layout.positions[&compiled.node_map["done"]];
+        let mark = config.tokens.end_marker_size();
+        assert!(done.height > mark + 2.0 * config.tokens.line_height(config.tokens.detail_font_size), "caption below the mark: {done:?}");
+        assert!(done.width > mark, "as wide as the caption: {done:?}");
+    }
+
+    #[test]
+    fn test_group_is_never_narrower_than_its_title() {
+        let yaml = "nodes: [{id: a, label: A}]\ngroups: [{id: g, label: A very long group title indeed, nodes: [a]}]\n";
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        let config = LayoutConfig::default();
+        let layout = compute_layout(&compiled, &config).unwrap();
+        let (x, _, w, _) = groups::group_rects(&compiled, &layout.positions, &config.tokens)[0].unwrap();
+        let t = &config.tokens;
+        let title_end = x + groups::group_title_inset(t).0 + 31.0 * t.char_width(t.group_title_font_size);
+        let a = &layout.positions[&compiled.node_map["a"]];
+        assert!(x + w >= title_end, "box ends before its title");
+        assert!(a.x + a.width / 2.0 > title_end, "the lone node's centre clears the title, so an arrow can drop onto it");
     }
 }

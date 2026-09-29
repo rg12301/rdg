@@ -87,25 +87,27 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
         }
     }
 
-    // --- group membership ---------------------------------------------------------
-    let mut member_of: HashMap<&str, &str> = HashMap::new();
+    // --- groups: members (nodes or nested groups), nesting --------------------------
+    let group_ids: Vec<&str> = payload.groups.iter().map(|g| g.id.as_str()).collect();
     for (i, g) in payload.groups.iter().enumerate() {
         for (j, id) in g.nodes.iter().enumerate() {
-            if !node_set.contains(id.as_str()) {
+            if !node_set.contains(id.as_str()) && !group_ids.contains(&id.as_str()) {
                 push(
                     Level::Error,
                     format!("groups[{i}].nodes[{j}]"),
-                    format!("unknown node id `{id}`"),
-                    did_you_mean(id, node_ids.iter().copied()),
-                );
-            } else if let Some(other) = member_of.insert(id, &g.id) {
-                push(
-                    Level::Warning,
-                    format!("groups[{i}].nodes[{j}]"),
-                    format!("node `{id}` is already in group `{other}`; a node can belong to one group"),
-                    None,
+                    format!("unknown node or group id `{id}`"),
+                    did_you_mean(id, node_ids.iter().chain(&group_ids).copied()),
                 );
             }
+        }
+        if let Some(p) = g.parent.as_deref().filter(|p| !group_ids.contains(p)) {
+            push(Level::Error, format!("groups[{i}].parent"), format!("unknown group id `{p}`"), did_you_mean(p, group_ids.iter().copied()));
+        }
+    }
+    for issue in payload.group_tree().issues {
+        // (An unknown `parent` is reported above, with a suggestion.)
+        if !issue.message.starts_with("unknown group id") {
+            push(if issue.error { Level::Error } else { Level::Warning }, issue.path, issue.message, None);
         }
     }
 
@@ -122,6 +124,14 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
                     did_you_mean(class, preset_names.iter().copied()),
                 );
             }
+        }
+        if !raw.label.trim().is_empty() && raw.title.as_deref().is_some_and(|t| !t.trim().is_empty()) {
+            push(
+                Level::Warning,
+                format!("nodes[{i}].label"),
+                "`label` is ignored when `title` is set".into(),
+                Some("keep `title` (and `subtitle` / `description`), drop `label`".into()),
+            );
         }
         let n = payload.effective_node(raw);
         let ty = n.node_type.to_ascii_lowercase();
@@ -211,6 +221,9 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
                     did_you_mean(class, edge_presets.iter().copied()),
                 );
             }
+        }
+        if let Some(problem) = raw.step.as_deref().and_then(rdg_schema::step_label_problem) {
+            push(Level::Error, format!("edges[{i}].step"), problem.into(), None);
         }
         let e = payload.effective_edge(raw);
         if let Some(style) = e.edge_style.as_deref() {
@@ -323,7 +336,7 @@ pub fn validate_against_theme(payload: &DiagramPayload, theme: &rdg_render_core:
                 level: Level::Warning,
                 path: format!("nodes[{i}].label"),
                 message: format!("{} characters on one line (\"{line}\")", line.chars().count()),
-                hint: Some(format!("split it with \\n into lines of ≤ {NODE_LINE_MAX} characters, or move detail to `metadata`")),
+                hint: Some("give the name as `title:` and the rest as `subtitle:` / `description:` — each wraps on its own, and a name is never split".into()),
             });
         }
     }
@@ -389,5 +402,29 @@ mod tests {
     #[test]
     fn clean_payload_has_no_diagnostics() {
         assert!(diags("nodes:\n  - {id: a, label: A, type: service, language: rust}\n  - {id: b, label: B, type: database, db_type: postgres}\nedges:\n  - {from: a, to: b, edge_style: data}\n").is_empty());
+    }
+
+    #[test]
+    fn nested_groups_and_branch_steps_are_valid() {
+        let d = diags(
+            "nodes:\n  - {id: a, title: A}\n  - {id: b, title: B}\n  - {id: c, title: C}\n\
+             groups:\n  - {id: outer, label: Outer, nodes: [a, inner]}\n  - {id: inner, label: Inner, nodes: [b]}\n  - {id: deep, label: Deep, parent: inner, nodes: [c]}\n\
+             edges:\n  - {from: a, to: b, step: 1}\n  - {from: a, to: c, step: 2a}\n  - {from: b, to: c, step: \"2b\"}\n",
+        );
+        assert!(d.is_empty(), "{d:#?}");
+    }
+
+    #[test]
+    fn reports_group_and_step_mistakes() {
+        let d = diags(
+            "nodes:\n  - {id: a, label: A, title: Alpha}\n  - {id: b, label: B}\n  - {id: c, label: C}\n\
+             groups:\n  - {id: x, label: X, nodes: [a, b, innr]}\n  - {id: y, label: Y, nodes: [b, c]}\n  - {id: inner, label: I, parent: nope, nodes: [c]}\n\
+             edges:\n  - {from: a, to: b, step: b3}\n",
+        );
+        assert!(d.iter().any(|m| m.contains("groups[0].nodes[2]") && m.contains("did you mean `inner`?")), "{d:#?}");
+        assert!(d.iter().any(|m| m.starts_with("warning: groups[1].nodes[0]") && m.contains("not nested")), "{d:#?}");
+        assert!(d.iter().any(|m| m.starts_with("error: groups[2].parent")), "{d:#?}");
+        assert!(d.iter().any(|m| m.starts_with("error: edges[0].step")), "{d:#?}");
+        assert!(d.iter().any(|m| m.starts_with("warning: nodes[0].label") && m.contains("ignored")), "{d:#?}");
     }
 }
