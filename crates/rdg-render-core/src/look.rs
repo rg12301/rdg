@@ -225,9 +225,22 @@ pub fn legend_items(theme: &Theme, compiled: &CompiledGraph) -> Vec<LegendItem> 
 pub fn legend_size(items: &[LegendItem], theme: &Theme, max_width: f64) -> (f64, f64) {
     let rows = legend_rows(items, theme, max_width);
     let row_h = theme.font.edge_label_size * 1.35 + 10.0;
-    let w = rows.iter().map(|r| r.iter().map(|(_, w)| *w).sum::<f64>()).fold(0.0, f64::max);
+    let w = rows.iter().map(|r| legend_row_width(r)).fold(legend_heading_width(theme), f64::max);
     let heading = theme.font.group_title_size * 1.35 + 6.0;
     (w, heading + rows.len() as f64 * row_h)
+}
+
+/// Space after each legend item, before the next one on its row.
+const LEGEND_ITEM_GAP: f64 = 20.0;
+
+/// Drawn width of a legend row (its items, without the gap after the last one).
+pub fn legend_row_width(row: &[(&LegendItem, f64)]) -> f64 {
+    (row.iter().map(|(_, w)| *w).sum::<f64>() - LEGEND_ITEM_GAP).max(0.0)
+}
+
+/// Drawn width of the legend's "Legend" heading.
+pub fn legend_heading_width(theme: &Theme) -> f64 {
+    "Legend".len() as f64 * theme.font.group_title_size * theme.font.char_width_ratio
 }
 
 /// Legend items grouped into rows, each with its drawn width.
@@ -239,7 +252,7 @@ pub fn legend_rows<'a>(items: &'a [LegendItem], theme: &Theme, max_width: f64) -
         let label = match it {
             LegendItem::Category { label, .. } | LegendItem::Edge { label, .. } => label,
         };
-        let w = 30.0 + label.chars().count() as f64 * cw + 20.0;
+        let w = 30.0 + label.chars().count() as f64 * cw + LEGEND_ITEM_GAP;
         if x + w > max_width && !rows.last().unwrap().is_empty() {
             rows.push(Vec::new());
             x = 0.0;

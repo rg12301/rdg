@@ -8,6 +8,9 @@
         <mxCell id="diagram_title_header" value="&lt;b&gt;&lt;font style=&quot;font-size:18px;color:#111827;&quot;&gt;OAuth 2.0 Authorization Code Flow&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;" vertex="1" parent="1">
           <mxGeometry x="24" y="12" width="356" height="36" as="geometry"/>
         </mxCell>
+        <mxCell id="canvas_frame" value="" style="rounded=0;fillColor=none;strokeColor=none;locked=1;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;connectable=0;selectable=0;" vertex="1" parent="1">
+          <mxGeometry x="0.0" y="0.0" width="927.0" height="726.0" as="geometry"/>
+        </mxCell>
         <mxCell id="user_lifeline" value="" style="endArrow=none;html=1;strokeColor=#9aa3b2;strokeWidth=1.25;dashed=1;dashPattern=6 6;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="74.0" y="104.0" as="sourcePoint"/>
@@ -163,7 +166,7 @@
           <mxGeometry x="773.0" y="64.0" width="130.0" height="40.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="665.5" width="120.0" height="14.9" as="geometry"/>
+          <mxGeometry x="24.0" y="665.5" width="43.6" height="14.9" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_0_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#2563eb;fillOpacity=12;strokeColor=#2563eb;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="24.0" y="691.1" width="22.0" height="14.0" as="geometry"/>

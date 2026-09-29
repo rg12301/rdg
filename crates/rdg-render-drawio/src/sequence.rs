@@ -114,6 +114,22 @@ pub fn render_sequence_drawio(
 
     let st = &theme.sequence;
     let f = &theme.font;
+    // The canvas, sized like the SVG renderer's, so exports keep the margin.
+    {
+        let title_w = compiled.title.as_deref().map_or(0.0, |t| 24.0 + t.chars().count() as f64 * tokens.char_width(f.title_size));
+        let desc_w = compiled.description.as_deref().map_or(0.0, |d| 24.0 + d.chars().count() as f64 * tokens.char_width(f.description_size));
+        let mut cw = (seq.max_x + tokens.px(3.0)).max(title_w.max(desc_w) + tokens.px(3.0));
+        let mut ch = seq.lifeline_bottom_y + tokens.px(3.0);
+        if rdg_render_core::look::legend_enabled(theme, compiled) {
+            let items = rdg_render_core::look::legend_items(theme, compiled);
+            if !items.is_empty() {
+                let (lw, lh) = rdg_render_core::look::legend_size(&items, theme, (seq.max_x - seq.min_x).max(tokens.px(40.0)));
+                ch += lh + tokens.px(1.0);
+                cw = cw.max(seq.min_x + lw + tokens.px(3.0));
+            }
+        }
+        crate::write_canvas_cell(&mut w, cw, ch)?;
+    }
     let lbl = f.edge_label_size;
     let cw = tokens.char_width(lbl);
     let lh = tokens.line_height(lbl);
@@ -272,7 +288,9 @@ pub fn render_sequence_drawio(
     if rdg_render_core::look::legend_enabled(theme, compiled) {
         let items = rdg_render_core::look::legend_items(theme, compiled);
         if !items.is_empty() {
-            write_legend(&mut w, theme, tokens, &items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), (seq.max_x - seq.min_x).max(tokens.px(40.0)))?;
+            let max_w = (seq.max_x - seq.min_x).max(tokens.px(40.0));
+            let lw = rdg_render_core::look::legend_size(&items, theme, max_w).0;
+            write_legend(&mut w, theme, tokens, &items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), max_w, lw, rdg_render_core::frame::Align::Left)?;
         }
     }
 

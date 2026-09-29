@@ -182,7 +182,10 @@ pub(crate) fn normalize_positions(
     let max_x = result.positions.values().map(|nl| nl.x + nl.width).fold(f64::MIN, f64::max);
     let max_y = result.positions.values().map(|nl| nl.y + nl.height).fold(f64::MIN, f64::max);
 
-    let title_offset_y = if has_title { config.tokens.title_band() } else { 0.0 };
+    // The title is placed after routing, into the diagram's white space (render-core's
+    // `frame`); nothing is reserved for it here.
+    let _ = has_title;
+    let title_offset_y = 0.0;
     // A group's drawn padding is content-aware (`group_pad_for`) and never exceeds the
     // padding the *whole* diagram's bounding box would earn, so reserving that bound
     // guarantees no group container is drawn past the canvas margin. `finalize_canvas`

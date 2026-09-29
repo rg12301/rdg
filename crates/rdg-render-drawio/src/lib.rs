@@ -115,45 +115,35 @@ pub fn render_drawio(
     w.write_event(Event::Empty(cell1))?;
 
     // --- Optional Diagram Title Header --------------------------------------
-    if let Some(title) = &compiled.title {
+    // Title, description and legend sit in the diagram's largest white patches (see
+    // `rdg_render_core::frame`).
+    let frame = rdg_render_core::frame::compute_frame(compiled, layout, edge_plans, theme, tokens);
+    // The canvas itself, as an invisible cell behind everything: draw.io crops exports to
+    // the drawn cells, so without it the margin would be lost on every side.
+    if let Some(f) = &frame {
+        let (cw, ch) = f.canvas_size();
+        write_canvas_cell(&mut w, cw, ch)?;
+    }
+    if let Some(t) = frame.as_ref().and_then(|f| f.title.as_ref()) {
         let f = &theme.font;
-        let title_html = format!(
-            "<b><font style=\"font-size:{}px;color:{};\">{title}</font></b>{}",
-            f.title_size,
-            theme.title.color,
-            compiled.description.as_deref().map_or(String::new(), |desc| format!(
-                "<br/><font style=\"font-size:{}px;color:{};\">{desc}</font>",
-                f.description_size, theme.title.description_color
-            ))
-        );
-        let title_style_owned = format!(
-            "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;whiteSpace=nowrap;fontFamily={};",
+        let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+        let line = |text: &str, size: f64, color: &str, lh: f64, bold: bool| {
+            let body = format!("<font style=\"font-size:{size}px;color:{color};line-height:{lh:.0}px;\">{}</font>", esc(text));
+            if bold { format!("<b>{body}</b>") } else { body }
+        };
+        let mut parts: Vec<String> = t.title_lines.iter().map(|l| line(l, f.title_size, &theme.title.color, t.title_lh, true)).collect();
+        parts.extend(t.description_lines.iter().map(|l| line(l, f.description_size, &theme.title.description_color, t.description_lh, false)));
+        // Lines aligned to the canvas edge the block sits nearest (see `frame::align_to_canvas`).
+        let (align, x) = match t.align {
+            rdg_render_core::frame::Align::Left => ("left", t.x),
+            rdg_render_core::frame::Align::Center => ("center", t.x - 2.0),
+            rdg_render_core::frame::Align::Right => ("right", t.x - 4.0),
+        };
+        let title_style = format!(
+            "text;html=1;strokeColor=none;fillColor=none;align={align};verticalAlign=top;rounded=0;whiteSpace=nowrap;spacing=0;fontFamily={};",
             f.family
         );
-        let title_style = title_style_owned.as_str();
-        let mut t_cell = BytesStart::new("mxCell");
-        t_cell.push_attribute(("id", "diagram_title_header"));
-        t_cell.push_attribute(("value", title_html.as_str()));
-        t_cell.push_attribute(("style", title_style));
-        t_cell.push_attribute(("vertex", "1"));
-        t_cell.push_attribute(("parent", "1"));
-        w.write_event(Event::Start(t_cell))?;
-
-        let mut t_geo = BytesStart::new("mxGeometry");
-        // Anchored to the content origin (margin), not a fixed pixel position.
-        let (title_x, title_y) =
-            rdg_render_core::canvas::content_bounds(compiled, layout, edge_plans, tokens)
-                .map_or((24.0, 12.0), |b| (b.min_x, b.min_y));
-        t_geo.push_attribute(("x", format!("{title_x:.1}").as_str()));
-        t_geo.push_attribute(("y", format!("{title_y:.1}").as_str()));
-        let title_w = title.chars().count().max(compiled.description.as_deref().map_or(0, |d| d.chars().count())) as f64
-            * tokens.char_width(f.title_size);
-        t_geo.push_attribute(("width", format!("{:.0}", title_w).as_str()));
-        t_geo.push_attribute(("height", format!("{:.0}", tokens.title_band_for(compiled.description.is_some())).as_str()));
-        t_geo.push_attribute(("as", "geometry"));
-        w.write_event(Event::Empty(t_geo))?;
-
-        w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+        write_vertex(&mut w, "diagram_title_header", &parts.join("<br/>"), &title_style, (x, t.y, t.w + 4.0, t.h))?;
     }
 
     // --- Group / Swimlane container cells -----------------------------------
@@ -463,12 +453,9 @@ pub fn render_drawio(
         w.write_event(Event::End(BytesEnd::new("mxCell")))?;
     }
 
-    // --- Legend: categories and edge styles used, below the diagram --------------
-    if rdg_render_core::look::legend_enabled(theme, compiled) {
-        let items = rdg_render_core::look::legend_items(theme, compiled);
-        if let (false, Some(b)) = (items.is_empty(), rdg_render_core::canvas::content_bounds(compiled, layout, edge_plans, tokens)) {
-            write_legend(&mut w, theme, tokens, &items, b.min_x, b.max_y + tokens.px(3.0), (b.max_x - b.min_x).max(tokens.px(40.0)))?;
-        }
+    // --- Legend: categories and edge styles used, in a white patch ---------------
+    if let Some(l) = frame.as_ref().and_then(|f| f.legend.as_ref()) {
+        write_legend(&mut w, theme, tokens, &l.items, l.x, l.y, l.max_w, l.w, l.align)?;
     }
 
     w.write_event(Event::End(BytesEnd::new("root")))?;
@@ -480,6 +467,17 @@ pub fn render_drawio(
 }
 
 /// A plain vertex cell at absolute `(x, y, w, h)`.
+/// An invisible, locked cell the size of the canvas, so exports keep the margin.
+pub(crate) fn write_canvas_cell<W: std::io::Write>(w: &mut Writer<W>, width: f64, height: f64) -> Result<()> {
+    write_vertex(
+        w,
+        "canvas_frame",
+        "",
+        "rounded=0;fillColor=none;strokeColor=none;locked=1;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;connectable=0;selectable=0;",
+        (0.0, 0.0, width.round(), height.round()),
+    )
+}
+
 /// A decorative child cell of `parent` at `rect` (relative to it).
 fn write_child<W: std::io::Write>(w: &mut Writer<W>, id: &str, style: &str, parent: &str, rect: (f64, f64, f64, f64)) -> Result<()> {
     let mut c = BytesStart::new("mxCell");
@@ -519,6 +517,7 @@ pub(crate) fn write_vertex<W: std::io::Write>(w: &mut Writer<W>, id: &str, value
 }
 
 /// The legend block: a heading, then rows of category swatches and edge-style samples.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn write_legend<W: std::io::Write>(
     w: &mut Writer<W>,
     theme: &Theme,
@@ -527,6 +526,8 @@ pub(crate) fn write_legend<W: std::io::Write>(
     x0: f64,
     y0: f64,
     max_w: f64,
+    block_w: f64,
+    align: rdg_render_core::frame::Align,
 ) -> Result<()> {
     use rdg_render_core::look::LegendItem;
     let f = &theme.font;
@@ -538,11 +539,12 @@ pub(crate) fn write_legend<W: std::io::Write>(
         )
     };
     let head_h = tokens.line_height(f.group_title_size);
-    write_vertex(w, "legend_title", "Legend", &text_style(f.group_title_size, &theme.text.primary, true), (x0, y0, 120.0, head_h))?;
+    let head_w = rdg_render_core::look::legend_heading_width(theme) + 4.0;
+    write_vertex(w, "legend_title", "Legend", &text_style(f.group_title_size, &theme.text.primary, true), (align.line_x(x0, block_w, head_w), y0, head_w, head_h))?;
     let row_h = f.edge_label_size * 1.35 + 10.0;
     let mut y = y0 + f.group_title_size * 1.35 + 6.0;
     for (r, row) in rdg_render_core::look::legend_rows(items, theme, max_w).iter().enumerate() {
-        let mut x = x0;
+        let mut x = align.line_x(x0, block_w, rdg_render_core::look::legend_row_width(row));
         for (k, (it, width)) in row.iter().enumerate() {
             let id = format!("legend_{r}_{k}");
             let mid = y + row_h / 2.0;

@@ -6,6 +6,7 @@
 
 pub mod annotate;
 pub mod canvas;
+pub mod frame;
 pub mod look;
 pub mod ortho;
 pub mod polish;

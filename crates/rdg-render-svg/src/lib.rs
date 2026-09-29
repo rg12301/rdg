@@ -19,7 +19,8 @@ use petgraph::stable_graph::EdgeIndex;
 
 use rdg_graph::{CompiledGraph, NodeData};
 use rdg_layout::{DesignTokens, LayoutResult, NodeLayout};
-use rdg_render_core::look::{LegendItem, NodeLook, edge_look, group_look, legend_enabled, legend_items, legend_rows, legend_size, node_look};
+use rdg_render_core::frame::Align;
+use rdg_render_core::look::{LegendItem, NodeLook, edge_look, group_look, legend_heading_width, legend_row_width, legend_rows, node_look};
 use rdg_render_core::routing::EdgeRoutingPlan;
 use rdg_render_core::theme::{ResolvedEdge, Theme};
 use rdg_render_core::typography::{latex_to_unicode, parse_inline_spans, to_subscript, to_superscript, wrap_and_classify_label};
@@ -167,17 +168,10 @@ pub fn render_svg(
     }
     let f = &theme.font;
 
-    // Canvas = everything drawn plus a margin mirroring the left/top one, plus the legend.
-    let bounds = rdg_render_core::canvas::content_bounds(compiled, layout, edge_plans, tokens);
-    let (mut canvas_w, mut canvas_h) = bounds.as_ref().map_or((0.0, 0.0), rdg_render_core::canvas::canvas_size);
-    let (min_x, max_y) = bounds.as_ref().map_or((0.0, 0.0), |b| (b.min_x, b.max_y));
-    let legend = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty());
-    let legend_gap = tokens.px(3.0);
-    if let Some(items) = &legend {
-        let (lw, lh) = legend_size(items, theme, (canvas_w - 2.0 * min_x).max(tokens.px(40.0)));
-        canvas_h += legend_gap + lh;
-        canvas_w = canvas_w.max(min_x * 2.0 + lw);
-    }
+    // Canvas = everything drawn — title and legend blocks included, each placed in the
+    // diagram's largest white patch — plus a margin mirroring the left/top one.
+    let frame = rdg_render_core::frame::compute_frame(compiled, layout, edge_plans, theme, tokens);
+    let (canvas_w, canvas_h) = frame.as_ref().map_or((0.0, 0.0), |f| f.canvas_size());
     let canvas_w = canvas_w.max(tokens.px(15.0));
     let canvas_h = canvas_h.max(tokens.px(12.5));
 
@@ -243,31 +237,32 @@ pub fn render_svg(
     let shadow_attr = || theme.node.shadow.then(|| ("filter", "url(#card-shadow)".to_string()));
 
     // --- Title -----------------------------------------------------------------------
-    if let Some(title) = &compiled.title {
-        let (tx, ty) = bounds.as_ref().map_or((24.0, 12.0), |b| (b.min_x, b.min_y));
-        let lh = tokens.line_height(f.title_size);
-        text_el(
-            &mut w,
-            &[
-                ("x", f1(tx)),
-                ("y", f1(ty + lh * 0.8)),
-                ("font-size", format!("{}", f.title_size)),
-                ("font-weight", "bold".into()),
-                ("fill", theme.title.color.clone()),
-            ],
-            title,
-        )?;
-        if let Some(desc) = &compiled.description {
+    if let Some(t) = frame.as_ref().and_then(|f| f.title.as_ref()) {
+        // Lines anchored to the side the block is aligned to.
+        let (ax, anchor) = match t.align {
+            Align::Left => (t.x, "start"),
+            Align::Center => (t.x + t.w / 2.0, "middle"),
+            Align::Right => (t.x + t.w, "end"),
+        };
+        let mut y = t.y;
+        for line in &t.title_lines {
             text_el(
                 &mut w,
-                &[
-                    ("x", f1(tx)),
-                    ("y", f1(ty + lh + tokens.line_height(f.description_size) * 0.85)),
-                    ("font-size", format!("{}", f.description_size)),
-                    ("fill", theme.title.description_color.clone()),
-                ],
-                desc,
+                &[("x", f1(ax)), ("y", f1(y + t.title_lh * 0.78)), ("text-anchor", anchor.into()), ("font-size", format!("{}", f.title_size)), ("font-weight", "bold".into()), ("fill", theme.title.color.clone())],
+                line,
             )?;
+            y += t.title_lh;
+        }
+        if !t.description_lines.is_empty() {
+            y += t.gap;
+        }
+        for line in &t.description_lines {
+            text_el(
+                &mut w,
+                &[("x", f1(ax)), ("y", f1(y + t.description_lh * 0.78)), ("text-anchor", anchor.into()), ("font-size", format!("{}", f.description_size)), ("fill", theme.title.description_color.clone())],
+                line,
+            )?;
+            y += t.description_lh;
         }
     }
 
@@ -393,8 +388,8 @@ pub fn render_svg(
     }
 
     // --- Legend ------------------------------------------------------------------------
-    if let Some(items) = &legend {
-        draw_legend(&mut w, theme, tokens, items, min_x, max_y + legend_gap, (canvas_w - 2.0 * min_x).max(tokens.px(40.0)))?;
+    if let Some(l) = frame.as_ref().and_then(|f| f.legend.as_ref()) {
+        draw_legend(&mut w, theme, tokens, &l.items, l.x, l.y, l.max_w, l.w, l.align)?;
     }
 
     close(&mut w, "svg")?;
@@ -685,17 +680,20 @@ fn field_card(w: &mut W, theme: &Theme, nd: &NodeData, nl: &NodeLayout, look: &N
 // Legend
 // ---------------------------------------------------------------------------
 
-pub(crate) fn draw_legend(w: &mut W, theme: &Theme, tokens: &DesignTokens, items: &[LegendItem], x0: f64, y0: f64, max_w: f64) -> Result<()> {
+/// The legend at `(x0, y0)`: rows wrapped at `max_w`, each row (and the heading) lined
+/// up inside the `block_w`-wide block per `align`.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn draw_legend(w: &mut W, theme: &Theme, tokens: &DesignTokens, items: &[LegendItem], x0: f64, y0: f64, max_w: f64, block_w: f64, align: Align) -> Result<()> {
     let f = &theme.font;
     text_el(
         w,
-        &[("x", f1(x0)), ("y", f1(y0 + tokens.line_height(f.group_title_size) * 0.8)), ("font-size", format!("{}", f.group_title_size)), ("font-weight", "bold".into()), ("fill", theme.text.primary.clone())],
+        &[("x", f1(align.line_x(x0, block_w, legend_heading_width(theme)))), ("y", f1(y0 + tokens.line_height(f.group_title_size) * 0.8)), ("font-size", format!("{}", f.group_title_size)), ("font-weight", "bold".into()), ("fill", theme.text.primary.clone())],
         "Legend",
     )?;
     let row_h = f.edge_label_size * 1.35 + 10.0;
     let mut y = y0 + f.group_title_size * 1.35 + 6.0;
     for row in legend_rows(items, theme, max_w).iter() {
-        let mut x = x0;
+        let mut x = align.line_x(x0, block_w, legend_row_width(row));
         for (it, width) in row {
             let mid = y + row_h / 2.0;
             let label = match it {

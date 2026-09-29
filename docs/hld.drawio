@@ -5,17 +5,20 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="diagram_title_header" value="&lt;b&gt;&lt;font style=&quot;font-size:18px;color:#111827;&quot;&gt;High-Level System Design&lt;/font&gt;&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:11px;color:#5b6474;&quot;&gt;AI Semantic Generation to Deterministic Graph Compilation&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="28.0" width="616" height="59" as="geometry"/>
+        <mxCell id="canvas_frame" value="" style="rounded=0;fillColor=none;strokeColor=none;locked=1;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;connectable=0;selectable=0;" vertex="1" parent="1">
+          <mxGeometry x="0.0" y="0.0" width="467.0" height="1353.0" as="geometry"/>
+        </mxCell>
+        <mxCell id="diagram_title_header" value="&lt;b&gt;&lt;font style=&quot;font-size:18px;color:#111827;line-height:24px;&quot;&gt;High-Level System Design&lt;/font&gt;&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:11px;color:#5b6474;line-height:15px;&quot;&gt;AI Semantic Generation to Deterministic Graph Compilation&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;rounded=0;whiteSpace=nowrap;spacing=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;" vertex="1" parent="1">
+          <mxGeometry x="43.0" y="28.0" width="380.2" height="41.2" as="geometry"/>
         </mxCell>
         <mxCell id="grp_client" value="Client / Prompt Layer" style="rounded=1;absoluteArcSize=1;arcSize=20;fillColor=#94a3b8;fillOpacity=5;strokeColor=#94a3b8;strokeWidth=1.25;dashed=1;dashPattern=6 4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;container=1;collapsible=0;recursiveResize=0;connectable=0;html=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontStyle=1;fontColor=#94a3b8;" vertex="1" parent="1">
-          <mxGeometry x="95" y="87" width="234" height="252" as="geometry"/>
+          <mxGeometry x="95" y="93" width="234" height="252" as="geometry"/>
         </mxCell>
         <mxCell id="grp_compiler" value="&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cGF0aCBkPSJNNjIuOTYuMjQyYy0uMjMyLjEzNS0xLjIwMyAxLjUyOC0yLjE2IDMuMDk3LTIuNCAzLjk0LTIuNDI2IDMuOTQyLTUuNjUuNTUtMi4wOTgtMi4yMDgtMi42MDUtMi42MTItMy4yOC0yLjYwNy0uNDQuMDAyLS45OTUuMTUyLTEuMjM1LjMzMi0uMjQuMTgtLjkxNiAxLjYxMi0xLjUwNCAzLjE4My0xLjM0NiAzLjYtMS40MSAzLjcxNS0yLjE1NiAzLjg2LS40Ni4wODYtMS4zNDMtLjQwNy0zLjQ2My0xLjkyOS0xLjU2NS0xLjEyNS0zLjEtMi4wNDUtMy40MTEtMi4wNDUtMS4yOTEgMC0xLjY1NS43MDYtMi4yNyA0LjQtLjc4IDQuNjk3LS43NTQgNC42ODEtNC45ODggMi43NTgtMS43MS0uNzc2LTMuMzMtMS40MS0zLjYwMy0xLjQxLS4yNzQgMC0uNzkyLjI5My0xLjE1LjY1Mi0uNjUyLjY1Mi0uNjUzLjY1NS0uNDc1IDQuMjQ2bC4xNzggMy41OTUtLjY4LjM2NGMtLjYwMi4zMjItMS4wMTcuMjgzLTMuNjg0LS4zNDgtMy40OC0uODIyLTQuMjE2LS44LTQuOTIuMTVsLS41MTYuNjkzLjY5MiAyLjk2NGMuMzggMS42My43NDUgMy4yLjgxNCAzLjQ4Ny4wNjcuMjg3LS4wNS43NDYtLjI2IDEuMDItLjM0OC40NDgtLjcxNy40OS0zLjk0LjQ0LTUuNDUyLS4wODYtNS43NjEuMzgyLTMuNTEgNS4zLjcxOCAxLjU2IDEuMzA1IDIuOTggMS4zMDUgMy4xNSAwIC44OTgtLjcxNyAxLjIyNC0zLjc5NCAxLjcyNy0xLjcyMi4yOC0zLjIxOC41MS0zLjMyNi41MS0uMTA3IDAtLjQzLjIzNS0uNzE3LjUyMi0uOTM3LjkzNi0uNjcxIDEuODE2IDEuNDUzIDQuODE0IDIuNjQ2IDMuNzM1IDIuNjQyIDMuNzUtMS43MyA1LjQyMS00Ljk3MSAxLjkwMi01LjA3MiAyLjM3LTEuMjg3IDUuOTYgMy41MjUgMy4zNDQgMy41MyAzLjI5NS0uNDYxIDUuODA0Qy4yMDggNjIuOC4xNjIgNjIuODQ2LjA4NSA2My44NzZjLS4wOTMgMS4yNTMtLjA3MSAxLjI3NSAzLjUzOCAzLjQ4IDMuNTcgMi4xOCAzLjU3IDIuMjQ2LjA2NyA1LjU2Qy0uMDc4IDc2LjQ4LjAzOCA3NyA1LjAxMyA3OC44NzdjNC4zNDcgMS42NCA0LjM1MyAxLjY2IDEuNzAyIDUuMzk0LTEuNTAyIDIuMTE3LTEuOTgxIDMtMS45ODEgMy42NTMgMCAxLjIyMy42MzcgMS41MzUgNC40NCAyLjE3NCAzLjIwNi41NCAzLjkyLjg1NyAzLjkyIDEuNzQxIDAgLjE4Mi0uNTg4IDEuNjEyLTEuMzA3IDMuMTc3LTIuMjM2IDQuODctMS45ODEgNS4yNzUgMy4zMSA1LjI3NSA0LjkzIDAgNC43OTktLjE1IDMuNzM3IDQuMjk0LS44IDMuMzUtLjgxMyAzLjk5Mi0uMDg4IDQuNzE1LjU1NC41NTYgMS42LjQ5NCA0Ljg3LS4yODkgMi40OTktLjU5NiAyLjkzNy0uNjM3IDMuNTE2LS4zMjhsLjY2LjM1NC0uMTc3IDMuNTk0Yy0uMTc4IDMuNTkzLS4xNzcgMy41OTUuNDc1IDQuMjQ4LjM1OC4zNi44ODQuNjUyIDEuMTY1LjY1Mi4yODIgMCAxLjkwMy0uNjMgMy42MDQtMS40MDQgNC4yMi0xLjkxNiA0LjE5NC0xLjkzMiA0Ljk3MyAyLjc1LjYxNyAzLjcxMS45NzcgNC40IDIuMjk0IDQuNC4zMjcgMCAxLjgzLS44OCAzLjM0LTEuOTU4IDIuNjU0LTEuODkzIDMuMzQyLTIuMTkgNC4wNDktMS43NC4xODIuMTE1Ljg5IDEuNjcgMS41NzIgMy40NTUgMS4wMDMgMi42MjUgMS4zNyAzLjMxIDEuOTI5IDMuNTc2IDEuMDYyLjUxIDEuNzIuMSA0LjIxOC0yLjYyIDMuMDE2LTMuMjg2IDMuMTQtMy4yNyA1LjYwMi43MiAyLjcyIDQuNDA2IDMuNDI0IDQuMzk2IDYuMjEyLS4wODkgMi40MDItMy44NjQgMi4zNzQtMy44NjIgNS42MjEtLjQ3IDIuMTU3IDIuMjUgMi42MTYgMi42MSAzLjM0MyAyLjYxLjQ2NCAwIDEuMDE5LS4xNzUgMS4yMy0uMzg4LjIxNC0uMjEzLjkyLTEuNzg2IDEuNTY4LTMuNDk2LjY0OS0xLjcxIDEuMzIxLTMuMiAxLjQ5NS0zLjMxLjY4Ny0uNDM2IDEuMzk4LS4xMyA0LjA0OCAxLjc1MiAxLjU2IDEuMTA4IDMuMDI4IDEuOTYgMy4zNzcgMS45NiAxLjI5NiAwIDEuNzY0LS45MiAyLjMwMi00LjUzNS40Ni0zLjA4Mi41NTQtMy4zNzggMS4xNi0zLjY4NS41OTYtLjMwMi45NTQtLjIgMy43NSAxLjA3IDEuNzAxLjc3IDMuMzIzIDEuNDAyIDMuNjA0IDEuNDAyLjI4MiAwIC44MTYtLjMwMiAxLjE4NC0uNjcybC42NzItLjY3LS4xODQtMy40NDhjLS4xNzctMy4yOS0uMTYtMy40NjguMzY0LTMuOTQzLjU0LS40ODguNTk2LS40ODYgMy42MTUuMjA0IDMuNjU2LjgzNSA0LjMzOC44NTcgNS4wMjUuMTcuNjcxLS42Ny42NjQtLjgxOC0uMjU0LTQuNjktMS4wMy00LjM0Ni0xLjE2OC00LjE5IDMuNzgtNC4xOSAzLjM3NCAwIDMuNzUtLjA0OSA0LjE4LS41MjMuNzE4LS43OTMuNTQ3LTEuNzAyLS44OTYtNC43NzktLjcyOS0xLjU1LTEuMzItMi45Ni0xLjMxNS0zLjEzNS4wMjQtLjkxNC43NDMtMS4yMjcgNC4wNjUtMS43NjcgMi4wMzMtLjMyOSAzLjU1My0uNzEgMy44MjktLjk2LjkyMy0uODMzLjU4NC0xLjkxOC0xLjUyMy00Ljg3My0yLjY0Mi0zLjcwMy0yLjYzLTMuNzM4IDEuNTk5LTUuMjk3IDUuMDY0LTEuODY2IDUuMjA5LTIuNDg4IDEuNDE5LTYuMDktMy41MS0zLjMzNS0zLjUxMi0zLjMxNy4zMzMtNS42NzcgNC42NDgtMi44NTMgNC42NTUtMy40OTYuMDgyLTYuMzM1LTMuOTMzLTIuNDQtMy45My0yLjQwNi0uNDA1LTUuNzUzIDMuNzgtMy41OTMgMy42NzgtNC4wNjMtMS4yOTUtNS45NjUtNC4zODgtMS42NzktNC40MDItMS43Mi0xLjczNS01LjM4IDEuNTg4LTIuMTggMS45ODItMi45MDMgMS45ODItMy42NSAwLTEuMzA2LS41ODYtMS41OTgtNC40MzYtMi4yMi0zLjIxNi0uNTItMy45MjQtLjgzNS0zLjkyNC0xLjc1IDAtLjE3NC41ODgtMS41NzQgMS4zMDctMy4xMTMgMS40MDYtMy4wMTMgMS42MDQtNC4yMi44MDgtNC45NC0uNDI4LS4zODctMS0uNDQzLTQuMDY3LS4zOTItMy4yMDguMDU0LTMuNjE4LjAwOC00LjA2My0uNDM5LS40ODYtLjQ4OC0uNDgtLjU1Ny4yNzgtMy43MjUuOTMxLTMuODguOTM1LTMuOTc1LjE3LTQuNjk0LS43NzctLjczLTEuMjYyLS43MTgtNC44MjYuMTIxLTIuNTk3LjYxMi0zLjAyNy42NTMtMy42MTcuMzM3bC0uNjctLjM2LjE4NS0zLjU4Mi4xODYtMy41OC0uNjctLjY3Yy0uMzY5LS4zNy0uODkxLS42Ny0xLjE2My0uNjctLjI3IDAtMS44ODQuNjQtMy41ODMgMS40MjEtMi44MzggMS4zMDYtMy4xNDMgMS4zOTMtMy43NTcgMS4wNzItLjYxMi0uMzItLjcxNC0uNjM3LTEuMjM3LTMuODI5LS42MDMtMy42OTMtLjk3Ny00LjQxMi0yLjI4OC00LjQxMi0uMzExIDAtMS44NTMuOTI1LTMuNDI2IDIuMDU1LTIuNTg0IDEuODU2LTIuOTMgMi4wMzItMy41NzQgMS44MDctLjUzMy0uMTg2LS44NDMtLjU5LTEuMjIxLTEuNTk5LS4yOC0uNzQyLS44MTctMi4xNzItMS4xOTQtMy4xNzctLjc2Mi0yLjAyOC0xLjE4Ny0yLjQ4Mi0yLjMyOC0yLjQ4Mi0uNjM3IDAtMS4yMTMuNDU4LTMuMjggMi42MDQtMy4yNSAzLjM3NS0zLjI2MSAzLjM3NC01LjY1LS41NDVDNjYuMDczIDEuNzggNjUuMDc1LjM4MiA2NC44MS4yNGMtLjU5Ny0uMzItMS4zLS4zMi0xLjg1LjAwMm0yLjk2IDExLjc5OGMyLjgzIDIuMDE0IDEuMzI2IDYuNzUtMi4xNDQgNi43NS0zLjM2OCAwLTUuMDY0LTQuMDU3LTIuNjYtNi4zNiAxLjM1OC0xLjMgMy4zMDQtMS40NTkgNC44MDUtLjM5bS0zLjU1OCAxMi41MDdjMS44NTUuNzA1IDIuNjE2LjI4MiA2Ljg1Mi0zLjhsMy4xODItMy4wNyAxLjM0Ny4xOGM0LjIyNS41NiAxMi42MjcgNC4yNSAxNy40NTUgNy42NjYgNC40MzYgMy4xNCAxMC4zMzIgOS41MzQgMTIuODQ1IDEzLjkzbC41MzcuOTQyLTIuMzggNS4zNjRjLTEuMzEgMi45NS0yLjM4MiA1LjY3My0yLjM4MiA2LjA1MyAwIC44NzguNTc2IDIuMjY3IDEuMTMgMi43MjYuMjM0LjE5NSAyLjQ1NyAxLjI2NSA0LjkzOSAyLjM3OGw0LjUxIDIuMDI1LjE3OCAxLjE0OGMuMjMgMS40OTUuMjYgNS4xNjcuMDUyIDYuMjFsLS4xNjMuODE2aC0yLjU3NWMtMi45ODcgMC0yLjc1Ni0uMjY3LTIuOTE4IDMuMzk2LS4xMTggMi42NTYtLjc2IDQuMTI0LTIuMjIgNS4wNzUtMi4zNzcgMS41NTEtNi4zMDQgMS4yNy03Ljk3LS41Ny0uMjU1LS4yODQtLjc1Mi0xLjcwNS0xLjEwNS0zLjE2LTEuMDMtNC4yNTQtMi40MTMtNi42NC01LjE5My04Ljk2NS0uODc4LS43MzMtMS41OTUtMS40MTgtMS41OTUtMS41MjIgMC0uMTAyLjk2NS0uOTE1IDIuMTQ1LTEuODAzIDQuMjk4LTMuMjQgNi43Ny03LjAxMiA3LjA0LTEwLjc0Ny41MTktNy4xMjYtNS4xNTgtMTMuNzY3LTEzLjYwMi0xNS45Mi0yLjAwMi0uNTEtMi44NTctLjUyNi0yNy42MjQtLjUyNi0xNC4wNTcgMC0yNS41Ni0uMDkyLTI1LjU2LS4yMDQgMC0uMjYzIDMuMTI1LTMuMjk1IDQuOTY1LTQuODE2IDUuMDU0LTQuMTc4IDExLjYxOC03LjQ2NSAxOC40MTctOS4yMmwyLjM1LS42MSAzLjM0IDMuMzg3YzEuODM5IDEuODYzIDMuNjQgMy41IDQuMDAzIDMuNjM3TTIwLjMgNDYuMzRjMS41MzkgMS4wMDggMi4xNyAzLjU0IDEuMjYgNS4wNjItMS40MDUgMi4zNTYtNC45NjYgMi40NTUtNi4zNzMuMTc4LTIuMDQ2LTMuMzA5IDEuODk1LTcuMzQ5IDUuMTEzLTUuMjRtOTAuNjcyLjEzYzQuMDI2IDIuNDU0LjkwNiA4LjQ5My0zLjQwNCA2LjU4Ni0yLjg3Ny0xLjI3My0yLjk3LTUuMjA2LS4xNTUtNi42NCAxLjE3NC0uNiAyLjUyMy0uNTc5IDMuNTYuMDUzTTMyLjE2MyA2MS41djE1LjAyaC0xMy4yOGwtLjUyNi0yLjI4NWMtMS4wMzYtNC41LTEuNDcyLTkuMTU2LTEuMjExLTEyLjk2OWwuMTgyLTIuNjc5IDQuNTY1LTIuMDQ3YzIuODY0LTEuMjgzIDQuNzA2LTIuMjYyIDQuOTQzLTIuNjI1IDEuMDM4LTEuNTg0Ljk0LTIuNzE1LS41MTgtNS45MzNsLS42OC0xLjUwMmg2LjUyM1Y2MS41TTcwLjM5IDQ3LjEzMmMyLjg0My43NCA0LjM0NSAyLjI0NSA0LjM0OSA0LjM1NS4wMDIgMS41NS0uNzY1IDIuNTItMi42NyAzLjM4LTEuMzQ4LjYxLTEuNTYyLjYyNS0xMC4wNjMuNzA4bC04LjY4Ni4wODR2LTguOTJoNy43ODJjNi4wNzggMCA4LjExMi4wODYgOS4yODguMzkzbS0yLjkzNCAyMS41NTRjMS40MS4zOTIgMy4wNzYgMS42MTYgMy45MyAyLjg4OC44OTggMS4zMzcgMS40MjMgMy4wNzYgMi42NjcgOC44MzYgMS4wNSA0Ljg3IDEuNzI3IDYuNDYgMy42MiA4LjUzMiAyLjM0NSAyLjU2NiAxLjggMi40NjYgMTMuNTE0IDIuNDY2IDUuNjEgMCAxMC4xOTguMDkgMTAuMTk4LjIgMCAuMTk3LTMuODYzIDQuNzY0LTQuMDMgNC43NjQtLjA0OCAwLTIuMDY2LS40MjItNC40ODQtLjkzOS02LjgyOS0xLjQ1OC03LjA3NS0xLjI4Ny04LjY0MiA2LjAzMmwtMS4wMDggNC43MDItLjkxLjQ0OGMtMS41MTguNzUtNi40NTMgMi4yOTItOS4wMSAyLjgyLTQuMjI4Ljg3LTguODI4IDEuMTYyLTEyLjg3MS44MjEtNi44OTMtLjU4NS0xNi4wMi0zLjI1OS0xNi4zNzctNC44LS4wNzUtLjMyNy0uNTM1LTIuNDQzLTEuMDE4LTQuNzA0LS40ODUtMi4yNi0xLjA3NC00LjQwNC0xLjMxLTQuNzY0LTEuMTMtMS43MjQtMi4zMTgtMS44My03LjU0Ny0uNjc0LTEuOTguNDQtMy43MDguNzk2LTMuODQuNzk2LS4yNDggMC0zLjkyMy00LjI0OS0zLjkyMy00LjUzNSAwLS4wOSA4LjcyOC0uMTk0IDE5LjM5Ni0uMjNsMTkuMzk1LS4wNjYuMDctNi44OWMuMDUtNC44NjUtLjAxOC02Ljk5Ny0uMjMtNy4yNS0uMjM0LS4yODQtMS40ODUtLjM1OC02LjAxMS0uMzU4SDUzLjMydi04LjM2bDYuNTk3LjAwMWMzLjYyNi4wMDIgNy4wMi4xMiA3LjUzOS4yNjRNMzcuNTcgMTAwLjAyYzMuMDg0IDEuODggMS42MDUgNi44MDQtMi4wNDMgNi44LTMuNzQgMC01LjEyNy00Ljg4LTEuOTQtNi44MjYgMS4wNTUtLjY0MyAyLjkwOC0uNjMgMy45ODMuMDI2bTU2LjQ4LjIwNmMxLjUxMiAxLjEwOCAyLjAxNSAzLjQxMyAxLjA3OSA0Ljk1LTIuNDYgNC4wMzQtOC42MTIuODI3LTYuNTU3LTMuNDE5IDEuMDEtMi4wODUgMy42OTUtMi44MzcgNS40NzgtMS41MyIvPjwvc3ZnPgo=&quot; width=&quot;15&quot; height=&quot;15&quot; style=&quot;vertical-align:middle;margin-right:6px;&quot;/&gt;rdg Compilation Pipeline" style="rounded=1;absoluteArcSize=1;arcSize=20;fillColor=#94a3b8;fillOpacity=5;strokeColor=#94a3b8;strokeWidth=1.25;dashed=1;dashPattern=6 4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;container=1;collapsible=0;recursiveResize=0;connectable=0;html=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontStyle=1;fontColor=#94a3b8;" vertex="1" parent="1">
-          <mxGeometry x="115" y="403" width="194" height="598" as="geometry"/>
+          <mxGeometry x="115" y="409" width="194" height="598" as="geometry"/>
         </mxCell>
         <mxCell id="grp_output" value="Artifacts" style="rounded=1;absoluteArcSize=1;arcSize=20;fillColor=#94a3b8;fillOpacity=5;strokeColor=#94a3b8;strokeWidth=1.25;dashed=1;dashPattern=6 4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;container=1;collapsible=0;recursiveResize=0;connectable=0;html=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontStyle=1;fontColor=#94a3b8;" vertex="1" parent="1">
-          <mxGeometry x="24" y="1067" width="370" height="160" as="geometry"/>
+          <mxGeometry x="24" y="1073" width="370" height="160" as="geometry"/>
         </mxCell>
         <mxCell id="llm" value="&lt;img src=&quot;data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48Zz48Y2lyY2xlIGN4PSIxMiIgY3k9IjciIHI9IjQiIGZpbGw9IiM2NDc0OGIiLz48cGF0aCBmaWxsPSIjNjQ3NDhiIiBkPSJNNCAyMXYtMmE2IDYgMCAwIDEgNi02aDRhNiA2IDAgMCAxIDYgNnYySDR6Ii8+PC9nPjwvc3ZnPg==&quot; width=&quot;20&quot; height=&quot;20&quot; style=&quot;vertical-align:middle;margin-right:6px;&quot;&gt;&lt;b&gt;LLM / AI Agent&lt;/b&gt;" tooltip="Generates the semantic graph as token-efficient YAML. Never computes coordinates." style="rounded=1;absoluteArcSize=1;arcSize=12;html=1;whiteSpace=wrap;fillColor=#2563eb;fillOpacity=12;strokeColor=#2563eb;strokeWidth=1.5;shadow=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=12;fontColor=#111827;fontStyle=0;align=center;verticalAlign=middle;spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="grp_client">
           <mxGeometry x="42" y="48" width="150" height="50" as="geometry"/>
@@ -50,8 +53,8 @@
         <mxCell id="e_yaml_rdg" value="stdin / --input" style="exitX=1.00000;exitY=0.85714;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.00000;entryY=0.15714;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="yaml" target="rdg" parent="1">
           <mxGeometry x="-0.0887" y="52.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="343.0" y="297.0"/>
-              <mxPoint x="343.0" y="462.0"/>
+              <mxPoint x="343.0" y="303.0"/>
+              <mxPoint x="343.0" y="468.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -74,55 +77,55 @@
           <mxGeometry x="0.0000" y="19.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="legend_title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="1251.0" width="120.0" height="14.9" as="geometry"/>
+          <mxGeometry x="212.2" y="1257.0" width="43.6" height="14.9" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_0_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#2563eb;fillOpacity=12;strokeColor=#2563eb;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="1276.6" width="22.0" height="14.0" as="geometry"/>
+          <mxGeometry x="36.0" y="1282.6" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_0_label" value="Frontend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="54.0" y="1271.8" width="68.0" height="23.5" as="geometry"/>
+          <mxGeometry x="66.0" y="1277.8" width="68.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_1_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#ea580c;fillOpacity=12;strokeColor=#ea580c;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
-          <mxGeometry x="122.0" y="1276.6" width="22.0" height="14.0" as="geometry"/>
+          <mxGeometry x="134.0" y="1282.6" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_1_label" value="Messaging" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="152.0" y="1271.8" width="74.0" height="23.5" as="geometry"/>
+          <mxGeometry x="164.0" y="1277.8" width="74.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_2_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#0891b2;fillOpacity=12;strokeColor=#0891b2;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
-          <mxGeometry x="226.0" y="1276.6" width="22.0" height="14.0" as="geometry"/>
+          <mxGeometry x="238.0" y="1282.6" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_2_label" value="Edge &amp; cloud" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="256.0" y="1271.8" width="92.0" height="23.5" as="geometry"/>
+          <mxGeometry x="268.0" y="1277.8" width="92.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_3_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#059669;fillOpacity=12;strokeColor=#059669;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
-          <mxGeometry x="348.0" y="1276.6" width="22.0" height="14.0" as="geometry"/>
+          <mxGeometry x="360.0" y="1282.6" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_3_label" value="Backend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="378.0" y="1271.8" width="62.0" height="23.5" as="geometry"/>
+          <mxGeometry x="390.0" y="1277.8" width="62.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_1_0_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#7c3aed;fillOpacity=12;strokeColor=#7c3aed;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
-          <mxGeometry x="24.0" y="1300.1" width="22.0" height="14.0" as="geometry"/>
+          <mxGeometry x="73.0" y="1306.1" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_1_0_label" value="Data" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="54.0" y="1295.3" width="44.0" height="23.5" as="geometry"/>
+          <mxGeometry x="103.0" y="1301.3" width="44.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_1_1_line" value="" style="endArrow=none;html=1;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="98.0" y="1307.1" as="sourcePoint"/>
-            <mxPoint x="120.0" y="1307.1" as="targetPoint"/>
+            <mxPoint x="147.0" y="1313.1" as="sourcePoint"/>
+            <mxPoint x="169.0" y="1313.1" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
         <mxCell id="legend_1_1_label" value="Async / event" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="128.0" y="1295.3" width="98.0" height="23.5" as="geometry"/>
+          <mxGeometry x="177.0" y="1301.3" width="98.0" height="23.5" as="geometry"/>
         </mxCell>
         <mxCell id="legend_1_2_line" value="" style="endArrow=none;html=1;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="226.0" y="1307.1" as="sourcePoint"/>
-            <mxPoint x="248.0" y="1307.1" as="targetPoint"/>
+            <mxPoint x="275.0" y="1313.1" as="sourcePoint"/>
+            <mxPoint x="297.0" y="1313.1" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
         <mxCell id="legend_1_2_label" value="Data read/write" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
-          <mxGeometry x="256.0" y="1295.3" width="110.0" height="23.5" as="geometry"/>
+          <mxGeometry x="305.0" y="1301.3" width="110.0" height="23.5" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

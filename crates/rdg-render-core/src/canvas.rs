@@ -73,7 +73,7 @@ pub fn group_rects(
 }
 
 /// Extent of everything drawn: node boxes, group containers, routed waypoints, edge
-/// label pills and flow badges (where [`crate::annotate`] places them), and the title band. `None` when the
+/// label pills and flow badges (where [`crate::annotate`] places them). `None` when the
 /// layout has no nodes.
 pub fn content_bounds(
     compiled: &CompiledGraph,
@@ -107,12 +107,8 @@ pub fn content_bounds(
     for &(x, y) in ann.badges.values() {
         b.add_rect(x - r, y - r, 2.0 * r, 2.0 * r);
     }
-    if let Some(title) = &compiled.title {
-        b.min_y -= tokens.title_band_for(compiled.description.is_some());
-        let title_w = title.chars().count() as f64 * tokens.char_width(tokens.title_font_size) * 1.1;
-        let desc_w = compiled.description.as_deref().map_or(0.0, |d| d.chars().count() as f64 * tokens.char_width(tokens.detail_font_size + 1.0));
-        b.max_x = b.max_x.max(b.min_x + title_w.max(desc_w));
-    }
+    // (The title and legend are placed afterwards, into the white space this leaves —
+    // see `crate::frame`.)
     Some(b)
 }
 

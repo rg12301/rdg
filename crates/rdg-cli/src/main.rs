@@ -361,8 +361,19 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
         ..LayoutConfig::default()
     };
     let max_passes = layout_config.tokens.max_review_passes;
-    let reviewed = compute_reviewed_layout(&compiled, &layout_config, max_passes, &decision)
+    let mut reviewed = compute_reviewed_layout(&compiled, &layout_config, max_passes, &decision)
         .context("layout computation failed")?;
+    // Title, description and legend go into the diagram's largest white patches; then the
+    // margin is applied evenly around everything (see `rdg_render_core::frame`).
+    rdg_render_core::frame::place_frame(
+        &compiled,
+        &mut reviewed.layout,
+        &mut reviewed.edge_plans,
+        &theme,
+        &layout_config.tokens,
+        margin_x,
+        margin_y,
+    );
     let remaining_anomalies = reviewed.remaining_anomalies(&compiled, &layout_config.tokens);
     report_review(report, &reviewed, remaining_anomalies.len());
     for a in &remaining_anomalies {

@@ -259,7 +259,8 @@ pub fn render_sequence_svg(
     }
 
     if let Some(items) = &legend {
-        draw_legend(&mut w, theme, tokens, items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), legend_w)?;
+        let lw = legend_size(items, theme, legend_w).0;
+        draw_legend(&mut w, theme, tokens, items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), legend_w, lw, rdg_render_core::frame::Align::Left)?;
     }
 
     close(&mut w, "svg")?;
