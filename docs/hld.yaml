@@ -10,15 +10,12 @@ spacing:
 groups:
   - id: grp_client
     label: "Client / Prompt Layer"
-    color: "#64748b"
     nodes: ["llm", "yaml"]
   - id: grp_compiler
     label: "rdg Compilation Pipeline"
-    color: "#2563eb"
     nodes: ["rdg", "schema", "graph", "layout", "renderer"]
   - id: grp_output
     label: "Artifacts"
-    color: "#059669"
     nodes: ["drawio", "svg"]
 nodes:
   - id: llm

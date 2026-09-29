@@ -9,6 +9,7 @@ mod force;
 mod gaps;
 mod hillclimb;
 mod physics;
+mod sequence;
 mod sugiyama;
 mod tokens;
 mod wrap;
@@ -16,10 +17,14 @@ mod wrap;
 pub use fcose::compute_fcose_layout;
 pub use force::compute_force_layout;
 pub use hillclimb::{refine as refine_positions, request_extra_clearance};
+pub use sequence::{
+    SeqActivation, SeqDivider, SeqFragment, SeqGroupBox, SeqLifeline, SeqNote, SequenceLayoutInfo, SequenceMessageLayout,
+    actor_figure_h, compute_sequence_layout, message_label_lines,
+};
 pub use tokens::DesignTokens;
 pub use wrap::{
     estimate_node_size, estimate_node_size_with_details, estimate_node_size_with_fields,
-    strip_markdown_tokens, wrap_label,
+    LabelLine, SUBTITLE_WRAP_FACTOR, classify_label, strip_markdown_tokens, wrap_label,
 };
 
 use anyhow::Result;
@@ -109,30 +114,6 @@ impl Default for LayoutConfig {
             tokens,
         }
     }
-}
-
-/// Single chronological message in a sequence diagram.
-#[derive(Debug, Clone)]
-pub struct SequenceMessageLayout {
-    pub edge_idx: petgraph::stable_graph::EdgeIndex,
-    pub from_node: NodeIndex,
-    pub to_node: NodeIndex,
-    pub y: f64,
-    pub is_self_call: bool,
-    pub is_reply: bool,
-}
-
-/// Metadata and lifeline geometry for sequence diagrams.
-#[derive(Debug, Clone)]
-pub struct SequenceLayoutInfo {
-    /// Maps participant NodeIndex to its vertical lifeline X centerline.
-    pub lifeline_x: HashMap<NodeIndex, f64>,
-    /// Top Y coordinate of the lifelines (bottom of participant header cards).
-    pub lifeline_top_y: f64,
-    /// Bottom Y coordinate of the lifelines (below all messages).
-    pub lifeline_bottom_y: f64,
-    /// Chronological list of message layout positions.
-    pub messages: Vec<SequenceMessageLayout>,
 }
 
 /// Computed spatial positions for every node in the graph.
@@ -239,7 +220,31 @@ pub(crate) fn layout_node_size(
     config: &LayoutConfig,
 ) -> (f64, f64) {
     let data = &compiled.graph[idx];
-    let has_icon = data.icon.is_some() || data.language.is_some();
+    // A node drawn as its logo: the logo (in its halo) on top, the label underneath.
+    if data.shape.as_deref() == Some("icon") {
+        let t = &config.tokens;
+        let lines = classify_label(&data.label, t.wrap_chars_normal);
+        let line_w = |l: &LabelLine| {
+            let f = if l.is_subtitle { t.detail_font_size } else { t.font_size };
+            strip_markdown_tokens(&l.text).chars().count() as f64 * t.char_width(f)
+        };
+        let mut text_w = lines.iter().map(line_w).fold(0.0, f64::max);
+        let mut text_h: f64 = lines
+            .iter()
+            .map(|l| t.line_height(if l.is_subtitle { t.detail_font_size } else { t.font_size }))
+            .sum();
+        if let Some(tech) = data.technology.as_deref().filter(|tech| !data.label.contains(tech)) {
+            text_w = text_w.max((tech.chars().count() + 2) as f64 * t.char_width(t.detail_font_size));
+            text_h += t.line_height(t.detail_font_size);
+        }
+        // The halo (logo + padding, where arrows attach) on top, the label under it.
+        let halo = t.icon_halo_size();
+        let w = (text_w + t.px(1.0)).max(halo + t.px(1.0));
+        let h = halo + t.px(0.25) + text_h;
+        return grow_for_degree(compiled, idx, ((w / 4.0).ceil() * 4.0, (h / 4.0).ceil() * 4.0), config);
+    }
+    // Only `icon` is drawn (a node's language can be shown on its group instead).
+    let has_icon = data.icon.is_some();
     let (w, h) = estimate_node_size_with_details(
         &data.label,
         &data.node_type,
@@ -371,91 +376,6 @@ pub fn estimate_average_node_size(
     } else {
         (total_w / count as f64, total_h / count as f64)
     }
-}
-
-/// Compute coordinates for a sequence diagram.
-/// Places participants horizontally along the top, extends vertical lifelines downwards,
-/// and allocates chronological rows for each message arrow.
-pub fn compute_sequence_layout(
-    compiled: &CompiledGraph,
-    config: &LayoutConfig,
-) -> Result<LayoutResult> {
-    let mut positions = HashMap::new();
-    let mut lifeline_x = HashMap::new();
-
-    if compiled.graph.node_count() == 0 {
-        return Ok(LayoutResult {
-            positions,
-            sequence_info: None,
-        });
-    }
-
-    let title_offset_y =
-        if compiled.title.is_some() { config.tokens.line_height(config.tokens.font_size) * 3.0 } else { 0.0 };
-    let start_y = config.margin_y + title_offset_y;
-
-    // Collect participants in stable node_indices order
-    let participants: Vec<NodeIndex> = compiled.graph.node_indices().collect();
-
-    let participant_w = config.tokens.px(17.5);
-    let participant_h = config.tokens.px(5.5);
-    // Reuses the same "gap between boxes" scale as group containers — conceptually
-    // the same measurement (breathing room between adjacent visual blocks).
-    let participant_gap = config.tokens.group_gap();
-
-    for (i, &node_idx) in participants.iter().enumerate() {
-        let x = config.margin_x + (i as f64) * (participant_w + participant_gap);
-        let y = start_y;
-        positions.insert(
-            node_idx,
-            NodeLayout {
-                x,
-                y,
-                width: participant_w,
-                height: participant_h,
-            },
-        );
-        lifeline_x.insert(node_idx, x + participant_w / 2.0);
-    }
-
-    let lifeline_top_y = start_y + participant_h;
-    let mut current_y = lifeline_top_y + config.tokens.px(4.5);
-    let mut messages = Vec::new();
-
-    for &edge_idx in &compiled.edge_order {
-        if let Some((src, dst)) = compiled.graph.edge_endpoints(edge_idx) {
-            let edge_data = &compiled.graph[edge_idx];
-            let is_self_call = src == dst;
-            let is_reply = edge_data.edge_style.as_deref() == Some("reply");
-
-            messages.push(SequenceMessageLayout {
-                edge_idx,
-                from_node: src,
-                to_node: dst,
-                y: current_y,
-                is_self_call,
-                is_reply,
-            });
-
-            if is_self_call {
-                current_y += config.tokens.px(6.5);
-            } else {
-                current_y += config.tokens.px(5.0);
-            }
-        }
-    }
-
-    let lifeline_bottom_y = current_y + config.tokens.stub_clearance();
-
-    Ok(LayoutResult {
-        positions,
-        sequence_info: Some(SequenceLayoutInfo {
-            lifeline_x,
-            lifeline_top_y,
-            lifeline_bottom_y,
-            messages,
-        }),
-    })
 }
 
 // ---------------------------------------------------------------------------

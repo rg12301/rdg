@@ -1,0 +1,58 @@
+# Sequence diagram showcase: participant groups, actor, auto-activation, notes,
+# alt/else, loop, opt, par, create/destroy, dividers and autonumbering.
+title: "Login with MFA"
+description: "Password login, optional OTP challenge, session issue and audit"
+numbered: true
+participants:
+  - {id: user, label: "User", type: actor}
+  - {id: web, label: "Web App", type: client, language: typescript}
+  - {id: gw, label: "API Gateway", type: gateway}
+  - {id: auth, label: "auth-api", type: service, language: typescript}
+  - {id: otp, label: "OTP Session", type: service}
+  - {id: db, label: "authdb", type: database, db_type: postgres}
+  - {id: redis, label: "Redis", type: cache, db_type: redis}
+  - {id: kafka, label: "Kafka", type: queue, db_type: kafka}
+groups:
+  - {id: edge, label: "Edge", category: cloud, nodes: [gw]}
+  - {id: core, label: "Auth Service", category: backend, nodes: [auth, otp]}
+  - {id: data, label: "Data", category: database, nodes: [db, redis, kafka]}
+sequence:
+  - {from: user, to: web, label: "enter email + password"}
+  - {from: web, to: gw, label: "POST /login"}
+  - {from: gw, to: auth, label: "login(credentials)"}
+  - {note: "Rate limit: 5 attempts / 15 min per IP", right_of: auth}
+  - {from: auth, to: redis, label: "INCR attempts:ip"}
+  - {from: redis, to: auth, label: "count", style: reply}
+  - {from: auth, to: db, label: "SELECT user by email"}
+  - {from: db, to: auth, label: "user row", style: reply}
+  - alt: "password valid"
+    steps:
+      - opt: "MFA enabled"
+        steps:
+          - {from: auth, to: otp, label: "new(user_id)", create: true}
+          - {from: otp, to: otp, label: "generate code", activate: true}
+          - {from: otp, to: user, label: "SMS code", style: async}
+          - {from: user, to: web, label: "enter code"}
+          - {from: web, to: auth, label: "verify(code)"}
+          - {from: auth, to: otp, label: "check(code)"}
+          - {from: otp, to: auth, label: "ok", style: reply}
+          - {from: auth, to: otp, label: "discard()", destroy: true}
+      - {from: auth, to: redis, label: "SET session (TTL 24h)"}
+      - {from: auth, to: gw, label: "200 + token", style: reply}
+    else:
+      label: "invalid password"
+      steps:
+        - {from: auth, to: gw, label: "401 Unauthorized", style: reply}
+  - {from: gw, to: web, label: "response", style: reply}
+  - divider: "async audit"
+  - par: "fan-out"
+    steps:
+      - {from: auth, to: kafka, label: "publish login_event", style: async}
+    and:
+      - label: "metrics"
+        steps:
+          - {from: auth, to: auth, label: "record latency"}
+  - loop: "every 5 min"
+    steps:
+      - {from: web, to: gw, label: "refresh token"}
+      - {note: "Silent refresh keeps the session alive", over: [web, gw]}

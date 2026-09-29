@@ -284,6 +284,12 @@ fn detect_excessive_bend(
 ) {
     let title_zones = crate::routing::compute_group_title_zones(compiled, layout, tokens);
     for (&edge_idx, plan) in edge_plans {
+        // The search router already takes the fewest bends the obstacles allow; a bend
+        // count above this naive face-pair estimate there means a node is in the way,
+        // which wider spacing doesn't remove.
+        if plan.searched {
+            continue;
+        }
         let Some((s_idx, d_idx)) = edge_endpoint_ids(compiled, edge_idx) else {
             continue;
         };
@@ -583,6 +589,11 @@ pub struct SpacingMetrics {
     pub micro_jogs: usize,
     /// Right-angle crossings between different edges.
     pub crossings: usize,
+    /// Crossings within 16px of a bend or an end of either edge — where a reader can't
+    /// tell which line turns and which carries on.
+    pub crossings_near_bend: usize,
+    /// Edge segments running parallel within 8px of a group border for over 24px.
+    pub border_hugs: usize,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -627,7 +638,31 @@ pub fn spacing_metrics(
     for (i, pa) in paths.iter().enumerate() {
         m.micro_jogs += crate::polish::micro_jog_segments(pa, min_jog).len();
         for pb in &paths[i + 1..] {
-            m.crossings += crate::polish::crossing_points(pa, pb).len();
+            let pts = crate::polish::crossing_points(pa, pb);
+            m.crossings += pts.len();
+            // Every path point is a bend or an end.
+            m.crossings_near_bend += pts
+                .iter()
+                .filter(|x| pa.iter().chain(pb).any(|c| (c.0 - x.0).abs() + (c.1 - x.1).abs() < 16.0))
+                .count();
+        }
+    }
+    for (gx, gy, gw, gh) in crate::canvas::group_rects(compiled, layout, tokens) {
+        let lines = [(true, gy, gx, gx + gw), (true, gy + gh, gx, gx + gw), (false, gx, gy, gy + gh), (false, gx + gw, gy, gy + gh)];
+        for p in &paths {
+            for w in p.windows(2) {
+                let (a, b) = (w[0], w[1]);
+                let horiz = (a.1 - b.1).abs() < 0.5;
+                for &(lh, at, lo, hi) in &lines {
+                    if lh != horiz {
+                        continue;
+                    }
+                    let (c, s0, s1) = if horiz { (a.1, a.0.min(b.0), a.0.max(b.0)) } else { (a.0, a.1.min(b.1), a.1.max(b.1)) };
+                    if (c - at).abs() < 8.0 && s1.min(hi) - s0.max(lo) > 24.0 {
+                        m.border_hugs += 1;
+                    }
+                }
+            }
         }
     }
 
@@ -637,7 +672,12 @@ pub fn spacing_metrics(
         if s_idx == d_idx {
             continue;
         }
-        if let Some(pts) = edge_full_path(compiled, layout, edge_idx, plan) {
+        if let Some(mut pts) = edge_full_path(compiled, layout, edge_idx, plan) {
+            // The arrow as drawn: into the outline (a round shape, a logo's halo), not
+            // just to the bounding box.
+            if let (Some(last), Some(nl)) = (pts.last_mut(), layout.positions.get(&d_idx)) {
+                *last = crate::routing::node_attach_point(compiled, d_idx, nl, plan.dst_side, plan.entry_port, tokens);
+            }
             if let [.., a, b] = pts.as_slice() {
                 let len = (b.0 - a.0).hypot(b.1 - a.1);
                 if m.min_arrow_len.is_none_or(|c| len < c) {
@@ -1046,6 +1086,7 @@ mod tests {
                 corridor_x: 0.0,
                 waypoints: vec![],
                 corridor_bucket_size: 1,
+                searched: false,
             },
         );
         let anomalies = detect_anomalies(&compiled, &layout, &edge_plans, 60.0, 160.0, &DesignTokens::default());

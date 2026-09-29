@@ -4,6 +4,10 @@
 //! the output file. All heavy lifting is in the `rdg-schema`/`rdg-graph`/`rdg-layout`/
 //! `rdg-render-drawio`/`rdg-render-svg` library crates.
 
+mod guide;
+mod report;
+mod validate;
+
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -18,585 +22,102 @@ use rdg_render_drawio::render_drawio;
 use rdg_render_svg::render_svg;
 use rdg_schema::DiagramPayload;
 
-// ---------------------------------------------------------------------------
-// Long help text — LLM-optimised
-// ---------------------------------------------------------------------------
+use report::{Format, Report};
 
-const LONG_ABOUT: &str = "\
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  rdg  ·  Render Diagram  ·  v1.0
-  Deterministic graph layout compiler for LLM-generated semantic diagrams.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ROLE OF THIS TOOL (FOR LLM AGENTS)
-───────────────────────────────────
-You (the LLM) are responsible for semantic reasoning: deciding which nodes
-exist, what they represent, and how they connect. rdg is responsible for
-spatial reasoning: computing pixel-perfect, non-overlapping coordinates and
-serialising a strictly valid output file.
-
-Do NOT attempt to compute x/y coordinates, widths, or geometry yourself.
-Do NOT write raw draw.io XML or SVG. Instead:
-  1. Emit the token-minimal YAML schema described below.
-  2. Pipe it to rdg or save it to a file and pass with --input.
-  3. rdg handles all layout, styling, and serialisation.
-
-This separation prevents coordinate hallucinations and XML syntax errors.
-
-─────────────────────────────────────────────────────────────────────────────
-INPUT SCHEMA (YAML) — emit exactly this structure
-─────────────────────────────────────────────────────────────────────────────
-
-  diagram_type: architecture       # architecture | flowchart | sequence | erd | class | state
-  theme: standard                  # optional — standard (white-card) or dark
-  direction: tb                    # optional — tb (top-to-bottom) or lr (left-to-right)
-  groups:                          # optional — visual swimlane containers
-    - id: g1
-      label: \"Core Cluster\"        # container title
-      color: \"#0284c7\"             # optional accent hex color
-      nodes: [n1, n2]              # node ids enclosed in container
-  nodes:
-    - id: n1                       # required — unique, short, no spaces
-      label: \"Order Service\"       # required — component title
-      type: service                # optional — semantic type (see NODE TYPES)
-      language: rust               # optional — flat vector logo: rust, go, python, ts, java...
-      technology: \"Axum 0.7\"       # optional — tech stack badge
-      metadata: \"tooltip text\"     # optional — free annotation / tooltip
-    - id: n2
-      label: \"orders\"              # required — table / db entity
-      type: database               # database or table renders 3D cylinder
-      db_type: postgres            # optional — postgres, mysql, redis, mongo, kafka...
-      fields:                      # optional — column or member rows
-        - \"id: UUID [PK]\"
-        - \"user_id: UUID [FK]\"
-        - \"amount: DECIMAL\"
-  edges:
-    - from: n1                     # required — source node id
-      to:   n2                     # required — target node id
-      label: \"SQL INSERT\"          # optional — text along connector / protocol
-      edge_style: one_to_many      # optional: flow | async | sync | reply | one_to_many | inheritance...
-
-Rules:
-  • ids must be unique across all nodes and groups.
-  • Edge from/to values must reference existing node ids.
-  • Cycles are allowed — rdg breaks them automatically via ELS Feedback Arc Set.
-  • Unknown node types fall back to the default rounded-card style.
-  • The 'theme' key in YAML takes precedence over --theme flag.
-
-─────────────────────────────────────────────────────────────────────────────
-DIAGRAM TYPES & ARCHITECTURE STANDARDS
-─────────────────────────────────────────────────────────────────────────────
-
-  architecture (HLD / LLD / C4)
-    • Level 2 (Container) & Level 3 (Component) architecture diagrams.
-    • Services display vector language badges and technology stack tags.
-    • Databases render 3D cylinders with database engine badges.
-    • Edge labels should name explicit communication protocols (e.g. gRPC, HTTPS, SQL).
-
-  flowchart / graph
-    • General computational pipelines, logic flows, state transitions.
-
-  sequence
-    • Participant lifelines at top; time flows strictly downward.
-    • Solid lines with filled arrows for sync requests; dashed lines with open
-      arrows for replies (edge_style: reply) and async events (edge_style: async).
-
-  erd (Entity Relationship Diagram)
-    • Tables rendered as cylinders or structured entity cards with [PK] and [FK] fields.
-    • Connectors feature standard Crow's Foot notation:
-      one_to_many (1:N), many_to_many (M:N), one_to_one (1:1), zero_to_many (0:N).
-
-  class (UML Class Diagram)
-    • Structured compartment cards with member fields and methods.
-    • Stereotype badges: <<interface>>, <<abstract>>.
-    • Connectors: inheritance (hollow triangle), realization (dashed triangle),
-      composition (filled diamond), aggregation (hollow diamond), dependency (dashed open).
-
-─────────────────────────────────────────────────────────────────────────────
-NODE TYPES (WHITE-CARD DESIGN SYSTEM)
-─────────────────────────────────────────────────────────────────────────────
-
-  All nodes render as clean elevated white cards with semantic border accents:
-
-  proxy / gateway / api      → Indigo accent card  (API gateways, load balancers)
-  server / service / backend → Emerald accent card (microservices, backends)
-  database / db / storage    → Sky 3D cylinder     (databases, persistent stores)
-  table / entity / record    → Sky 3D cylinder     (database tables, entities)
-  queue / broker / bus       → Amber queue pill    (Kafka, RabbitMQ, SQS)
-  cache / redis / memcache   → Rose diamond        (Redis, Memcached, CDN edge)
-  function / lambda / faas   → Orange Lambda card  (serverless handlers)
-  client / user / browser    → Slate person icon   (end-users, web clients)
-  decision / condition       → Purple diamond      (branching logic)
-  class / abstract_class     → UML structured card (classes with methods/fields)
-  interface                  → UML interface card  (<<interface>> stereotype)
-  start / start_state        → Solid filled circle (entry point)
-  end / end_state            → Bullseye circle     (terminal state)
-  (anything else)            → Neutral slate card  (generic component)
-
-─────────────────────────────────────────────────────────────────────────────
-SUPPORTED FLAT VECTOR ICONS
-─────────────────────────────────────────────────────────────────────────────
-
-  Languages:
-    rust, go, python, typescript, javascript, java, kotlin, cpp, csharp,
-    ruby, swift, node
-
-  Databases & Message Stores:
-    postgres, mysql, redis, mongodb, dynamodb, kafka, cassandra, sqlite,
-    elasticsearch, database, table, user
-
-─────────────────────────────────────────────────────────────────────────────
-INLINE TYPOGRAPHY & MARKDOWN FORMATTING
-─────────────────────────────────────────────────────────────────────────────
-
-  Labels in nodes, edges, and groups support rich inline typography:
-
-  `code`             → Monospace font (JetBrains Mono / Menlo) for types, APIs, filenames
-  **bold**           → Bold weight for emphasis
-  *italic*           → Italic styling for status or notes
-  __underline__      → Underline styling
-  ~~strike~~         → Strikethrough for deprecated/removed components
-  ~sub~              → Subscript (e.g. H~2~O)
-  ^super^            → Superscript (e.g. O(N^2^))
-  $math$ or \\(math\\) → LaTeX math (e.g. $R \\times C$, $\\alpha = 0.5$)
-                       Rendered natively via MathJax in draw.io (math=\"1\")
-                       and crisp Unicode mathematical glyphs in SVG.
-
-─────────────────────────────────────────────────────────────────────────────
-EDGE STYLES (edge_style)
-─────────────────────────────────────────────────────────────────────────────
-
-  General:
-    flow (default)   → Solid slate line, filled block arrow
-    async            → Dashed amber line, open arrow (events, queues)
-    error / fallback → Dashed red line, hollow arrow (dead-letter, circuit breaker)
-    data / stream    → 2px Indigo line, filled block arrow (data replication)
-    bidirectional    → Solid slate line, dual arrows (WebSocket, full-duplex)
-    sync / call      → Synchronous call arrow
-    reply / return   → Dashed return message arrow
-
-  Entity Relationship (ER):
-    one_to_many      → Crow's foot one-to-many (1:N)
-    many_to_many     → Crow's foot many-to-many (M:N)
-    one_to_one       → Crow's foot one-to-one (1:1)
-    zero_to_many     → Crow's foot zero-to-many (0:N)
-
-  UML Class Relationships:
-    inheritance      → Solid line with hollow triangle arrowhead
-    realization      → Dashed line with hollow triangle arrowhead
-    composition      → Solid line with filled diamond start marker
-    aggregation      → Solid line with hollow diamond start marker
-    dependency       → Dashed line with open arrowhead
-
-─────────────────────────────────────────────────────────────────────────────
-OUTPUT FORMATS — extension controls format
-─────────────────────────────────────────────────────────────────────────────
-
-  .drawio   Uncompressed mxfile XML — open in draw.io desktop / diagrams.net
-  .svg      Scalable Vector Graphics — embed in docs, Markdown, HTML
-
-─────────────────────────────────────────────────────────────────────────────
-LAYOUT ALGORITHMS
-─────────────────────────────────────────────────────────────────────────────
-
-  auto      (default) A topology analyzer inspects the input graph (cycles,
-                      edge density, compound/nested group structure, connected
-                      components) and dispatches to whichever engine below
-                      fits — a one-line summary is printed to stderr.
-
-  sugiyama            Hierarchical top-to-bottom DAG layout. Best for:
-                      flowcharts, pipelines, data-flow diagrams, system
-                      architectures, CI/CD. Cycles are auto-broken (reversed
-                      edges are marked).
-
-  force               Barnes-Hut force-directed layout. Best for: dense or
-                      very large graphs, social graphs, dependency webs.
-
-  fcose               Compound spring embedder. Best for: diagrams with
-                      visual groups or disconnected components.
-
-  Edge routing (a fixed corridor heuristic vs. a visibility-graph A* search)
-  is chosen independently of --layout, based on obstacle density.
-
-─────────────────────────────────────────────────────────────────────────────
-QUICKSTART EXAMPLES
-─────────────────────────────────────────────────────────────────────────────
-
-  # Minimal: read from stdin, write draw.io file
-  rdg --output architecture.drawio << 'EOF'
-  diagram_type: flowchart
-  nodes:
-    - id: n1
-      label: \"Client\"
-      type: client
-    - id: n2
-      label: \"API Gateway\"
-      type: proxy
-    - id: n3
-      label: \"Database\"
-      type: database
-  edges:
-    - from: n1
-      to: n2
-      label: \"HTTPS\"
-    - from: n2
-      to: n3
-      label: \"SQL\"
-  EOF
-
-  # From a file, output SVG, custom spacing
-  rdg --input diagram.yaml --output diagram.svg --rank-spacing 80 --node-spacing 50
-
-  # Explicit layout and theme
-  rdg -i graph.yaml -o out.drawio --layout sugiyama --theme aws
-
-─────────────────────────────────────────────────────────────────────────────
-LLM AGENT WORKFLOW (RECOMMENDED PROMPT PATTERN)
-─────────────────────────────────────────────────────────────────────────────
-
-  When asked to generate a diagram, follow these steps:
-
-  Step 1 — Reason about nodes and relationships in natural language.
-  Step 2 — Emit ONLY the YAML block (no extra prose, no XML, no SVG).
-           Use short ids (n1, n2, …) to minimise token count.
-  Step 3 — Pipe or save the YAML, then invoke:
-             rdg --input diagram.yaml --output diagram.drawio
-  Step 4 — Report the output file path to the user.
-
-  DO NOT hallucinate pixel coordinates.
-  DO NOT write mxGeometry tags.
-  DO NOT wrap the YAML in JSON or any other envelope.
-  DO NOT invent node types not listed above (unknown types render safely).
-
-─────────────────────────────────────────────────────────────────────────────
-NOTES FOR AGENTIC PIPELINES
-─────────────────────────────────────────────────────────────────────────────
-
-  • rdg exits 0 on success, non-zero on error.
-  • All diagnostic messages go to stderr; the output file is pure content.
-  • The tool is deterministic: same YAML input always produces the same output.
-  • Cycle warnings are printed to stderr and do not affect exit code.
-  • You can chain: llm-generate | rdg -o out.drawio && open out.drawio
-";
 
 // ---------------------------------------------------------------------------
 // CLI definition
 // ---------------------------------------------------------------------------
 
-/// rdg (Render Diagram) — token-efficient LLM diagram compiler.
-///
-/// Accepts a flat YAML semantic graph, runs deterministic layout algorithms,
-/// and emits a pixel-perfect draw.io XML or SVG file.
+/// rdg (Render Diagram) — compiles a YAML diagram description into draw.io XML or SVG.
 #[derive(Parser, Debug)]
 #[command(
     name = "rdg",
-    version = "1.0",
-    author = "rdg contributors",
-    about = "Render Diagram: compile LLM semantic graphs into draw.io XML or SVG.",
-    long_about = LONG_ABOUT,
-    after_help = "Tip: run `rdg --help` to see the full LLM usage guide including YAML schema and node types."
+    version,
+    about = "Compile a YAML diagram description (nodes, edges, groups) into a laid-out .drawio or .svg file.",
+    long_about = guide::LONG_ABOUT,
+    after_help = "`rdg --help` shows the YAML format; `rdg --guide all` has every detail."
 )]
 struct Cli {
-    /// Path to input YAML file (reads stdin if omitted or '-').
-    #[arg(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Path to input YAML file (reads stdin if omitted or '-')",
-        long_help = "Path to the input YAML diagram payload.\n\
-                     \n\
-                     If omitted or set to '-', rdg reads from standard input (stdin),\n\
-                     enabling clean Unix piping in scripts and LLM generation pipelines:\n\
-                       cat diagram.yaml | rdg -o diagram.svg\n\
-                       llm-agent-command | rdg -o arch.drawio\n\
-                     \n\
-                     The YAML payload must conform to the rdg schema (nodes, edges, groups).\n\
-                     Run `rdg --example` to see a full reference template, or `rdg --schema`\n\
-                     for the JSON Schema definition."
-    )]
+    /// Input YAML file; stdin if omitted or '-'.
+    #[arg(short, long, value_name = "FILE")]
     input: Option<String>,
 
-    /// Output diagram file path (.drawio or .svg).
-    #[arg(
-        short,
-        long,
-        default_value = "output.drawio",
-        value_name = "FILE",
-        help = "Output diagram file path (.drawio or .svg)",
-        long_help = "Path where the finished diagram will be written.\n\
-                     \n\
-                     The file extension selects the output serialization format:\n\
-                     \n\
-                       .drawio  Uncompressed XML in the standard mxfile format.\n\
-                                • 100% native draw.io / diagrams.net compatibility\n\
-                                • Full editability: drag, resize, and modify in draw.io\n\
-                                • Container grouping: moving a group moves all member nodes\n\
-                                • MathJax support (math=\"1\"): renders LaTeX equations\n\
-                                • Rich HTML labels with code monospace and bold titles\n\
-                                • Rounded orthogonal edges with line jump arcs (jumpStyle=arc)\n\
-                     \n\
-                       .svg     Standalone Scalable Vector Graphics.\n\
-                                • Crisp vector rendering for web, Markdown, and docs\n\
-                                • Modern elevated card styling with drop shadows\n\
-                                • Orthogonal rounded fillet connector paths (no line collisions)\n\
-                                • Styled <tspan> elements with Unicode mathematical glyphs\n\
-                                • Embed directly in GitHub READMEs, Notion, and HTML"
-    )]
+    /// Input YAML file given positionally (same as -i).
+    #[arg(value_name = "INPUT", conflicts_with = "input")]
+    input_pos: Option<String>,
+
+    /// Output file; the extension picks the format (.drawio or .svg).
+    #[arg(short, long, default_value = "output.drawio", value_name = "FILE")]
     output: String,
 
-    /// Layout framework: auto (topology-dispatched), sugiyama, force, or fcose.
-    #[arg(
-        short,
-        long,
-        value_enum,
-        default_value_t = LayoutEngine::Auto,
-        help = "Layout framework (auto, sugiyama, force, fcose)",
-        long_help = "Which layout framework computes node coordinates.\n\
-                     \n\
-                     Available engines:\n\
-                     \n\
-                       auto      (Default, Recommended)\n\
-                                 Runs a topology analyzer over the input graph (cyclicity,\n\
-                                 edge density, compound/nested group structure, connected\n\
-                                 components) and dispatches to whichever of the three engines\n\
-                                 below fits that shape best. A one-line summary of the choice\n\
-                                 and why is printed to stderr. This is what most diagrams\n\
-                                 should use — the other three values are for forcing a\n\
-                                 specific engine regardless of what the analyzer would pick.\n\
-                     \n\
-                       sugiyama  Layered hierarchical DAG layout implementing:\n\
-                                 1. Cycle breaking: Greedy Feedback Arc Set (FAS)\n\
-                                    reverses back-edges to guarantee a valid DAG.\n\
-                                 2. Layer assignment: Longest-path topological ranking.\n\
-                                 3. Crossing minimization: 3-pass alternating barycentric\n\
-                                    median heuristics with adjacent transpositions.\n\
-                                 4. 2D Compound Quotient Layout: Resolves inter-group\n\
-                                    dependencies using grid search to optimize canvas\n\
-                                    aspect ratio close to 1.0 (squarish canvas).\n\
-                                 5. Compact whitespace normalization: Eliminates dead\n\
-                                    canvas margins and centers ranks.\n\
-                                 Best for: dependency DAGs and chronological process flows.\n\
-                     \n\
-                       force     Barnes-Hut force-directed layout (O(N log N) repulsion).\n\
-                                 Best for: dense or very large graphs that don't have a clean\n\
-                                 hierarchical shape.\n\
-                     \n\
-                       fcose     Compound spring embedder: spectral draft layout + physical\n\
-                                 relaxation, with grouped nodes pulled toward each other.\n\
-                                 Best for: diagrams with visual groups or disconnected\n\
-                                 components.\n\
-                     \n\
-                     Edge routing is chosen independently of this flag, based on how\n\
-                     obstacle-dense the diagram is: a cheap corridor heuristic for small/\n\
-                     sparse diagrams, or a visibility-graph A* search (penalizing bends and\n\
-                     obstacle proximity) once there are enough nodes that global routing\n\
-                     awareness actually pays for itself."
-    )]
-    layout: LayoutEngine,
+    /// Validate the YAML only: report every error and warning, write nothing.
+    #[arg(long)]
+    check: bool,
 
-    /// Visual theme (standard, dark).
-    #[arg(
-        short,
-        long,
-        default_value = "standard",
-        value_name = "THEME",
-        help = "Visual theme (standard, dark)",
-        long_help = "Visual color palette and card styling.\n\
-                     \n\
-                     Themes:\n\
-                     \n\
-                       standard  (Default)\n\
-                                 Modern elevated white-card design system on a clean\n\
-                                 light slate background (#f8fafc). Each node renders\n\
-                                 as a #ffffff card with a subtle drop shadow, 8px\n\
-                                 rounded corners, and semantic border color accents.\n\
-                     \n\
-                       dark      High-contrast dark mode on a deep Slate-900 canvas\n\
-                                 (#0f172a). Nodes render with Slate-800 card bodies\n\
-                                 (#1e293b), Slate-600 borders (#475569), and bright\n\
-                                 typography (#f1f5f9).\n\
-                     \n\
-                     Note: Can also be set inside the YAML payload via `theme: dark`.\n\
-                     YAML setting overrides this CLI flag."
-    )]
-    theme: String,
+    /// How results and diagnostics are reported: text on stderr, or one JSON object on stdout.
+    #[arg(long, value_enum, default_value_t = Format::Text)]
+    format: Format,
 
-    /// Vertical gap between successive ranks in pixels (default: auto, proportional
-    /// to node size — see `--design-config`'s `rank_spacing_fraction`).
-    #[arg(
-        long,
-        value_name = "PIXELS",
-        help = "Vertical gap between successive ranks in pixels (default: auto, scales with node size)",
-        long_help = "Gap in pixels between successive layers (ranks) of nodes.\n\
-                     \n\
-                     • In top-to-bottom (tb) mode, this controls vertical distance between ranks.\n\
-                     • In left-to-right (lr) mode, this controls horizontal distance between columns.\n\
-                     \n\
-                     Left unset (the default), this is computed at runtime as this diagram's own\n\
-                     average node size times `rank_spacing_fraction` (a `--design-config` token,\n\
-                     default 0.7) — bigger boxes automatically get proportionally more room, and\n\
-                     retuning overall compactness is one fraction rather than a pixel count tied to\n\
-                     whatever node size this particular diagram happens to have.\n\
-                     \n\
-                     Passing this flag pins an exact, non-proportional pixel value instead.\n\
-                     \n\
-                     Note: Can also be specified in YAML via `rank_spacing: 60`."
-    )]
-    rank_spacing: Option<u32>,
+    /// Print a detailed guide on one topic and exit.
+    #[arg(long, value_enum, value_name = "TOPIC")]
+    guide: Option<guide::Topic>,
 
-    /// Horizontal gap between sibling nodes on the same rank (default: auto,
-    /// proportional to node size — see `--design-config`'s `node_spacing_fraction`).
-    #[arg(
-        long,
-        value_name = "PIXELS",
-        help = "Horizontal gap between sibling nodes on the same rank (default: auto, scales with node size)",
-        long_help = "Clearance in pixels between sibling nodes sharing the same rank.\n\
-                     \n\
-                     Left unset (the default), this is computed at runtime as this diagram's own\n\
-                     average node size times `node_spacing_fraction` (a `--design-config` token,\n\
-                     default 0.4) — the same proportional reasoning as `--rank-spacing`.\n\
-                     \n\
-                     Passing this flag pins an exact, non-proportional pixel value instead.\n\
-                     \n\
-                     Note: Can also be specified in YAML via `node_spacing: 36`."
-    )]
-    node_spacing: Option<u32>,
+    /// Print every icon key (for `icon:`, `language:`, `db_type:`) and exit.
+    #[arg(long)]
+    list_icons: bool,
 
-    /// Diagram flow direction (tb, lr).
-    #[arg(
-        long,
-        value_enum,
-        default_value_t = CliDirection::Tb,
-        help = "Diagram flow direction (tb, lr)",
-        long_help = "Overall flow direction of the diagram hierarchy.\n\
-                     \n\
-                     Options:\n\
-                     \n\
-                       tb   Top-to-Bottom (Default)\n\
-                            Hierarchical downward flow. Best for:\n\
-                            • Microservice architectures and cloud topology\n\
-                            • Call graphs and dependency trees\n\
-                            • Decision trees and state transition diagrams\n\
-                     \n\
-                       lr   Left-to-Right\n\
-                            Horizontal sequential flow. Best for:\n\
-                            • CI/CD and build/release pipelines\n\
-                            • Event streaming architectures (Kafka / Flink / ETL)\n\
-                            • Request/response lifecycles and sequence pipelines\n\
-                     \n\
-                     Note: Can also be specified inside YAML via `direction: lr` or `direction: tb`.\n\
-                     YAML setting overrides this CLI flag."
-    )]
-    direction: CliDirection,
-
-    /// Print a complete reference YAML template to stdout and exit.
-    #[arg(
-        long,
-        help = "Print a complete reference YAML template to stdout and exit",
-        long_help = "Print a production-ready, fully commented YAML diagram template to stdout.\n\
-                     \n\
-                     Demonstrates every feature:\n\
-                       • Top-level diagram metadata (title, description, direction, theme)\n\
-                       • Visual group containers (swimlanes)\n\
-                       • All semantic node types (proxy, database, queue, server, decision, etc.)\n\
-                       • All edge styles (flow, async, error, data, bidirectional)\n\
-                       • Inline typography (monospace `code`, **bold**, *italic*, $LaTeX math$)\n\
-                     \n\
-                     Usage for LLMs:\n\
-                       rdg --example > template.yaml"
-    )]
+    /// Print a complete, commented YAML template and exit.
+    #[arg(long)]
     example: bool,
 
-    /// Print JSON Schema specification for the YAML payload and exit.
-    #[arg(
-        long,
-        help = "Print JSON Schema specification for the YAML payload and exit",
-        long_help = "Print the JSON Schema (draft-07) for the YAML diagram payload to stdout.\n\
-                     \n\
-                     Enables:\n\
-                       • Schema-guided decoding in LLM tool calling (structured output)\n\
-                       • Automated validation of generated YAML files in CI/CD\n\
-                       • IDE autocompletion and hover documentation in VS Code / IntelliJ\n\
-                     \n\
-                     Usage:\n\
-                       rdg --schema > schema.json"
-    )]
+    /// Print the JSON Schema of the YAML format and exit.
+    #[arg(long)]
     schema: bool,
 
-    /// SVG export engine when writing .svg files: 'auto' (use draw.io CLI if available, else native),
-    /// 'drawio' (require exact draw.io export), or 'native' (pure-Rust SVG renderer).
-    #[arg(
-        long,
-        default_value = "auto",
-        help = "SVG export engine: 'auto' (draw.io CLI if available, else native), 'drawio', or 'native'"
-    )]
+    /// Layout engine; `auto` picks from the graph's shape and reports its choice.
+    #[arg(short, long, value_enum, default_value_t = LayoutEngine::Auto)]
+    layout: LayoutEngine,
+
+    /// Theme: a built-in name (light, dark, mono-light, mono-dark, classic) or a theme
+    /// YAML file. Wins over the YAML `theme:` name; a YAML override mapping still applies on top.
+    #[arg(short, long, value_name = "THEME|FILE")]
+    theme: Option<String>,
+
+    /// List the built-in themes and exit.
+    #[arg(long)]
+    list_themes: bool,
+
+    /// Print a theme as YAML (a starting point for a custom one) and exit.
+    #[arg(long, value_name = "THEME")]
+    print_theme: Option<String>,
+
+    /// Flow direction; the YAML `direction:` wins.
+    #[arg(long, value_enum, default_value_t = CliDirection::Tb)]
+    direction: CliDirection,
+
+    /// Gap between ranks in px (default: proportional to node size); YAML `rank_spacing:` wins.
+    #[arg(long, value_name = "PIXELS")]
+    rank_spacing: Option<u32>,
+
+    /// Gap between neighbouring nodes in px (default: proportional); YAML `node_spacing:` wins.
+    #[arg(long, value_name = "PIXELS")]
+    node_spacing: Option<u32>,
+
+    /// SVG engine: auto (draw.io CLI if installed, else native), drawio, native.
+    #[arg(long, default_value = "auto")]
     svg_engine: String,
 
-    /// Exit non-zero if geometric anomalies (overlaps, edges cutting through nodes, an
-    /// explicit size too small for its content, an unreadable aspect ratio) remain after
-    /// rdg's self-review retry budget is exhausted. Off by default: rdg always writes its
-    /// best attempt regardless, this flag only controls whether that's treated as failure.
-    #[arg(
-        long,
-        help = "Exit non-zero if self-review anomalies remain after the retry budget",
-        long_help = "By default rdg auto-retries layout (wider spacing) up to a few times \
-                     when it detects geometric anomalies — overlapping nodes, an edge cutting \
-                     through an unrelated node, an explicit width/height too small for its \
-                     content, or a canvas aspect ratio too lopsided to read as a diagram — \
-                     and always writes its best (fewest-anomaly) attempt either way, with a \
-                     summary on stderr.\n\
-                     \n\
-                     --strict changes only the exit code: if anomalies remain after the \
-                     retry budget, rdg exits 1 instead of 0, so a CI or agent pipeline can \
-                     hard-fail instead of silently shipping an imperfect diagram. Some \
-                     anomaly kinds (an explicit size override, an extreme aspect ratio) \
-                     aren't fixable by retrying spacing alone — they need a YAML change, \
-                     which is exactly what a --strict failure here is telling you to make."
-    )]
+    /// Exit 1 if layout anomalies (overlaps, arrows through nodes, …) remain; the file is still written.
+    #[arg(long)]
     strict: bool,
 
-    /// Skip the final polish pass (small guarded port/waypoint adjustments that remove
-    /// micro-jogs and avoidable crossings), leaving routing exactly as first planned.
-    #[arg(
-        long,
-        help = "Disable the final polish pass (micro-jog / crossing cleanup)",
-        long_help = "After layout, routing and self-review, rdg runs a deterministic polish \
-                     pass that slides edge ports and waypoints by a few pixels to remove \
-                     micro-jogs and avoidable crossings. Every adjustment is guarded (no new \
-                     overlap, node hit, bend or shorter arrow) and kept only if it strictly \
-                     improves the diagram. --no-polish skips it. Set RDG_DEBUG_POLISH=1 to \
-                     see each adjustment on stderr."
-    )]
+    /// Skip the final polish pass (small port/waypoint clean-ups).
+    #[arg(long)]
     no_polish: bool,
 
-    /// Path to a design-tokens YAML file overriding rdg's base spacing/typography/
-    /// threshold tokens, without recompiling. See `DesignTokens` in `rdg-layout` for
-    /// every overridable field and its default.
-    #[arg(
-        long,
-        value_name = "FILE",
-        help = "Path to a design-tokens YAML file (base spacing/typography/threshold overrides)",
-        long_help = "Nearly every spacing, sizing, and threshold decision rdg makes — how \
-                     much clearance to leave between two boxes that just avoided overlapping, \
-                     how far a flow-numbering badge sits from its edge, the density above which \
-                     a graph gets force-directed layout instead of Sugiyama, and so on — derives \
-                     at runtime from a small set of base design tokens (a spacing unit, a font \
-                     size, a couple of ratios, a couple of algorithm-quality knobs), not from \
-                     independent hardcoded pixel values. Every one of those tokens has a sane \
-                     built-in default, and every one is overridable here without a rebuild.\n\
-                     \n\
-                     Pass a YAML file with any subset of fields to override — omitted fields \
-                     keep their default:\n\
-                     \n\
-                       unit: 10.0              # base spacing unit (default 8.0)\n\
-                       font_size: 13.0          # base body font size (default 12.0)\n\
-                       overlap_clearance_units: 3.0   # breathing room after resolving an overlap\n\
-                     \n\
-                     Usage:\n\
-                       rdg -i diagram.yaml -o out.svg --design-config spacious.yaml\n\
-                     \n\
-                     Field names and defaults are documented on `rdg_layout::DesignTokens`."
-    )]
+    /// YAML file overriding design tokens (spacing unit, font size, thresholds); see `rdg_layout::DesignTokens`.
+    #[arg(long, value_name = "FILE")]
     design_config: Option<String>,
 }
 
@@ -612,14 +133,13 @@ enum CliDirection {
 /// Layout framework to use for spatial positioning.
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 enum LayoutEngine {
-    /// Topology-dispatched: let `rdg_dispatch::dispatch` pick the framework.
+    /// Pick from the graph's shape (default).
     Auto,
-    /// Hierarchical Sugiyama framework for DAGs — top-to-bottom flow.
-    /// Automatically breaks cycles using a greedy Feedback Arc Set.
+    /// Layered: hierarchies, flows, grouped architectures.
     Sugiyama,
-    /// Barnes-Hut force-directed layout for dense or massive graphs.
+    /// Force-directed: dense webs.
     Force,
-    /// fCoSE-style compound spring embedder for nested/disconnected structure.
+    /// Compound spring embedder: disconnected components.
     #[value(name = "fcose")]
     FCose,
 }
@@ -641,21 +161,65 @@ impl LayoutEngine {
 // Entry point
 // ---------------------------------------------------------------------------
 
-fn main() -> Result<()> {
+fn main() {
     let cli = Cli::parse();
+    let mut report = Report::new(cli.format);
+    let outcome = run(&cli, &mut report);
+    let json = report.is_json();
+    match outcome {
+        Ok(code) => {
+            report.finish(None);
+            std::process::exit(code);
+        }
+        Err(e) => {
+            if !json {
+                eprintln!("Error: {e:?}");
+            }
+            report.finish(Some(&e));
+            std::process::exit(1);
+        }
+    }
+}
 
-    // --- Special flags: --example and --schema -------------------------------
+/// The whole pipeline; returns the exit code on success.
+fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
+    // --- Informational flags --------------------------------------------------
     if cli.example {
         print!("{}", DiagramPayload::example_yaml());
-        return Ok(());
+        return Ok(0);
     }
     if cli.schema {
         print!("{}", DiagramPayload::json_schema());
-        return Ok(());
+        return Ok(0);
+    }
+    if let Some(topic) = cli.guide {
+        println!("{}", guide::text(topic));
+        return Ok(0);
+    }
+    if cli.list_themes {
+        for (name, src) in rdg_render_core::theme::BUILTIN {
+            let about = src.lines().next().unwrap_or("").trim_start_matches('#').trim();
+            println!("{name:<12} {about}");
+        }
+        return Ok(0);
+    }
+    if let Some(name) = &cli.print_theme {
+        print!("{}", resolve_theme(Some(name), None)?.to_yaml());
+        return Ok(0);
+    }
+    if cli.list_icons {
+        let keys = rdg_icons::icon_keys();
+        if report.is_json() {
+            let list: Vec<String> = keys.iter().map(|k| report::esc(k)).collect();
+            println!("[{}]", list.join(","));
+        } else {
+            println!("{}", keys.join("\n"));
+        }
+        std::process::exit(0);
     }
 
     // --- 1. Read YAML input -------------------------------------------------
-    let yaml = match cli.input.as_deref() {
+    let yaml = match cli.input.as_deref().or(cli.input_pos.as_deref()) {
         None | Some("-") => {
             let mut buf = String::new();
             std::io::stdin()
@@ -669,11 +233,25 @@ fn main() -> Result<()> {
 
     // --- 2. Deserialise payload ---------------------------------------------
     let payload = DiagramPayload::from_yaml(&yaml).context(
-        "YAML payload does not match the rdg schema — run `rdg --help` or `rdg --example`",
+        "YAML payload does not match the rdg schema — see `rdg --help` or `rdg --guide schema`",
     )?;
 
-    // Priority: YAML payload > CLI flag
-    let theme = payload.theme.as_deref().unwrap_or(&cli.theme);
+    // --- 2b. Semantic checks: report every problem at once, fail on errors ---------
+    let diagnostics = validate::validate(&payload);
+    for d in &diagnostics {
+        report.diagnostic(d);
+    }
+    let errors = diagnostics.iter().filter(|d| d.level == validate::Level::Error).count();
+    if errors > 0 {
+        anyhow::bail!("{errors} error(s) in the YAML payload — fix them and re-run (nothing was written)");
+    }
+
+    // --- 2c. Theme: CLI name/file, else the YAML's; YAML overrides layered on top -------
+    let theme = resolve_theme(cli.theme.as_deref(), payload.theme.as_ref())
+        .map_err(|e| anyhow::anyhow!("theme: {e:#}"))?;
+    for d in validate::validate_against_theme(&payload, &theme) {
+        report.diagnostic(&d);
+    }
 
     // `rdg-schema`'s `Direction` has no dependency on `rdg-layout` (to avoid a crate
     // cycle), so the CLI is what maps between the schema's and the layout engine's
@@ -696,15 +274,29 @@ fn main() -> Result<()> {
     if cli.no_polish {
         tokens.polish_enabled = false;
     }
+    // Text, icon and badge sizes come from the theme, so boxes fit what's drawn.
+    theme.apply_to_tokens(&mut tokens);
 
     // --- 3. Build petgraph --------------------------------------------------
     // Moved ahead of the spacing block below: computing a proportional
     // `rank_spacing`/`node_spacing` default needs this diagram's own node sizes,
     // which needs the compiled graph. `build_graph` only depends on `payload`, so
     // nothing else here needed to move with it.
-    let compiled = build_graph(&payload)?;
+    let mut compiled = build_graph(&payload)?;
+    rdg_render_core::look::prepare_graph(&theme, &mut compiled);
     if compiled.had_cycles {
-        eprintln!("⚠  Cycles detected in input graph — automatically broken via Feedback Arc Set.");
+        report.warning("cycles in the graph were broken automatically (some arrows point against the flow)");
+    }
+    if cli.check {
+        report.note(&format!(
+            "✓ valid: {} node(s), {} {}, {} group(s){}",
+            payload.nodes.len(),
+            compiled.graph.edge_count(),
+            if compiled.diagram_type == "sequence" { "message(s)" } else { "edge(s)" },
+            payload.groups.len(),
+            if diagnostics.is_empty() { String::new() } else { format!(", {} warning(s)", diagnostics.len()) }
+        ));
+        return Ok(0);
     }
 
     // --- Spacing: proportional by default, explicit override wins ------------
@@ -754,7 +346,7 @@ fn main() -> Result<()> {
         decision.framework = forced;
     }
     if compiled.diagram_type != "sequence" {
-        report_dispatch(&decision, cli.layout == LayoutEngine::Auto);
+        report_dispatch(report, &decision, cli.layout == LayoutEngine::Auto);
     }
 
     let layout_config = LayoutConfig {
@@ -772,7 +364,10 @@ fn main() -> Result<()> {
     let reviewed = compute_reviewed_layout(&compiled, &layout_config, max_passes, &decision)
         .context("layout computation failed")?;
     let remaining_anomalies = reviewed.remaining_anomalies(&compiled, &layout_config.tokens);
-    report_review(&reviewed, remaining_anomalies.len());
+    report_review(report, &reviewed, remaining_anomalies.len());
+    for a in &remaining_anomalies {
+        report.anomaly(&format!("{:?}", a.kind), &a.description);
+    }
     if std::env::var("RDG_DEBUG_ANOMALIES").is_ok() {
         for a in &remaining_anomalies {
             eprintln!("  [{:?}] {}", a.kind, a.description);
@@ -784,12 +379,14 @@ fn main() -> Result<()> {
         let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
         let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
         eprintln!(
-            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={}  [arrow: {}; pitch: {}]",
+            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={}  [arrow: {}; pitch: {}]",
             fmt(m.min_arrow_len),
             fmt(m.min_node_gap),
             fmt(m.min_port_pitch),
             m.micro_jogs,
             m.crossings,
+            m.crossings_near_bend,
+            m.border_hugs,
             m.min_arrow_edge.as_deref().unwrap_or("-"),
             m.min_pitch_face.as_deref().unwrap_or("-")
         );
@@ -800,12 +397,12 @@ fn main() -> Result<()> {
     let is_svg = output_path.extension().and_then(|e| e.to_str()) == Some("svg");
 
     if is_svg {
-        let drawio_xml = render_drawio(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
+        let drawio_xml = render_drawio(&compiled, layout_result, edge_plans, &theme, background, &layout_config.tokens)
             .context("draw.io XML rendering failed")?;
 
         let mut rendered_exact_drawio = false;
         if cli.svg_engine != "native" {
-            if let Some(()) = try_export_svg_via_drawio_cli(&drawio_xml, output_path, theme) {
+            if let Some(()) = try_export_svg_via_drawio_cli(&drawio_xml, output_path, theme.mode == rdg_render_core::theme::Mode::Dark) {
                 rendered_exact_drawio = true;
             }
         }
@@ -816,26 +413,45 @@ fn main() -> Result<()> {
                     "Exact draw.io export was requested (--svg-engine=drawio), but drawio CLI is not installed or failed"
                 );
             }
-            let svg_content = render_svg(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
+            let svg_content = render_svg(&compiled, layout_result, edge_plans, &theme, background, &layout_config.tokens)
                 .context("SVG rendering failed")?;
             fs::write(&cli.output, svg_content)
                 .with_context(|| format!("failed to write output to '{}'", cli.output))?;
         } else {
-            eprintln!("✓ Rendered exact draw.io SVG export via drawio CLI");
+            report.note("✓ Rendered exact draw.io SVG export via drawio CLI");
         }
     } else {
-        let content = render_drawio(&compiled, layout_result, edge_plans, theme, background, &layout_config.tokens)
+        let content = render_drawio(&compiled, layout_result, edge_plans, &theme, background, &layout_config.tokens)
             .context("draw.io XML rendering failed")?;
         fs::write(&cli.output, content)
             .with_context(|| format!("failed to write output to '{}'", cli.output))?;
     }
 
-    eprintln!("✓ Diagram written to {}", cli.output);
+    report.written(&cli.output);
 
-    if cli.strict && !remaining_anomalies.is_empty() {
-        std::process::exit(1);
+    Ok(if cli.strict && !remaining_anomalies.is_empty() { 1 } else { 0 })
+}
+
+/// The theme to render with. A theme *file* on the command line is used as written; a
+/// theme *name* on the command line replaces the YAML's name but keeps its overrides
+/// (so one diagram renders in any theme); otherwise the YAML's `theme:` decides.
+fn resolve_theme(cli: Option<&str>, yaml: Option<&serde_yaml::Value>) -> Result<rdg_render_core::theme::Theme> {
+    use rdg_render_core::theme::{DEFAULT_THEME, Theme};
+    use serde_yaml::Value;
+    if let Some(path) = cli.filter(|p| p.ends_with(".yaml") || p.ends_with(".yml")) {
+        let src = fs::read_to_string(path).with_context(|| format!("failed to read theme file '{path}'"))?;
+        return Theme::from_yaml(&src).with_context(|| format!("in theme file '{path}'"));
     }
-    Ok(())
+    match (cli, yaml) {
+        (Some(name), Some(Value::Mapping(m))) => {
+            let mut m = m.clone();
+            m.insert(Value::from("extends"), Value::from(name));
+            Theme::from_value(Value::Mapping(m), DEFAULT_THEME)
+        }
+        (Some(name), _) => Theme::builtin(name),
+        (None, Some(v)) => Theme::from_value(v.clone(), DEFAULT_THEME),
+        (None, None) => Theme::builtin(DEFAULT_THEME),
+    }
 }
 
 /// Loads [`DesignTokens`] from `path` if given, falling back to built-in defaults
@@ -857,35 +473,32 @@ fn load_design_tokens(path: Option<&str>) -> Result<DesignTokens> {
 /// its complexity estimate, and the deciding metric(s). Silent when the user explicitly
 /// forced a framework via `--layout` — there's nothing to report in that case, the
 /// choice was theirs, not the analyzer's.
-fn report_dispatch(decision: &rdg_dispatch::AlgorithmDecision, was_auto: bool) {
-    if !was_auto {
-        return;
-    }
+fn report_dispatch(report: &mut Report, decision: &rdg_dispatch::AlgorithmDecision, was_auto: bool) {
     let framework = match decision.framework {
         rdg_dispatch::LayoutFramework::Sugiyama => "sugiyama",
         rdg_dispatch::LayoutFramework::ForceDirected => "force-directed",
         rdg_dispatch::LayoutFramework::FCose => "fcose",
     };
-    let routing = match decision.routing.algorithm {
-        rdg_dispatch::RoutingAlgorithm::CornerHeuristic => "corner heuristic",
-        rdg_dispatch::RoutingAlgorithm::VisibilityGraphAStar => "visibility-graph A*",
-    };
-    eprintln!(
-        "→  dispatch: {framework} ({}), routing: {routing} — {}",
+    report.layout(framework);
+    if !was_auto {
+        return;
+    }
+    report.note(&format!(
+        "→  layout: {framework} ({}), routing: orthogonal search — {}",
         decision.complexity_estimate,
         decision.preprocessing_steps.join("; ")
-    );
+    ));
 }
 
 /// Prints a concise stderr summary of the self-review retry loop: nothing at all for a
 /// clean first pass, one line per retry otherwise, and a final resolved/remaining summary.
-fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout, final_count: usize) {
+fn report_review(report: &Report, reviewed: &rdg_render_core::review::ReviewedLayout, final_count: usize) {
     if reviewed.passes.len() == 1 && reviewed.passes[0].anomaly_count == 0 {
         return;
     }
     for pass in &reviewed.passes {
         if pass.anomaly_count > 0 {
-            eprintln!(
+            report.note(&format!(
                 "⚠  pass {}: {} anomal{} detected (rank_spacing={}, node_spacing={}){}",
                 pass.attempt,
                 pass.anomaly_count,
@@ -897,7 +510,7 @@ fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout, final_count
                 } else {
                     ""
                 },
-            );
+            ));
         }
     }
     // What matters is the layout `rdg` actually writes: the fewest-anomaly pass (widening
@@ -908,23 +521,23 @@ fn report_review(reviewed: &rdg_render_core::review::ReviewedLayout, final_count
     // `--strict` acts on — so this summary can never contradict the exit code.
     if final_count == 0 {
         if reviewed.passes.len() > 1 {
-            eprintln!("✓  resolved after {} pass(es)", reviewed.passes.len());
+            report.note(&format!("✓  resolved after {} pass(es)", reviewed.passes.len()));
         } else {
-            eprintln!("✓  resolved by the polish pass");
+            report.note("✓  resolved by the polish pass");
         }
     } else {
-        eprintln!(
+        report.note(&format!(
             "✗  {} anomal{} {} in the best attempt tried ({} pass(es)) — writing it anyway",
             final_count,
             if final_count == 1 { "y" } else { "ies" },
             if final_count == 1 { "remains" } else { "remain" },
             reviewed.passes.len(),
-        );
+        ));
     }
 }
 
 /// Attempts to export exact draw.io SVG using the drawio desktop CLI if available in PATH or Applications.
-fn try_export_svg_via_drawio_cli(drawio_xml: &str, output_path: &Path, theme: &str) -> Option<()> {
+fn try_export_svg_via_drawio_cli(drawio_xml: &str, output_path: &Path, dark: bool) -> Option<()> {
     let candidates = [
         "drawio",
         "/opt/homebrew/bin/drawio",
@@ -940,7 +553,7 @@ fn try_export_svg_via_drawio_cli(drawio_xml: &str, output_path: &Path, theme: &s
 
     fs::write(&temp_path, drawio_xml).ok()?;
 
-    let theme_arg = if theme == "dark" { "dark" } else { "light" };
+    let theme_arg = if dark { "dark" } else { "light" };
 
     let mut exported = false;
     for cmd in candidates {

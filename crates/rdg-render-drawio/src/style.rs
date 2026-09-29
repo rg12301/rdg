@@ -1,162 +1,152 @@
-//! draw.io `style=` string construction, built on the shared node/edge color table in
-//! `rdg_render_core::style`.
+//! draw.io `style=` strings, built from the theme-resolved looks in
+//! `rdg_render_core::look` — no colour, font or size is decided here.
 
-use rdg_render_core::style::node_accent_color;
+use rdg_render_core::look::{GroupLook, NodeLook};
+use rdg_render_core::theme::{ResolvedEdge, Theme};
 
-/// Map a semantic node type and theme to a draw.io style string.
-///
-/// Supports `"dark"` theme as well as semantic node type styling using the
-/// white-card paradigm (white fill, drop shadow, absolute 8px arc, colored border).
-#[allow(clippy::useless_format)]
-pub fn style_for_type(node_type: &str, theme: &str) -> String {
-    // Base shared by every node
-    let base = "rounded=1;absoluteArcSize=1;arcSize=8;\
-                whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
-                strokeWidth=1.5;\
-                fontFamily=Inter,Helvetica,sans-serif;\
-                fontSize=12;fontStyle=1;fontColor=#0f172a;\
-                spacingTop=6;spacingBottom=6;spacingLeft=8;spacingRight=8;";
+fn pct(opacity: f64) -> u32 {
+    (opacity.clamp(0.0, 1.0) * 100.0).round() as u32
+}
 
-    if theme == "dark" {
-        return format!("{base}fillColor=#1e293b;fontColor=#f1f5f9;strokeColor=#475569;");
+/// A node's style. `label_top` is where an icon node's label starts (under its halo).
+pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
+    let f = &theme.font;
+    let common = |fill: &str, opacity: f64, stroke: &str| {
+        format!(
+            "html=1;whiteSpace=wrap;fillColor={fill};fillOpacity={};strokeColor={stroke};strokeWidth={};shadow={};\
+             fontFamily={};fontSize={};fontColor={};fontStyle=0;",
+            pct(opacity),
+            look.stroke_width,
+            u8::from(look.shadow),
+            f.family,
+            f.node_title_size,
+            look.title_color,
+        )
+    };
+    let pad = "spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;";
+    // Markers draw their label underneath the (tiny) shape.
+    let below = "verticalLabelPosition=bottom;verticalAlign=top;whiteSpace=nowrap;";
+    match look.shape.as_str() {
+        "cylinder" => format!(
+            "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size={cap};{}align=center;verticalAlign=middle;{pad}spacingTop={};",
+            common(&look.fill, look.fill_opacity, &look.stroke),
+            2.0 * theme.node.cylinder_cap,
+            cap = theme.node.cylinder_cap
+        ),
+        "ellipse" => format!("ellipse;{}align=center;verticalAlign=middle;{pad}", common(&look.fill, look.fill_opacity, &look.stroke)),
+        "diamond" => format!(
+            "rhombus;{}align=center;verticalAlign=middle;spacingLeft=12;spacingRight=12;",
+            common(&look.fill, look.fill_opacity, &look.stroke),
+        ),
+        "start" => format!("ellipse;{}{below}", common(&look.fill, 1.0, &look.stroke)),
+        "end" => format!("shape=endState;{}{below}", common(&look.fill, 1.0, &look.stroke)),
+        "choice" => format!("rhombus;{}{below}", common(&look.fill, look.fill_opacity, &look.stroke)),
+        // Drawn as its logo: an invisible box; the logo is a child image cell, the
+        // label starts under the logo's halo.
+        "icon" => format!(
+            "rounded=0;{}align=center;verticalAlign=top;spacingTop={label_top:.0};spacingBottom=0;spacingLeft=0;spacingRight=0;",
+            common("none", 1.0, "none")
+        ),
+        _ => format!(
+            "rounded=1;absoluteArcSize=1;arcSize={};{}align=center;verticalAlign=middle;{pad}",
+            2.0 * look.corner_radius,
+            common(&look.fill, look.fill_opacity, &look.stroke)
+        ),
     }
+}
 
-    match node_type.to_ascii_lowercase().as_str() {
-        "proxy" | "gateway" | "api" => {
-            format!("{base}strokeColor={};", node_accent_color(node_type, theme))
-        }
-        "server" | "service" | "backend" => {
-            format!("{base}strokeColor={};", node_accent_color(node_type, theme))
-        }
-        "database" | "db" | "storage" | "table" | "entity" | "record" => {
-            let (bg, text) = ("#ffffff", "#0f172a");
-            let stroke = node_accent_color(node_type, theme);
-            format!(
-                "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=8;\
-                 whiteSpace=wrap;html=1;fillColor={bg};shadow=1;\
-                 strokeWidth=1.5;strokeColor={stroke};\
-                 fontFamily=Inter,Helvetica,sans-serif;\
-                 fontSize=12;fontStyle=1;fontColor={text};\
-                 spacingTop=12;spacingBottom=6;spacingLeft=8;spacingRight=8;"
-            )
-        }
-        "queue" | "broker" | "bus" => {
-            format!(
-                "ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
-                 strokeWidth=1.5;strokeColor=#fbbf24;\
-                 fontFamily=Inter,Helvetica,sans-serif;\
-                 fontSize=12;fontStyle=1;fontColor=#0f172a;\
-                 align=center;verticalAlign=middle;"
-            )
-        }
-        "function" | "lambda" | "faas" => {
-            // `mxgraph.aws4.lambda` used to be the shape here directly, but that AWS4
-            // stencil is an icon-only glyph — unlike `mxgraph.general.person_2` (used
-            // for `client`/`user`/`browser` below), it does not paint a `fillColor`/
-            // `strokeColor` background behind itself at all, so the node rendered as
-            // bare text over a pale watermark with no visible card, unlike every other
-            // semantic type. The shared white-card `base` (same family as
-            // server/service/cache) gives it the bordered "Orange Lambda card" the CLI
-            // help text promises; a real-fixture re-render (`docs/*.yaml` plus varied
-            // sample diagrams) confirmed the icon-only shape regression directly.
-            format!("{base}strokeColor=#fb923c;")
-        }
-        "decision" | "condition" => {
-            format!(
-                "rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
-                 strokeWidth=2;strokeColor=#a78bfa;\
-                 fontFamily=Inter,Helvetica,sans-serif;\
-                 fontSize=11;fontStyle=2;fontColor=#0f172a;\
-                 align=center;verticalAlign=middle;\
-                 spacingLeft=12;spacingRight=12;"
-            )
-        }
-        "client" | "user" | "browser" => {
-            format!(
-                "shape=mxgraph.general.person_2;\
-                     whiteSpace=wrap;html=1;fillColor=#ffffff;shadow=1;\
-                     strokeWidth=1.5;strokeColor=#94a3b8;\
-                     fontFamily=Inter,Helvetica,sans-serif;\
-                     fontSize=12;fontStyle=1;fontColor=#0f172a;"
-            )
-        }
-        // These two are deliberately tiny fixed-size markers (28x28 / 32x32, see
-        // `estimate_node_size_inner` in `rdg-layout`), far smaller than their label
-        // text. Without `html=1` the cell's HTML `value` (built by
-        // `format_html_label`, e.g. `<b>Order Placed</b>`) rendered as literal
-        // on-canvas text — the `<b>` tags themselves were visible — instead of being
-        // interpreted as markup, and without `verticalLabelPosition=bottom` the label
-        // centered itself on top of the shape instead of sitting below it, so the text
-        // and the small circle overlapped badly. `whiteSpace=nowrap` keeps the label
-        // from wrapping to the shape's own tiny width once it's freed to sit outside
-        // it. A real-fixture re-render (varied sample diagrams' flowchart start/end
-        // nodes) surfaced both defects directly.
-        "start" | "start_state" | "initial" | "initial_state" => {
-            "shape=ellipse;fillColor=#0f172a;strokeColor=#0f172a;strokeWidth=1;\
-             html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;"
-                .to_string()
-        }
-        "end" | "end_state" | "final" | "final_state" => {
-            "shape=endState;fillColor=#0f172a;strokeColor=#0f172a;strokeWidth=2;\
-             html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;"
-                .to_string()
-        }
-        "choice" | "branch" => {
-            // Same fixed tiny-marker sizing (36x36, see `estimate_node_size_inner`) as
-            // start/end above, so it needs the same label-outside-the-shape treatment.
-            "rhombus;fillColor=#ffffff;strokeColor=#a78bfa;strokeWidth=2;html=1;\
-             whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;"
-                .to_string()
-        }
-        "cache" | "redis" | "memcache" => {
-            format!("{base}strokeColor={};", node_accent_color(node_type, theme))
-        }
-        "class" | "interface" | "abstract_class" | "struct" => {
-            format!(
-                "{base}strokeColor={};strokeWidth=1.5;",
-                node_accent_color(node_type, theme)
-            )
-        }
-        "participant" | "actor" => {
-            format!(
-                "{base}strokeColor={};strokeWidth=1.5;",
-                node_accent_color(node_type, theme)
-            )
-        }
-        other => format!("{base}strokeColor={};", node_accent_color(other, theme)),
-    }
+/// A group container's style.
+pub fn group_style(theme: &Theme, g: &GroupLook) -> String {
+    let dash = g.dash.as_deref().map_or("dashed=0;".to_string(), |d| format!("dashed=1;dashPattern={d};"));
+    format!(
+        "rounded=1;absoluteArcSize=1;arcSize={};fillColor={};fillOpacity={};strokeColor={};strokeWidth={};{dash}\
+         verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;\
+         container=1;collapsible=0;recursiveResize=0;connectable=0;html=1;\
+         fontFamily={};fontSize={};fontStyle={};fontColor={};",
+        2.0 * g.corner_radius,
+        g.fill,
+        pct(g.fill_opacity),
+        g.stroke,
+        g.stroke_width,
+        theme.font.family,
+        theme.font.group_title_size,
+        u8::from(g.title_bold),
+        g.title_color,
+    )
+}
+
+/// An edge's line and arrowhead style (without its geometry anchors).
+pub fn edge_style(theme: &Theme, e: &ResolvedEdge) -> String {
+    let dash = e.dash.as_deref().map_or("dashed=0;".to_string(), |d| format!("dashed=1;dashPattern={d};"));
+    let tail = match &e.tail {
+        Some(t) => format!("startArrow={t};startFill={};startSize={};", u8::from(e.tail_fill), theme.edge.head_size),
+        None => "startArrow=none;".to_string(),
+    };
+    let label_color = if theme.edge_label.use_edge_color { e.color.as_str() } else { theme.edge_label.color.as_str() };
+    format!(
+        "edgeStyle=none;html=1;rounded={};jumpStyle={};jumpSize=6;\
+         strokeColor={};strokeWidth={};{dash}endArrow={};endFill={};endSize={};{tail}\
+         labelBackgroundColor={};labelBorderColor=none;\
+         fontFamily={};fontSize={};fontColor={label_color};",
+        u8::from(theme.edge.rounded),
+        if theme.edge.line_jumps { "arc" } else { "none" },
+        e.color,
+        e.width,
+        e.head,
+        u8::from(e.head_fill),
+        theme.edge.head_size,
+        theme.edge_label.background,
+        theme.font.family,
+        theme.font.edge_label_size,
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rdg_render_core::look::node_look;
 
-    #[test]
-    fn test_style_mapping_database() {
-        let style = style_for_type("database", "standard");
-        assert!(style.contains("shape=cylinder3"));
-        assert!(style.contains("strokeColor=#0284c7"));
+    fn look_for(theme: &Theme, ty: &str, shape: &str) -> NodeLook {
+        let mut compiled = rdg_graph::build_graph(&rdg_schema::DiagramPayload {
+            nodes: vec![rdg_schema::NodeDef { id: "a".into(), label: "A".into(), node_type: ty.into(), ..Default::default() }],
+            ..Default::default()
+        })
+        .unwrap();
+        rdg_render_core::look::prepare_graph(theme, &mut compiled);
+        let idx = compiled.node_map["a"];
+        let mut nd = compiled.graph[idx].clone();
+        nd.shape = Some(shape.into());
+        node_look(theme, &nd)
     }
 
     #[test]
-    fn test_style_mapping_default() {
-        let style = style_for_type("unknown_type", "standard");
-        assert!(style.contains("strokeColor=#cbd5e1"));
+    fn node_colours_come_from_the_category() {
+        let t = Theme::builtin("light").unwrap();
+        let s = node_style(&t, &look_for(&t, "service", "card"), 0.0);
+        assert!(s.contains(&format!("strokeColor={}", t.category("backend").stroke)), "{s}");
+        assert!(s.contains("fillOpacity="));
+        assert!(s.contains(&format!("fontFamily={}", t.font.family)));
     }
 
     #[test]
-    fn test_style_mapping_dark_mode() {
-        let style = style_for_type("proxy", "dark");
-        assert!(style.contains("fillColor=#1e293b"));
-        assert!(style.contains("strokeColor=#475569"));
+    fn database_is_a_cylinder_in_light_and_an_ellipse_is_available() {
+        let t = Theme::builtin("light").unwrap();
+        assert!(node_style(&t, &look_for(&t, "database", "cylinder"), 0.0).contains("shape=cylinder3"));
+        assert!(node_style(&t, &look_for(&t, "queue", "ellipse"), 0.0).starts_with("ellipse;"));
     }
 
     #[test]
-    fn test_table_and_database_share_style_family() {
-        let db = style_for_type("database", "standard");
-        let table = style_for_type("table", "standard");
-        assert!(db.contains("shape=cylinder3"));
-        assert!(table.contains("shape=cylinder3"));
-        assert_eq!(db, table);
+    fn dark_theme_changes_colours_not_meaning() {
+        let (l, d) = (Theme::builtin("light").unwrap(), Theme::builtin("dark").unwrap());
+        let (sl, sd) = (node_style(&l, &look_for(&l, "queue", "card"), 0.0), node_style(&d, &look_for(&d, "queue", "card"), 0.0));
+        assert!(sl.contains(&l.category("messagebus").stroke) && sd.contains(&d.category("messagebus").stroke));
+        assert_ne!(sl, sd);
+    }
+
+    #[test]
+    fn async_edges_are_dashed_in_the_messaging_hue() {
+        let t = Theme::builtin("light").unwrap();
+        let s = edge_style(&t, &t.edge_look(Some("async")));
+        assert!(s.contains("dashed=1") && s.contains(&t.category("messagebus").stroke));
     }
 }

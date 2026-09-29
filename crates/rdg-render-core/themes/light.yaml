@@ -1,0 +1,182 @@
+# rdg built-in theme: light — flat, minimal, colour carries meaning.
+# Every value here can be overridden from a diagram (`theme: {extends: light, …}`)
+# or a theme file (`--theme my-theme.yaml`). Print any theme with `rdg --print-theme <name>`.
+name: light
+mode: light
+custom_colors: true
+
+font:
+  family: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+  code_family: "JetBrains Mono, ui-monospace, Menlo, monospace"
+  title_size: 18
+  description_size: 11
+  node_title_size: 12
+  node_detail_size: 10
+  edge_label_size: 10
+  group_title_size: 11
+  badge_size: 9
+  char_width_ratio: 0.6
+
+canvas:
+  background: "#f7f8fa"
+  grid: "#e3e7ed"          # dot grid (SVG); null for none
+  grid_spacing: 24
+
+text:
+  primary: "#111827"
+  muted: "#5b6474"
+  dim: "#9aa3b2"
+
+title:
+  color: "#111827"
+  description_color: "#5b6474"
+
+node:
+  corner_radius: 6
+  cylinder_cap: 8
+  stroke_width: 1.5
+  shadow: false
+  detail_color: "#5b6474"
+  title_bold: true
+
+group:
+  stroke_width: 1.25
+  dash: "6 4"
+  fill_opacity: 0.05
+  corner_radius: 10
+  title_uppercase: false
+  title_bold: true
+  default_category: neutral
+
+# Node type → shape (card, cylinder, ellipse, diamond); unlisted types are cards.
+shapes:
+  database: cylinder
+  db: cylinder
+  storage: cylinder
+  table: cylinder
+  entity: cylinder
+  record: cylinder
+  decision: diamond
+  condition: diamond
+
+edge:
+  color: "#8b95a5"
+  width: 1.25
+  head: blockThin
+  head_size: 7
+  rounded: true
+  line_jumps: true
+
+edge_label:
+  color: "#5b6474"
+  background: "#f7f8fa"
+  use_edge_color: true
+  wrap_chars: 22           # longer labels wrap onto two lines
+
+badge:
+  fill: "#111827"
+  text: "#ffffff"
+  radius: 9
+
+icon:
+  style: color
+  mono_color: "#111827"
+  size: 20                 # icon inline before a card's title
+  gap: 6                   # between that icon and the title
+  node_size: 48            # a node drawn as its logo (database, cache, queue, …)
+  halo:                    # invisible boundary around the logo where arrows attach
+    shape: circle          # circle | square
+    padding: 8
+  node_types: [database, db, storage, cache, redis, memcache, queue, broker, bus]
+  # Category glyphs in cards without a logo would only repeat what the colour already
+  # says; black-and-white themes turn them on, where they carry the meaning instead.
+  category_glyphs: false
+  backdrop: null
+
+legend:
+  # Explain what the colours mean. Shown when there are at least 2 things to explain
+  # (a diagram's `legend: true/false` always wins).
+  enabled: true
+
+# Colour = meaning: one clearly distinct hue per category (tint fill + saturated stroke
+# of the same hue), never reused for anything else. Containers stay neutral unless a
+# group sets `category:`, so the colour on a box always says what that box is.
+categories:
+  frontend:   {label: Frontend,     fill: "#2563eb1f", stroke: "#2563eb", glyph: glyph-frontend}
+  backend:    {label: Backend,      fill: "#0596691f", stroke: "#059669", glyph: glyph-service}
+  database:   {label: Data,         fill: "#7c3aed1f", stroke: "#7c3aed", glyph: glyph-database}
+  messagebus: {label: Messaging,    fill: "#ea580c1f", stroke: "#ea580c", glyph: glyph-queue}
+  cloud:      {label: Edge & cloud, fill: "#0891b21f", stroke: "#0891b2", glyph: glyph-cloud}
+  security:   {label: Security,     fill: "#dc26261a", stroke: "#dc2626", glyph: glyph-security}
+  external:   {label: External,     fill: "#64748b14", stroke: "#64748b", glyph: glyph-external}
+  neutral:    {label: Other,        fill: "#ffffff",   stroke: "#94a3b8", glyph: glyph-generic}
+
+type_categories:
+  client: frontend
+  user: frontend
+  browser: frontend
+  frontend: frontend
+  service: backend
+  server: backend
+  backend: backend
+  function: backend
+  lambda: backend
+  faas: backend
+  database: database
+  db: database
+  storage: database
+  table: database
+  entity: database
+  record: database
+  cache: database
+  redis: database
+  memcache: database
+  queue: messagebus
+  broker: messagebus
+  bus: messagebus
+  proxy: cloud
+  gateway: cloud
+  api: cloud
+  cdn: cloud
+  auth: security
+  firewall: security
+  external: external
+  third_party: external
+
+default_category: neutral
+
+# Edge styles: colour (hex, or @category for that category's hue), dash, width, ends.
+edge_styles:
+  flow:          {}
+  sync:          {}
+  call:          {}
+  async:         {color: "@messagebus", dash: "6 4", head: open, head_fill: false, label: Async / event}
+  data:          {color: "@database", width: 1.75, label: Data read/write}
+  stream:        {color: "@database", width: 1.75, label: Data read/write}
+  auth:          {color: "@security", dash: "4 3", label: Auth flow}
+  error:         {color: "@security", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
+  fallback:      {color: "@security", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
+  reply:         {color: "#9aa3b2", dash: "4 4", head: open, head_fill: false}
+  return:        {color: "#9aa3b2", dash: "4 4", head: open, head_fill: false}
+  bidirectional: {tail: blockThin, tail_fill: true}
+  bi:            {tail: blockThin, tail_fill: true}
+  one_to_many:   {head: ERmany, head_fill: false, tail: ERone, tail_fill: false}
+  many_to_many:  {head: ERmany, head_fill: false, tail: ERmany, tail_fill: false}
+  one_to_one:    {head: ERone, head_fill: false, tail: ERone, tail_fill: false}
+  zero_to_many:  {head: ERmany, head_fill: false, tail: ERzeroToOne, tail_fill: false}
+  inheritance:   {head: block, head_fill: false}
+  realization:   {head: block, head_fill: false, dash: "6 4"}
+  composition:   {head: none, tail: diamond, tail_fill: true}
+  aggregation:   {head: none, tail: diamond, tail_fill: false}
+  dependency:    {head: open, head_fill: false, dash: "6 4"}
+
+# Sequence diagrams.
+sequence:
+  participant_gap: 32      # minimum gap between participant boxes
+  message_gap: 20          # vertical room between messages, beyond their labels
+  actor_types: [actor, user, person, human, customer]   # drawn as a stick figure
+  lifeline: {color: "#9aa3b2", width: 1.25, dash: "6 6"}
+  activation: {width: 10, fill: "#ffffff", category_stroke: true, stroke: "#9aa3b2"}
+  note: {fill: "#fef9c3", stroke: "#e2c55a", text: "#4a3f12", wrap_chars: 32}
+  fragment: {stroke: "#8b95a5", width: 1.25, tab_fill: "#eef1f5", tab_text: "#111827", guard_color: "#5b6474", separator_dash: "6 4"}
+  divider: {color: "#c3c9d3", width: 1, dash: null}

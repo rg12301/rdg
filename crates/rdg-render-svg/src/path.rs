@@ -6,7 +6,7 @@
 /// Compute an orthogonal SVG path with smooth fillet corners passing through all waypoints.
 ///
 /// Returns only the path string: where an edge's label goes is decided in one place,
-/// `rdg_render_core::routing::polyline_midpoint`, which the draw.io backend and the canvas
+/// `rdg_render_core::annotate`, which the draw.io backend and the canvas
 /// bounds also use. This function used to pick its own anchor (the longest segment's
 /// midpoint), so the same edge's label sat on a different leg in SVG than in draw.io.
 pub fn build_orthogonal_svg_path(

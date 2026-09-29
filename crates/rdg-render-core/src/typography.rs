@@ -424,58 +424,13 @@ pub struct ProcessedLine {
     pub is_subtitle: bool,
 }
 
-/// Wraps label into lines and classifies each line.
-///
-/// Multi-line titles (like `petgraph::\nStableDiGraph`) keep both lines as bold titles.
-/// Parenthesized `(subtitle)` or bracketed `[detail]` or `{fields}` blocks are classified
-/// as muted subtitles.
+/// Wraps label into lines and classifies each line — see [`rdg_layout::classify_label`],
+/// which the layout engine's size estimate uses too, so the box fits what is drawn.
 pub fn wrap_and_classify_label(label: &str, max_chars: usize) -> Vec<ProcessedLine> {
-    let mut out = Vec::new();
-    let mut in_multiline_block = false;
-
-    for raw_line in label.split('\n') {
-        let trimmed = raw_line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        let clean = rdg_layout::strip_markdown_tokens(trimmed);
-        let c_trim = clean.trim();
-
-        let is_sub = if in_multiline_block {
-            if c_trim.ends_with('}') || c_trim.ends_with(')') || c_trim.ends_with(']') {
-                in_multiline_block = false;
-            }
-            true
-        } else if (c_trim.starts_with('(') && c_trim.ends_with(')'))
-            || (c_trim.starts_with('[') && c_trim.ends_with(']'))
-            || (c_trim.starts_with('{') && c_trim.ends_with('}'))
-        {
-            true
-        } else if c_trim.starts_with('{') || c_trim.starts_with('(') || c_trim.starts_with('[') {
-            in_multiline_block = true;
-            true
-        } else {
-            false
-        };
-
-        let wrapped = rdg_layout::wrap_label(trimmed, max_chars);
-        for line in wrapped {
-            out.push(ProcessedLine {
-                text: line,
-                is_subtitle: is_sub,
-            });
-        }
-    }
-
-    if out.is_empty() {
-        out.push(ProcessedLine {
-            text: label.to_string(),
-            is_subtitle: false,
-        });
-    }
-
-    out
+    rdg_layout::classify_label(label, max_chars)
+        .into_iter()
+        .map(|l| ProcessedLine { text: l.text, is_subtitle: l.is_subtitle })
+        .collect()
 }
 
 #[cfg(test)]
@@ -503,6 +458,15 @@ mod tests {
     fn test_subscript_superscript() {
         assert_eq!(to_subscript("2"), "₂");
         assert_eq!(to_superscript("2"), "²");
+    }
+
+    #[test]
+    fn test_first_line_is_title_later_lines_are_details() {
+        let lines = wrap_and_classify_label("auth-api-ext\nPublic Auth API\nPort 4000", 40);
+        assert_eq!(lines.iter().map(|l| l.is_subtitle).collect::<Vec<_>>(), vec![false, true, true]);
+        // A title that visibly continues keeps its next line.
+        let lines = wrap_and_classify_label("petgraph::\nStableDiGraph\nthe graph store", 40);
+        assert_eq!(lines.iter().map(|l| l.is_subtitle).collect::<Vec<_>>(), vec![false, false, true]);
     }
 
     #[test]

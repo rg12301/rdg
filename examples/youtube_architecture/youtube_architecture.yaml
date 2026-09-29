@@ -1,0 +1,162 @@
+diagram_type: architecture
+theme: standard
+title: "YouTube-style Video Platform"
+groups:
+  - id: grp_edge
+    label: "Edge / Delivery"
+    nodes: [cdn, client_web, client_mobile]
+  - id: grp_api
+    label: "API Layer"
+    nodes: [gateway, auth_svc, upload_svc, metadata_svc, recommend_svc]
+  - id: grp_processing
+    label: "Video Processing Pipeline"
+    nodes: [transcode_queue, transcoder, thumbnail_svc]
+  - id: grp_data
+    label: "Data Stores"
+    nodes: [blob_store, video_db, user_db, cache, search_index, events_topic]
+nodes:
+  - id: client_web
+    label: "Web Client"
+    type: client
+  - id: client_mobile
+    label: "Mobile App"
+    type: client
+  - id: cdn
+    label: "Global CDN"
+    type: proxy
+    metadata: "Edge caching for video segments"
+  - id: gateway
+    label: "API Gateway"
+    type: gateway
+  - id: auth_svc
+    label: "Auth Service"
+    type: service
+    language: go
+    technology: "Go 1.22"
+  - id: upload_svc
+    label: "Upload Service"
+    type: service
+    language: rust
+    technology: "Rust / Axum"
+  - id: metadata_svc
+    label: "Metadata Service"
+    type: service
+    language: java
+    technology: "Java / Spring"
+  - id: recommend_svc
+    label: "Recommendation Service"
+    type: service
+    language: python
+    technology: "Python / TF Serving"
+  - id: transcode_queue
+    label: "Transcode Queue"
+    type: queue
+    technology: "Kafka"
+  - id: transcoder
+    label: "Transcoding Workers"
+    type: server
+    language: cpp
+  - id: thumbnail_svc
+    label: "Thumbnail Generator"
+    type: function
+  - id: blob_store
+    label: "video_blobs"
+    type: database
+    db_type: dynamodb
+    metadata: "Raw + transcoded video segments"
+  - id: video_db
+    label: "video_metadata"
+    type: table
+    db_type: postgres
+    fields:
+      - "id: UUID [PK]"
+      - "title: TEXT"
+      - "owner_id: UUID [FK]"
+      - "duration_s: INT"
+  - id: user_db
+    label: "users"
+    type: table
+    db_type: postgres
+    fields:
+      - "id: UUID [PK]"
+      - "email: TEXT"
+      - "created_at: TIMESTAMP"
+  - id: cache
+    label: "Metadata Cache"
+    type: cache
+    db_type: redis
+  - id: search_index
+    label: "Search Index"
+    type: database
+    db_type: elasticsearch
+  - id: events_topic
+    label: "view_events"
+    type: queue
+    technology: "Kafka"
+edges:
+  - from: client_web
+    to: cdn
+    label: "HTTPS video playback"
+  - from: client_mobile
+    to: cdn
+    label: "HTTPS video playback"
+  - from: client_web
+    to: gateway
+    label: "HTTPS API"
+  - from: client_mobile
+    to: gateway
+    label: "HTTPS API"
+  - from: gateway
+    to: auth_svc
+    label: "gRPC"
+  - from: gateway
+    to: upload_svc
+    label: "gRPC"
+  - from: gateway
+    to: metadata_svc
+    label: "gRPC"
+  - from: gateway
+    to: recommend_svc
+    label: "gRPC"
+  - from: auth_svc
+    to: user_db
+    label: "SQL"
+  - from: upload_svc
+    to: blob_store
+    label: "PUT object"
+  - from: upload_svc
+    to: transcode_queue
+    label: "enqueue job"
+    edge_style: async
+  - from: transcode_queue
+    to: transcoder
+    label: "consume"
+    edge_style: async
+  - from: transcoder
+    to: blob_store
+    label: "PUT segments"
+  - from: transcoder
+    to: thumbnail_svc
+    label: "invoke"
+  - from: thumbnail_svc
+    to: blob_store
+    label: "PUT thumbnail"
+  - from: metadata_svc
+    to: video_db
+    label: "SQL"
+  - from: metadata_svc
+    to: cache
+    label: "GET/SET"
+  - from: recommend_svc
+    to: search_index
+    label: "query"
+  - from: recommend_svc
+    to: cache
+    label: "GET"
+  - from: metadata_svc
+    to: events_topic
+    label: "publish"
+    edge_style: async
+  - from: cdn
+    to: blob_store
+    label: "origin fetch"

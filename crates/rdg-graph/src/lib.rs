@@ -56,6 +56,14 @@ pub struct NodeData {
     pub style_extra: Option<String>,
     /// Optional URL making the rendered shape clickable (draw.io backend only).
     pub link: Option<String>,
+    /// Explicit semantic category (else the theme derives one from the type).
+    pub category: Option<String>,
+    /// `card` / `icon` (else the theme decides).
+    pub display: Option<String>,
+    /// Drawn shape, resolved from the theme before layout: `card`, `cylinder`,
+    /// `ellipse`, `diamond`, `icon`, or a marker (`start`, `end`, `choice`). `None`
+    /// before resolution — consumers then fall back to the node type.
+    pub shape: Option<String>,
 }
 
 /// Data attached to every graph edge.
@@ -107,6 +115,35 @@ pub struct CompiledGraph {
     pub diagram_type: String,
     /// Sequential order of edges as declared in input payload.
     pub edge_order: Vec<petgraph::stable_graph::EdgeIndex>,
+    /// Draw a legend (`None`: the theme decides).
+    pub legend: Option<bool>,
+    /// Sequence diagrams: the script in order (messages refer to graph edges). Built
+    /// from `sequence:`, or from `edges` as a plain list of messages.
+    pub sequence: Vec<SeqItem>,
+}
+
+/// One compiled step of a sequence diagram.
+#[derive(Debug, Clone)]
+pub enum SeqItem {
+    Message {
+        edge: EdgeIndex,
+        /// Explicit `activate` / `deactivate` (None: the default rule decides).
+        activate: Option<bool>,
+        deactivate: Option<bool>,
+        create: bool,
+        destroy: bool,
+    },
+    Note { text: String, placement: NotePlacement, over: Vec<NodeIndex> },
+    /// `sections[0]` is the body; later sections are `else` / `and` branches.
+    Fragment { kind: String, sections: Vec<(Option<String>, Vec<SeqItem>)> },
+    Divider(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NotePlacement {
+    Over,
+    LeftOf,
+    RightOf,
 }
 
 // ---------------------------------------------------------------------------
@@ -183,16 +220,12 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
 
         // If the node belongs to a group with the same language, and the node did NOT explicitly
         // set a custom icon or specific database engine, suppress the redundant language icon on the shape!
+        // The icon would only repeat the language its group already shows — drop it
+        // (an explicit `icon:` or a database/broker logo is a different fact; kept).
         if let Some(grp_lang) = node_to_group_lang.get(&node_def.id) {
             let has_explicit_icon = node_def.icon.as_ref().is_some_and(|i| !i.trim().is_empty());
-            let has_db_engine = node_def.resolved_db_type().is_some();
-            if !has_explicit_icon && !has_db_engine {
-                if let Some(ref nl) = node_lang {
-                    if nl == grp_lang {
-                        // Same stack as container! Highlight on container instead of cluttering each shape.
-                        icon = None;
-                    }
-                }
+            if !has_explicit_icon && icon.as_deref() == Some(grp_lang.as_str()) {
+                icon = None;
             }
         }
 
@@ -212,6 +245,9 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             provider: node_def.provider.clone(),
             style_extra: node_def.style_extra.clone(),
             link: node_def.link.clone(),
+            category: node_def.category.clone(),
+            display: node_def.display.clone(),
+            shape: None,
         };
         let idx = graph.add_node(data);
         node_map.insert(node_def.id.clone(), idx);
@@ -255,6 +291,24 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         edge_order.push(e_idx);
     }
 
+    // --- 2b. Sequence script -----------------------------------------------------
+    let sequence = if is_sequence {
+        if payload.sequence.is_empty() {
+            edge_order
+                .iter()
+                .map(|&edge| SeqItem::Message { edge, activate: None, deactivate: None, create: false, destroy: false })
+                .collect()
+        } else {
+            if !payload.edges.is_empty() {
+                anyhow::bail!("a sequence diagram takes its messages from `sequence:` or `edges:`, not both");
+            }
+            let mut counter = 0u32;
+            compile_steps(&payload.sequence, &node_map, &mut graph, &mut edge_order, numbered, &mut counter)?
+        }
+    } else {
+        Vec::new()
+    };
+
     // --- 3. Cycle detection & breaking (skipped for sequence diagrams) -------
     let had_cycles = if !is_sequence && is_cyclic_directed(&graph) {
         break_cycles(&mut graph);
@@ -272,7 +326,79 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         description: payload.description.clone(),
         diagram_type,
         edge_order,
+        legend: payload.legend,
+        sequence,
     })
+}
+
+/// Compile sequence steps, adding each message as a graph edge (in order).
+fn compile_steps(
+    steps: &[rdg_schema::SeqStep],
+    node_map: &HashMap<String, NodeIndex>,
+    graph: &mut StableDiGraph<NodeData, EdgeData>,
+    edge_order: &mut Vec<EdgeIndex>,
+    numbered: bool,
+    counter: &mut u32,
+) -> Result<Vec<SeqItem>> {
+    use rdg_schema::SeqStepKind;
+    let node = |id: &str| node_map.get(id).copied().ok_or_else(|| anyhow::anyhow!("sequence step references unknown participant '{id}'"));
+    let mut out = Vec::with_capacity(steps.len());
+    for step in steps {
+        match step.kind().map_err(|e| anyhow::anyhow!(e))? {
+            SeqStepKind::Message { from, to } => {
+                let (src, dst) = (node(from)?, node(to)?);
+                *counter += 1;
+                let edge = graph.add_edge(
+                    src,
+                    dst,
+                    EdgeData {
+                        label: step.label.clone(),
+                        edge_style: step.edge_style.as_ref().map(|s| s.to_ascii_lowercase()),
+                        reversed: false,
+                        color: step.color.clone(),
+                        width: None,
+                        line_style: None,
+                        head: None,
+                        tail: None,
+                        source_port: None,
+                        target_port: None,
+                        style_extra: None,
+                        step: numbered.then_some(*counter),
+                    },
+                );
+                edge_order.push(edge);
+                out.push(SeqItem::Message {
+                    edge,
+                    activate: step.activate,
+                    deactivate: step.deactivate,
+                    create: step.create.unwrap_or(false),
+                    destroy: step.destroy.unwrap_or(false),
+                });
+            }
+            SeqStepKind::Note => {
+                let (placement, ids): (NotePlacement, Vec<&str>) = if let Some(l) = step.left_of.as_deref() {
+                    (NotePlacement::LeftOf, vec![l])
+                } else if let Some(r) = step.right_of.as_deref() {
+                    (NotePlacement::RightOf, vec![r])
+                } else if !step.over.is_empty() {
+                    (NotePlacement::Over, step.over.iter().map(String::as_str).collect())
+                } else {
+                    anyhow::bail!("a note needs `over`, `left_of` or `right_of`");
+                };
+                let over = ids.into_iter().map(node).collect::<Result<Vec<_>>>()?;
+                out.push(SeqItem::Note { text: step.note.clone().unwrap_or_default(), placement, over });
+            }
+            SeqStepKind::Fragment { kind, label } => {
+                let mut sections = vec![(Some(label.to_string()).filter(|l| !l.is_empty()), compile_steps(&step.steps, node_map, graph, edge_order, numbered, counter)?)];
+                for b in step.else_.iter().chain(&step.and) {
+                    sections.push((b.label.clone(), compile_steps(&b.steps, node_map, graph, edge_order, numbered, counter)?));
+                }
+                out.push(SeqItem::Fragment { kind: kind.to_string(), sections });
+            }
+            SeqStepKind::Divider(label) => out.push(SeqItem::Divider(label.to_string())),
+        }
+    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------

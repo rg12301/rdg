@@ -4,9 +4,13 @@
 //! Each backend encodes the results into its own output format; this crate is where the
 //! two backends can't drift apart on what a given node type or edge style *means*.
 
+pub mod annotate;
 pub mod canvas;
+pub mod look;
+pub mod ortho;
 pub mod polish;
 pub mod review;
 pub mod routing;
 pub mod style;
+pub mod theme;
 pub mod typography;

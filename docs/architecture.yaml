@@ -7,22 +7,18 @@ description: "Microservice Container Architecture with Event Streaming and Distr
 groups:
   - id: grp_edge
     label: "Client & Edge Ingress"
-    color: "#64748b"
     nodes: ["web_client", "mobile_app", "api_gateway"]
 
   - id: grp_services
     label: "Transactional Core Services"
-    color: "#0284c7"
     nodes: ["auth_svc", "order_svc", "payment_svc"]
 
   - id: grp_streaming
     label: "Async Event Streaming"
-    color: "#d97706"
     nodes: ["event_bus", "analytics_worker"]
 
   - id: grp_persistence
     label: "Persistent Storage Tier"
-    color: "#059669"
     nodes: ["orders_db", "user_cache", "analytics_lake"]
 
 nodes:

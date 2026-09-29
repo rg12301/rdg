@@ -3,6 +3,9 @@
 use crate::DesignTokens;
 
 /// Wrap label into lines, respecting existing newlines and breaking on word boundaries.
+/// A line too long for `max_chars_per_line` is split into as few lines as it needs,
+/// balanced in length (`"Port 4000 · Isolated" / "Traffic"` becomes `"Port 4000 ·" /
+/// "Isolated Traffic"`), so a card doesn't grow wide for one line and leave an orphan.
 /// Prevents orphan closing delimiters/brackets (like single `}`) from landing alone on a line.
 pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
     let mut result = Vec::new();
@@ -15,51 +18,120 @@ pub fn wrap_label(label: &str, max_chars_per_line: usize) -> Vec<String> {
             result.push(trimmed.to_string());
             continue;
         }
-
-        let words: Vec<&str> = trimmed.split_whitespace().collect();
-        if words.is_empty() {
-            continue;
-        }
-
-        let mut current_line = String::new();
-        for word in words {
-            let is_closing = word
-                .chars()
-                .all(|c| matches!(c, '}' | ')' | ']' | '>' | ';' | ',' | '.' | ':'));
-
-            if current_line.is_empty() {
-                current_line.push_str(word);
-            } else if is_closing
-                || current_line.chars().count() + 1 + word.chars().count()
-                    <= max_chars_per_line + if is_closing { 3 } else { 0 }
-            {
-                current_line.push(' ');
-                current_line.push_str(word);
-            } else {
-                result.push(current_line);
-                current_line = word.to_string();
+        let greedy = wrap_greedy(trimmed, max_chars_per_line);
+        let n = greedy.len();
+        // Narrowest limit that still needs no more lines than the greedy wrap.
+        let total = trimmed.chars().count();
+        let mut best = greedy;
+        for limit in total.div_ceil(n)..max_chars_per_line {
+            let lines = wrap_greedy(trimmed, limit);
+            if lines.len() <= n {
+                best = lines;
+                break;
             }
         }
-        if !current_line.is_empty() {
-            // Fold orphan single bracket/punctuation back into the preceding line
-            let is_orphan = current_line
-                .trim()
-                .chars()
-                .all(|c| matches!(c, '}' | ')' | ']' | '>' | ';' | ',' | '.' | ':'));
-            if is_orphan && !result.is_empty() {
-                let last = result.last_mut().unwrap();
-                last.push(' ');
-                last.push_str(current_line.trim());
-            } else {
-                result.push(current_line);
-            }
-        }
+        result.extend(best);
     }
     if result.is_empty() {
         vec![label.to_string()]
     } else {
         result
     }
+}
+
+/// Greedy word wrap of one line at `max` chars (a single word longer than `max` keeps
+/// its own line).
+fn wrap_greedy(line: &str, max: usize) -> Vec<String> {
+    let is_closing = |w: &str| w.chars().all(|c| matches!(c, '}' | ')' | ']' | '>' | ';' | ',' | '.' | ':'));
+    let mut out: Vec<String> = Vec::new();
+    let mut current = String::new();
+    for word in line.split_whitespace() {
+        if current.is_empty() {
+            current.push_str(word);
+        } else if is_closing(word) || current.chars().count() + 1 + word.chars().count() <= max {
+            current.push(' ');
+            current.push_str(word);
+        } else {
+            out.push(std::mem::take(&mut current));
+            current.push_str(word);
+        }
+    }
+    if !current.is_empty() {
+        // Fold an orphan single bracket/punctuation back into the preceding line.
+        match out.last_mut() {
+            Some(last) if is_closing(current.trim()) => {
+                last.push(' ');
+                last.push_str(current.trim());
+            }
+            _ => out.push(current),
+        }
+    }
+    out
+}
+
+/// One rendered line of a node label: its text and whether it's a muted detail line.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LabelLine {
+    pub text: String,
+    pub is_subtitle: bool,
+}
+
+/// Detail lines render at 10px against the title's 12px bold, so they fit this much
+/// more text per line.
+pub const SUBTITLE_WRAP_FACTOR: f64 = 1.25;
+
+/// Splits a node label into wrapped, classified lines.
+///
+/// The first explicit line is the title (bold); every later explicit line is a muted
+/// detail line — `"auth-api-ext\nPublic Auth API\nPort 4000"` reads as a name and two
+/// facts about it, the hierarchy a person gives such a card by hand. A title that
+/// visibly continues onto the next line (ending in `::`, `.`, `/`, `-` or `_`, as in
+/// `petgraph::\nStableDiGraph`) keeps that line in the title. Parenthesised,
+/// bracketed or braced lines (`(subtitle)`, `[detail]`, `{fields}`) are always detail
+/// lines, even first. Title lines wrap at `max_chars`, detail lines at
+/// [`SUBTITLE_WRAP_FACTOR`] times that.
+pub fn classify_label(label: &str, max_chars: usize) -> Vec<LabelLine> {
+    let mut out = Vec::new();
+    let mut in_block = false;
+    let mut title_open = true; // still inside the title (first explicit line or its continuation)
+    let sub_chars = ((max_chars as f64) * SUBTITLE_WRAP_FACTOR).round() as usize;
+    for raw in label.split('\n') {
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let clean = strip_markdown_tokens(trimmed);
+        let c = clean.trim();
+        let bracketed = if in_block {
+            if c.ends_with('}') || c.ends_with(')') || c.ends_with(']') {
+                in_block = false;
+            }
+            true
+        } else if (c.starts_with('(') && c.ends_with(')'))
+            || (c.starts_with('[') && c.ends_with(']'))
+            || (c.starts_with('{') && c.ends_with('}'))
+        {
+            true
+        } else if c.starts_with('{') || c.starts_with('(') || c.starts_with('[') {
+            in_block = true;
+            true
+        } else {
+            false
+        };
+        let is_sub = bracketed || !title_open;
+        if !is_sub {
+            title_open = ["::", ".", "/", "-", "_"].iter().any(|t| c.ends_with(t));
+        } else {
+            title_open = false;
+        }
+        for line in wrap_label(trimmed, if is_sub { sub_chars } else { max_chars }) {
+            out.push(LabelLine { text: line, is_subtitle: is_sub });
+        }
+    }
+    if out.is_empty() {
+        out.push(LabelLine { text: label.to_string(), is_subtitle: false });
+    }
+    out
 }
 
 /// Strips inline markdown tokens (` ``, `**`, `*`, `__`, `~~`, `~`, `^`, `$`, `\(` etc.)
@@ -203,7 +275,7 @@ fn estimate_node_size_inner(
     node_type: &str,
     fields: &[String],
     technology: Option<&str>,
-    _has_icon: bool,
+    has_icon: bool,
     min_width: f64,
     min_height: f64,
     tokens: &DesignTokens,
@@ -266,31 +338,39 @@ fn estimate_node_size_inner(
     let is_ellipse = matches!(lower_type.as_str(), "queue" | "broker" | "bus" | "topic");
 
     let max_line_chars = if is_diamond { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal };
-    let clean_label = strip_markdown_tokens(label);
-    let lines = wrap_label(&clean_label, max_line_chars);
-    let mut max_chars = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
+    // Same classification the renderers draw with: title lines at the body font, detail
+    // lines at the smaller subtitle font (see `classify_label`).
+    let lines = classify_label(label, max_line_chars);
+    let sub_font = tokens.detail_font_size;
+    let line_w = |text: &str, sub: bool| {
+        strip_markdown_tokens(text).chars().count() as f64 * tokens.char_width(if sub { sub_font } else { tokens.font_size })
+    };
+    // An icon sits inline before the first line (the title), widening only that line.
+    let reserve = if has_icon { tokens.icon_reserve } else { 0.0 };
+    let mut text_w = lines
+        .iter()
+        .enumerate()
+        .map(|(i, l)| line_w(&l.text, l.is_subtitle) + if i == 0 { reserve } else { 0.0 })
+        .fold(0.0, f64::max);
 
     let mut line_count = lines.len();
     if let Some(tech) = technology {
         if !label.contains(tech) {
             line_count += 1;
-            max_chars = max_chars.max(tech.chars().count() + 2);
+            text_w = text_w.max(line_w(&format!("[{tech}]"), true));
         }
     }
 
-    let mut width = (max_chars as f64 * tokens.char_width(tokens.font_size) + tokens.px(2.5))
-        .max(min_width)
-        .min(tokens.px(32.5));
+    let mut width = (text_w + tokens.px(2.5)).max(min_width).min(tokens.px(32.5) + reserve);
 
     // First line at full line height, subsequent lines (subtitles) a touch smaller,
     // plus vertical padding.
-    let subtitle_line_height = tokens.line_height(tokens.font_size * 0.83);
+    let subtitle_line_height = tokens.line_height(tokens.detail_font_size);
+    let title_h = tokens.title_line_height(has_icon);
     let total_h = if line_count <= 1 {
-        tokens.line_height(tokens.font_size) + tokens.px(2.0)
+        title_h + tokens.px(2.0)
     } else {
-        tokens.line_height(tokens.font_size)
-            + (line_count - 1) as f64 * subtitle_line_height
-            + tokens.px(2.25)
+        title_h + (line_count - 1) as f64 * subtitle_line_height + tokens.px(2.25)
     };
     let mut height = total_h.max(min_height);
 

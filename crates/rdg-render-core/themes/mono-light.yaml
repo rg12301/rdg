@@ -1,0 +1,32 @@
+# rdg built-in theme: mono-light — black on white. Categories keep their glyphs and
+# edges keep their dash patterns, so meaning survives without colour (print, papers).
+extends: light
+name: mono-light
+custom_colors: false
+canvas: {background: "#ffffff", grid: null}
+text: {primary: "#0a0a0a", muted: "#525252", dim: "#a3a3a3"}
+title: {color: "#0a0a0a", description_color: "#525252"}
+node: {detail_color: "#525252"}
+group: {fill_opacity: 0.0}
+edge: {color: "#404040"}
+edge_label: {color: "#404040", background: "#ffffff", use_edge_color: false}
+badge: {fill: "#0a0a0a", text: "#ffffff"}
+icon: {style: mono, mono_color: "#0a0a0a", category_glyphs: true}   # glyphs carry the meaning colour can't
+categories:
+  frontend:   {fill: "#ffffff", stroke: "#0a0a0a"}
+  backend:    {fill: "#ffffff", stroke: "#0a0a0a"}
+  database:   {fill: "#f5f5f5", stroke: "#0a0a0a"}
+  messagebus: {fill: "#ffffff", stroke: "#0a0a0a"}
+  cloud:      {fill: "#ffffff", stroke: "#0a0a0a"}
+  security:   {fill: "#ffffff", stroke: "#0a0a0a"}
+  external:   {fill: "#fafafa", stroke: "#737373"}
+  neutral:    {fill: "#ffffff", stroke: "#737373"}
+edge_styles:
+  reply:  {color: "#a3a3a3"}
+  return: {color: "#a3a3a3"}
+sequence:
+  lifeline: {color: "#a3a3a3"}
+  activation: {fill: "#ffffff", category_stroke: false, stroke: "#0a0a0a"}
+  note: {fill: "#f5f5f5", stroke: "#525252", text: "#0a0a0a"}
+  fragment: {stroke: "#404040", tab_fill: "#f5f5f5", tab_text: "#0a0a0a", guard_color: "#525252"}
+  divider: {color: "#a3a3a3"}

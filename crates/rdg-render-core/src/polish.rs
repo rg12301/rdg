@@ -396,6 +396,9 @@ impl<'a> Polisher<'a> {
     fn sweep(&mut self) -> bool {
         let mut changed = false;
         for e in self.ids.clone() {
+            if self.plans[&e].searched {
+                continue;
+            }
             // Bounded retries per edge: each committed fix removes a jog, so this cannot
             // loop, but the cap makes that obvious.
             for _ in 0..8 {
@@ -414,7 +417,8 @@ impl<'a> Polisher<'a> {
                     (Some(pa), Some(pb)) => !crossing_points(pa, pb).is_empty(),
                     _ => false,
                 };
-                if crosses && self.try_fix_crossing(a, b) {
+                let fixable = !self.plans[&a].searched && !self.plans[&b].searched;
+                if crosses && fixable && self.try_fix_crossing(a, b) {
                     changed = true;
                 }
             }
@@ -1061,12 +1065,12 @@ mod tests {
     use rdg_schema::DiagramPayload;
 
     const FIXTURES: &[(&str, &str)] = &[
-        ("social_graph_dense", include_str!("../../../examples/social_graph_dense.yaml")),
-        ("netflix_architecture", include_str!("../../../examples/netflix_architecture.yaml")),
-        ("kubernetes_cluster", include_str!("../../../examples/kubernetes_cluster.yaml")),
-        ("youtube_architecture", include_str!("../../../examples/youtube_architecture.yaml")),
+        ("social_graph_dense", include_str!("../../../examples/social_graph_dense/social_graph_dense.yaml")),
+        ("netflix_architecture", include_str!("../../../examples/netflix_architecture/netflix_architecture.yaml")),
+        ("kubernetes_cluster", include_str!("../../../examples/kubernetes_cluster/kubernetes_cluster.yaml")),
+        ("youtube_architecture", include_str!("../../../examples/youtube_architecture/youtube_architecture.yaml")),
         ("architecture", include_str!("../../../docs/architecture.yaml")),
-        ("ecommerce_erd", include_str!("../../../examples/ecommerce_erd.yaml")),
+        ("ecommerce_erd", include_str!("../../../examples/ecommerce_erd/ecommerce_erd.yaml")),
     ];
 
     /// Lays out `yaml` with polish enabled or not, returning everything needed to re-run it.

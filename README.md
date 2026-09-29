@@ -28,12 +28,47 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
+- **Sequence diagrams, properly**: an ordered `sequence:` script with notes, fragments
+  (`alt`/`else`, `opt`, `loop`, `par`/`and`, `critical`, `break`, `region`), dividers,
+  participant groups, actors, automatic activation bars (a call with a reply activates
+  the callee), `create`/`destroy` lifecycles and autonumbering. Lifelines are spaced to
+  fit the labels, notes and fragment headers between them.
+- **Logos with halos, centred cards**: a node drawn as its logo gets an invisible circle
+  around the logo that arrows start and end on; a card's icon sits inline before its
+  title and the two are centred together. Long node lines wrap into balanced lines;
+  long edge labels wrap onto two lines, and `--check` asks agents to split them.
+
+- **Themes with meaning**: every colour, font, size, shape and arrow style comes from a
+  YAML theme — nothing design-related is hardcoded. Five built-ins: `light` (default,
+  flat and minimal), `dark`, `mono-light`, `mono-dark` (black & white) and `classic`.
+  Colour encodes a node's *category* (frontend, backend, data, messaging, edge/cloud,
+  security, external), and a legend can list them. Infra with an official logo —
+  Postgres, Redis, Kafka, … — is drawn as the enlarged full-colour logo instead of a box.
+
+- **Search-based arrow routing**: every edge is routed by an orthogonal A* search over
+  node outlines and channel midlines that picks the faces itself (instead of guessing
+  them first), weighing length, bends, crossings, shared lanes and group borders; edges
+  are then re-routed with all others in place, and parallel segments are fanned out into
+  evenly spaced lanes. Arrows touch the real outline of ellipses, cylinders and diamonds.
+  `RDG_LEGACY_ROUTER=1` switches back to the previous heuristic router for comparison.
+- **Tiered group layout**: groups are stacked in rows by the flow between them (groups
+  that call each other share a row, pure sources sit right above what they call, overly
+  wide rows wrap), then slid toward what they connect to — so arrows between tiers stay
+  short and straight.
+- **Label and badge placement**: edge labels are placed beside a clear straight stretch
+  of their own arrow (wrapped onto two lines when that fits better), scored against every
+  node, line, group title and other label; flow-number badges sit beside their arrow
+  near its start instead of on it. Node labels read as a bold title plus smaller detail
+  lines, and icons sit inside their shape.
+- **Agent-friendly CLI**: unknown YAML keys are errors with a did-you-mean; `--check`
+  validates without writing and lists every problem (bad ids, unknown types/styles/icons)
+  with its YAML path; `--format json` reports results as one JSON object;
+  `--guide <topic>` and `--list-icons` replace the old 27 KB help page.
 - **Topology-dispatched layout**: `rdg` inspects each input graph (cyclicity, edge
   density, compound/nested group structure, connected components) and automatically
   picks between three layout frameworks — the original Sugiyama layered layout, a
-  Barnes-Hut force-directed engine, and an fCoSE-style compound spring embedder — plus
-  either a fixed corridor router or a visibility-graph A* router for edges, based on
-  how obstacle-dense the diagram is. `--layout auto` (the default) reports its choice
+  Barnes-Hut force-directed engine, and an fCoSE-style compound spring embedder (edges
+  are then routed by the search router above). `--layout auto` (the default) reports its choice
   on stderr; `--layout sugiyama|force|fcose` forces one explicitly. See
   [`crates/rdg-dispatch`](crates/rdg-dispatch) for the decision logic.
 - **Self-review**: every render runs a deterministic geometry check (overlaps, edges
@@ -162,7 +197,7 @@ mv rdg ~/.local/bin/
 
 ```bash
 rdg --version
-# rdg 1.0
+# rdg 1.1.0
 
 rdg --help
 # Prints the full LLM-friendly usage guide
@@ -176,70 +211,137 @@ rdg --help
 
 ```yaml
 diagram_type: flowchart        # required — logical category
-theme: standard                # optional — standard (white-card) or dark
-groups:                        # optional — visual swimlane containers
+theme: light                   # optional — built-in name, or a mapping that overrides one
+legend: true                   # optional — list the colour categories used
+groups:                        # optional — visual containers
   - id: g1
     label: "Ingestion Tier"
-    color: "#0284c7"           # optional hex accent
     nodes: [n1, n2]
 nodes:
   - id: n1                     # required — unique, short, no spaces
-    label: "API Gateway\nv2.4" # required — supports 2-line title + subtitle
-    type: proxy                # optional — controls shape + border accent
-    metadata: "Routes traffic" # optional — tooltip annotation
+    label: "API Gateway\nv2.4" # required — bold title + detail lines
+    type: gateway              # optional — picks category, shape and glyph
   - id: n2
-    label: "Database"
+    label: "orders"
     type: database
+    db_type: postgres          # official logo; database-like types render as the logo
+    display: card              # optional — force a card instead of the logo
 edges:
   - from: n1                   # source node id
     to: n2                     # target node id
     label: "SQL queries"       # optional edge label
-    edge_style: async          # optional: flow | async | error | data | bidirectional
+    edge_style: data           # optional: flow | async | data | auth | error | bidirectional | ...
 ```
 
-### Node types (White-Card Design System)
+### Theming
 
-All nodes render as clean, modern white cards with subtle elevation (`shadow=1`), 8px rounded corners, and a semantic colored accent:
+Run `rdg --list-themes`, `rdg --print-theme light` (the full, commented YAML) and
+`rdg --guide theming`. Pick a theme with `theme:` in the YAML or `--theme <name|file.yaml>`
+(the CLI wins). A theme file can `extends: dark` and override only what it changes;
+a `theme:` *mapping* in the diagram YAML is deep-merged over the chosen theme:
 
-| `type` value | Shape | Accent Color |
+```yaml
+theme:
+  extends: dark
+  font: {family: "Inter, sans-serif"}
+  categories:
+    database: {stroke: "#22c55e"}
+  edge_styles:
+    async: {dash: "2 2"}
+```
+
+**Colour = meaning.** A node's colour is its category, taken from `category:` or its
+`type` (via the theme's `type_categories`) — and nothing else: containers are drawn
+neutral so they never compete with the nodes inside them, category glyphs are left out
+of colour themes (the colour already says it; black-and-white themes use the glyphs
+instead), and a legend explains the colours whenever there are at least two. A
+hand-picked `color:` on a node, group or edge still works, but `rdg --check` warns,
+because it breaks the code. Every diagram type — architecture, flowchart, ER, class,
+state, sequence — is coloured by the same rules unless the YAML customises it:
+
+| Category | Default types | Light theme stroke |
 |---|---|---|
-| `proxy` / `gateway` / `api` | Rounded card | Indigo (`#818cf8`) |
-| `server` / `service` / `backend` | Rounded card | Emerald (`#34d399`) |
-| `database` / `db` / `storage` | 3D Cylinder (`cylinder3`) | Sky (`#38bdf8`) |
-| `queue` / `broker` / `bus` | Queue (`start_2`) | Amber (`#fbbf24`) |
-| `cache` / `redis` | Diamond | Rose (`#f87171`) |
-| `function` / `lambda` / `faas` | AWS Lambda icon | Orange (`#fb923c`) |
-| `decision` / `condition` | Diamond | Purple (`#a78bfa`) |
-| `client` / `user` / `browser` | Person icon | Slate (`#94a3b8`) |
-| *(anything else)* | Rounded card | Slate (`#cbd5e1`) |
+| `frontend` | client, user, browser, frontend | blue `#2563eb` |
+| `backend` | service, server, backend, function, lambda | green `#059669` |
+| `database` | database, db, storage, table, cache, redis | violet `#7c3aed` |
+| `messagebus` | queue, broker, bus | orange `#ea580c` |
+| `cloud` | proxy, gateway, api, cdn | teal `#0891b2` |
+| `security` | auth, firewall | red `#dc2626` |
+| `external` | external, third_party | slate `#64748b` |
+| `neutral` | anything else | grey `#94a3b8` |
 
-### Edge styles (`edge_style`)
+Edge styles also carry meaning: `async` is dashed in the messaging colour with an open
+head, `data`/`stream` is thicker in the data colour, `auth` and `error`/`fallback` use
+the security colour; ER (`one_to_many`, …) and UML (`inheritance`, `composition`, …)
+ends are built in. Shapes (`database` → cylinder, `decision` → diamond), icon sizes,
+which types render as a bare logo (`icon.node_types`), the icon style (`color` or
+`mono`) and every font size and colour live in the theme too.
 
-| Style | Line appearance | Arrow head | Use case |
-|---|---|---|---|
-| `flow` (default) | Solid slate (`#64748b`) | Filled `blockThin` | Standard synchronous request/response |
-| `async` | Dashed amber (`#d97706`, `8 4`) | Open arrow | Asynchronous message / event publication |
-| `error` / `fallback` | Dashed red (`#ef4444`, `6 3`) | Hollow `blockThin` | Circuit breaker / dead-letter / fallback |
-| `data` / `stream` | 2px Indigo (`#6366f1`) | Filled `blockThin` | High-throughput data stream / replication |
-| `bidirectional` | Solid slate (`#64748b`) | Dual `blockThin` | Full-duplex WebSocket / mutual sync |
+Brand logos are the full-colour [devicon](https://devicon.dev) set (MIT); see
+[`crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md`](crates/rdg-icons/assets/THIRD_PARTY_LICENSES.md).
+
+### Sequence diagrams
+
+```yaml
+title: Checkout
+numbered: true
+participants:
+  - {id: user, label: Shopper, type: actor}
+  - {id: web, label: Web App, type: client}
+  - {id: api, label: Orders API, type: service}
+  - {id: db, label: orders, type: database, db_type: postgres}
+groups:
+  - {id: backend, label: Backend, nodes: [api, db]}
+sequence:
+  - {from: user, to: web, label: "place order"}
+  - {from: web, to: api, label: "POST /orders"}
+  - {note: "idempotency key checked", right_of: api}
+  - alt: "in stock"
+    steps:
+      - {from: api, to: db, label: "INSERT order"}
+      - {from: db, to: api, label: "id", style: reply}
+      - {from: api, to: web, label: "201 Created", style: reply}
+    else:
+      label: "out of stock"
+      steps:
+        - {from: api, to: web, label: "409 Conflict", style: reply}
+  - divider: "later"
+  - loop: "every 30s"
+    steps:
+      - {from: web, to: api, label: "GET /orders/:id"}
+```
+
+Each step is one of: a message (`from`, `to`, `label`, `style: flow|reply|async`,
+`activate`, `deactivate`, `create`, `destroy`), a note (`note` + `over`/`left_of`/
+`right_of`), a fragment (`alt`, `opt`, `loop`, `par`, `critical`, `break`, `region`
+with nested `steps`, plus `else` / `and` branches) or a `divider`. Activation bars are
+automatic: a call opens one on the receiver when a reply comes back later. Colours and
+spacing live in the theme's `sequence:` section. `rdg --guide sequence` has the details;
+[`examples/login_sequence/login_sequence.yaml`](examples/login_sequence/login_sequence.yaml) uses every feature.
 
 ### CLI flags
 
 ```
-rdg [OPTIONS]
+rdg [OPTIONS] [INPUT]
 
-Options:
-  -i, --input <FILE>            YAML input file (omit or use - for stdin)
-  -o, --output <FILE>           Output path; extension selects format [default: output.drawio]
-  -l, --layout <LAYOUT>         auto | sugiyama | force | fcose [default: auto]
-  -t, --theme <THEME>           standard | aws | azure [default: standard]
-      --rank-spacing <N>        Vertical gap between layers in px [default: 60]
-      --node-spacing <N>        Horizontal gap between nodes in px [default: 40]
-      --strict                  Exit non-zero if self-review anomalies remain after retrying
-      --no-polish               Skip the final micro-jog / crossing cleanup pass
-      --svg-engine <ENGINE>     auto | drawio | native — SVG export engine [default: auto]
-  -h, --help                    Print full LLM usage guide
-  -V, --version                 Print version
+  -i, --input <FILE>         YAML input (omit or - for stdin)
+  -o, --output <FILE>        Output; extension picks the format (.drawio | .svg) [default: output.drawio]
+      --check                Validate only: list every error/warning, write nothing
+      --format <text|json>   Diagnostics as text on stderr, or one JSON object on stdout
+      --guide <TOPIC>        schema | nodes | edges | groups | styles | theming | sequence | typography | layout | output | all
+      --list-icons           Every icon key for icon:/language:/db_type:
+      --example / --schema   Commented YAML template / JSON Schema
+  -l, --layout <LAYOUT>      auto | sugiyama | force | fcose [default: auto]
+  -t, --theme <NAME|FILE>    light | dark | mono-light | mono-dark | classic, or a theme YAML
+      --list-themes          Built-in themes, one per line
+      --print-theme <NAME>   Print a theme's full YAML (a starting point for your own)
+      --direction <DIR>      tb | lr [default: tb]
+      --rank-spacing <PX>    Gap between ranks (default: proportional to node size)
+      --node-spacing <PX>    Gap between neighbouring nodes (default: proportional)
+      --strict               Exit 1 if layout anomalies remain (the file is still written)
+      --no-polish            Skip the final polish pass
+      --svg-engine <ENGINE>  auto | drawio | native [default: auto]
+      --design-config <FILE> Design-token overrides (spacing unit, font size, thresholds)
 ```
 
 ### Examples
@@ -285,22 +387,29 @@ cat llm_output.yaml | rdg -o diagram.drawio && open diagram.drawio
 
 ## For LLM Agents
 
-Run `rdg --help` from your tool-use environment. The full help text contains:
+`rdg --help` is written for agents: one screen with the workflow, a minimal YAML
+example, every node/edge/top-level field, node types and edge styles, and exit codes.
+`rdg --guide <topic>` has the detail. Mistakes fail loudly instead of rendering
+something wrong: an unknown key, a typo'd node id or an undefined preset is an error
+naming its YAML path and the closest valid name, and `--format json` makes that
+machine-readable:
 
-- Complete YAML schema with rules and examples  
-- All node type aliases with visual descriptions  
-- An explicit 4-step agentic workflow  
-- `DO NOT` guardrails (no coordinate hallucination, no raw XML)  
-- Pipe-friendly usage for agentic pipelines  
+```
+$ rdg --check --format json -i diagram.yaml
+{"ok":false,"output":null,"layout":null,
+ "errors":[{"path":"edges[3].to","message":"unknown node id `auth_svc`","hint":"did you mean `auth_api`?"}],
+ "warnings":[{"path":"nodes[1].type","message":"unknown node type `servce` renders as a plain card","hint":"did you mean `service`?"}],
+ "anomalies":[]}
+```
 
 **Recommended system prompt addition:**
 
 ```
-You have access to the `rdg` CLI tool. When asked to generate architecture or
-flow diagrams, emit ONLY a YAML block following the rdg schema, then call:
-  rdg --input <file> --output <file>.drawio
-Never compute pixel coordinates. Never write draw.io XML or SVG directly.
-Run `rdg --help` to read the full schema and node type reference.
+You have access to the `rdg` CLI. To draw an architecture or flow diagram, write the
+diagram as rdg YAML (read `rdg --help` once for the format), then run
+  rdg --check --format json -i diagram.yaml     # fix every error it lists
+  rdg -i diagram.yaml -o diagram.drawio
+Never compute coordinates or write draw.io XML/SVG yourself.
 ```
 
 ---

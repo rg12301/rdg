@@ -172,7 +172,9 @@ pub struct AlgorithmDecision {
 /// 1. `node_count > `[`DesignTokens::massive_node_threshold`] → `ForceDirected`. A hard safety valve:
 ///    regardless of shape, a graph this large cannot be laid out hierarchically in
 ///    reasonable time or produce a legible result.
-/// 2. else `component_count > 1` → `FCose`. Genuinely disconnected structure is the one
+/// 2. else `component_count > 1` without groups → `FCose`. (With groups, the tiered
+///    group layout ranks the groups themselves, so a group or node unconnected to the
+///    rest simply takes its own slot — it stays on `Sugiyama`.) Genuinely disconnected structure is the one
 ///    shape `Sugiyama` (and its compound-grid variant) has **no** handling for at all —
 ///    it assumes a single connected structure to rank. This is deliberately narrower
 ///    than "has compound structure": a real-fixture regression surfaced during
@@ -200,7 +202,7 @@ pub fn dispatch(sig: &TopologySignature, tokens: &DesignTokens) -> AlgorithmDeci
             sig.node_count, tokens.massive_node_threshold
         ));
         LayoutFramework::ForceDirected
-    } else if sig.component_count > 1 {
+    } else if sig.component_count > 1 && !sig.has_compound_structure {
         steps.push(format!(
             "graph has {} disconnected components — bridging with dummy nodes",
             sig.component_count
@@ -221,7 +223,7 @@ pub fn dispatch(sig: &TopologySignature, tokens: &DesignTokens) -> AlgorithmDeci
             "acyclic-after-FAS dependency structure".into()
         });
         if sig.has_compound_structure {
-            steps.push("visual groups present — compound grid-search layout applied".into());
+            steps.push("visual groups present — tiered group layout applied".into());
         }
         LayoutFramework::Sugiyama
     };
@@ -414,6 +416,13 @@ mod tests {
         let sig = signature(10, 8, false, false, false, false, 3);
         let decision = dispatch(&sig, &DesignTokens::default());
         assert_eq!(decision.framework, LayoutFramework::FCose);
+    }
+
+    #[test]
+    fn test_dispatch_grouped_multi_component_stays_on_tiered_layout() {
+        let sig = signature(10, 8, false, false, false, true, 2);
+        let decision = dispatch(&sig, &DesignTokens::default());
+        assert_eq!(decision.framework, LayoutFramework::Sugiyama);
     }
 
     #[test]

@@ -14,3 +14,15 @@ graphify-out/
 .vscode/
 *.swp
 *~
+
+# Diagram sources and renders belong in examples/<name>/ (and the tracked docs/ figures);
+# any other .yaml / .svg / .drawio is local output. Built-in themes are source.
+*.yaml
+*.svg
+*.drawio
+!examples/**
+!crates/rdg-render-core/themes/*.yaml
+!crates/rdg-icons/assets/**
+
+# Local test material, never committed.
+auth-service/

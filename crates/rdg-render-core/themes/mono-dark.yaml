@@ -1,0 +1,30 @@
+# rdg built-in theme: mono-dark — white on black.
+extends: mono-light
+name: mono-dark
+mode: dark
+canvas: {background: "#0a0a0a", grid: null}
+text: {primary: "#fafafa", muted: "#a3a3a3", dim: "#525252"}
+title: {color: "#fafafa", description_color: "#a3a3a3"}
+node: {detail_color: "#a3a3a3"}
+edge: {color: "#d4d4d4"}
+edge_label: {color: "#d4d4d4", background: "#0a0a0a"}
+badge: {fill: "#fafafa", text: "#0a0a0a"}
+icon: {mono_color: "#fafafa"}
+categories:
+  frontend:   {fill: "#0a0a0a", stroke: "#fafafa"}
+  backend:    {fill: "#0a0a0a", stroke: "#fafafa"}
+  database:   {fill: "#171717", stroke: "#fafafa"}
+  messagebus: {fill: "#0a0a0a", stroke: "#fafafa"}
+  cloud:      {fill: "#0a0a0a", stroke: "#fafafa"}
+  security:   {fill: "#0a0a0a", stroke: "#fafafa"}
+  external:   {fill: "#0a0a0a", stroke: "#a3a3a3"}
+  neutral:    {fill: "#0a0a0a", stroke: "#a3a3a3"}
+edge_styles:
+  reply:  {color: "#737373"}
+  return: {color: "#737373"}
+sequence:
+  lifeline: {color: "#525252"}
+  activation: {fill: "#0a0a0a", stroke: "#fafafa"}
+  note: {fill: "#171717", stroke: "#a3a3a3", text: "#fafafa"}
+  fragment: {stroke: "#d4d4d4", tab_fill: "#171717", tab_text: "#fafafa", guard_color: "#a3a3a3"}
+  divider: {color: "#525252"}

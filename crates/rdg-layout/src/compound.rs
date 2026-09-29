@@ -1,5 +1,13 @@
-//! Compound graph layout: 2D group grid placement for visual (group/swimlane) containers,
-//! targeting a canvas aspect ratio close to 1:1.
+//! Compound graph layout for diagrams with visual groups (containers/swimlanes).
+//!
+//! Each group is first laid out on its own (layers, crossing minimisation). Groups —
+//! plus a borderless one-node "unit" for every ungrouped node — are then stacked in
+//! rows by the flow between them, the way a person arranges tiers: a group sits one
+//! row below whatever feeds it, groups that call each other both ways share a row, and
+//! a group that only sends is pulled down to just above what it calls. Within a row,
+//! every unit is slid horizontally toward the nodes its edges connect to, and every
+//! node is slid within its group toward its own neighbours, so arrows between tiers run
+//! short and straight instead of wrapping around the canvas.
 
 use anyhow::Result;
 use petgraph::stable_graph::NodeIndex;
@@ -11,11 +19,13 @@ use rdg_graph::CompiledGraph;
 use crate::sugiyama::minimise_crossings;
 use crate::{LayoutConfig, LayoutResult, NodeLayout};
 
-/// Weight applied to inter-group edge "distance" (grid Euclidean distance) in the
-/// grid-search score, relative to the `ln(aspect ratio)` term. Kept small and positive
-/// so aspect ratio dominates the choice between candidate grids, and edge distance only
-/// acts as a tie-breaker that favors keeping connected groups close together.
-const EDGE_DISTANCE_WEIGHT: f64 = 0.02;
+/// A row may grow to this multiple of the widest single unit before the next unit
+/// wraps onto a row of its own.
+const ROW_WIDTH_SLACK: f64 = 1.3;
+/// Placement sweeps (units, then nodes within units) — enough for positions to settle.
+const SWEEPS: usize = 4;
+/// A gap widened for crossing edge labels grows to at most this many `group_gap_x`.
+const MAX_LABEL_GAP_FACTOR: f64 = 5.0;
 
 #[derive(Debug, Clone)]
 struct GroupInfo {
@@ -30,6 +40,10 @@ struct GroupInfo {
     content_h: f64,
     nodes: Vec<NodeIndex>,
     local_pos: HashMap<NodeIndex, (f64, f64)>,
+    /// Member nodes per local layer, left to right.
+    layers: Vec<Vec<NodeIndex>>,
+    /// `false` for the borderless single-node unit wrapping an ungrouped node.
+    bordered: bool,
 }
 
 fn compute_group_local(
@@ -173,305 +187,426 @@ fn compute_group_local(
         content_h,
         nodes,
         local_pos,
+        layers: buckets.into_iter().filter(|b| !b.is_empty()).collect(),
+        bordered: true,
     })
 }
 
-struct GridSearchCtx<'a> {
-    topo_groups: &'a [usize],
-    groups: &'a [GroupInfo],
-    edges: &'a [(usize, usize)],
-    current_grid: Vec<(usize, usize)>,
-    occupied: HashSet<(usize, usize)>,
-    best_grid: Vec<(usize, usize)>,
-    best_score: f64,
-    margin_x: f64,
-    margin_y: f64,
-    group_gap_x: f64,
-    group_gap_y: f64,
+
+/// Padding between a unit's box and its content: the group's left and top padding, or
+/// none for a lone ungrouped node.
+fn unit_pad(u: &GroupInfo, config: &LayoutConfig) -> (f64, f64) {
+    if u.bordered {
+        (
+            config.tokens.group_pad_for(u.content_w, u.content_h),
+            config.tokens.group_pad_top_for(u.content_w, u.content_h),
+        )
+    } else {
+        (0.0, 0.0)
+    }
 }
 
-impl<'a> GridSearchCtx<'a> {
-    fn search(&mut self, step: usize) {
-        if step == self.topo_groups.len() {
-            let mut w0 = 0.0_f64;
-            let mut w1 = 0.0_f64;
-            let mut max_row = 0;
-            for g in self.groups {
-                let (r, c) = self.current_grid[g.idx];
-                max_row = max_row.max(r);
-                if c == 0 {
-                    w0 = w0.max(g.width);
-                } else {
-                    w1 = w1.max(g.width);
-                }
-            }
-            let num_r = max_row + 1;
-            let mut row_h = vec![0.0_f64; num_r];
-            for g in self.groups {
-                let (r, _) = self.current_grid[g.idx];
-                row_h[r] = row_h[r].max(g.height);
-            }
-
-            let tot_w = if w1 > 0.0 {
-                w0 + self.group_gap_x + w1
+/// Weighted isotonic placement of boxes in a fixed left-to-right order: minimises
+/// `Σ weight·(x - desired)²` subject to box `i+1` starting at least `gaps[i]` after
+/// box `i` ends (pool-adjacent-violators on gap-shifted coordinates), then clamps
+/// into `[lo, hi]` (on the shifted axis, when bounds are given). Returns left edges.
+fn place_in_order(widths: &[f64], desired: &[f64], weights: &[f64], gaps: &[f64], bounds: Option<(f64, f64)>) -> Vec<f64> {
+    let n = widths.len();
+    let mut prefix = vec![0.0; n];
+    for i in 1..n {
+        prefix[i] = prefix[i - 1] + widths[i - 1] + gaps[i - 1];
+    }
+    // Blocks of (weight sum, weighted target sum, count).
+    let mut blocks: Vec<(f64, f64, usize)> = Vec::with_capacity(n);
+    for i in 0..n {
+        let w = weights[i].max(1e-6);
+        blocks.push((w, w * (desired[i] - prefix[i]), 1));
+        while blocks.len() >= 2 {
+            let (w1, s1, c1) = blocks[blocks.len() - 1];
+            let (w0, s0, c0) = blocks[blocks.len() - 2];
+            if s0 / w0 > s1 / w1 {
+                blocks.pop();
+                *blocks.last_mut().unwrap() = (w0 + w1, s0 + s1, c0 + c1);
             } else {
-                w0
-            };
-            let tot_h: f64 =
-                row_h.iter().sum::<f64>() + (num_r.saturating_sub(1)) as f64 * self.group_gap_y;
-            let ratio = (tot_w + 2.0 * self.margin_x) / (tot_h + 2.0 * self.margin_y);
-
-            let edge_dist: f64 = self
-                .edges
-                .iter()
-                .map(|&(a, b)| {
-                    let (ra, ca) = self.current_grid[a];
-                    let (rb, cb) = self.current_grid[b];
-                    let dr = rb as f64 - ra as f64;
-                    let dc = cb as f64 - ca as f64;
-                    (dr * dr + dc * dc).sqrt()
-                })
-                .sum();
-
-            let score = ratio.ln().abs() + EDGE_DISTANCE_WEIGHT * edge_dist;
-            if score < self.best_score {
-                self.best_score = score;
-                self.best_grid = self.current_grid.clone();
-            }
-            return;
-        }
-
-        let g = self.topo_groups[step];
-
-        let mut min_r = 0;
-        for &(p, dst) in self.edges {
-            if dst == g {
-                let (rp, cp) = self.current_grid[p];
-                if cp == 1 {
-                    min_r = min_r.max(rp + 1);
-                } else {
-                    min_r = min_r.max(rp);
-                }
-            }
-        }
-
-        let cur_max_r = self.topo_groups[..step]
-            .iter()
-            .map(|&i| self.current_grid[i].0)
-            .max()
-            .unwrap_or(0);
-        let max_r = (cur_max_r + 1).min(self.groups.len());
-
-        for c in 0..=1 {
-            for r in min_r..=max_r {
-                let mut valid = true;
-                for &(p, dst) in self.edges {
-                    if dst == g {
-                        let (rp, cp) = self.current_grid[p];
-                        if !(r > rp || (r == rp && c > cp)) {
-                            valid = false;
-                            break;
-                        }
-                    }
-                }
-                if !valid || self.occupied.contains(&(r, c)) {
-                    continue;
-                }
-
-                self.occupied.insert((r, c));
-                self.current_grid[g] = (r, c);
-
-                self.search(step + 1);
-
-                self.occupied.remove(&(r, c));
+                break;
             }
         }
     }
+    let mut out = Vec::with_capacity(n);
+    for (w, s, c) in blocks {
+        let mut y = s / w;
+        if let Some((lo, hi)) = bounds {
+            y = y.clamp(lo, hi.max(lo));
+        }
+        for _ in 0..c {
+            let i = out.len();
+            out.push(y + prefix[i]);
+        }
+    }
+    out
 }
 
-/// 2D grid placement for compound graphs with visual groups.
-/// Guarantees zero group overlap and minimizes aspect ratio deviation from 1.0.
-pub(crate) fn layout_compound(
-    compiled: &CompiledGraph,
-    config: &LayoutConfig,
-) -> Result<LayoutResult> {
-    let mut groups: Vec<GroupInfo> = Vec::new();
-    let mut assigned_nodes: HashSet<NodeIndex> = HashSet::new();
+/// Longest-path rank per unit over the unit graph, with mutually-reachable units
+/// (strongly connected components) sharing one rank, and pure sources pulled down to
+/// sit directly above the earliest unit they feed.
+fn unit_ranks(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
+    use petgraph::algo::tarjan_scc;
+    use petgraph::graph::DiGraph;
+    let mut g: DiGraph<(), ()> = DiGraph::new();
+    let idx: Vec<_> = (0..n).map(|_| g.add_node(())).collect();
+    for &(a, b) in edges {
+        g.add_edge(idx[a], idx[b], ());
+    }
+    // tarjan_scc returns components in reverse topological order.
+    let sccs = tarjan_scc(&g);
+    let mut comp = vec![0usize; n];
+    for (ci, c) in sccs.iter().enumerate() {
+        for v in c {
+            comp[v.index()] = ci;
+        }
+    }
+    let nc = sccs.len();
+    let mut preds: Vec<HashSet<usize>> = vec![HashSet::new(); nc];
+    let mut succs: Vec<HashSet<usize>> = vec![HashSet::new(); nc];
+    for &(a, b) in edges {
+        let (ca, cb) = (comp[a], comp[b]);
+        if ca != cb {
+            preds[cb].insert(ca);
+            succs[ca].insert(cb);
+        }
+    }
+    let mut rank = vec![0usize; nc];
+    for c in (0..nc).rev() {
+        rank[c] = preds[c].iter().map(|&p| rank[p] + 1).max().unwrap_or(0);
+    }
+    for c in 0..nc {
+        if preds[c].is_empty() {
+            if let Some(m) = succs[c].iter().map(|&s| rank[s]).min() {
+                rank[c] = m.saturating_sub(1);
+            }
+        }
+    }
+    (0..n).map(|u| rank[comp[u]]).collect()
+}
 
+/// Row-based placement for compound graphs with visual groups — see the module docs.
+pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
+    let mut units: Vec<GroupInfo> = Vec::new();
+    let mut unit_of: HashMap<NodeIndex, usize> = HashMap::new();
     for (g_idx, group) in compiled.groups.iter().enumerate() {
-        if let Some(info) = compute_group_local(g_idx, group, compiled, config) {
-            for &u in &info.nodes {
-                assigned_nodes.insert(u);
+        if let Some(mut info) = compute_group_local(g_idx, group, compiled, config) {
+            // A node listed in two groups stays in the first.
+            info.nodes.retain(|n| !unit_of.contains_key(n));
+            if info.nodes.is_empty() {
+                continue;
             }
-            groups.push(info);
-        }
-    }
-
-    let has_unassigned = compiled
-        .graph
-        .node_indices()
-        .any(|idx| !assigned_nodes.contains(&idx));
-
-    if has_unassigned || groups.is_empty() {
-        return crate::sugiyama::layout_topological(compiled, config);
-    }
-
-    let num_groups = groups.len();
-    let mut node_to_gidx: HashMap<NodeIndex, usize> = HashMap::new();
-    for info in &groups {
-        for &u in &info.nodes {
-            node_to_gidx.insert(u, info.idx);
-        }
-    }
-
-    let mut group_edges: Vec<(usize, usize)> = Vec::new();
-    for edge_ref in compiled.graph.edge_references() {
-        let s = edge_ref.source();
-        let t = edge_ref.target();
-        if let (Some(&ga), Some(&gb)) = (node_to_gidx.get(&s), node_to_gidx.get(&t)) {
-            if ga != gb {
-                group_edges.push((ga, gb));
+            for &n in &info.nodes {
+                unit_of.insert(n, units.len());
             }
+            info.idx = units.len();
+            units.push(info);
         }
     }
-    group_edges.sort_unstable();
-    group_edges.dedup();
-
-    // Topological sort of groups
-    let mut in_degrees = vec![0usize; num_groups];
-    let mut adj = vec![Vec::new(); num_groups];
-    for &(ga, gb) in &group_edges {
-        in_degrees[gb] += 1;
-        adj[ga].push(gb);
+    let mut ungrouped: Vec<NodeIndex> = compiled.graph.node_indices().filter(|n| !unit_of.contains_key(n)).collect();
+    ungrouped.sort();
+    for n in ungrouped {
+        let (w, h) = crate::layout_node_size(compiled, n, config);
+        unit_of.insert(n, units.len());
+        units.push(GroupInfo {
+            idx: units.len(),
+            width: w,
+            height: h,
+            content_w: w,
+            content_h: h,
+            nodes: vec![n],
+            local_pos: HashMap::from([(n, (0.0, 0.0))]),
+            layers: vec![vec![n]],
+            bordered: false,
+        });
     }
+    let nu = units.len();
+    let sizes: HashMap<NodeIndex, (f64, f64)> =
+        compiled.graph.node_indices().map(|n| (n, crate::layout_node_size(compiled, n, config))).collect();
 
-    let mut topo_groups: Vec<usize> = Vec::with_capacity(num_groups);
-    let mut q: std::collections::VecDeque<usize> = in_degrees
-        .iter()
-        .enumerate()
-        .filter(|&(_, &deg)| deg == 0)
-        .map(|(i, _)| i)
-        .collect();
-
-    while let Some(g) = q.pop_front() {
-        topo_groups.push(g);
-        for &next in &adj[g] {
-            in_degrees[next] -= 1;
-            if in_degrees[next] == 0 {
-                q.push_back(next);
+    // Cross-unit edges, node level (for positions) and unit level (for ranks).
+    let mut cross: Vec<(NodeIndex, NodeIndex)> = Vec::new();
+    let mut unit_edges: Vec<(usize, usize)> = Vec::new();
+    // Labelled cross-unit edges and the width their label needs (a long one-line label
+    // is drawn on two, see `wrap_chars`) — a gap between side-by-side units they cross
+    // must fit it beside the arrows' stubs.
+    let mut labelled: Vec<(usize, usize, f64)> = Vec::new();
+    let label_cw = config.tokens.char_width(config.tokens.edge_label_font_size);
+    for e in compiled.graph.edge_references() {
+        let (a, b) = (e.source(), e.target());
+        let (ua, ub) = (unit_of[&a], unit_of[&b]);
+        if let Some(label) = e.weight().label.as_deref().map(str::trim).filter(|l| !l.is_empty()) {
+            if ua != ub {
+                let mut longest_line = label.lines().map(|l| l.chars().count()).max().unwrap_or(0);
+                if !label.contains('\n') && longest_line > config.tokens.edge_label_wrap_chars {
+                    let longest_word = label.split_whitespace().map(|w| w.chars().count()).max().unwrap_or(0);
+                    longest_line = longest_line.div_ceil(2).max(longest_word) + 2;
+                }
+                labelled.push((ua, ub, longest_line as f64 * label_cw));
             }
         }
+        if ua != ub {
+            cross.push((a, b));
+            unit_edges.push((ua, ub));
+        }
     }
-    if topo_groups.len() < num_groups {
-        for i in 0..num_groups {
-            if !topo_groups.contains(&i) {
-                topo_groups.push(i);
+    let rank = unit_ranks(nu, &unit_edges);
+
+    // --- Rows: one per rank, wrapped when too wide ------------------------------
+    let gap_x = config.group_gap_x;
+    let max_w = units.iter().map(|u| u.width).fold(0.0, f64::max);
+    let area: f64 = units.iter().map(|u| u.width * u.height).sum();
+    let row_budget = (max_w * ROW_WIDTH_SLACK).max((area * 1.5).sqrt());
+    let max_rank = rank.iter().copied().max().unwrap_or(0);
+    let mut rows: Vec<Vec<usize>> = Vec::new();
+    for r in 0..=max_rank {
+        let mut members: Vec<usize> = (0..nu).filter(|&u| rank[u] == r).collect();
+        if members.is_empty() {
+            continue;
+        }
+        // Keep the units most tied to the rows above; wrap the rest below them.
+        let from_above = |u: usize| unit_edges.iter().filter(|&&(a, b)| b == u && rank[a] < r).count();
+        members.sort_by_key(|&u| (std::cmp::Reverse(from_above(u)), u));
+        let mut row: Vec<usize> = Vec::new();
+        let mut w = 0.0;
+        for u in members {
+            let add = if row.is_empty() { units[u].width } else { gap_x + units[u].width };
+            if !row.is_empty() && w + add > row_budget {
+                row.sort_unstable();
+                rows.push(std::mem::take(&mut row));
+                w = 0.0;
+                row.push(u);
+                w += units[u].width;
+            } else {
+                row.push(u);
+                w += add;
             }
         }
+        row.sort_unstable();
+        rows.push(row);
     }
-
-    // 1-column layout baseline
-    let mut grid_1col = vec![(0usize, 0usize); num_groups];
-    for (r, &g) in topo_groups.iter().enumerate() {
-        grid_1col[g] = (r, 0);
-    }
-    let w_1col = groups.iter().map(|g| g.width).fold(0.0_f64, f64::max);
-    let h_1col: f64 = groups.iter().map(|g| g.height).sum::<f64>()
-        + (num_groups.saturating_sub(1)) as f64 * config.group_gap_y;
-    let ratio_1col = (w_1col + 2.0 * config.margin_x) / (h_1col + 2.0 * config.margin_y);
-    let score_1col = ratio_1col.ln().abs();
-
-    // 2-column search
-    let chosen_grid = if num_groups >= 2 {
-        let mut ctx = GridSearchCtx {
-            topo_groups: &topo_groups,
-            groups: &groups,
-            edges: &group_edges,
-            current_grid: vec![(0usize, 0usize); num_groups],
-            occupied: HashSet::new(),
-            best_grid: grid_1col.clone(),
-            best_score: score_1col,
-            margin_x: config.margin_x,
-            margin_y: config.margin_y,
-            group_gap_x: config.group_gap_x,
-            group_gap_y: config.group_gap_y,
-        };
-        ctx.search(0);
-        if ctx.best_score < score_1col {
-            ctx.best_grid
-        } else {
-            grid_1col
+    let mut row_of = vec![0usize; nu];
+    for (ri, row) in rows.iter().enumerate() {
+        for &u in row {
+            row_of[u] = ri;
         }
-    } else {
-        grid_1col
+    }
+
+    // --- Horizontal placement ---------------------------------------------------
+    let mut unit_x = vec![0.0_f64; nu];
+    for row in &rows {
+        let mut x = 0.0;
+        for &u in row {
+            unit_x[u] = x;
+            x += units[u].width + gap_x;
+        }
+    }
+    let node_cx = |n: NodeIndex, units: &[GroupInfo], unit_x: &[f64]| {
+        let u = &units[unit_of[&n]];
+        unit_x[u.idx] + unit_pad(u, config).0 + u.local_pos[&n].0 + sizes[&n].0 / 2.0
     };
+    let node_gap = config.node_spacing as f64;
+    // Beyond the label itself: a stub's clearance at each end plus the label's gap.
+    let label_room = 2.0 * config.tokens.stub_clearance() + config.tokens.px(1.0);
+    for sweep in 0..SWEEPS {
+        // Units: down, then up; the first pass only looks at rows already settled.
+        let order: Vec<usize> = if sweep % 2 == 0 { (0..rows.len()).collect() } else { (0..rows.len()).rev().collect() };
+        for &ri in &order {
+            let settled = |other: usize| {
+                if sweep == 0 { row_of[other] < ri } else if sweep == 1 { row_of[other] > ri } else { true }
+            };
+            let mut desired_center: HashMap<usize, (f64, f64)> = HashMap::new();
+            for &(a, b) in &cross {
+                for (mine, theirs) in [(a, b), (b, a)] {
+                    let (um, ut) = (unit_of[&mine], unit_of[&theirs]);
+                    if row_of[um] != ri || !settled(ut) || (row_of[ut] == ri && sweep < 2) {
+                        continue;
+                    }
+                    // Where this unit's left edge would put `mine` right above/below `theirs`.
+                    let offset = node_cx(mine, &units, &unit_x) - unit_x[um];
+                    let want = node_cx(theirs, &units, &unit_x) - offset;
+                    let e = desired_center.entry(um).or_insert((0.0, 0.0));
+                    e.0 += want;
+                    e.1 += 1.0;
+                }
+            }
+            let mut row = rows[ri].clone();
+            let desired: HashMap<usize, (f64, f64)> = row
+                .iter()
+                .map(|&u| match desired_center.get(&u) {
+                    Some(&(s, w)) => (u, (s / w, w)),
+                    None => (u, (unit_x[u], 0.05)),
+                })
+                .collect();
+            row.sort_by(|&a, &b| {
+                let ca = desired[&a].0 + units[a].width / 2.0;
+                let cb = desired[&b].0 + units[b].width / 2.0;
+                ca.total_cmp(&cb).then(a.cmp(&b))
+            });
+            let widths: Vec<f64> = row.iter().map(|&u| units[u].width).collect();
+            let want: Vec<f64> = row.iter().map(|&u| desired[&u].0).collect();
+            let wts: Vec<f64> = row.iter().map(|&u| desired[&u].1).collect();
+            let gaps: Vec<f64> = (1..row.len())
+                .map(|i| {
+                    let (left, right) = (&row[..i], &row[i..]);
+                    labelled
+                        .iter()
+                        .filter(|&&(a, b, _)| (left.contains(&a) && right.contains(&b)) || (left.contains(&b) && right.contains(&a)))
+                        .map(|&(_, _, w)| w + label_room)
+                        .fold(gap_x, f64::max)
+                        .min(gap_x * MAX_LABEL_GAP_FACTOR)
+                })
+                .collect();
+            let xs = place_in_order(&widths, &want, &wts, &gaps, None);
+            for (&u, x) in row.iter().zip(xs) {
+                unit_x[u] = x;
+            }
+            rows[ri] = row;
+        }
 
-    let mut w_col0 = 0.0_f64;
-    let mut w_col1 = 0.0_f64;
-    let mut max_r = 0;
-    for info in &groups {
-        let (r, c) = chosen_grid[info.idx];
-        max_r = max_r.max(r);
-        if c == 0 {
-            w_col0 = w_col0.max(info.width);
-        } else {
-            w_col1 = w_col1.max(info.width);
+        // Nodes within each group layer: toward all their neighbours, order by desire.
+        for ui in 0..nu {
+            if !units[ui].bordered {
+                continue;
+            }
+            let origin = unit_x[ui] + unit_pad(&units[ui], config).0;
+            let content_w = units[ui].content_w;
+            for li in 0..units[ui].layers.len() {
+                let layer = units[ui].layers[li].clone();
+                let mut desired: HashMap<NodeIndex, (f64, f64)> = HashMap::new();
+                for &n in &layer {
+                    let mut sum = 0.0;
+                    let mut cnt = 0.0;
+                    for m in compiled.graph.neighbors_undirected(n) {
+                        if m == n || layer.contains(&m) {
+                            continue;
+                        }
+                        sum += node_cx(m, &units, &unit_x) - origin - sizes[&n].0 / 2.0;
+                        cnt += 1.0;
+                    }
+                    let cur = units[ui].local_pos[&n].0;
+                    desired.insert(n, if cnt > 0.0 { (sum / cnt, cnt) } else { (cur, 0.05) });
+                }
+                let mut sorted = layer.clone();
+                sorted.sort_by(|a, b| {
+                    let ca = desired[a].0 + sizes[a].0 / 2.0;
+                    let cb = desired[b].0 + sizes[b].0 / 2.0;
+                    ca.total_cmp(&cb).then(a.cmp(b))
+                });
+                let widths: Vec<f64> = sorted.iter().map(|n| sizes[n].0).collect();
+                let used: f64 = widths.iter().sum::<f64>() + node_gap * (widths.len() - 1) as f64;
+                let want: Vec<f64> = sorted.iter().map(|n| desired[n].0).collect();
+                let wts: Vec<f64> = sorted.iter().map(|n| desired[n].1).collect();
+                let xs = place_in_order(&widths, &want, &wts, &vec![node_gap; widths.len().saturating_sub(1)], Some((0.0, content_w - used)));
+                for (n, x) in sorted.iter().zip(xs) {
+                    units[ui].local_pos.get_mut(n).unwrap().0 = x;
+                }
+                units[ui].layers[li] = sorted;
+            }
         }
     }
-    let num_rows = max_r + 1;
-    let mut row_heights = vec![0.0_f64; num_rows];
-    for info in &groups {
-        let (r, _) = chosen_grid[info.idx];
-        row_heights[r] = row_heights[r].max(info.height);
+
+    // --- Vertical placement: rows stacked, gaps sized for the edges crossing them ---
+    let row_h: Vec<f64> = rows.iter().map(|r| r.iter().map(|&u| units[u].height).fold(0.0, f64::max)).collect();
+    let mut row_y = vec![0.0_f64; rows.len()];
+    for ri in 1..rows.len() {
+        let crossing = cross
+            .iter()
+            .filter(|(a, b)| {
+                let (ra, rb) = (row_of[unit_of[a]], row_of[unit_of[b]]);
+                ra.min(rb) < ri && ra.max(rb) >= ri
+            })
+            .count();
+        let bordered = rows[ri - 1].iter().chain(&rows[ri]).any(|&u| units[u].bordered);
+        // Most edges crossing a row gap drop straight through it; only those that turn
+        // there need a lane of their own — about half, in practice.
+        let gap = crate::gaps::gap_for(crossing.div_ceil(2), config).max(if bordered { config.group_gap_y } else { 0.0 });
+        row_y[ri] = row_y[ri - 1] + row_h[ri - 1] + gap;
+    }
+    // Within its row, a shorter unit hugs the side its edges leave from — or, when it
+    // is wired to units in its own row, lines up with those.
+    let mut unit_y = vec![0.0_f64; nu];
+    for (ri, row) in rows.iter().enumerate() {
+        for &u in row {
+            let down = cross.iter().filter(|(a, b)| unit_of[a] == u && row_of[unit_of[b]] > ri || unit_of[b] == u && row_of[unit_of[a]] > ri).count();
+            let up = cross.iter().filter(|(a, b)| unit_of[a] == u && row_of[unit_of[b]] < ri || unit_of[b] == u && row_of[unit_of[a]] < ri).count();
+            let slack = row_h[ri] - units[u].height;
+            unit_y[u] = row_y[ri] + if down >= up { slack } else { 0.0 };
+        }
+    }
+    for (ri, row) in rows.iter().enumerate() {
+        for &u in row {
+            let slack = row_h[ri] - units[u].height;
+            if slack <= 0.0 {
+                continue;
+            }
+            let (_, pad_top) = unit_pad(&units[u], config);
+            let mut sum = 0.0;
+            let mut cnt = 0.0;
+            for &(a, b) in &cross {
+                for (mine, theirs) in [(a, b), (b, a)] {
+                    let ut = unit_of[&theirs];
+                    if unit_of[&mine] != u || row_of[ut] != ri || units[ut].height < units[u].height {
+                        continue;
+                    }
+                    let tu = &units[ut];
+                    let their_cy = unit_y[ut] + unit_pad(tu, config).1 + tu.local_pos[&theirs].1 + sizes[&theirs].1 / 2.0;
+                    let my_off = pad_top + units[u].local_pos[&mine].1 + sizes[&mine].1 / 2.0;
+                    sum += their_cy - my_off;
+                    cnt += 1.0;
+                }
+            }
+            if cnt > 0.0 {
+                unit_y[u] = (sum / cnt).clamp(row_y[ri], row_y[ri] + slack);
+            }
+        }
     }
 
-    let total_content_w = if w_col1 > 0.0 {
-        w_col0 + config.group_gap_x + w_col1
-    } else {
-        w_col0
-    };
-
-    let mut row_y = vec![0.0_f64; num_rows];
-    let mut cur_y = config.margin_y;
-    for r in 0..num_rows {
-        row_y[r] = cur_y;
-        cur_y += row_heights[r] + config.group_gap_y;
-    }
-
-    let mut positions: HashMap<NodeIndex, NodeLayout> =
-        HashMap::with_capacity(compiled.graph.node_count());
-
-    for info in &groups {
-        let (r, c) = chosen_grid[info.idx];
-        let gy = row_y[r] + (row_heights[r] - info.height) / 2.0;
-
-        let is_sole_in_row = groups.iter().filter(|g| chosen_grid[g.idx].0 == r).count() == 1;
-
-        let gx = if is_sole_in_row && w_col1 > 0.0 {
-            config.margin_x + (total_content_w - info.width).max(0.0) / 2.0
-        } else if c == 0 {
-            config.margin_x + (w_col0 - info.width).max(0.0) / 2.0
-        } else {
-            config.margin_x + w_col0 + config.group_gap_x + (w_col1 - info.width).max(0.0) / 2.0
-        };
-
-        for &u in &info.nodes {
-            let (lx, ly) = info.local_pos[&u];
-            let (nw, nh) = crate::layout_node_size(compiled, u, config);
+    // --- Absolute node positions --------------------------------------------------
+    let min_x = unit_x.iter().copied().fold(f64::MAX, f64::min);
+    let mut positions: HashMap<NodeIndex, NodeLayout> = HashMap::with_capacity(compiled.graph.node_count());
+    for u in &units {
+        let (px, py) = unit_pad(u, config);
+        for &n in &u.nodes {
+            let (lx, ly) = u.local_pos[&n];
+            let (w, h) = sizes[&n];
             positions.insert(
-                u,
-                NodeLayout {
-                    x: gx + config.tokens.group_pad_for(info.content_w, info.content_h) + lx,
-                    y: gy + config.tokens.group_pad_top_for(info.content_w, info.content_h) + ly,
-                    width: nw,
-                    height: nh,
-                },
+                n,
+                NodeLayout { x: config.margin_x + unit_x[u.idx] - min_x + px + lx, y: config.margin_y + unit_y[u.idx] + py + ly, width: w, height: h },
             );
         }
     }
+    Ok(LayoutResult { positions, sequence_info: None })
+}
 
-    Ok(LayoutResult {
-        positions,
-        sequence_info: None,
-    })
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn place_in_order_respects_gaps_and_pulls_toward_targets() {
+        // Both want x=0: they share the overlap cost symmetrically.
+        let xs = place_in_order(&[10.0, 10.0], &[0.0, 0.0], &[1.0, 1.0], &[5.0], None);
+        assert_eq!(xs, vec![-7.5, 7.5]);
+        // No conflict: each lands exactly where wanted.
+        let xs = place_in_order(&[10.0, 10.0], &[0.0, 100.0], &[1.0, 1.0], &[5.0], None);
+        assert_eq!(xs, vec![0.0, 100.0]);
+        // Bounds clamp the whole run.
+        let xs = place_in_order(&[10.0], &[-50.0], &[1.0], &[], Some((0.0, 20.0)));
+        assert_eq!(xs, vec![0.0]);
+    }
+
+    #[test]
+    fn mutually_calling_units_share_a_rank_and_sources_sit_above_targets() {
+        // 0 -> 1 <-> 2 -> 3, and a source 4 that only feeds 3.
+        let r = unit_ranks(5, &[(0, 1), (1, 2), (2, 1), (2, 3), (4, 3)]);
+        assert_eq!(r[1], r[2]);
+        assert_eq!(r[0] + 1, r[1]);
+        assert_eq!(r[3], r[1] + 1);
+        assert_eq!(r[4] + 1, r[3]);
+    }
 }

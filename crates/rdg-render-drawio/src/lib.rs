@@ -13,7 +13,7 @@ mod html;
 mod sequence;
 mod style;
 
-pub use style::style_for_type;
+pub use style::{edge_style, group_style, node_style};
 
 use anyhow::Result;
 use quick_xml::{
@@ -27,8 +27,9 @@ use petgraph::stable_graph::EdgeIndex;
 
 use rdg_graph::CompiledGraph;
 use rdg_layout::{DesignTokens, LayoutResult};
-use rdg_render_core::routing::{EdgeRoutingPlan, Side, badge_point_near_exit};
-use rdg_render_core::style::edge_style_colors;
+use rdg_render_core::routing::{EdgeRoutingPlan, Side};
+use rdg_render_core::look::{edge_look, group_look, node_look};
+use rdg_render_core::theme::Theme;
 
 use html::{format_html_label_with_details, format_html_table_or_class};
 use sequence::render_sequence_drawio;
@@ -53,7 +54,7 @@ pub fn render_drawio(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     edge_plans: &HashMap<EdgeIndex, EdgeRoutingPlan>,
-    theme: &str,
+    theme: &Theme,
     background: Option<&str>,
     tokens: &DesignTokens,
 ) -> Result<String> {
@@ -92,11 +93,7 @@ pub fn render_drawio(
     model.push_attribute(("fold", "1"));
     model.push_attribute(("page", "0"));
     model.push_attribute(("pageScale", "1"));
-    let bg_color = background.unwrap_or(if theme == "dark" {
-        "#0f172a"
-    } else {
-        "#f8fafc"
-    });
+    let bg_color = background.unwrap_or(&theme.canvas.background);
     model.push_attribute(("background", bg_color));
     model.push_attribute(("math", "1"));
     model.push_attribute(("shadow", "0"));
@@ -119,24 +116,21 @@ pub fn render_drawio(
 
     // --- Optional Diagram Title Header --------------------------------------
     if let Some(title) = &compiled.title {
-        let title_color = if theme == "dark" {
-            "#f1f5f9"
-        } else {
-            "#0f172a"
-        };
-        let sub_color = if theme == "dark" {
-            "#94a3b8"
-        } else {
-            "#64748b"
-        };
-        let title_html = if let Some(desc) = &compiled.description {
-            format!(
-                "<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b><br/><font style=\"font-size:11px;color:{sub_color};\">{desc}</font>"
-            )
-        } else {
-            format!("<b><font style=\"font-size:16px;color:{title_color};\">{title}</font></b>")
-        };
-        let title_style = "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontFamily=Inter,Helvetica,sans-serif;";
+        let f = &theme.font;
+        let title_html = format!(
+            "<b><font style=\"font-size:{}px;color:{};\">{title}</font></b>{}",
+            f.title_size,
+            theme.title.color,
+            compiled.description.as_deref().map_or(String::new(), |desc| format!(
+                "<br/><font style=\"font-size:{}px;color:{};\">{desc}</font>",
+                f.description_size, theme.title.description_color
+            ))
+        );
+        let title_style_owned = format!(
+            "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;whiteSpace=nowrap;fontFamily={};",
+            f.family
+        );
+        let title_style = title_style_owned.as_str();
         let mut t_cell = BytesStart::new("mxCell");
         t_cell.push_attribute(("id", "diagram_title_header"));
         t_cell.push_attribute(("value", title_html.as_str()));
@@ -152,8 +146,10 @@ pub fn render_drawio(
                 .map_or((24.0, 12.0), |b| (b.min_x, b.min_y));
         t_geo.push_attribute(("x", format!("{title_x:.1}").as_str()));
         t_geo.push_attribute(("y", format!("{title_y:.1}").as_str()));
-        t_geo.push_attribute(("width", "500"));
-        t_geo.push_attribute(("height", "40"));
+        let title_w = title.chars().count().max(compiled.description.as_deref().map_or(0, |d| d.chars().count())) as f64
+            * tokens.char_width(f.title_size);
+        t_geo.push_attribute(("width", format!("{:.0}", title_w).as_str()));
+        t_geo.push_attribute(("height", format!("{:.0}", tokens.title_band_for(compiled.description.is_some())).as_str()));
         t_geo.push_attribute(("as", "geometry"));
         w.write_event(Event::Empty(t_geo))?;
 
@@ -202,36 +198,22 @@ pub fn render_drawio(
             node_to_group_id.insert(nid.clone(), group.id.clone());
         }
 
-        let color = group.color.as_deref().unwrap_or("#64748b");
-        let group_style = format!(
-            "rounded=1;absoluteArcSize=1;arcSize=10;\
-             fillColor={color};fillOpacity=10;\
-             strokeColor={color};strokeWidth=1.5;\
-             dashed=1;dashPattern=6 6;\
-             verticalAlign=top;align=left;\
-             spacingLeft=16;spacingTop=10;\
-             container=1;collapsible=0;recursiveResize=0;connectable=0;\
-             fontFamily=Inter,Helvetica,sans-serif;\
-             fontStyle=1;fontSize=12;fontColor={color};html=1;"
-        );
-
-        let group_value = if let Some(icon_key) = group.resolved_icon() {
-            if let Some(uri) = rdg_icons::icon_as_data_uri(&icon_key) {
-                format!(
-                    "<img src=\"{uri}\" width=\"16\" height=\"16\" style=\"vertical-align:middle;margin-right:6px;\"/><b>{}</b>",
-                    group.label
-                )
-            } else {
-                group.label.clone()
-            }
-        } else {
-            group.label.clone()
+        let look = group_look(theme, group);
+        let style_owned = group_style(theme, &look);
+        let group_style = style_owned.as_str();
+        let group_value = match group.resolved_icon().and_then(|k| rdg_icons::icon_as_data_uri(&k, theme.icon_style())) {
+            Some(uri) => format!(
+                "<img src=\"{uri}\" width=\"{s}\" height=\"{s}\" style=\"vertical-align:middle;margin-right:6px;\"/>{}",
+                look.title,
+                s = theme.font.group_title_size + 4.0
+            ),
+            None => look.title.clone(),
         };
 
         let mut g_cell = BytesStart::new("mxCell");
         g_cell.push_attribute(("id", group.id.as_str()));
         g_cell.push_attribute(("value", group_value.as_str()));
-        g_cell.push_attribute(("style", group_style.as_str()));
+        g_cell.push_attribute(("style", group_style));
         g_cell.push_attribute(("vertex", "1"));
         g_cell.push_attribute(("parent", "1"));
         w.write_event(Event::Start(g_cell))?;
@@ -248,45 +230,33 @@ pub fn render_drawio(
     }
 
     // --- Node cells ---------------------------------------------------------
-    let is_dark = theme == "dark";
     for node_idx in compiled.graph.node_indices() {
         let node_data = &compiled.graph[node_idx];
         let nl = match layout.positions.get(&node_idx) {
             Some(p) => p,
             None => continue,
         };
-        let mut style = style_for_type(&node_data.node_type, theme);
+        let look = node_look(theme, node_data);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
+        let is_icon_node = look.shape == "icon";
+        // A box's icon goes inline before its title, the two centred together (tables
+        // and class cards draw their own header, icon nodes put the logo on top,
+        // markers have no icon).
+        let boxed = matches!(look.shape.as_str(), "card" | "cylinder" | "ellipse" | "diamond");
+        let inline_icon = node_data.icon.as_deref().filter(|_| node_data.fields.is_empty() && boxed);
+        let halo = tokens.icon_halo_size();
+        let mut style = node_style(theme, &look, halo + tokens.px(0.25));
 
-        // Build HTML label: formatted with typography, title/subtitle hierarchy, and code spans
+        // Build HTML label: title line + detail lines, typography, code spans.
         let html_value = if !node_data.fields.is_empty() {
-            style.push_str(
-                ";spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;",
-            );
-            format_html_table_or_class(
-                &node_data.label,
-                &node_data.fields,
-                theme,
-                &node_data.node_type,
-                node_data.icon.as_deref(),
-            )
+            style.push_str("spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;");
+            format_html_table_or_class(&node_data.label, &node_data.fields, theme, &look, &node_data.node_type)
         } else {
-            format_html_label_with_details(
-                &node_data.label,
-                theme,
-                &node_data.node_type,
-                node_data.icon.as_deref(),
-                node_data.technology.as_deref(),
-                tokens,
-            )
+            format_html_label_with_details(&node_data.label, theme, &look, node_data.technology.as_deref(), tokens, inline_icon)
         };
 
-        // A per-node `color` override wins over the semantic-type accent color; `style_extra`
-        // is a raw draw.io style fragment appended verbatim, for whatever this schema doesn't
-        // expose a typed field for.
-        if let Some(color) = &node_data.color {
-            style.push_str(&format!("strokeColor={color};"));
-        }
+        // `style_extra` is a raw draw.io style fragment appended verbatim, for whatever
+        // this schema doesn't expose a typed field for.
         if let Some(extra) = &node_data.style_extra {
             style.push_str(extra);
         }
@@ -340,109 +310,35 @@ pub fn render_drawio(
             w.write_event(Event::End(BytesEnd::new("UserObject")))?;
         }
 
-        // Render elevated brand / tech icon badge at vertex without wrapper tile
-        if let Some(icon_key) = node_data.icon.as_deref() {
-            if let Some(uri) = rdg_icons::icon_as_data_uri(icon_key) {
-                let badge_id = format!("{}_badge", node_data.id);
-                let badge_value = format!("<img src=\"{uri}\" width=\"22\" height=\"22\"/>");
-                let badge_style = "fillColor=none;strokeColor=none;rounded=0;shadow=0;html=1;align=center;verticalAlign=middle;connectable=0;";
-                let mut badge_cell = BytesStart::new("mxCell");
-                badge_cell.push_attribute(("id", badge_id.as_str()));
-                badge_cell.push_attribute(("value", badge_value.as_str()));
-                badge_cell.push_attribute(("style", badge_style));
-                badge_cell.push_attribute(("vertex", "1"));
-                badge_cell.push_attribute(("parent", node_data.id.as_str()));
-                w.write_event(Event::Start(badge_cell))?;
-
-                let is_diamond = matches!(
-                    node_data.node_type.to_ascii_lowercase().as_str(),
-                    "decision" | "condition" | "choice" | "branch" | "cache" | "redis" | "memcache"
+        // An icon node's logo, centred in its halo at the top of the box (a card's icon
+        // is inline in its label, above).
+        if is_icon_node {
+            if let Some(plate) = theme.icon.backdrop.as_deref() {
+                // The halo filled with a light plate, so dark marks stay visible on dark
+                // canvases.
+                let shape = if tokens.icon_halo_circle { "ellipse;".to_string() } else { format!("rounded=1;absoluteArcSize=1;arcSize={};", 2.0 * (look.corner_radius + 2.0)) };
+                let plate_style = format!("{shape}fillColor={plate};strokeColor=none;connectable=0;editable=0;");
+                let x = (nl.width - halo) / 2.0;
+                write_child(&mut w, &format!("{}_plate", node_data.id), &plate_style, &node_data.id, (x, 0.0, halo, halo))?;
+            }
+            if let Some(uri) = node_data.icon.as_deref().and_then(|k| rdg_icons::icon_as_data_uri(k, theme.icon_style())) {
+                let size = tokens.icon_node_size;
+                // draw.io styles are `;`-separated, so its image URIs drop the `;base64`.
+                let logo_style = format!(
+                    "shape=image;image={};imageAspect=1;aspect=fixed;fillColor=none;strokeColor=none;connectable=0;editable=0;",
+                    uri.replacen(";base64,", ",", 1)
                 );
-                let (bx, by) = if is_diamond {
-                    (-11, (nl.height / 2.0 - 11.0).round() as i32)
-                } else {
-                    (-11, -11)
-                };
-
-                let mut badge_geo = BytesStart::new("mxGeometry");
-                badge_geo.push_attribute(("x", bx.to_string().as_str()));
-                badge_geo.push_attribute(("y", by.to_string().as_str()));
-                badge_geo.push_attribute(("width", "22"));
-                badge_geo.push_attribute(("height", "22"));
-                badge_geo.push_attribute(("as", "geometry"));
-                w.write_event(Event::Empty(badge_geo))?;
-
-                w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+                let (bx, by) = rdg_render_core::style::logo_offset(nl.width, size, halo);
+                write_child(&mut w, &format!("{}_badge", node_data.id), &logo_style, &node_data.id, (bx, by, size, size))?;
             }
         }
     }
 
     // --- Edge cells ---------------------------------------------------------
-    let default_edge_color: &'static str = if is_dark { "#94a3b8" } else { "#64748b" };
-    let label_bg_color = if is_dark { "#1e293b" } else { "#ffffff" };
-    let label_font_color = if is_dark { "#cbd5e1" } else { "#475569" };
 
-    // Two different edges' paths can legitimately pass close to each other (common in
-    // any real, moderately dense diagram), which lands their labels — each drawn at
-    // its own edge's path midpoint, oblivious to every other edge — on the same spot
-    // often enough in practice to be worth fixing: confirmed directly while visually
-    // reviewing rendered sample diagrams (e.g. a "SQL" label and an "invoke" label
-    // overlapping into illegible text reading as "SQLoke"). This pre-pass estimates
-    // each labeled edge's default midpoint the same way draw.io would place it (this
-    // crate has no literal pixel coordinates elsewhere — every edge's actual
-    // attachment point is the percentage-based `exitX`/`entryX` written below — so
-    // `port_point` is used here purely to *predict* draw.io's placement for
-    // decluttering purposes, in `compiled.graph.edge_indices()` order for
-    // determinism), then nudges any that collide with an already-placed label.
-    let label_dy: HashMap<EdgeIndex, f64> = {
-        let mut anchors = Vec::new();
-        let mut ids = Vec::new();
-        for edge_idx in compiled.graph.edge_indices() {
-            let edge_data = &compiled.graph[edge_idx];
-            let Some(label) = edge_data.label.as_deref() else {
-                continue;
-            };
-            if label.is_empty() {
-                continue;
-            }
-            let Some((_, _, src_nl, dst_nl)) =
-                rdg_render_core::routing::resolve_edge_layout(compiled, layout, edge_idx)
-            else {
-                continue;
-            };
-            let plan = edge_plans.get(&edge_idx);
-            let src_side = plan.map_or(Side::Bottom, |p| p.src_side);
-            let dst_side = plan.map_or(Side::Top, |p| p.dst_side);
-            let exit_port = plan.map_or(0.5, |p| p.exit_port);
-            let entry_port = plan.map_or(0.5, |p| p.entry_port);
-            let waypoints = plan.map_or(&[][..], |p| p.waypoints.as_slice());
-            let p1 = rdg_render_core::routing::port_point(src_nl, src_side, exit_port);
-            let p2 = rdg_render_core::routing::port_point(dst_nl, dst_side, entry_port);
-            let (mx, my) = rdg_render_core::routing::polyline_midpoint(p1, waypoints, p2);
-
-            let char_count = label.chars().count();
-            let edge_label_font = tokens.font_size * 0.83;
-            let box_w = (char_count as f64 * tokens.char_width(edge_label_font) + tokens.px(1.5))
-                .max(tokens.px(2.5));
-            anchors.push((mx, my - tokens.px(1.25), box_w, tokens.line_height(edge_label_font) * 1.2));
-            ids.push(edge_idx);
-        }
-        // Labels must clear every node box too, not just each other — see
-        // `declutter_label_positions_avoiding`'s doc comment for the real diagram
-        // that surfaced this (a label pushed clear of another label landed squarely
-        // on an unrelated node's card instead). Group title banners get the same
-        // treatment — a label on top of a group's title text is just as unreadable.
-        let mut node_obstacles: Vec<(f64, f64, f64, f64)> =
-            layout.positions.values().map(|nl| (nl.x, nl.y, nl.width, nl.height)).collect();
-        node_obstacles.extend(
-            rdg_render_core::routing::compute_group_title_zones(compiled, layout, tokens)
-                .iter()
-                .map(|tz| (tz.min_x, tz.min_y, tz.max_x - tz.min_x, tz.max_y - tz.min_y)),
-        );
-        let dys =
-            rdg_render_core::routing::declutter_label_positions_avoiding(&anchors, &node_obstacles, tokens);
-        ids.into_iter().zip(dys).collect()
-    };
+    // Label and flow-badge spots come from the shared scorer so draw.io and SVG agree
+    // (see `rdg_render_core::annotate`).
+    let annotations = rdg_render_core::annotate::place_edge_annotations(compiled, layout, edge_plans, tokens);
 
     for edge_idx in compiled.graph.edge_indices() {
         let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
@@ -488,133 +384,47 @@ pub fn render_drawio(
         let exit_perimeter = if marker_bottom_exit { "exitPerimeter=0;" } else { "" };
         let marker_exit_y = if marker_bottom_exit { tokens.marker_label_clearance_ratio } else { 1.0 };
 
-        let exit_attr = match src_side {
-            Side::Bottom => format!("exitX={port_frac:.5};exitY={marker_exit_y:.1};exitDx=0;exitDy=0;{exit_perimeter}"),
-            Side::Top => format!("exitX={port_frac:.5};exitY=0.0;exitDx=0;exitDy=0;"),
-            Side::Left => format!("exitX=0.0;exitY={port_frac:.5};exitDx=0;exitDy=0;"),
-            Side::Right => format!("exitX=1.0;exitY={port_frac:.5};exitDx=0;exitDy=0;"),
-        };
-
-        let entry_attr = match dst_side {
-            Side::Top => format!("entryX={entry_port_frac:.5};entryY=0.0;entryDx=0;entryDy=0;"),
-            Side::Bottom => format!("entryX={entry_port_frac:.5};entryY=1.0;entryDx=0;entryDy=0;"),
-            Side::Left => format!("entryX=0.0;entryY={entry_port_frac:.5};entryDx=0;entryDy=0;"),
-            Side::Right => format!("entryX=1.0;entryY={entry_port_frac:.5};entryDx=0;entryDy=0;"),
-        };
-
-        // Flow-numbering badge: a small floating circle near the source exit point, when
-        // this edge has a resolved `step` (i.e. the diagram opted into `numbered: true`).
-        if let Some(step) = edge_data.step {
-            let (s_idx, _) = if edge_data.reversed {
-                (dst, src)
-            } else {
-                (src, dst)
-            };
-            if let Some(src_nl) = layout.positions.get(&s_idx) {
-                // Start/end/choice markers are tiny fixed-size shapes whose label now
-                // renders *below* them rather than inside (see
-                // `rdg-render-svg`'s `write_label_below_marker` and this crate's
-                // `style.rs` `verticalLabelPosition=bottom`) — the default 14px badge
-                // offset lands the badge right on top of that label instead of near
-                // the shape itself. Push it out past the label for those node types;
-                // every other node type keeps its label inside the card, so 14px next
-                // to the card edge stays correct there.
-                let is_marker = matches!(
-                    compiled.graph[s_idx].node_type.to_ascii_lowercase().as_str(),
-                    "start" | "start_state" | "initial" | "initial_state" |
-                    "end" | "end_state" | "final" | "final_state" |
-                    "choice" | "branch"
-                );
-                // `port_point` (used by `badge_point_near_exit`) computes from the
-                // node's own true geometry, unaware of the `exitY=2.0` trick used
-                // below for these same marker types' actual edge exit point — so the
-                // badge needs a larger distance to end up past both the label and
-                // that pushed-out exit point, not just past the label. Not so large
-                // that it reaches into a short edge's destination box, though — the
-                // node-to-node gap on a start/end marker's own outgoing edge is often
-                // small (e.g. an immediately-following decision or terminal node).
-                let distance = if is_marker { src_nl.height * 1.4 } else { tokens.px(1.75) };
-                let (bx, by) = badge_point_near_exit(src_nl, src_side, port_frac, distance);
-                write_step_badge(&mut w, &edge_id, step, bx, by, is_dark)?;
+        // Exact attachment on the drawn outline (ellipse, cylinder cap, diamond), as
+        // relative coordinates with perimeter projection off — draw.io would otherwise
+        // project a bounding-box point toward the centre, landing it off the face normal.
+        let rel = |nl: &rdg_layout::NodeLayout, (px, py): (f64, f64)| ((px - nl.x) / nl.width, (py - nl.y) / nl.height);
+        let exit_attr = match (layout.positions.get(&exit_s_idx), marker_bottom_exit) {
+            (Some(nl), false) => {
+                let (ex, ey) = rel(nl, rdg_render_core::routing::node_attach_point(compiled, exit_s_idx, nl, src_side, port_frac, tokens));
+                format!("exitX={ex:.5};exitY={ey:.5};exitDx=0;exitDy=0;exitPerimeter=0;")
             }
-        }
-
-        let edge_style_key = edge_data.edge_style.as_deref();
-
-        // Stroke/width/dash come from the shared `rdg_render_core::style` table (also used by
-        // the SVG backend); the arrow-marker tokens are draw.io-specific style-string syntax
-        // and stay here.
-        let mut custom_style = if matches!(edge_style_key, Some("bi") | Some("bidirectional")) {
-            format!(
-                "strokeColor={default_edge_color};strokeWidth=1.5;\
-                 startArrow=blockThin;startFill=1;endArrow=blockThin;endFill=1;"
-            )
-        } else {
-            let colors = edge_style_colors(edge_style_key, theme, default_edge_color);
-            let dash_prefix = colors
-                .dash
-                .map(|d| format!("dashed=1;dashPattern={d};"))
-                .unwrap_or_default();
-            let arrow_tokens = match edge_style_key {
-                Some("async") => "endArrow=open;endFill=0;",
-                Some("error") | Some("fallback") => "endArrow=blockThin;endFill=0;",
-                Some("one_to_many") => "startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;",
-                Some("many_to_many") => "startArrow=ERmany;startFill=0;endArrow=ERmany;endFill=0;",
-                Some("one_to_one") => "startArrow=ERone;startFill=0;endArrow=ERone;endFill=0;",
-                Some("zero_to_many") => {
-                    "startArrow=ERzeroToOne;startFill=0;endArrow=ERmany;endFill=0;"
-                }
-                Some("inheritance") | Some("realization") => "endArrow=block;endFill=0;endSize=10;",
-                Some("composition") => "startArrow=diamond;startFill=1;startSize=12;endArrow=none;",
-                Some("aggregation") => "startArrow=diamond;startFill=0;startSize=12;endArrow=none;",
-                Some("dependency") => "endArrow=open;endFill=0;",
-                _ => "endArrow=blockThin;endFill=1;",
-            };
-            format!(
-                "{dash_prefix}strokeColor={};strokeWidth={};{arrow_tokens}",
-                colors.stroke, colors.width
-            )
+            _ => format!("exitX={port_frac:.5};exitY={marker_exit_y:.1};exitDx=0;exitDy=0;{exit_perimeter}"),
+        };
+        let entry_s_idx = if edge_data.reversed { src } else { dst };
+        let entry_attr = match layout.positions.get(&entry_s_idx) {
+            Some(nl) => {
+                let (ex, ey) = rel(nl, rdg_render_core::routing::node_attach_point(compiled, entry_s_idx, nl, dst_side, entry_port_frac, tokens));
+                format!("entryX={ex:.5};entryY={ey:.5};entryDx=0;entryDy=0;entryPerimeter=0;")
+            }
+            None => format!("entryX={entry_port_frac:.5};entryY=0.0;entryDx=0;entryDy=0;"),
         };
 
-        if let Some(c) = &edge_data.color {
-            custom_style.push_str(&format!("strokeColor={c};"));
-        }
-        if let Some(w) = edge_data.width {
-            custom_style.push_str(&format!("strokeWidth={w:.1};"));
-        }
-        if let Some(ls) = &edge_data.line_style {
-            match ls.to_ascii_lowercase().as_str() {
-                "dashed" => custom_style.push_str("dashed=1;dashPattern=8 4;"),
-                "dotted" => custom_style.push_str("dashed=1;dashPattern=2 3;"),
-                "solid" => custom_style.push_str("dashed=0;"),
-                _ => {}
-            }
-        }
-        if let Some(h) = &edge_data.head {
-            custom_style.push_str(&format!("endArrow={h};"));
-        }
-        if let Some(t) = &edge_data.tail {
-            custom_style.push_str(&format!("startArrow={t};"));
-        }
-        if let Some(extra) = &edge_data.style_extra {
-            custom_style.push_str(extra);
+        // Flow-numbering badge: a small floating circle beside the line near its source,
+        // when this edge has a resolved `step` (i.e. the diagram opted into `numbered: true`).
+        if let (Some(step), Some(&(bx, by))) = (edge_data.step, annotations.badges.get(&edge_idx)) {
+            write_step_badge(&mut w, &edge_id, step, bx, by, theme, tokens)?;
         }
 
+        // Line, arrowheads and label type from the theme's look for this edge style,
+        // with the edge's own overrides; `style_extra` is appended verbatim.
+        let look = edge_look(theme, edge_data);
         let edge_style = format!(
-            "edgeStyle=none;\
-             rounded=1;html=1;\
-             {exit_attr}\
-             {entry_attr}\
-             {custom_style}\
-             endSize=6;\
-             jumpStyle=arc;jumpSize=6;\
-             labelBackgroundColor={label_bg_color};labelBorderColor=none;\
-             fontFamily=Inter,Helvetica,sans-serif;fontSize=11;fontColor={label_font_color};"
+            "{exit_attr}{entry_attr}{}{}",
+            style::edge_style(theme, &look),
+            edge_data.style_extra.as_deref().unwrap_or("")
         );
 
         let mut cell = BytesStart::new("mxCell");
         cell.push_attribute(("id", edge_id.as_str()));
-        cell.push_attribute(("value", label));
+        let spot = if label.is_empty() { None } else { annotations.labels.get(&edge_idx) };
+        // The placer may have wrapped the label onto two lines to fit a gap (html=1 label).
+        let label_value = spot.map_or_else(|| label.to_string(), |s| s.text.replace('\n', "<br>"));
+        cell.push_attribute(("value", label_value.as_str()));
         cell.push_attribute(("style", edge_style.as_str()));
         cell.push_attribute(("edge", "1"));
         cell.push_attribute(("source", render_src));
@@ -622,48 +432,43 @@ pub fn render_drawio(
         cell.push_attribute(("parent", "1"));
         w.write_event(Event::Start(cell))?;
 
-        // <mxGeometry relative="1" as="geometry">
-        //   <Array as="points">
-        //     <mxPoint x="..." y="..." />
-        //   </Array>
-        //   <mxPoint y="-10" as="offset" />
+        // <mxGeometry x="…" y="…" relative="1" as="geometry">   (label: x along path, y beside it)
+        //   <Array as="points"> <mxPoint x="..." y="..." /> … </Array>
         // </mxGeometry>
         let mut geo = BytesStart::new("mxGeometry");
+        if let Some(spot) = spot {
+            let (gx, gy) = spot.drawio_geometry();
+            geo.push_attribute(("x", format!("{gx:.4}").as_str()));
+            geo.push_attribute(("y", format!("{gy:.1}").as_str()));
+        }
         geo.push_attribute(("relative", "1"));
         geo.push_attribute(("as", "geometry"));
-        if !waypoints.is_empty() || !label.is_empty() {
+        if waypoints.is_empty() {
+            w.write_event(Event::Empty(geo))?;
+        } else {
             w.write_event(Event::Start(geo))?;
-
-            if !waypoints.is_empty() {
-                let mut arr = BytesStart::new("Array");
-                arr.push_attribute(("as", "points"));
-                w.write_event(Event::Start(arr))?;
-
-                for &(wx, wy) in waypoints {
-                    let mut pt = BytesStart::new("mxPoint");
-                    pt.push_attribute(("x", format!("{wx:.1}").as_str()));
-                    pt.push_attribute(("y", format!("{wy:.1}").as_str()));
-                    w.write_event(Event::Empty(pt))?;
-                }
-
-                w.write_event(Event::End(BytesEnd::new("Array")))?;
-            }
-
-            if !label.is_empty() {
-                let dy = label_dy.get(&edge_idx).copied().unwrap_or(0.0);
-                let offset_y = -tokens.px(1.25) + dy;
+            let mut arr = BytesStart::new("Array");
+            arr.push_attribute(("as", "points"));
+            w.write_event(Event::Start(arr))?;
+            for &(wx, wy) in waypoints {
                 let mut pt = BytesStart::new("mxPoint");
-                pt.push_attribute(("y", format!("{offset_y:.1}").as_str()));
-                pt.push_attribute(("as", "offset"));
+                pt.push_attribute(("x", format!("{wx:.1}").as_str()));
+                pt.push_attribute(("y", format!("{wy:.1}").as_str()));
                 w.write_event(Event::Empty(pt))?;
             }
-
+            w.write_event(Event::End(BytesEnd::new("Array")))?;
             w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
-        } else {
-            w.write_event(Event::Empty(geo))?;
         }
 
         w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    }
+
+    // --- Legend: categories and edge styles used, below the diagram --------------
+    if rdg_render_core::look::legend_enabled(theme, compiled) {
+        let items = rdg_render_core::look::legend_items(theme, compiled);
+        if let (false, Some(b)) = (items.is_empty(), rdg_render_core::canvas::content_bounds(compiled, layout, edge_plans, tokens)) {
+            write_legend(&mut w, theme, tokens, &items, b.min_x, b.max_y + tokens.px(3.0), (b.max_x - b.min_x).max(tokens.px(40.0)))?;
+        }
     }
 
     w.write_event(Event::End(BytesEnd::new("root")))?;
@@ -672,6 +477,117 @@ pub fn render_drawio(
     w.write_event(Event::End(BytesEnd::new("mxfile")))?;
 
     Ok(String::from_utf8(buf)?)
+}
+
+/// A plain vertex cell at absolute `(x, y, w, h)`.
+/// A decorative child cell of `parent` at `rect` (relative to it).
+fn write_child<W: std::io::Write>(w: &mut Writer<W>, id: &str, style: &str, parent: &str, rect: (f64, f64, f64, f64)) -> Result<()> {
+    let mut c = BytesStart::new("mxCell");
+    c.push_attribute(("id", id));
+    c.push_attribute(("value", ""));
+    c.push_attribute(("style", style));
+    c.push_attribute(("vertex", "1"));
+    c.push_attribute(("parent", parent));
+    w.write_event(Event::Start(c))?;
+    let mut g = BytesStart::new("mxGeometry");
+    g.push_attribute(("x", format!("{:.0}", rect.0).as_str()));
+    g.push_attribute(("y", format!("{:.0}", rect.1).as_str()));
+    g.push_attribute(("width", format!("{:.0}", rect.2).as_str()));
+    g.push_attribute(("height", format!("{:.0}", rect.3).as_str()));
+    g.push_attribute(("as", "geometry"));
+    w.write_event(Event::Empty(g))?;
+    w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    Ok(())
+}
+
+pub(crate) fn write_vertex<W: std::io::Write>(w: &mut Writer<W>, id: &str, value: &str, style: &str, rect: (f64, f64, f64, f64)) -> Result<()> {
+    let mut c = BytesStart::new("mxCell");
+    c.push_attribute(("id", id));
+    c.push_attribute(("value", value));
+    c.push_attribute(("style", style));
+    c.push_attribute(("vertex", "1"));
+    c.push_attribute(("parent", "1"));
+    w.write_event(Event::Start(c))?;
+    let mut g = BytesStart::new("mxGeometry");
+    for (k, v) in [("x", rect.0), ("y", rect.1), ("width", rect.2), ("height", rect.3)] {
+        g.push_attribute((k, format!("{v:.1}").as_str()));
+    }
+    g.push_attribute(("as", "geometry"));
+    w.write_event(Event::Empty(g))?;
+    w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+    Ok(())
+}
+
+/// The legend block: a heading, then rows of category swatches and edge-style samples.
+pub(crate) fn write_legend<W: std::io::Write>(
+    w: &mut Writer<W>,
+    theme: &Theme,
+    tokens: &DesignTokens,
+    items: &[rdg_render_core::look::LegendItem],
+    x0: f64,
+    y0: f64,
+    max_w: f64,
+) -> Result<()> {
+    use rdg_render_core::look::LegendItem;
+    let f = &theme.font;
+    let text_style = |size: f64, color: &str, bold: bool| {
+        format!(
+            "text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily={};fontSize={size};fontColor={color};fontStyle={};",
+            f.family,
+            u8::from(bold)
+        )
+    };
+    let head_h = tokens.line_height(f.group_title_size);
+    write_vertex(w, "legend_title", "Legend", &text_style(f.group_title_size, &theme.text.primary, true), (x0, y0, 120.0, head_h))?;
+    let row_h = f.edge_label_size * 1.35 + 10.0;
+    let mut y = y0 + f.group_title_size * 1.35 + 6.0;
+    for (r, row) in rdg_render_core::look::legend_rows(items, theme, max_w).iter().enumerate() {
+        let mut x = x0;
+        for (k, (it, width)) in row.iter().enumerate() {
+            let id = format!("legend_{r}_{k}");
+            let mid = y + row_h / 2.0;
+            let label = match it {
+                LegendItem::Category { label, fill, fill_opacity, stroke, .. } => {
+                    let style = format!(
+                        "rounded=1;absoluteArcSize=1;arcSize=6;fillColor={fill};fillOpacity={};strokeColor={stroke};strokeWidth=1.25;connectable=0;",
+                        (fill_opacity * 100.0).round()
+                    );
+                    write_vertex(w, &format!("{id}_swatch"), "", &style, (x, mid - 7.0, 22.0, 14.0))?;
+                    label
+                }
+                LegendItem::Edge { label, look } => {
+                    let dash = look.dash.as_deref().map_or("dashed=0;".to_string(), |d| format!("dashed=1;dashPattern={d};"));
+                    let style = format!("endArrow=none;html=1;strokeColor={};strokeWidth={};{dash}", look.color, look.width);
+                    let mut c = BytesStart::new("mxCell");
+                    let sid = format!("{id}_line");
+                    c.push_attribute(("id", sid.as_str()));
+                    c.push_attribute(("value", ""));
+                    c.push_attribute(("style", style.as_str()));
+                    c.push_attribute(("edge", "1"));
+                    c.push_attribute(("parent", "1"));
+                    w.write_event(Event::Start(c))?;
+                    let mut g = BytesStart::new("mxGeometry");
+                    g.push_attribute(("relative", "1"));
+                    g.push_attribute(("as", "geometry"));
+                    w.write_event(Event::Start(g))?;
+                    for (k2, px) in [("sourcePoint", x), ("targetPoint", x + 22.0)] {
+                        let mut p = BytesStart::new("mxPoint");
+                        p.push_attribute(("x", format!("{px:.1}").as_str()));
+                        p.push_attribute(("y", format!("{mid:.1}").as_str()));
+                        p.push_attribute(("as", k2));
+                        w.write_event(Event::Empty(p))?;
+                    }
+                    w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+                    w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+                    label
+                }
+            };
+            write_vertex(w, &format!("{id}_label"), label, &text_style(f.edge_label_size, &theme.text.muted, false), (x + 30.0, mid - row_h / 2.0, width - 30.0, row_h))?;
+            x += width;
+        }
+        y += row_h;
+    }
+    Ok(())
 }
 
 /// Writes a small floating filled-circle vertex carrying a flow-sequence number, centered
@@ -683,17 +599,14 @@ fn write_step_badge<W: std::io::Write>(
     step: u32,
     x: f64,
     y: f64,
-    is_dark: bool,
+    theme: &Theme,
+    tokens: &DesignTokens,
 ) -> Result<()> {
-    let size = 18.0;
-    let (fill, font_color) = if is_dark {
-        ("#f1f5f9", "#0f172a")
-    } else {
-        ("#0f172a", "#ffffff")
-    };
+    let size = 2.0 * tokens.badge_radius;
+    let b = &theme.badge;
     let style = format!(
-        "ellipse;whiteSpace=wrap;html=1;fillColor={fill};strokeColor=none;\
-         fontColor={font_color};fontSize=10;fontStyle=1;fontFamily=Inter,Helvetica,sans-serif;"
+        "ellipse;whiteSpace=wrap;html=1;fillColor={};strokeColor=none;fontColor={};fontSize={};fontStyle=1;fontFamily={};",
+        b.fill, b.text, theme.font.badge_size, theme.font.family
     );
 
     let mut cell = BytesStart::new("mxCell");
@@ -761,15 +674,20 @@ mod tests {
     }
 
     fn render(payload: &DiagramPayload, theme: &str) -> String {
-        let compiled = build_graph(payload).unwrap();
-        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let theme = rdg_render_core::theme::Theme::builtin(theme).unwrap();
+        let mut tokens = DesignTokens::default();
+        theme.apply_to_tokens(&mut tokens);
+        let mut compiled = build_graph(payload).unwrap();
+        rdg_render_core::look::prepare_graph(&theme, &mut compiled);
+        let config = LayoutConfig { tokens, ..LayoutConfig::default() };
+        let layout = compute_layout(&compiled, &config).unwrap();
         let edge_plans = rdg_render_core::routing::plan_all_edge_routes(
             &compiled,
             &layout,
             rdg_render_core::routing::RoutingAlgorithm::CornerHeuristic,
-            &DesignTokens::default(),
+            &tokens,
         );
-        render_drawio(&compiled, &layout, &edge_plans, theme, None, &DesignTokens::default()).unwrap()
+        render_drawio(&compiled, &layout, &edge_plans, &theme, None, &tokens).unwrap()
     }
 
     #[test]
@@ -807,7 +725,8 @@ mod tests {
     #[test]
     fn test_drawio_dark_mode_canvas_and_edges() {
         let xml = render(&two_node_payload(), "dark");
-        assert!(xml.contains("background=\"#0f172a\""));
+        let dark = rdg_render_core::theme::Theme::builtin("dark").unwrap();
+        assert!(xml.contains(&format!("background=\"{}\"", dark.canvas.background)));
     }
 
     #[test]
@@ -842,7 +761,11 @@ mod tests {
         };
         let xml = render(&payload, "standard");
         assert!(xml.contains("container=1"));
-        assert!(xml.contains("dashPattern=8 4"));
+        let light = rdg_render_core::theme::Theme::builtin("light").unwrap();
+        let dash = light.edge_look(Some("async")).dash.unwrap();
+        assert!(xml.contains(&format!("dashPattern={dash}")));
+        // The group keeps its explicit colour.
+        assert!(xml.contains("strokeColor=#0284c7"));
     }
 
     #[test]
@@ -872,9 +795,14 @@ mod tests {
         };
         let light = render(&payload, "standard");
         let dark = render(&payload, "dark");
-        assert!(light.contains("startArrow=diamond;startFill=1;startSize=12"));
-        assert!(light.contains("strokeColor=#0f172a;strokeWidth=1.5;startArrow=diamond"));
-        assert!(dark.contains("strokeColor=#cbd5e1;strokeWidth=1.5;startArrow=diamond"));
+        assert!(light.contains("startArrow=diamond;startFill=1"));
+        let (lt, dt) = (
+            rdg_render_core::theme::Theme::builtin("light").unwrap(),
+            rdg_render_core::theme::Theme::builtin("dark").unwrap(),
+        );
+        assert!(light.contains(&format!("strokeColor={}", lt.edge.color)));
+        assert!(dark.contains(&format!("strokeColor={}", dt.edge.color)));
+        assert_ne!(lt.edge.color, dt.edge.color);
     }
 
     // -----------------------------------------------------------------------

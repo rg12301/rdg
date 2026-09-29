@@ -45,8 +45,6 @@ impl Bounds {
     }
 }
 
-/// Font size of the diagram title (renderers draw it at this size, bold).
-const TITLE_FONT_SIZE: f64 = 15.0;
 
 /// A group container's drawn rectangle: member bounding box plus content-aware padding
 /// and the title header row.
@@ -74,14 +72,8 @@ pub fn group_rects(
     out
 }
 
-fn edge_label_pill(text: &str, tokens: &DesignTokens) -> (f64, f64) {
-    let font = tokens.font_size * 0.83;
-    let w = (text.chars().count() as f64 * tokens.char_width(font) + tokens.px(1.0)).max(tokens.px(2.5));
-    (w, tokens.line_height(font))
-}
-
 /// Extent of everything drawn: node boxes, group containers, routed waypoints, edge
-/// label pills (at each path's midpoint), and the title band. `None` when the
+/// label pills and flow badges (where [`crate::annotate`] places them), and the title band. `None` when the
 /// layout has no nodes.
 pub fn content_bounds(
     compiled: &CompiledGraph,
@@ -99,28 +91,27 @@ pub fn content_bounds(
     for (x, y, w, h) in group_rects(compiled, layout, tokens) {
         b.add_rect(x, y, w, h);
     }
-    for (edge_idx, plan) in edge_plans {
+    for plan in edge_plans.values() {
         for &(x, y) in &plan.waypoints {
             b.add_rect(x, y, 0.0, 0.0);
         }
-        // The label pill is centred on the path's midpoint (where both renderers anchor
-        // it), so that — not every waypoint — is where it can poke past the content.
-        let Some(label) = compiled.graph.edge_weight(*edge_idx).and_then(|e| e.label.as_deref()) else {
-            continue;
-        };
-        let Some((_, _, src_nl, dst_nl)) = crate::routing::resolve_edge_layout(compiled, layout, *edge_idx) else {
-            continue;
-        };
-        let p1 = crate::routing::port_point(src_nl, plan.src_side, plan.exit_port);
-        let p2 = crate::routing::port_point(dst_nl, plan.dst_side, plan.entry_port);
-        let (mx, my) = crate::routing::polyline_midpoint(p1, &plan.waypoints, p2);
-        let (w, h) = edge_label_pill(label, tokens);
-        b.add_rect(mx - w / 2.0, my - h / 2.0, w, h);
+    }
+    // Labels and flow badges sit wherever the annotation scorer put them — possibly
+    // beside an outer leg of a path — so that, not the path midpoint, bounds them.
+    let ann = crate::annotate::place_edge_annotations(compiled, layout, edge_plans, tokens);
+    for spot in ann.labels.values() {
+        let (x, y, w, h) = spot.rect();
+        b.add_rect(x, y, w, h);
+    }
+    let r = tokens.badge_radius;
+    for &(x, y) in ann.badges.values() {
+        b.add_rect(x - r, y - r, 2.0 * r, 2.0 * r);
     }
     if let Some(title) = &compiled.title {
-        b.min_y -= tokens.title_band();
-        let title_w = title.chars().count() as f64 * tokens.char_width(TITLE_FONT_SIZE) * 1.1;
-        b.max_x = b.max_x.max(b.min_x + title_w);
+        b.min_y -= tokens.title_band_for(compiled.description.is_some());
+        let title_w = title.chars().count() as f64 * tokens.char_width(tokens.title_font_size) * 1.1;
+        let desc_w = compiled.description.as_deref().map_or(0.0, |d| d.chars().count() as f64 * tokens.char_width(tokens.detail_font_size + 1.0));
+        b.max_x = b.max_x.max(b.min_x + title_w.max(desc_w));
     }
     Some(b)
 }
@@ -229,6 +220,7 @@ mod tests {
                 corridor_x: -8.0,
                 waypoints: vec![(-8.0, 44.0), (-8.0, 220.0)],
                 corridor_bucket_size: 1,
+                searched: false,
             },
         );
         finalize_canvas(&compiled, &mut layout, &mut plans, 24.0, 24.0, &tokens);

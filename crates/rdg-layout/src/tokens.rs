@@ -65,6 +65,42 @@ pub struct DesignTokens {
     pub wrap_chars_diamond: usize,
     /// Max characters per wrapped line for every other node shape.
     pub wrap_chars_normal: usize,
+    /// Node detail lines (under the bold title), px.
+    pub detail_font_size: f64,
+    /// Edge labels, px.
+    pub edge_label_font_size: f64,
+    /// Diagram title, px.
+    pub title_font_size: f64,
+    /// Group (container) titles, px.
+    pub group_title_font_size: f64,
+
+    // -- Icons & badges (set from the theme; see `rdg_render_core::theme`) ----------
+    /// Icon drawn inside a card, px.
+    pub icon_size: f64,
+    /// Width an inline icon takes on a card's title line (icon + gap), px.
+    pub icon_reserve: f64,
+    /// A node drawn as its logo instead of a box, px.
+    pub icon_node_size: f64,
+    /// Gap between a logo node's logo and the invisible halo arrows attach to, px.
+    pub icon_halo_padding: f64,
+    /// Whether that halo is a circle (else a square).
+    pub icon_halo_circle: bool,
+    /// Edge labels longer than this wrap onto two lines.
+    pub edge_label_wrap_chars: usize,
+
+    // -- Sequence diagrams (set from the theme's `sequence:` section) ------------------
+    /// Minimum gap between neighbouring participant boxes, px.
+    pub seq_participant_gap: f64,
+    /// Vertical room between consecutive messages, beyond their labels, px.
+    pub seq_message_gap: f64,
+    /// Width of an activation bar, px (nested bars step by half of it).
+    pub seq_activation_width: f64,
+    /// Note text wraps at this many characters.
+    pub seq_note_wrap_chars: usize,
+    /// Flow-number badge radius, px.
+    pub badge_radius: f64,
+    /// Depth of a database cylinder's elliptical cap, px.
+    pub cylinder_cap: f64,
 
     // -- Spacing scale ----------------------------------------------------------------
     /// The base spacing unit, in pixels. Nearly every padding, margin, gap, and
@@ -254,6 +290,22 @@ impl Default for DesignTokens {
             line_height_ratio: 1.35,
             wrap_chars_diamond: 14,
             wrap_chars_normal: 22,
+            detail_font_size: 10.0,
+            edge_label_font_size: 10.0,
+            title_font_size: 18.0,
+            group_title_font_size: 11.0,
+            icon_size: 20.0,
+            icon_reserve: 26.0,
+            icon_node_size: 48.0,
+            icon_halo_padding: 8.0,
+            icon_halo_circle: true,
+            edge_label_wrap_chars: 22,
+            seq_participant_gap: 32.0,
+            seq_message_gap: 20.0,
+            seq_activation_width: 10.0,
+            seq_note_wrap_chars: 32,
+            badge_radius: 9.0,
+            cylinder_cap: 8.0,
 
             unit: 8.0,
             margin_x_units: 3.0,
@@ -367,6 +419,26 @@ impl DesignTokens {
     /// Vertical band reserved above the content for the diagram title.
     pub fn title_band(&self) -> f64 {
         (self.line_height(self.font_size) * 2.2).round()
+    }
+    /// Diameter (or side) of a logo node's halo: the logo plus its padding all round.
+    pub fn icon_halo_size(&self) -> f64 {
+        self.icon_node_size + 2.0 * self.icon_halo_padding
+    }
+
+    /// Height of a card's title line: the title text, or the inline icon if taller.
+    pub fn title_line_height(&self, has_icon: bool) -> f64 {
+        let lh = self.line_height(self.font_size);
+        if has_icon { lh.max(self.icon_size + 4.0) } else { lh }
+    }
+
+    /// [`Self::title_band`] plus room for the one-line description drawn under the title,
+    /// when there is one — without it the description ran into the top row of content.
+    pub fn title_band_for(&self, has_description: bool) -> f64 {
+        if has_description {
+            self.title_band() + (self.line_height(self.font_size * 0.92) + self.px(1.0)).round()
+        } else {
+            self.title_band()
+        }
     }
     /// Smallest allowed gap between adjacent ranks: [`Self::min_rank_gap_units`], but
     /// never less than two clearance stubs (one off each face).

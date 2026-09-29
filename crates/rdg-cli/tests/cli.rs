@@ -319,10 +319,17 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     // bundled diagrams; unpolished it was 11 and 54). A little headroom keeps unrelated
     // layout changes from tripping this, while a real regression in polish still does.
     let (mut total_jogs, mut total_crossings) = (0.0_f64, 0.0_f64);
+    // Crossings right at a bend/arrow end, and arrows tracing a group border (measured
+    // with the search router: 4 and 0).
+    let (mut total_near_bend, mut total_border_hugs) = (0.0_f64, 0.0_f64);
     for dir in ["examples", "docs"] {
-        let mut files: Vec<_> = std::fs::read_dir(root.join(dir))
-            .expect("read fixture dir")
-            .filter_map(|e| e.ok().map(|e| e.path()))
+        // `docs/*.yaml`, and `examples/<name>/<name>.yaml` (one folder per example).
+        let entries = |d: &Path| -> Vec<std::path::PathBuf> {
+            std::fs::read_dir(d).expect("read fixture dir").filter_map(|e| e.ok().map(|e| e.path())).collect()
+        };
+        let mut files: Vec<_> = entries(&root.join(dir))
+            .into_iter()
+            .flat_map(|p| if p.is_dir() { entries(&p) } else { vec![p] })
             .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("yaml"))
             .collect();
         files.sort();
@@ -353,6 +360,8 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
             }
             total_jogs += field("jogs=").unwrap_or(0.0);
             total_crossings += field("crossings=").unwrap_or(0.0);
+            total_near_bend += field("near_bend=").unwrap_or(0.0);
+            total_border_hugs += field("border_hugs=").unwrap_or(0.0);
             let _ = std::fs::remove_file(&out_path);
             checked += 1;
         }
@@ -360,4 +369,6 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     assert!(checked >= 8, "expected to check the bundled fixtures, checked {checked}");
     assert!(total_jogs <= 3.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 3)");
     assert!(total_crossings <= 30.0, "crossings across bundled diagrams: {total_crossings} (budget 30)");
+    assert!(total_near_bend <= 6.0, "crossings at a bend/arrow end: {total_near_bend} (budget 6)");
+    assert!(total_border_hugs <= 1.0, "arrows tracing a group border: {total_border_hugs} (budget 1)");
 }

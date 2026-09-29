@@ -1,7 +1,8 @@
 //! SVG rendering backend.
 //!
-//! Uses hand-rolled SVG primitives (via `quick-xml`) to avoid bringing in a heavy
-//! dependency while still producing well-formed, human-readable output.
+//! Hand-rolled SVG (via `quick-xml`). Every colour, font, stroke and size comes from the
+//! [`Theme`], through the looks resolved in `rdg_render_core::look` — the same ones the
+//! draw.io backend uses, so both outputs agree.
 
 mod path;
 mod sequence;
@@ -11,1191 +12,718 @@ use quick_xml::{
     Writer,
     events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event},
 };
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
 
 use petgraph::stable_graph::EdgeIndex;
 
-use rdg_graph::CompiledGraph;
-use rdg_layout::{DesignTokens, LayoutResult};
-use rdg_render_core::routing::{EdgeRoutingPlan, Side, compute_edge_waypoints, port_point};
-use rdg_render_core::style::{edge_style_colors, node_accent_color};
-use rdg_render_core::typography::{
-    latex_to_unicode, parse_inline_spans, to_subscript, to_superscript, wrap_and_classify_label,
-};
+use rdg_graph::{CompiledGraph, NodeData};
+use rdg_layout::{DesignTokens, LayoutResult, NodeLayout};
+use rdg_render_core::look::{LegendItem, NodeLook, edge_look, group_look, legend_enabled, legend_items, legend_rows, legend_size, node_look};
+use rdg_render_core::routing::EdgeRoutingPlan;
+use rdg_render_core::theme::{ResolvedEdge, Theme};
+use rdg_render_core::typography::{latex_to_unicode, parse_inline_spans, to_subscript, to_superscript, wrap_and_classify_label};
 
 use path::build_orthogonal_svg_path;
 use sequence::render_sequence_svg;
 
-/// Writes a centered, bold, word-wrapped label starting `top_y` below a small fixed-size
-/// marker shape (start/end/choice state circles — see `estimate_node_size_inner` in
-/// `rdg-layout`, which sizes those to ~28-36px regardless of label length). Centering a
-/// real label on top of a marker that small would bury the text inside the shape, so
-/// every marker-shaped node places its label below itself instead, the same fix applied
-/// to the draw.io backend's `verticalLabelPosition=bottom`.
-fn write_label_below_marker<W: std::io::Write>(
-    w: &mut Writer<W>,
-    cx: f64,
-    top_y: f64,
-    label: &str,
-    title_color: &str,
-    tokens: &DesignTokens,
-) -> Result<()> {
-    let lines = wrap_and_classify_label(label, tokens.wrap_chars_normal);
-    if lines.is_empty() {
-        return Ok(());
-    }
+pub(crate) type W<'a> = Writer<Cursor<&'a mut Vec<u8>>>;
 
-    let line_height = tokens.line_height(tokens.font_size);
-    let mut text = BytesStart::new("text");
-    let first_baseline = top_y + line_height * 0.93;
-    let font_size = tokens.font_size.round().to_string();
-    text.push_attribute(("x", format!("{cx:.1}").as_str()));
-    text.push_attribute(("y", format!("{first_baseline:.1}").as_str()));
-    text.push_attribute(("text-anchor", "middle"));
-    text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-    text.push_attribute(("font-size", font_size.as_str()));
-    text.push_attribute(("font-weight", "bold"));
-    text.push_attribute(("fill", title_color));
-    w.write_event(Event::Start(text))?;
+pub(crate) fn f1(v: f64) -> String {
+    format!("{v:.1}")
+}
 
-    for (line_idx, pl) in lines.iter().enumerate() {
-        let plain: String = parse_inline_spans(&pl.text).into_iter().map(|s| s.text).collect();
-        let mut tspan = BytesStart::new("tspan");
-        tspan.push_attribute(("x", format!("{cx:.1}").as_str()));
-        if line_idx > 0 {
-            tspan.push_attribute(("dy", format!("{line_height:.1}").as_str()));
-        }
-        w.write_event(Event::Start(tspan))?;
-        w.write_event(Event::Text(BytesText::new(&plain)))?;
-        w.write_event(Event::End(BytesEnd::new("tspan")))?;
+pub(crate) fn el(w: &mut W, name: &str, attrs: &[(&str, String)]) -> Result<()> {
+    let mut e = BytesStart::new(name);
+    for (k, v) in attrs {
+        e.push_attribute((*k, v.as_str()));
     }
-    w.write_event(Event::End(BytesEnd::new("text")))?;
+    w.write_event(Event::Empty(e))?;
     Ok(())
 }
 
+pub(crate) fn open(w: &mut W, name: &str, attrs: &[(&str, String)]) -> Result<()> {
+    let mut e = BytesStart::new(name);
+    for (k, v) in attrs {
+        e.push_attribute((*k, v.as_str()));
+    }
+    w.write_event(Event::Start(e))?;
+    Ok(())
+}
+
+pub(crate) fn close(w: &mut W, name: &str) -> Result<()> {
+    w.write_event(Event::End(BytesEnd::new(name)))?;
+    Ok(())
+}
+
+pub(crate) fn text_el(w: &mut W, attrs: &[(&str, String)], content: &str) -> Result<()> {
+    open(w, "text", attrs)?;
+    w.write_event(Event::Text(BytesText::new(content)))?;
+    close(w, "text")
+}
+
+/// Stroke dash attribute for a dash pattern.
+pub(crate) fn dash_attr(dash: Option<&str>) -> Option<(&'static str, String)> {
+    dash.map(|d| ("stroke-dasharray", d.to_string()))
+}
+
+// ---------------------------------------------------------------------------
+// Arrowhead markers
+// ---------------------------------------------------------------------------
+
+/// Arrowheads used, keyed by `(draw.io marker name, colour, filled)` → marker id. Ids are
+/// stable per kind (`marker-er-many-…`, `marker-uml-triangle-…`) so they're greppable.
+#[derive(Default)]
+pub(crate) struct Markers(BTreeMap<(String, String, bool), String>);
+
+impl Markers {
+    pub(crate) fn id(&mut self, kind: &str, color: &str, filled: bool) -> Option<String> {
+        let k = kind.to_ascii_lowercase();
+        if k == "none" || k.is_empty() {
+            return None;
+        }
+        let key = (k.clone(), color.to_string(), filled);
+        let n = self.0.len();
+        let family = match k.as_str() {
+            "ermany" => "er-many",
+            "erone" | "ermandone" => "er-one",
+            "erzerotoone" => "er-zero-one",
+            "block" | "blockthin" | "classic" | "classicthin" if !filled => "uml-triangle",
+            "diamond" | "diamondthin" => "diamond",
+            "oval" | "circle" => "circle",
+            "open" | "openthin" => "open",
+            _ => "arrow",
+        };
+        Some(self.0.entry(key).or_insert_with(|| format!("marker-{family}-{n}")).clone())
+    }
+
+    pub(crate) fn write_defs(&self, w: &mut W, size: f64) -> Result<()> {
+        for ((kind, color, filled), id) in &self.0 {
+            let s = size;
+            let fill = if *filled { color.as_str() } else { "none" };
+            // Drawn pointing right, tip at (s, s/2); `auto-start-reverse` flips tails.
+            let (vw, vh, body) = match kind.as_str() {
+                "ermany" => (s * 1.6, s * 1.6, format!(
+                    r#"<path d="M0 0 L{a} {h} L0 {b} M{a} 0 V{b}" fill="none" stroke="{color}" stroke-width="1.2"/>"#,
+                    a = s * 1.4, h = s * 0.8, b = s * 1.6
+                )),
+                "erone" | "ermandone" => (s * 1.6, s * 1.6, format!(
+                    r#"<path d="M{a} 0 V{b} M{c} 0 V{b}" fill="none" stroke="{color}" stroke-width="1.2"/>"#,
+                    a = s * 0.7, b = s * 1.6, c = s * 1.1
+                )),
+                "erzerotoone" => (s * 2.0, s * 1.6, format!(
+                    r#"<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{color}" stroke-width="1.2"/><path d="M{x} 0 V{b}" stroke="{color}" stroke-width="1.2"/>"#,
+                    cx = s * 0.6, cy = s * 0.8, r = s * 0.45, x = s * 1.5, b = s * 1.6
+                )),
+                "diamond" | "diamondthin" => (s * 2.0, s, format!(
+                    r#"<path d="M0 {h} L{m} 0 L{e} {h} L{m} {s} Z" fill="{fill}" stroke="{color}" stroke-width="1"/>"#,
+                    h = s / 2.0, m = s, e = s * 2.0
+                )),
+                "oval" | "circle" => (s, s, format!(r#"<circle cx="{h}" cy="{h}" r="{r}" fill="{fill}" stroke="{color}"/>"#, h = s / 2.0, r = s / 2.0 - 0.5)),
+                "open" | "openthin" => (s, s, format!(
+                    r#"<path d="M0 0 L{s} {h} L0 {s}" fill="none" stroke="{color}" stroke-width="1.3" stroke-linejoin="round"/>"#,
+                    h = s / 2.0
+                )),
+                _ => (s, s, format!(
+                    r#"<path d="M0 0 L{s} {h} L0 {s} Z" fill="{fill}" stroke="{color}" stroke-width="1" stroke-linejoin="round"/>"#,
+                    h = s / 2.0
+                )),
+            };
+            let markup = format!(
+                r#"<marker id="{id}" viewBox="-1 -1 {a} {b}" refX="{vw}" refY="{ry}" markerWidth="{a}" markerHeight="{b}" markerUnits="userSpaceOnUse" orient="auto-start-reverse">{body}</marker>"#,
+                a = vw + 2.0,
+                b = vh + 2.0,
+                ry = vh / 2.0,
+            );
+            w.write_event(Event::Text(BytesText::from_escaped(markup)))?;
+        }
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Entry point
+// ---------------------------------------------------------------------------
+
 /// Render the compiled, laid-out graph to an SVG string.
 ///
-/// `edge_plans` is expected to be the output of
-/// [`rdg_render_core::routing::plan_all_edge_routes`] (or, more commonly,
-/// [`rdg_render_core::review::compute_reviewed_layout`]) for this exact `layout` — see
-/// `rdg_render_drawio::render_drawio`'s doc comment for why this isn't computed internally.
-/// Ignored for sequence diagrams, which never route edges.
+/// `edge_plans` is the output of [`rdg_render_core::review::compute_reviewed_layout`] for
+/// this exact `layout` (see `rdg_render_drawio::render_drawio`). Ignored for sequence
+/// diagrams, which never route edges.
 ///
 /// # Errors
 ///
-/// Returns an error if XML serialization fails (practically infallible for well-formed inputs).
+/// Returns an error if XML serialization fails (practically infallible).
 pub fn render_svg(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     edge_plans: &HashMap<EdgeIndex, EdgeRoutingPlan>,
-    theme: &str,
+    theme: &Theme,
     background: Option<&str>,
     tokens: &DesignTokens,
 ) -> Result<String> {
     if let Some(seq) = &layout.sequence_info {
         return render_sequence_svg(compiled, layout, seq, theme, background, tokens);
     }
+    let f = &theme.font;
 
-    // Canvas = everything actually drawn (nodes, group containers, routed waypoints,
-    // title) plus a right/bottom margin mirroring the left/top one.
+    // Canvas = everything drawn plus a margin mirroring the left/top one, plus the legend.
     let bounds = rdg_render_core::canvas::content_bounds(compiled, layout, edge_plans, tokens);
-    let (canvas_w, canvas_h) = bounds.as_ref().map_or((0.0, 0.0), rdg_render_core::canvas::canvas_size);
+    let (mut canvas_w, mut canvas_h) = bounds.as_ref().map_or((0.0, 0.0), rdg_render_core::canvas::canvas_size);
+    let (min_x, max_y) = bounds.as_ref().map_or((0.0, 0.0), |b| (b.min_x, b.max_y));
+    let legend = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty());
+    let legend_gap = tokens.px(3.0);
+    if let Some(items) = &legend {
+        let (lw, lh) = legend_size(items, theme, (canvas_w - 2.0 * min_x).max(tokens.px(40.0)));
+        canvas_h += legend_gap + lh;
+        canvas_w = canvas_w.max(min_x * 2.0 + lw);
+    }
     let canvas_w = canvas_w.max(tokens.px(15.0));
     let canvas_h = canvas_h.max(tokens.px(12.5));
-    let (origin_x, origin_y) = bounds.as_ref().map_or((0.0, 0.0), |b| (b.min_x.max(0.0), b.min_y.max(0.0)));
 
-    let mut buf = Vec::with_capacity(8192);
+    let mut buf = Vec::with_capacity(16384);
     let mut w = Writer::new_with_indent(Cursor::new(&mut buf), b' ', 2);
-
-    // <?xml version="1.0" encoding="UTF-8"?>
     w.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+    open(
+        &mut w,
+        "svg",
+        &[
+            ("xmlns", "http://www.w3.org/2000/svg".into()),
+            ("xmlns:xlink", "http://www.w3.org/1999/xlink".into()),
+            ("version", "1.1".into()),
+            ("width", format!("{}", canvas_w.round())),
+            ("height", format!("{}", canvas_h.round())),
+            ("viewBox", format!("0 0 {} {}", canvas_w.round(), canvas_h.round())),
+            ("font-family", f.family.clone()),
+        ],
+    )?;
 
-    let mut svg = BytesStart::new("svg");
-    svg.push_attribute(("xmlns", "http://www.w3.org/2000/svg"));
-    svg.push_attribute(("version", "1.1"));
-    svg.push_attribute(("width", canvas_w.round().to_string().as_str()));
-    svg.push_attribute(("height", canvas_h.round().to_string().as_str()));
-    svg.push_attribute((
-        "viewBox",
-        format!("0 0 {} {}", canvas_w.round(), canvas_h.round()).as_str(),
-    ));
-    w.write_event(Event::Start(svg))?;
-
-    let is_dark = theme == "dark";
-    let bg_color = background.unwrap_or(if is_dark { "#0f172a" } else { "#f8fafc" });
-
-    // Canvas background
-    let mut bg = BytesStart::new("rect");
-    bg.push_attribute(("width", "100%"));
-    bg.push_attribute(("height", "100%"));
-    bg.push_attribute(("fill", bg_color));
-    w.write_event(Event::Empty(bg))?;
-
-    // --- Defs: drop shadows and markers -------------------------------------
-    w.write_event(Event::Start(BytesStart::new("defs")))?;
-
-    // Drop shadow filter for elevated cards
-    let mut filter = BytesStart::new("filter");
-    filter.push_attribute(("id", "card-shadow"));
-    filter.push_attribute(("x", "-20%"));
-    filter.push_attribute(("y", "-20%"));
-    filter.push_attribute(("width", "140%"));
-    filter.push_attribute(("height", "140%"));
-    w.write_event(Event::Start(filter))?;
-
-    let mut shadow = BytesStart::new("feDropShadow");
-    shadow.push_attribute(("dx", "0"));
-    shadow.push_attribute(("dy", "2"));
-    shadow.push_attribute(("stdDeviation", "3"));
-    shadow.push_attribute(("flood-color", "#0f172a"));
-    shadow.push_attribute(("flood-opacity", if is_dark { "0.35" } else { "0.08" }));
-    w.write_event(Event::Empty(shadow))?;
-    w.write_event(Event::End(BytesEnd::new("filter")))?;
-
-    // Arrow markers
-    let markers = [
-        ("arrow-slate", "#64748b", true),
-        ("arrow-dark", "#94a3b8", true),
-        ("arrow-amber", "#d97706", false),
-        ("arrow-red", "#ef4444", false),
-        ("arrow-indigo", "#6366f1", true),
-    ];
-    for (id, col, filled) in markers {
-        let mut marker = BytesStart::new("marker");
-        marker.push_attribute(("id", id));
-        marker.push_attribute(("viewBox", "0 0 10 10"));
-        marker.push_attribute(("refX", "8"));
-        marker.push_attribute(("refY", "5"));
-        marker.push_attribute(("markerWidth", "6"));
-        marker.push_attribute(("markerHeight", "6"));
-        marker.push_attribute(("orient", "auto-start-reverse"));
-        w.write_event(Event::Start(marker))?;
-
-        let mut mpath = BytesStart::new("path");
-        mpath.push_attribute(("d", "M 0 1.5 L 8 5 L 0 8.5 z"));
-        if filled {
-            mpath.push_attribute(("fill", col));
-        } else {
-            mpath.push_attribute(("fill", "none"));
-            mpath.push_attribute(("stroke", col));
-            mpath.push_attribute(("stroke-width", "1.5"));
-        }
-        w.write_event(Event::Empty(mpath))?;
-        w.write_event(Event::End(BytesEnd::new("marker")))?;
+    // --- Resolve edges first: their looks decide which markers exist -------------
+    let mut markers = Markers::default();
+    struct EdgeDraw {
+        pts: Vec<(f64, f64)>,
+        look: ResolvedEdge,
+        head: Option<String>,
+        tail: Option<String>,
     }
-
-    // ER & UML Markers
-    let er_color = "#0284c7";
-    let uml_color = "#6366f1";
-    let uml_dark = if is_dark { "#cbd5e1" } else { "#0f172a" };
-
-    // Crow's foot (many)
-    let mut m_er_many = BytesStart::new("marker");
-    m_er_many.push_attribute(("id", "marker-er-many"));
-    m_er_many.push_attribute(("viewBox", "0 0 12 12"));
-    m_er_many.push_attribute(("refX", "10"));
-    m_er_many.push_attribute(("refY", "6"));
-    m_er_many.push_attribute(("markerWidth", "8"));
-    m_er_many.push_attribute(("markerHeight", "8"));
-    m_er_many.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_er_many))?;
-    let mut p_er_many = BytesStart::new("path");
-    p_er_many.push_attribute(("d", "M 0 1 L 10 6 L 0 11 M 10 0 L 10 12"));
-    p_er_many.push_attribute(("fill", "none"));
-    p_er_many.push_attribute(("stroke", er_color));
-    p_er_many.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_er_many))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // Single line (one)
-    let mut m_er_one = BytesStart::new("marker");
-    m_er_one.push_attribute(("id", "marker-er-one"));
-    m_er_one.push_attribute(("viewBox", "0 0 12 12"));
-    m_er_one.push_attribute(("refX", "8"));
-    m_er_one.push_attribute(("refY", "6"));
-    m_er_one.push_attribute(("markerWidth", "8"));
-    m_er_one.push_attribute(("markerHeight", "8"));
-    m_er_one.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_er_one))?;
-    let mut p_er_one = BytesStart::new("path");
-    p_er_one.push_attribute(("d", "M 4 1 L 4 11 M 8 1 L 8 11"));
-    p_er_one.push_attribute(("fill", "none"));
-    p_er_one.push_attribute(("stroke", er_color));
-    p_er_one.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_er_one))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // UML Inheritance Triangle (hollow closed triangle)
-    let mut m_uml_tri = BytesStart::new("marker");
-    m_uml_tri.push_attribute(("id", "marker-uml-triangle"));
-    m_uml_tri.push_attribute(("viewBox", "0 0 12 12"));
-    m_uml_tri.push_attribute(("refX", "10"));
-    m_uml_tri.push_attribute(("refY", "6"));
-    m_uml_tri.push_attribute(("markerWidth", "8"));
-    m_uml_tri.push_attribute(("markerHeight", "8"));
-    m_uml_tri.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_uml_tri))?;
-    let mut p_uml_tri = BytesStart::new("path");
-    p_uml_tri.push_attribute(("d", "M 1 1 L 11 6 L 1 11 z"));
-    p_uml_tri.push_attribute(("fill", bg_color));
-    p_uml_tri.push_attribute(("stroke", uml_color));
-    p_uml_tri.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_uml_tri))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // UML Composition Diamond (filled)
-    let mut m_uml_df = BytesStart::new("marker");
-    m_uml_df.push_attribute(("id", "marker-uml-diamond-fill"));
-    m_uml_df.push_attribute(("viewBox", "0 0 16 12"));
-    m_uml_df.push_attribute(("refX", "2"));
-    m_uml_df.push_attribute(("refY", "6"));
-    m_uml_df.push_attribute(("markerWidth", "10"));
-    m_uml_df.push_attribute(("markerHeight", "8"));
-    m_uml_df.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_uml_df))?;
-    let mut p_uml_df = BytesStart::new("path");
-    p_uml_df.push_attribute(("d", "M 1 6 L 8 1 L 15 6 L 8 11 z"));
-    p_uml_df.push_attribute(("fill", uml_dark));
-    p_uml_df.push_attribute(("stroke", uml_dark));
-    p_uml_df.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_uml_df))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // UML Aggregation Diamond (hollow)
-    let mut m_uml_dh = BytesStart::new("marker");
-    m_uml_dh.push_attribute(("id", "marker-uml-diamond-hollow"));
-    m_uml_dh.push_attribute(("viewBox", "0 0 16 12"));
-    m_uml_dh.push_attribute(("refX", "2"));
-    m_uml_dh.push_attribute(("refY", "6"));
-    m_uml_dh.push_attribute(("markerWidth", "10"));
-    m_uml_dh.push_attribute(("markerHeight", "8"));
-    m_uml_dh.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_uml_dh))?;
-    let mut p_uml_dh = BytesStart::new("path");
-    p_uml_dh.push_attribute(("d", "M 1 6 L 8 1 L 15 6 L 8 11 z"));
-    p_uml_dh.push_attribute(("fill", bg_color));
-    p_uml_dh.push_attribute(("stroke", uml_dark));
-    p_uml_dh.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_uml_dh))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // Open Chevron Marker
-    let mut m_open = BytesStart::new("marker");
-    m_open.push_attribute(("id", "marker-open-slate"));
-    m_open.push_attribute(("viewBox", "0 0 10 10"));
-    m_open.push_attribute(("refX", "7"));
-    m_open.push_attribute(("refY", "5"));
-    m_open.push_attribute(("markerWidth", "6"));
-    m_open.push_attribute(("markerHeight", "6"));
-    m_open.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_open))?;
-    let mut p_open = BytesStart::new("path");
-    p_open.push_attribute(("d", "M 1 2 L 7 5 L 1 8"));
-    p_open.push_attribute(("fill", "none"));
-    p_open.push_attribute(("stroke", if is_dark { "#94a3b8" } else { "#64748b" }));
-    p_open.push_attribute(("stroke-width", "1.5"));
-    w.write_event(Event::Empty(p_open))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    // Circle / Dot Marker
-    let mut m_circle = BytesStart::new("marker");
-    m_circle.push_attribute(("id", "marker-circle-fill"));
-    m_circle.push_attribute(("viewBox", "0 0 10 10"));
-    m_circle.push_attribute(("refX", "5"));
-    m_circle.push_attribute(("refY", "5"));
-    m_circle.push_attribute(("markerWidth", "6"));
-    m_circle.push_attribute(("markerHeight", "6"));
-    m_circle.push_attribute(("orient", "auto-start-reverse"));
-    w.write_event(Event::Start(m_circle))?;
-    let mut c_elem = BytesStart::new("circle");
-    c_elem.push_attribute(("cx", "5"));
-    c_elem.push_attribute(("cy", "5"));
-    c_elem.push_attribute(("r", "3.5"));
-    c_elem.push_attribute(("fill", if is_dark { "#94a3b8" } else { "#64748b" }));
-    w.write_event(Event::Empty(c_elem))?;
-    w.write_event(Event::End(BytesEnd::new("marker")))?;
-
-    w.write_event(Event::End(BytesEnd::new("defs")))?;
-
-    // --- Optional Diagram Title Header --------------------------------------
-    if let Some(title) = &compiled.title {
-        let title_color = if is_dark { "#f1f5f9" } else { "#0f172a" };
-        let sub_color = if is_dark { "#94a3b8" } else { "#64748b" };
-
-        let mut t_elem = BytesStart::new("text");
-        t_elem.push_attribute(("x", format!("{origin_x:.1}").as_str()));
-        t_elem.push_attribute(("y", format!("{:.1}", origin_y + 15.0).as_str()));
-        t_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-        t_elem.push_attribute(("font-size", "15"));
-        t_elem.push_attribute(("font-weight", "bold"));
-        t_elem.push_attribute(("fill", title_color));
-        w.write_event(Event::Start(t_elem))?;
-        w.write_event(Event::Text(BytesText::new(title)))?;
-        w.write_event(Event::End(BytesEnd::new("text")))?;
-
-        if let Some(desc) = &compiled.description {
-            let mut d_elem = BytesStart::new("text");
-            d_elem.push_attribute(("x", format!("{origin_x:.1}").as_str()));
-            d_elem.push_attribute(("y", format!("{:.1}", origin_y + 31.0).as_str()));
-            d_elem.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-            d_elem.push_attribute(("font-size", "11"));
-            d_elem.push_attribute(("fill", sub_color));
-            w.write_event(Event::Start(d_elem))?;
-            w.write_event(Event::Text(BytesText::new(desc)))?;
-            w.write_event(Event::End(BytesEnd::new("text")))?;
-        }
-    }
-
-    // --- Draw group containers ----------------------------------------------
-    for group in &compiled.groups {
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
-        let mut found_count = 0;
-
-        for node_id in &group.nodes {
-            if let Some(&node_idx) = compiled.node_map.get(node_id) {
-                if let Some(nl) = layout.positions.get(&node_idx) {
-                    min_x = min_x.min(nl.x);
-                    min_y = min_y.min(nl.y);
-                    max_x = max_x.max(nl.x + nl.width);
-                    max_y = max_y.max(nl.y + nl.height);
-                    found_count += 1;
-                }
-            }
-        }
-
-        if found_count == 0 {
-            continue;
-        }
-
-        let pad_h = tokens.group_pad_for(max_x - min_x, max_y - min_y);
-        let pad_top = tokens.group_pad_top_for(max_x - min_x, max_y - min_y);
-        let pad_bot = pad_h;
-        let min_edge = tokens.px(1.25);
-
-        let gx = (min_x - pad_h).max(min_edge);
-        let gy = (min_y - pad_top).max(min_edge);
-        let gw = (max_x - min_x) + (pad_h * 2.0);
-        let gh = (max_y - min_y) + pad_top + pad_bot;
-        let color = group.color.as_deref().unwrap_or("#64748b");
-
-        let mut g = BytesStart::new("g");
-        g.push_attribute(("id", group.id.as_str()));
-        g.push_attribute(("class", "diagram-group"));
-        w.write_event(Event::Start(g))?;
-
-        let mut rect = BytesStart::new("rect");
-        rect.push_attribute(("x", gx.round().to_string().as_str()));
-        rect.push_attribute(("y", gy.round().to_string().as_str()));
-        rect.push_attribute(("width", gw.round().to_string().as_str()));
-        rect.push_attribute(("height", gh.round().to_string().as_str()));
-        rect.push_attribute(("rx", "8"));
-        rect.push_attribute(("fill", color));
-        rect.push_attribute(("fill-opacity", if is_dark { "0.12" } else { "0.08" }));
-        rect.push_attribute(("stroke", color));
-        rect.push_attribute(("stroke-width", "1.5"));
-        rect.push_attribute(("stroke-dasharray", "6 6"));
-        w.write_event(Event::Empty(rect))?;
-
-        let group_icon = group
-            .resolved_icon()
-            .and_then(|k| rdg_icons::render_icon_svg(&k, gx + 14.0, gy + 8.0, 16.0));
-        let text_x = if group_icon.is_some() {
-            gx + 36.0
-        } else {
-            gx + 14.0
-        };
-
-        if let Some(icon_svg) = group_icon {
-            w.write_event(Event::Text(BytesText::from_escaped(icon_svg)))?;
-        }
-
-        let mut text = BytesStart::new("text");
-        text.push_attribute(("x", text_x.round().to_string().as_str()));
-        text.push_attribute(("y", (gy + 20.0).round().to_string().as_str()));
-        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-        text.push_attribute(("font-size", "11"));
-        text.push_attribute(("font-weight", "bold"));
-        text.push_attribute(("fill", color));
-        w.write_event(Event::Start(text))?;
-        w.write_event(Event::Text(BytesText::new(&group.label)))?;
-        w.write_event(Event::End(BytesEnd::new("text")))?;
-
-        w.write_event(Event::End(BytesEnd::new("g")))?;
-    }
-
-    // --- Draw edges (behind nodes) with intelligent orthogonal rounded paths -
-    let default_edge = if is_dark { "#94a3b8" } else { "#64748b" };
-
-    struct SvgEdgeLabel {
-        lx: f64,
-        ly: f64,
-        text: String,
-    }
-    let mut pending_labels: Vec<SvgEdgeLabel> = Vec::new();
-    let mut pending_badges: Vec<(f64, f64, u32)> = Vec::new();
-
-    // Pass 1: Render all edge paths
+    let mut edges: Vec<(EdgeIndex, EdgeDraw)> = Vec::new();
     for edge_idx in compiled.graph.edge_indices() {
-        let (src_idx, dst_idx) = compiled.graph.edge_endpoints(edge_idx).unwrap();
         let edge_data = &compiled.graph[edge_idx];
-
-        let (s_idx, d_idx) = if edge_data.reversed {
-            (dst_idx, src_idx)
-        } else {
-            (src_idx, dst_idx)
-        };
-
-        let (Some(src_nl), Some(dst_nl)) =
-            (layout.positions.get(&s_idx), layout.positions.get(&d_idx))
-        else {
+        let Some(plan) = edge_plans.get(&edge_idx) else { continue };
+        let Some(pts) = rdg_render_core::annotate::edge_polyline(compiled, layout, edge_idx, Some(plan), tokens) else {
             continue;
         };
+        let look = edge_look(theme, edge_data);
+        let head = markers.id(&look.head, &look.color, look.head_fill);
+        let tail = look.tail.as_deref().and_then(|t| markers.id(t, &look.color, look.tail_fill));
+        edges.push((edge_idx, EdgeDraw { pts, look, head, tail }));
+    }
 
-        let plan = edge_plans.get(&edge_idx);
-        let src_side = plan.map_or(Side::Bottom, |p| p.src_side);
-        let dst_side = plan.map_or(Side::Top, |p| p.dst_side);
-        let exit_port = plan.map_or(0.5, |p| p.exit_port);
-        let entry_port = plan.map_or(0.5, |p| p.entry_port);
-        let channel_y = plan.map_or((src_nl.y + dst_nl.y) / 2.0, |p| p.channel_y);
+    // --- Background, grid, defs ------------------------------------------------------
+    let bg = background.unwrap_or(&theme.canvas.background).to_string();
+    open(&mut w, "defs", &[])?;
+    if theme.node.shadow {
+        let shadow = if theme.mode == rdg_render_core::theme::Mode::Dark { "0.35" } else { "0.10" };
+        w.write_event(Event::Text(BytesText::from_escaped(format!(
+            r##"<filter id="card-shadow" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="{shadow}"/></filter>"##
+        ))))?;
+    }
+    if let Some(grid) = &theme.canvas.grid {
+        let g = theme.canvas.grid_spacing;
+        w.write_event(Event::Text(BytesText::from_escaped(format!(
+            r#"<pattern id="canvas-grid" width="{g}" height="{g}" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="{grid}"/></pattern>"#
+        ))))?;
+    }
+    markers.write_defs(&mut w, theme.edge.head_size)?;
+    close(&mut w, "defs")?;
+    el(&mut w, "rect", &[("width", "100%".into()), ("height", "100%".into()), ("fill", bg.clone())])?;
+    if theme.canvas.grid.is_some() {
+        el(&mut w, "rect", &[("width", "100%".into()), ("height", "100%".into()), ("fill", "url(#canvas-grid)".into())])?;
+    }
+    let shadow_attr = || theme.node.shadow.then(|| ("filter", "url(#card-shadow)".to_string()));
 
-        // Start/end/choice markers are tiny fixed-size shapes whose label renders
-        // below the shape itself (`write_label_below_marker`, called further down for
-        // these same types) rather than inside it — an edge leaving from the exact
-        // bottom of that small box would be drawn straight through the label text
-        // sitting right below it. Both the exit point and the step badge need to
-        // clear the label, same fix as the draw.io backend's `exitDy`.
-        let src_is_marker = matches!(
-            compiled.graph[s_idx].node_type.to_ascii_lowercase().as_str(),
-            "start" | "start_state" | "initial" | "initial_state" |
-            "end" | "end_state" | "final" | "final_state" |
-            "choice" | "branch"
-        );
-        // Expressed as a multiple of the marker's *own* height, not a flat pixel
-        // value, so it stays correct if `DesignTokens::{start,end,choice}_marker_*`
-        // ever changes the marker's actual size — the same
-        // `marker_label_clearance_ratio` the draw.io backend applies via its `exitY`
-        // extrapolation (see that backend's `style.rs`), just computed directly here
-        // since native SVG draws literal coordinates rather than percentage anchors.
-        let marker_clearance = if src_is_marker && src_side == Side::Bottom {
-            src_nl.height * (tokens.marker_label_clearance_ratio - 1.0)
-        } else {
-            0.0
-        };
-
-        let (x1, y1_raw) = port_point(src_nl, src_side, exit_port);
-        let y1 = y1_raw + marker_clearance;
-        let (x2, y2) = port_point(dst_nl, dst_side, entry_port);
-
-        if let Some(step) = edge_data.step {
-            let badge_distance =
-                if src_is_marker { src_nl.height * 1.4 } else { tokens.px(1.75) };
-            let (bx, by) = rdg_render_core::routing::badge_point_near_exit(
-                src_nl, src_side, exit_port, badge_distance,
-            );
-            pending_badges.push((bx, by, step));
-        }
-
-        let is_bi = matches!(
-            edge_data.edge_style.as_deref(),
-            Some("bi") | Some("bidirectional")
-        );
-        let mut marker_start: Option<&str> = None;
-        let mut marker_end: Option<&str> = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
-
-        match edge_data.edge_style.as_deref() {
-            Some("async") => marker_end = Some("arrow-amber"),
-            Some("error") | Some("fallback") => marker_end = Some("arrow-red"),
-            Some("data") | Some("stream") => marker_end = Some("arrow-indigo"),
-            Some("one_to_many") => {
-                marker_start = Some("marker-er-one");
-                marker_end = Some("marker-er-many");
-            }
-            Some("many_to_many") => {
-                marker_start = Some("marker-er-many");
-                marker_end = Some("marker-er-many");
-            }
-            Some("one_to_one") => {
-                marker_start = Some("marker-er-one");
-                marker_end = Some("marker-er-one");
-            }
-            Some("zero_to_many") => {
-                marker_start = Some("marker-er-one");
-                marker_end = Some("marker-er-many");
-            }
-            Some("inheritance") => marker_end = Some("marker-uml-triangle"),
-            Some("realization") => marker_end = Some("marker-uml-triangle"),
-            Some("composition") => {
-                marker_start = Some("marker-uml-diamond-fill");
-                marker_end = None;
-            }
-            Some("aggregation") => {
-                marker_start = Some("marker-uml-diamond-hollow");
-                marker_end = None;
-            }
-            Some("dependency") => {
-                marker_end = Some(if is_dark { "arrow-dark" } else { "arrow-slate" })
-            }
-            _ => {
-                if is_bi {
-                    marker_start = Some(if is_dark { "arrow-dark" } else { "arrow-slate" });
-                }
-            }
-        };
-
-        // Stroke/width/dash come from the shared `rdg_render_core::style` table (also used by
-        // the draw.io backend); marker selection above stays SVG-specific.
-        let colors = edge_style_colors(edge_data.edge_style.as_deref(), theme, default_edge);
-        let (base_stroke, base_w, base_dash) = (colors.stroke, colors.width, colors.dash);
-
-        // Custom formatting overrides
-        let stroke = edge_data.color.as_deref().unwrap_or(base_stroke);
-        let stroke_w_buf = edge_data
-            .width
-            .map_or_else(|| base_w.to_string(), |w| format!("{w:.1}"));
-        let dash = if let Some(ls) = &edge_data.line_style {
-            match ls.to_ascii_lowercase().as_str() {
-                "dashed" => Some("8 4"),
-                "dotted" => Some("3 3"),
-                "solid" => None,
-                _ => base_dash,
-            }
-        } else {
-            base_dash
-        };
-
-        if let Some(h) = &edge_data.head {
-            marker_end = match h.to_ascii_lowercase().as_str() {
-                "none" => None,
-                "open" => Some("marker-open-slate"),
-                "diamond" => Some("marker-uml-diamond-fill"),
-                "circle" | "oval" => Some("marker-circle-fill"),
-                "ermany" => Some("marker-er-many"),
-                "erone" => Some("marker-er-one"),
-                _ => Some(if is_dark { "arrow-dark" } else { "arrow-slate" }),
-            };
-        }
-        if let Some(t) = &edge_data.tail {
-            marker_start = match t.to_ascii_lowercase().as_str() {
-                "none" => None,
-                "open" => Some("marker-open-slate"),
-                "diamond" => Some("marker-uml-diamond-fill"),
-                "circle" | "oval" => Some("marker-circle-fill"),
-                "ermany" => Some("marker-er-many"),
-                "erone" => Some("marker-er-one"),
-                _ => Some(if is_dark { "arrow-dark" } else { "arrow-slate" }),
-            };
-        }
-
-        let corridor_x = plan.map_or(0.0, |p| p.corridor_x);
-        let default_wps = compute_edge_waypoints(
-            (x1, y1),
-            src_side,
-            (x2, y2),
-            dst_side,
-            channel_y,
-            corridor_x,
-            tokens,
-        );
-        let waypoints = plan.map_or(default_wps.as_slice(), |p| p.waypoints.as_slice());
-        let path_d = build_orthogonal_svg_path((x1, y1), (x2, y2), waypoints);
-        let (lx, ly) = rdg_render_core::routing::polyline_midpoint((x1, y1), waypoints, (x2, y2));
-
-        let mut path = BytesStart::new("path");
-        path.push_attribute(("d", path_d.as_str()));
-        path.push_attribute(("fill", "none"));
-        path.push_attribute(("stroke", stroke));
-        path.push_attribute(("stroke-width", stroke_w_buf.as_str()));
-        if let Some(d) = dash {
-            path.push_attribute(("stroke-dasharray", d));
-        }
-        if let Some(ms) = marker_start {
-            path.push_attribute(("marker-start", format!("url(#{ms})").as_str()));
-        }
-        if let Some(me) = marker_end {
-            path.push_attribute(("marker-end", format!("url(#{me})").as_str()));
-        }
-        w.write_event(Event::Empty(path))?;
-
-        if let Some(label) = &edge_data.label {
-            let label_trimmed = label.trim();
-            if !label_trimmed.is_empty() {
-                pending_labels.push(SvgEdgeLabel {
-                    lx,
-                    ly,
-                    text: label_trimmed.to_string(),
-                });
-            }
+    // --- Title -----------------------------------------------------------------------
+    if let Some(title) = &compiled.title {
+        let (tx, ty) = bounds.as_ref().map_or((24.0, 12.0), |b| (b.min_x, b.min_y));
+        let lh = tokens.line_height(f.title_size);
+        text_el(
+            &mut w,
+            &[
+                ("x", f1(tx)),
+                ("y", f1(ty + lh * 0.8)),
+                ("font-size", format!("{}", f.title_size)),
+                ("font-weight", "bold".into()),
+                ("fill", theme.title.color.clone()),
+            ],
+            title,
+        )?;
+        if let Some(desc) = &compiled.description {
+            text_el(
+                &mut w,
+                &[
+                    ("x", f1(tx)),
+                    ("y", f1(ty + lh + tokens.line_height(f.description_size) * 0.85)),
+                    ("font-size", format!("{}", f.description_size)),
+                    ("fill", theme.title.description_color.clone()),
+                ],
+                desc,
+            )?;
         }
     }
 
-    // Two different edges' paths can legitimately pass close to each other (common in
-    // any real, moderately dense diagram), which put their labels at the same spot
-    // often enough in practice to be worth fixing rather than living with — confirmed
-    // directly while visually reviewing rendered sample diagrams (e.g. a "SQL" label
-    // and an "invoke" label landing on top of each other, reading as "SQLoke"). Pass 1
-    // already computed every label's un-adjusted anchor in a fixed, deterministic
-    // order (edge declaration order); decluttering them as a batch here — rather than
-    // each label only knowing about its own edge — is the only way to detect that kind
-    // of cross-edge collision at all.
-    // Edge labels render a size step below the base body font.
-    let edge_label_font = tokens.font_size * 0.83;
-    let pill_width = |text: &str| {
-        (text.chars().count() as f64 * tokens.char_width(edge_label_font) + tokens.px(1.0)).max(tokens.px(2.5))
-    };
-    let pill_height = tokens.line_height(edge_label_font);
-
-    let declutter_items: Vec<(f64, f64, f64, f64)> = pending_labels
-        .iter()
-        .map(|el| (el.lx, el.ly, pill_width(&el.text), pill_height))
-        .collect();
-    // Labels must clear every node box too, not just each other — otherwise
-    // decluttering one label away from another can just as easily land it on top of
-    // an unrelated node's card instead (see `declutter_label_positions_avoiding`'s
-    // own doc comment for the real diagram that surfaced this). Group title banners
-    // get the same treatment: a label landing on a group's title text is just as
-    // unreadable as one landing on a node.
-    let mut node_obstacles: Vec<(f64, f64, f64, f64)> =
-        layout.positions.values().map(|nl| (nl.x, nl.y, nl.width, nl.height)).collect();
-    node_obstacles.extend(
-        rdg_render_core::routing::compute_group_title_zones(compiled, layout, tokens)
-            .iter()
-            .map(|tz| (tz.min_x, tz.min_y, tz.max_x - tz.min_x, tz.max_y - tz.min_y)),
-    );
-    let label_dys = rdg_render_core::routing::declutter_label_positions_avoiding(
-        &declutter_items,
-        &node_obstacles,
-        tokens,
-    );
-
-    // Pass 2: Render all edge labels on top of all paths to guarantee zero line collisions
-    for (el, dy) in pending_labels.into_iter().zip(label_dys) {
-        let pill_w = pill_width(&el.text);
-        let pill_h = pill_height;
-        let ly = el.ly + dy;
-        let pill_x = el.lx - pill_w / 2.0;
-        let pill_y = ly - pill_h / 2.0;
-
-        let mut pill = BytesStart::new("rect");
-        pill.push_attribute(("x", format!("{pill_x:.1}").as_str()));
-        pill.push_attribute(("y", format!("{pill_y:.1}").as_str()));
-        pill.push_attribute(("width", format!("{pill_w:.1}").as_str()));
-        pill.push_attribute(("height", format!("{pill_h:.1}").as_str()));
-        // Clean text cutout background with NO border box!
-        pill.push_attribute(("fill", if is_dark { "#0f172a" } else { "#f8fafc" }));
-        w.write_event(Event::Empty(pill))?;
-
-        let mut text = BytesStart::new("text");
-        text.push_attribute(("x", format!("{:.1}", el.lx).as_str()));
-        text.push_attribute(("y", format!("{:.1}", ly + 3.5).as_str()));
-        text.push_attribute(("text-anchor", "middle"));
-        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-        text.push_attribute(("font-size", "10"));
-        text.push_attribute(("font-weight", "500"));
-        text.push_attribute(("fill", if is_dark { "#94a3b8" } else { "#475569" }));
-        w.write_event(Event::Start(text))?;
-        w.write_event(Event::Text(BytesText::new(&el.text)))?;
-        w.write_event(Event::End(BytesEnd::new("text")))?;
+    // --- Groups ----------------------------------------------------------------------
+    let rects = rdg_render_core::canvas::group_rects(compiled, layout, tokens);
+    let mut gi = 0;
+    for group in &compiled.groups {
+        if !group.nodes.iter().any(|id| compiled.node_map.get(id).is_some_and(|i| layout.positions.contains_key(i))) {
+            continue;
+        }
+        let Some(&(gx, gy, gw, gh)) = rects.get(gi) else { break };
+        gi += 1;
+        let look = group_look(theme, group);
+        let mut attrs = vec![
+            ("x", f1(gx)),
+            ("y", f1(gy)),
+            ("width", f1(gw)),
+            ("height", f1(gh)),
+            ("rx", f1(look.corner_radius)),
+            ("fill", look.fill.clone()),
+            ("fill-opacity", format!("{:.3}", look.fill_opacity)),
+            ("stroke", look.stroke.clone()),
+            ("stroke-width", f1(look.stroke_width)),
+        ];
+        attrs.extend(dash_attr(look.dash.as_deref()));
+        el(&mut w, "rect", &attrs)?;
+        let mut tx = gx + 12.0;
+        let ty = gy + 8.0 + tokens.line_height(f.group_title_size) * 0.8;
+        if let Some(icon) = group.resolved_icon() {
+            let s = f.group_title_size + 4.0;
+            if let Some(m) = rdg_icons::render_icon_svg(&icon, theme.icon_style(), tx, ty - s * 0.8, s, &format!("g{gi}-")) {
+                w.write_event(Event::Text(BytesText::from_escaped(m)))?;
+                tx += s + 6.0;
+            }
+        }
+        text_el(
+            &mut w,
+            &[
+                ("x", f1(tx)),
+                ("y", f1(ty)),
+                ("font-size", format!("{}", f.group_title_size)),
+                ("font-weight", if look.title_bold { "bold" } else { "normal" }.into()),
+                ("fill", look.title_color.clone()),
+            ],
+            &look.title,
+        )?;
     }
 
-    // Pass 3: Flow-numbering badges, on top of both paths and labels.
-    let (badge_fill, badge_text) = if is_dark {
-        ("#f1f5f9", "#0f172a")
-    } else {
-        ("#0f172a", "#ffffff")
-    };
-    for (bx, by, step) in pending_badges {
-        let mut circle = BytesStart::new("circle");
-        circle.push_attribute(("cx", format!("{bx:.1}").as_str()));
-        circle.push_attribute(("cy", format!("{by:.1}").as_str()));
-        circle.push_attribute(("r", "9"));
-        circle.push_attribute(("fill", badge_fill));
-        w.write_event(Event::Empty(circle))?;
-
-        let mut text = BytesStart::new("text");
-        text.push_attribute(("x", format!("{bx:.1}").as_str()));
-        text.push_attribute(("y", format!("{:.1}", by + 3.2).as_str()));
-        text.push_attribute(("text-anchor", "middle"));
-        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-        text.push_attribute(("font-size", "10"));
-        text.push_attribute(("font-weight", "700"));
-        text.push_attribute(("fill", badge_text));
-        w.write_event(Event::Start(text))?;
-        w.write_event(Event::Text(BytesText::new(&step.to_string())))?;
-        w.write_event(Event::End(BytesEnd::new("text")))?;
+    // --- Edges (under nodes) -----------------------------------------------------------
+    for (_, e) in &edges {
+        let d = build_orthogonal_svg_path(e.pts[0], e.pts[e.pts.len() - 1], &e.pts[1..e.pts.len() - 1]);
+        let mut attrs = vec![
+            ("d", d),
+            ("fill", "none".into()),
+            ("stroke", e.look.color.clone()),
+            ("stroke-width", f1(e.look.width)),
+        ];
+        attrs.extend(dash_attr(e.look.dash.as_deref()));
+        if let Some(m) = &e.head {
+            attrs.push(("marker-end", format!("url(#{m})")));
+        }
+        if let Some(m) = &e.tail {
+            attrs.push(("marker-start", format!("url(#{m})")));
+        }
+        el(&mut w, "path", &attrs)?;
     }
 
-    // --- Draw nodes with white-card elevation & semantic accents ------------
-    let card_fill = if is_dark { "#1e293b" } else { "#ffffff" };
-    let title_color = if is_dark { "#f1f5f9" } else { "#0f172a" };
-    let sub_color = if is_dark { "#94a3b8" } else { "#64748b" };
-
+    // --- Nodes ---------------------------------------------------------------------------
+    let mut icon_n = 0usize;
     for node_idx in compiled.graph.node_indices() {
-        let node_data = &compiled.graph[node_idx];
-        let Some(nl) = layout.positions.get(&node_idx) else {
-            continue;
-        };
-        let stroke_color = node_data
-            .color
-            .as_deref()
-            .unwrap_or_else(|| node_accent_color(&node_data.node_type, theme));
-
-        let lower_type = node_data.node_type.to_ascii_lowercase();
-        let is_start = matches!(
-            lower_type.as_str(),
-            "start" | "start_state" | "initial" | "initial_state"
-        );
-        let is_end = matches!(
-            lower_type.as_str(),
-            "end" | "end_state" | "final" | "final_state"
-        );
-        let is_choice = matches!(lower_type.as_str(), "choice" | "branch");
-        let is_decision = matches!(lower_type.as_str(), "decision" | "condition");
-        let is_class = matches!(
-            lower_type.as_str(),
-            "class" | "interface" | "abstract_class" | "struct"
-        );
-        let is_table_cylinder = !is_class
-            && (matches!(
-                lower_type.as_str(),
-                "table" | "entity" | "record" | "database" | "db" | "storage"
-            ) || !node_data.fields.is_empty());
-
-        if is_start {
-            let cx = nl.x + nl.width / 2.0;
-            let cy = nl.y + nl.height / 2.0;
-            let mut circle = BytesStart::new("circle");
-            circle.push_attribute(("cx", format!("{cx:.1}").as_str()));
-            circle.push_attribute(("cy", format!("{cy:.1}").as_str()));
-            circle.push_attribute(("r", "12"));
-            circle.push_attribute(("fill", stroke_color));
-            w.write_event(Event::Empty(circle))?;
-            // `nl` is a fixed 28x28 marker (see `estimate_node_size_inner`), far
-            // smaller than most labels — centering the label on top of it the way the
-            // generic card path does would bury the text inside the circle. Drawing it
-            // below instead (same fix applied to the draw.io backend's
-            // `verticalLabelPosition=bottom`) keeps it legible without needing the box
-            // itself to grow.
-            write_label_below_marker(&mut w, cx, nl.y + nl.height, &node_data.label, title_color, tokens)?;
-            continue;
-        } else if is_end {
-            let cx = nl.x + nl.width / 2.0;
-            let cy = nl.y + nl.height / 2.0;
-            let mut outer = BytesStart::new("circle");
-            outer.push_attribute(("cx", format!("{cx:.1}").as_str()));
-            outer.push_attribute(("cy", format!("{cy:.1}").as_str()));
-            outer.push_attribute(("r", "14"));
-            outer.push_attribute(("fill", "none"));
-            outer.push_attribute(("stroke", stroke_color));
-            outer.push_attribute(("stroke-width", "2.0"));
-            w.write_event(Event::Empty(outer))?;
-
-            let mut inner = BytesStart::new("circle");
-            inner.push_attribute(("cx", format!("{cx:.1}").as_str()));
-            inner.push_attribute(("cy", format!("{cy:.1}").as_str()));
-            inner.push_attribute(("r", "8"));
-            inner.push_attribute(("fill", stroke_color));
-            w.write_event(Event::Empty(inner))?;
-            write_label_below_marker(&mut w, cx, nl.y + nl.height, &node_data.label, title_color, tokens)?;
-            continue;
-        } else if is_choice || is_decision {
-            let poly_d = format!(
-                "M {cx:.1} {top:.1} L {right:.1} {cy:.1} L {cx:.1} {bot:.1} L {left:.1} {cy:.1} Z",
-                cx = nl.x + nl.width / 2.0,
-                top = nl.y,
-                right = nl.x + nl.width,
-                cy = nl.y + nl.height / 2.0,
-                bot = nl.y + nl.height,
-                left = nl.x,
-            );
-            let mut poly = BytesStart::new("path");
-            poly.push_attribute(("d", poly_d.as_str()));
-            poly.push_attribute(("fill", card_fill));
-            poly.push_attribute(("stroke", stroke_color));
-            poly.push_attribute(("stroke-width", "2.0"));
-            poly.push_attribute(("filter", "url(#card-shadow)"));
-            w.write_event(Event::Empty(poly))?;
-
-            // Render authentic icon badge pinned at left vertex if present
-            if let Some(icon_key) = node_data.icon.as_deref() {
-                if let Some(badge_markup) = rdg_icons::render_icon_badge_svg(
-                    icon_key,
-                    nl.x,
-                    nl.y + nl.height / 2.0,
-                    is_dark,
-                ) {
-                    w.write_event(Event::Text(BytesText::from_escaped(badge_markup)))?;
-                }
-            }
-        } else if is_class {
-            let mut rect = BytesStart::new("rect");
-            rect.push_attribute(("x", format!("{:.1}", nl.x).as_str()));
-            rect.push_attribute(("y", format!("{:.1}", nl.y).as_str()));
-            rect.push_attribute(("width", format!("{:.1}", nl.width).as_str()));
-            rect.push_attribute(("height", format!("{:.1}", nl.height).as_str()));
-            rect.push_attribute(("rx", "6"));
-            rect.push_attribute(("ry", "6"));
-            rect.push_attribute(("fill", card_fill));
-            rect.push_attribute(("stroke", stroke_color));
-            rect.push_attribute(("stroke-width", "1.5"));
-            rect.push_attribute(("filter", "url(#card-shadow)"));
-            w.write_event(Event::Empty(rect))?;
-
-            let cx = nl.x + nl.width / 2.0;
-            let mut cur_y = nl.y + 14.0;
-
-            let stereotype = if lower_type == "interface" {
-                Some("&lt;&lt;interface&gt;&gt;")
-            } else if lower_type == "abstract_class" {
-                Some("&lt;&lt;abstract&gt;&gt;")
-            } else {
-                None
-            };
-
-            if let Some(st) = stereotype {
-                let mut st_text = BytesStart::new("text");
-                st_text.push_attribute(("x", format!("{cx:.1}").as_str()));
-                st_text.push_attribute(("y", format!("{cur_y:.1}").as_str()));
-                st_text.push_attribute(("text-anchor", "middle"));
-                st_text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-                st_text.push_attribute(("font-size", "10"));
-                st_text.push_attribute(("font-style", "italic"));
-                st_text.push_attribute(("fill", sub_color));
-                w.write_event(Event::Start(st_text))?;
-                w.write_event(Event::Text(BytesText::from_escaped(st)))?;
-                w.write_event(Event::End(BytesEnd::new("text")))?;
-                cur_y += 14.0;
-            }
-
-            let mut title_text = BytesStart::new("text");
-            title_text.push_attribute(("x", format!("{cx:.1}").as_str()));
-            title_text.push_attribute(("y", format!("{cur_y:.1}").as_str()));
-            title_text.push_attribute(("text-anchor", "middle"));
-            title_text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-            title_text.push_attribute(("font-size", "12"));
-            title_text.push_attribute(("font-weight", "bold"));
-            if lower_type == "abstract_class" {
-                title_text.push_attribute(("font-style", "italic"));
-            }
-            title_text.push_attribute(("fill", title_color));
-            w.write_event(Event::Start(title_text))?;
-            w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
-            w.write_event(Event::End(BytesEnd::new("text")))?;
-            cur_y += 8.0;
-
-            let mut h_line = BytesStart::new("line");
-            h_line.push_attribute(("x1", (nl.x).round().to_string().as_str()));
-            h_line.push_attribute(("y1", cur_y.round().to_string().as_str()));
-            h_line.push_attribute(("x2", (nl.x + nl.width).round().to_string().as_str()));
-            h_line.push_attribute(("y2", cur_y.round().to_string().as_str()));
-            h_line.push_attribute(("stroke", if is_dark { "#475569" } else { "#e2e8f0" }));
-            h_line.push_attribute(("stroke-width", "1.0"));
-            w.write_event(Event::Empty(h_line))?;
-
-            for (f_idx, field) in node_data.fields.iter().enumerate() {
-                let field_y = cur_y + 16.0 + (f_idx as f64 * 18.0);
-                let field_clean = rdg_layout::strip_markdown_tokens(field);
-                let (left_part, right_part) = if let Some(idx) = field_clean.find(':') {
-                    (&field_clean[..idx], &field_clean[idx + 1..])
-                } else {
-                    (field_clean.as_str(), "")
-                };
-
-                let mut left_text = BytesStart::new("text");
-                left_text.push_attribute(("x", (nl.x + 12.0).round().to_string().as_str()));
-                left_text.push_attribute(("y", field_y.round().to_string().as_str()));
-                left_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
-                left_text.push_attribute(("font-size", "10"));
-                left_text.push_attribute(("fill", title_color));
-                w.write_event(Event::Start(left_text))?;
-                w.write_event(Event::Text(BytesText::new(left_part.trim())))?;
-                w.write_event(Event::End(BytesEnd::new("text")))?;
-
-                if !right_part.trim().is_empty() {
-                    let mut right_text = BytesStart::new("text");
-                    right_text.push_attribute((
-                        "x",
-                        (nl.x + nl.width - 12.0).round().to_string().as_str(),
-                    ));
-                    right_text.push_attribute(("y", field_y.round().to_string().as_str()));
-                    right_text.push_attribute(("text-anchor", "end"));
-                    right_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
-                    right_text.push_attribute(("font-size", "10"));
-                    right_text.push_attribute(("fill", sub_color));
-                    w.write_event(Event::Start(right_text))?;
-                    w.write_event(Event::Text(BytesText::new(right_part.trim())))?;
-                    w.write_event(Event::End(BytesEnd::new("text")))?;
-                }
-            }
-            continue;
-        } else if is_table_cylinder {
-            let rh = (nl.height * 0.08).clamp(6.0, 9.0);
-            let rx = nl.width / 2.0;
-            let cx = nl.x + rx;
-
-            let body_d = format!(
-                "M {x:.1} {y_top:.1} \
-                 L {x:.1} {y_bot:.1} \
-                 A {rx:.1} {rh:.1} 0 0 0 {x_right:.1} {y_bot:.1} \
-                 L {x_right:.1} {y_top:.1} Z",
-                x = nl.x,
-                y_top = nl.y + rh,
-                y_bot = nl.y + nl.height - rh,
-                x_right = nl.x + nl.width,
-            );
-            let mut body = BytesStart::new("path");
-            body.push_attribute(("d", body_d.as_str()));
-            body.push_attribute(("fill", card_fill));
-            body.push_attribute(("stroke", stroke_color));
-            body.push_attribute(("stroke-width", "1.5"));
-            body.push_attribute(("filter", "url(#card-shadow)"));
-            w.write_event(Event::Empty(body))?;
-
-            let mut top_cap = BytesStart::new("ellipse");
-            top_cap.push_attribute(("cx", format!("{cx:.1}").as_str()));
-            top_cap.push_attribute(("cy", format!("{:.1}", nl.y + rh).as_str()));
-            top_cap.push_attribute(("rx", format!("{rx:.1}").as_str()));
-            top_cap.push_attribute(("ry", format!("{rh:.1}").as_str()));
-            let cap_fill = if is_dark { "#334155" } else { "#f1f5f9" };
-            top_cap.push_attribute(("fill", cap_fill));
-            top_cap.push_attribute(("stroke", stroke_color));
-            top_cap.push_attribute(("stroke-width", "1.5"));
-            w.write_event(Event::Empty(top_cap))?;
-
-            // Render authentic database/engine icon badge pinned at top-left boundary!
-            if let Some(icon_key) = node_data.icon.as_deref() {
-                if let Some(badge_markup) =
-                    rdg_icons::render_icon_badge_svg(icon_key, nl.x, nl.y, is_dark)
-                {
-                    w.write_event(Event::Text(BytesText::from_escaped(badge_markup)))?;
-                }
-            }
-
-            // If table has fields, render structured table rows inside the cylinder!
-            if !node_data.fields.is_empty() {
-                // Table header label
-                let header_y = nl.y + rh * 2.0 + 8.0;
-                let mut text = BytesStart::new("text");
-                text.push_attribute(("x", format!("{cx:.1}").as_str()));
-                text.push_attribute(("y", format!("{header_y:.1}").as_str()));
-                text.push_attribute(("text-anchor", "middle"));
-                text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-                text.push_attribute(("font-size", "11"));
-                text.push_attribute(("font-weight", "bold"));
-                text.push_attribute(("fill", title_color));
-                w.write_event(Event::Start(text))?;
-                w.write_event(Event::Text(BytesText::new(&node_data.label)))?;
-                w.write_event(Event::End(BytesEnd::new("text")))?;
-
-                // Divider line below header
-                let mut h_line = BytesStart::new("line");
-                h_line.push_attribute(("x1", (nl.x + 8.0).round().to_string().as_str()));
-                h_line.push_attribute(("y1", (header_y + 6.0).round().to_string().as_str()));
-                h_line.push_attribute(("x2", (nl.x + nl.width - 8.0).round().to_string().as_str()));
-                h_line.push_attribute(("y2", (header_y + 6.0).round().to_string().as_str()));
-                h_line.push_attribute(("stroke", if is_dark { "#475569" } else { "#e2e8f0" }));
-                h_line.push_attribute(("stroke-width", "1.0"));
-                w.write_event(Event::Empty(h_line))?;
-
-                // Fields rows
-                for (f_idx, field) in node_data.fields.iter().enumerate() {
-                    let field_y = header_y + 18.0 + (f_idx as f64 * 20.0);
-                    let field_clean = rdg_layout::strip_markdown_tokens(field);
-                    let (left_part, right_part) = if let Some(idx) = field_clean.find(':') {
-                        (&field_clean[..idx], &field_clean[idx + 1..])
-                    } else {
-                        (field_clean.as_str(), "")
-                    };
-                    let is_pk = field_clean.to_ascii_uppercase().contains("[PK]")
-                        || field_clean.to_ascii_uppercase().contains("PRIMARY KEY");
-
-                    let mut left_text = BytesStart::new("text");
-                    left_text.push_attribute(("x", (nl.x + 12.0).round().to_string().as_str()));
-                    left_text.push_attribute(("y", field_y.round().to_string().as_str()));
-                    left_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
-                    left_text.push_attribute(("font-size", "10"));
-                    if is_pk {
-                        left_text.push_attribute(("font-weight", "bold"));
-                        left_text.push_attribute(("fill", "#d97706"));
-                    } else {
-                        left_text.push_attribute(("fill", title_color));
-                    }
-                    w.write_event(Event::Start(left_text))?;
-                    w.write_event(Event::Text(BytesText::new(left_part.trim())))?;
-                    w.write_event(Event::End(BytesEnd::new("text")))?;
-
-                    if !right_part.trim().is_empty() {
-                        let mut right_text = BytesStart::new("text");
-                        right_text.push_attribute((
-                            "x",
-                            (nl.x + nl.width - 12.0).round().to_string().as_str(),
-                        ));
-                        right_text.push_attribute(("y", field_y.round().to_string().as_str()));
-                        right_text.push_attribute(("text-anchor", "end"));
-                        right_text.push_attribute(("font-family", "JetBrains Mono, monospace"));
-                        right_text.push_attribute(("font-size", "9"));
-                        right_text.push_attribute(("fill", sub_color));
-                        w.write_event(Event::Start(right_text))?;
-                        w.write_event(Event::Text(BytesText::new(right_part.trim())))?;
-                        w.write_event(Event::End(BytesEnd::new("text")))?;
-                    }
-                }
-                continue;
-            }
-        } else {
-            let mut rect = BytesStart::new("rect");
-            rect.push_attribute(("x", format!("{:.1}", nl.x).as_str()));
-            rect.push_attribute(("y", format!("{:.1}", nl.y).as_str()));
-            rect.push_attribute(("width", format!("{:.1}", nl.width).as_str()));
-            rect.push_attribute(("height", format!("{:.1}", nl.height).as_str()));
-            rect.push_attribute(("rx", "8"));
-            rect.push_attribute(("ry", "8"));
-            rect.push_attribute(("fill", card_fill));
-            rect.push_attribute(("stroke", stroke_color));
-            rect.push_attribute(("stroke-width", "1.5"));
-            rect.push_attribute(("filter", "url(#card-shadow)"));
-            w.write_event(Event::Empty(rect))?;
-
-            // Render authentic language / database / user icon badge pinned at top-left boundary!
-            if let Some(icon_key) = node_data.icon.as_deref() {
-                if let Some(badge_markup) =
-                    rdg_icons::render_icon_badge_svg(icon_key, nl.x, nl.y, is_dark)
-                {
-                    w.write_event(Event::Text(BytesText::from_escaped(badge_markup)))?;
-                }
-            }
-        }
-
-        // Multi-line text wrapping with centered tspans and typography support
-        let max_line_chars = if is_decision { 16 } else { 20 };
-        let lines = wrap_and_classify_label(&node_data.label, max_line_chars);
-        let cx = nl.x + nl.width / 2.0;
-
-        let total_text_h = match lines.len() {
-            0 => 0.0,
-            1 => 14.0,
-            n => 14.0 + (n - 1) as f64 * 14.0,
-        };
-
-        // Center text inside cylindrical body below the top ellipse cap for databases/tables
-        let start_y = if is_table_cylinder {
-            let rh = (nl.height * 0.08).clamp(6.0, 9.0);
-            let body_top = nl.y + 2.0 * rh + 2.0;
-            let body_bot = nl.y + nl.height - rh - 2.0;
-            let body_h = (body_bot - body_top).max(total_text_h);
-            body_top + (body_h - total_text_h) / 2.0 + 11.0
-        } else {
-            nl.y + (nl.height - total_text_h) / 2.0 + 11.0
-        };
-
-        let mut text = BytesStart::new("text");
-        text.push_attribute(("x", format!("{cx:.1}").as_str()));
-        text.push_attribute(("y", format!("{start_y:.1}").as_str()));
-        text.push_attribute(("text-anchor", "middle"));
-        text.push_attribute(("font-family", "Inter, Helvetica, sans-serif"));
-        w.write_event(Event::Start(text))?;
-
-        for (line_idx, pl) in lines.iter().enumerate() {
-            let spans = parse_inline_spans(&pl.text);
-
-            for (span_idx, span) in spans.into_iter().enumerate() {
-                let mut tspan = BytesStart::new("tspan");
-                if span_idx == 0 {
-                    tspan.push_attribute(("x", format!("{cx:.1}").as_str()));
-                    if line_idx > 0 {
-                        tspan.push_attribute(("dy", "14"));
-                    }
-                }
-
-                let span_text = if span.style.is_math {
-                    latex_to_unicode(&span.text)
-                } else if span.style.is_subscript {
-                    to_subscript(&span.text)
-                } else if span.style.is_superscript {
-                    to_superscript(&span.text)
-                } else {
-                    span.text
-                };
-
-                if span.style.is_code {
-                    tspan.push_attribute((
-                        "font-family",
-                        "JetBrains Mono, Menlo, Courier New, monospace",
-                    ));
-                    tspan.push_attribute(("font-size", "11"));
-                    if pl.is_subtitle {
-                        tspan.push_attribute(("font-weight", "normal"));
-                        tspan.push_attribute(("fill", sub_color));
-                    } else {
-                        tspan.push_attribute(("font-weight", "bold"));
-                        tspan.push_attribute(("fill", title_color));
-                    }
-                } else if span.style.is_math {
-                    tspan.push_attribute((
-                        "font-family",
-                        "Cambria Math, Latin Modern Math, Times New Roman, serif",
-                    ));
-                    tspan.push_attribute(("font-style", "italic"));
-                    tspan.push_attribute(("font-size", if pl.is_subtitle { "10" } else { "12" }));
-                    tspan.push_attribute((
-                        "fill",
-                        if pl.is_subtitle {
-                            sub_color
-                        } else {
-                            title_color
-                        },
-                    ));
-                } else {
-                    tspan.push_attribute(("font-size", if pl.is_subtitle { "10" } else { "12" }));
-                    tspan.push_attribute((
-                        "fill",
-                        if pl.is_subtitle {
-                            sub_color
-                        } else {
-                            title_color
-                        },
-                    ));
-                    let is_bold = span.style.is_bold || (!pl.is_subtitle && !span.style.is_italic);
-                    tspan.push_attribute(("font-weight", if is_bold { "bold" } else { "normal" }));
-                    if span.style.is_italic {
-                        tspan.push_attribute(("font-style", "italic"));
-                    }
-                    if span.style.is_underline {
-                        tspan.push_attribute(("text-decoration", "underline"));
-                    }
-                    if span.style.is_strikethrough {
-                        tspan.push_attribute(("text-decoration", "line-through"));
-                    }
-                }
-
-                w.write_event(Event::Start(tspan))?;
-                w.write_event(Event::Text(BytesText::new(&span_text)))?;
-                w.write_event(Event::End(BytesEnd::new("tspan")))?;
-            }
-        }
-
-        if let Some(t) = &node_data.technology {
-            if !node_data.label.contains(t) {
-                let mut tech_span = BytesStart::new("tspan");
-                tech_span.push_attribute(("x", format!("{cx:.1}").as_str()));
-                tech_span.push_attribute(("dy", "14"));
-                tech_span.push_attribute(("font-family", "JetBrains Mono, monospace"));
-                tech_span.push_attribute(("font-size", "9"));
-                tech_span.push_attribute(("fill", sub_color));
-                w.write_event(Event::Start(tech_span))?;
-                w.write_event(Event::Text(BytesText::new(&format!("[{t}]"))))?;
-                w.write_event(Event::End(BytesEnd::new("tspan")))?;
-            }
-        }
-
-        w.write_event(Event::End(BytesEnd::new("text")))?;
+        let nd = &compiled.graph[node_idx];
+        let Some(nl) = layout.positions.get(&node_idx) else { continue };
+        let look = node_look(theme, nd);
+        icon_n += 1;
+        draw_node(&mut w, theme, tokens, nd, nl, &look, icon_n, &shadow_attr)?;
     }
 
-    w.write_event(Event::End(BytesEnd::new("svg")))?;
+    // --- Edge labels and flow badges, on top ---------------------------------------------
+    let annotations = rdg_render_core::annotate::place_edge_annotations(compiled, layout, edge_plans, tokens);
+    for (edge_idx, e) in &edges {
+        let Some(spot) = annotations.labels.get(edge_idx) else { continue };
+        let (x, y, pw, ph) = spot.rect();
+        el(
+            &mut w,
+            "rect",
+            &[("x", f1(x)), ("y", f1(y)), ("width", f1(pw)), ("height", f1(ph)), ("rx", "2".into()), ("fill", theme.edge_label.background.clone())],
+        )?;
+        let color = if theme.edge_label.use_edge_color { e.look.color.clone() } else { theme.edge_label.color.clone() };
+        let lines: Vec<&str> = spot.text.lines().collect();
+        let line_h = ph / lines.len().max(1) as f64;
+        for (i, line) in lines.iter().enumerate() {
+            let baseline = y + line_h * (i as f64 + 0.5) + f.edge_label_size * 0.35;
+            text_el(
+                &mut w,
+                &[
+                    ("x", f1(spot.cx)),
+                    ("y", f1(baseline)),
+                    ("text-anchor", "middle".into()),
+                    ("font-size", format!("{}", f.edge_label_size)),
+                    ("fill", color.clone()),
+                ],
+                line,
+            )?;
+        }
+    }
+    for edge_idx in compiled.graph.edge_indices() {
+        let (Some(step), Some(&(bx, by))) = (compiled.graph[edge_idx].step, annotations.badges.get(&edge_idx)) else {
+            continue;
+        };
+        el(&mut w, "circle", &[("cx", f1(bx)), ("cy", f1(by)), ("r", f1(tokens.badge_radius)), ("fill", theme.badge.fill.clone())])?;
+        text_el(
+            &mut w,
+            &[
+                ("x", f1(bx)),
+                ("y", f1(by + f.badge_size * 0.35)),
+                ("text-anchor", "middle".into()),
+                ("font-size", format!("{}", f.badge_size)),
+                ("font-weight", "bold".into()),
+                ("fill", theme.badge.text.clone()),
+            ],
+            &step.to_string(),
+        )?;
+    }
+
+    // --- Legend ------------------------------------------------------------------------
+    if let Some(items) = &legend {
+        draw_legend(&mut w, theme, tokens, items, min_x, max_y + legend_gap, (canvas_w - 2.0 * min_x).max(tokens.px(40.0)))?;
+    }
+
+    close(&mut w, "svg")?;
     Ok(String::from_utf8(buf)?)
+}
+
+// ---------------------------------------------------------------------------
+// Nodes
+// ---------------------------------------------------------------------------
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn draw_node(
+    w: &mut W,
+    theme: &Theme,
+    tokens: &DesignTokens,
+    nd: &NodeData,
+    nl: &NodeLayout,
+    look: &NodeLook,
+    n: usize,
+    shadow_attr: &dyn Fn() -> Option<(&'static str, String)>,
+) -> Result<()> {
+    let f = &theme.font;
+    let (cx, cy) = (nl.x + nl.width / 2.0, nl.y + nl.height / 2.0);
+    let paint = |extra: &[(&'static str, String)]| {
+        let mut a = vec![
+            ("fill", look.fill.clone()),
+            ("fill-opacity", format!("{:.3}", look.fill_opacity)),
+            ("stroke", look.stroke.clone()),
+            ("stroke-width", f1(look.stroke_width)),
+        ];
+        a.extend_from_slice(extra);
+        a.extend(shadow_attr());
+        a
+    };
+
+    match look.shape.as_str() {
+        "start" => {
+            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 2.0)), ("fill", look.fill.clone())])?;
+            return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
+        }
+        "end" => {
+            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 1.0)), ("fill", "none".into()), ("stroke", look.stroke.clone()), ("stroke-width", "2".into())])?;
+            el(w, "circle", &[("cx", f1(cx)), ("cy", f1(cy)), ("r", f1(nl.width / 2.0 - 6.0)), ("fill", look.fill.clone())])?;
+            return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
+        }
+        "choice" | "diamond" => {
+            let d = format!(
+                "M {cx:.1} {t:.1} L {r:.1} {cy:.1} L {cx:.1} {b:.1} L {l:.1} {cy:.1} Z",
+                t = nl.y,
+                r = nl.x + nl.width,
+                b = nl.y + nl.height,
+                l = nl.x
+            );
+            el(w, "path", &paint(&[("d", d)]))?;
+            if look.shape == "choice" {
+                return label_below(w, theme, tokens, &nd.label, cx, nl.y + nl.height, &look.title_color);
+            }
+        }
+        "ellipse" => {
+            el(w, "ellipse", &paint(&[("cx", f1(cx)), ("cy", f1(cy)), ("rx", f1(nl.width / 2.0)), ("ry", f1(nl.height / 2.0))]))?;
+        }
+        "cylinder" => {
+            let (rx, rh) = (nl.width / 2.0, theme.node.cylinder_cap);
+            let body = format!(
+                "M {x:.1} {t:.1} L {x:.1} {b:.1} A {rx:.1} {rh:.1} 0 0 0 {r:.1} {b:.1} L {r:.1} {t:.1} Z",
+                x = nl.x,
+                t = nl.y + rh,
+                b = nl.y + nl.height - rh,
+                r = nl.x + nl.width
+            );
+            el(w, "path", &paint(&[("d", body)]))?;
+            let mut cap = vec![("cx", f1(cx)), ("cy", f1(nl.y + rh)), ("rx", f1(rx)), ("ry", f1(rh))];
+            cap.extend([("fill", look.fill.clone()), ("fill-opacity", format!("{:.3}", look.fill_opacity)), ("stroke", look.stroke.clone()), ("stroke-width", f1(look.stroke_width))]);
+            el(w, "ellipse", &cap)?;
+        }
+        "icon" => {
+            let halo = tokens.icon_halo_size();
+            if let Some(plate) = &theme.icon.backdrop {
+                // The halo filled with a light plate, so dark marks stay visible.
+                if tokens.icon_halo_circle {
+                    el(w, "circle", &[("cx", f1(cx)), ("cy", f1(nl.y + halo / 2.0)), ("r", f1(halo / 2.0)), ("fill", plate.clone())])?;
+                } else {
+                    el(
+                        w,
+                        "rect",
+                        &[("x", f1(cx - halo / 2.0)), ("y", f1(nl.y)), ("width", f1(halo)), ("height", f1(halo)), ("rx", f1(look.corner_radius + 2.0)), ("fill", plate.clone())],
+                    )?;
+                }
+            }
+            if let Some(key) = nd.icon.as_deref() {
+                let size = tokens.icon_node_size;
+                let (dx, dy) = rdg_render_core::style::logo_offset(nl.width, size, halo);
+                if let Some(m) = rdg_icons::render_icon_svg(key, theme.icon_style(), nl.x + dx, nl.y + dy, size, &format!("n{n}-")) {
+                    w.write_event(Event::Text(BytesText::from_escaped(m)))?;
+                }
+            }
+            let top = nl.y + halo + tokens.px(0.25);
+            return node_text(w, theme, tokens, nd, look, cx, top, None, None);
+        }
+        _ => {
+            el(
+                w,
+                "rect",
+                &paint(&[("x", f1(nl.x)), ("y", f1(nl.y)), ("width", f1(nl.width)), ("height", f1(nl.height)), ("rx", f1(look.corner_radius))]),
+            )?;
+        }
+    }
+
+    if !nd.fields.is_empty() {
+        return field_card(w, theme, nd, nl, look);
+    }
+    // Vertically centred in the box (a cylinder's body, below its cap); the icon sits
+    // inline before the first line, the pair centred together.
+    let lines = wrap_and_classify_label(&nd.label, if look.shape == "diamond" { tokens.wrap_chars_diamond } else { tokens.wrap_chars_normal });
+    let tech = nd.technology.as_deref().filter(|t| !nd.label.contains(*t));
+    let inline_icon = nd.icon.as_deref().filter(|k| rdg_icons::icon_document(k, theme.icon_style()).is_some());
+    let text_h: f64 = lines
+        .iter()
+        .enumerate()
+        .map(|(i, l)| if i == 0 { first_line_height(tokens, f, l.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(if l.is_subtitle { f.node_detail_size } else { f.node_title_size }) })
+        .sum::<f64>()
+        + tech.map_or(0.0, |_| tokens.line_height(f.node_detail_size));
+    let (top, bottom) = if look.shape == "cylinder" { (nl.y + 2.0 * theme.node.cylinder_cap, nl.y + nl.height - theme.node.cylinder_cap) } else { (nl.y, nl.y + nl.height) };
+    let start = top + ((bottom - top) - text_h) / 2.0;
+    node_text(w, theme, tokens, nd, look, cx, start, Some(lines), inline_icon.map(|k| (k, n)))
+}
+
+/// Height of a label's first line: its text, or the inline icon beside it if taller.
+fn first_line_height(tokens: &DesignTokens, f: &rdg_render_core::theme::Fonts, is_subtitle: bool, has_icon: bool) -> f64 {
+    let lh = tokens.line_height(if is_subtitle { f.node_detail_size } else { f.node_title_size });
+    if has_icon { lh.max(tokens.icon_size + 4.0) } else { lh }
+}
+
+/// A node's label lines starting at `top`, centred on `cx`.
+#[allow(clippy::too_many_arguments)]
+fn node_text(
+    w: &mut W,
+    theme: &Theme,
+    tokens: &DesignTokens,
+    nd: &NodeData,
+    look: &NodeLook,
+    cx: f64,
+    top: f64,
+    lines: Option<Vec<rdg_render_core::typography::ProcessedLine>>,
+    inline_icon: Option<(&str, usize)>,
+) -> Result<()> {
+    let f = &theme.font;
+    let lines = lines.unwrap_or_else(|| wrap_and_classify_label(&nd.label, tokens.wrap_chars_normal));
+    let mut y = top;
+    for (i, pl) in lines.iter().enumerate() {
+        let size = if pl.is_subtitle { f.node_detail_size } else { f.node_title_size };
+        let lh = if i == 0 { first_line_height(tokens, f, pl.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(size) };
+        // Text sits centred in its line box (the line box is taller beside an icon).
+        let baseline = y + lh / 2.0 + size * 0.35;
+        let mut cx = cx;
+        if let (0, Some((key, n))) = (i, inline_icon) {
+            let plain: String = parse_inline_spans(&pl.text).into_iter().map(|s| s.text).collect();
+            let text_w = plain.chars().count() as f64 * tokens.char_width(size);
+            let (s, gap) = (tokens.icon_size, tokens.icon_reserve - tokens.icon_size);
+            let x0 = cx - (s + gap + text_w) / 2.0;
+            if let Some(plate) = theme.icon.backdrop.as_ref().filter(|_| !rdg_icons::is_glyph(key)) {
+                el(w, "rect", &[("x", f1(x0 - 1.0)), ("y", f1(y + (lh - s) / 2.0 - 1.0)), ("width", f1(s + 2.0)), ("height", f1(s + 2.0)), ("rx", "3".into()), ("fill", plate.clone())])?;
+            }
+            if let Some(m) = rdg_icons::render_icon_svg(key, theme.icon_style(), x0, y + (lh - s) / 2.0, s, &format!("n{n}-")) {
+                w.write_event(Event::Text(BytesText::from_escaped(m)))?;
+            }
+            cx = x0 + s + gap + text_w / 2.0;
+        }
+        y += lh;
+        let color = if pl.is_subtitle { &look.detail_color } else { &look.title_color };
+        let weight = if !pl.is_subtitle && theme.node.title_bold { "bold" } else { "normal" };
+        open(
+            w,
+            "text",
+            &[("x", f1(cx)), ("y", f1(baseline)), ("text-anchor", "middle".into()), ("font-size", format!("{size}")), ("font-weight", weight.into()), ("fill", color.clone())],
+        )?;
+        for span in parse_inline_spans(&pl.text) {
+            let t = if span.style.is_math {
+                latex_to_unicode(&span.text)
+            } else if span.style.is_subscript {
+                to_subscript(&span.text)
+            } else if span.style.is_superscript {
+                to_superscript(&span.text)
+            } else {
+                span.text
+            };
+            let mut attrs: Vec<(&str, String)> = Vec::new();
+            if span.style.is_code {
+                attrs.push(("font-family", f.code_family.clone()));
+            }
+            if span.style.is_bold {
+                attrs.push(("font-weight", "bold".into()));
+            }
+            if span.style.is_italic || span.style.is_math {
+                attrs.push(("font-style", "italic".into()));
+            }
+            if span.style.is_underline {
+                attrs.push(("text-decoration", "underline".into()));
+            }
+            if span.style.is_strikethrough {
+                attrs.push(("text-decoration", "line-through".into()));
+            }
+            open(w, "tspan", &attrs)?;
+            w.write_event(Event::Text(BytesText::new(&t)))?;
+            close(w, "tspan")?;
+        }
+        close(w, "text")?;
+    }
+    if let Some(t) = nd.technology.as_deref().filter(|t| !nd.label.contains(*t)) {
+        let lh = tokens.line_height(f.node_detail_size);
+        text_el(
+            w,
+            &[("x", f1(cx)), ("y", f1(y + lh * 0.75)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_detail_size)), ("fill", look.detail_color.clone())],
+            &format!("[{t}]"),
+        )?;
+    }
+    Ok(())
+}
+
+/// A marker's label, underneath it.
+fn label_below(w: &mut W, theme: &Theme, tokens: &DesignTokens, label: &str, cx: f64, top: f64, color: &str) -> Result<()> {
+    let size = theme.font.node_title_size;
+    let lh = tokens.line_height(size);
+    for (i, pl) in wrap_and_classify_label(label, tokens.wrap_chars_normal).iter().enumerate() {
+        let plain: String = parse_inline_spans(&pl.text).into_iter().map(|s| s.text).collect();
+        text_el(
+            w,
+            &[
+                ("x", f1(cx)),
+                ("y", f1(top + lh * (i as f64 + 0.93))),
+                ("text-anchor", "middle".into()),
+                ("font-size", format!("{size}")),
+                ("font-weight", "bold".into()),
+                ("fill", color.to_string()),
+            ],
+            &plain,
+        )?;
+    }
+    Ok(())
+}
+
+/// Table / class card body: name header, divider, one row per field.
+fn field_card(w: &mut W, theme: &Theme, nd: &NodeData, nl: &NodeLayout, look: &NodeLook) -> Result<()> {
+    let f = &theme.font;
+    let lower = nd.node_type.to_ascii_lowercase();
+    let cx = nl.x + nl.width / 2.0;
+    let mut y = nl.y + if look.shape == "cylinder" { 2.0 * theme.node.cylinder_cap } else { 0.0 } + 16.0;
+    if let Some(st) = match lower.as_str() {
+        "interface" => Some("«interface»"),
+        "abstract_class" => Some("«abstract»"),
+        _ => None,
+    } {
+        text_el(w, &[("x", f1(cx)), ("y", f1(y)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_detail_size)), ("font-style", "italic".into()), ("fill", look.detail_color.clone())], st)?;
+        y += 14.0;
+    }
+    let mut title = vec![("x", f1(cx)), ("y", f1(y)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_title_size)), ("font-weight", "bold".into()), ("fill", look.title_color.clone())];
+    if lower == "abstract_class" {
+        title.push(("font-style", "italic".into()));
+    }
+    text_el(w, &title, &nd.label)?;
+    y += 8.0;
+    el(w, "line", &[("x1", f1(nl.x)), ("y1", f1(y)), ("x2", f1(nl.x + nl.width)), ("y2", f1(y)), ("stroke", look.stroke.clone()), ("stroke-opacity", "0.4".into())])?;
+    for (i, field) in nd.fields.iter().enumerate() {
+        let fy = y + 16.0 + i as f64 * 18.0;
+        let clean = rdg_layout::strip_markdown_tokens(field);
+        let (left, right) = clean.split_once(':').unwrap_or((clean.as_str(), ""));
+        let is_pk = clean.to_ascii_uppercase().contains("[PK]");
+        let mut la = vec![("x", f1(nl.x + 12.0)), ("y", f1(fy)), ("font-family", f.code_family.clone()), ("font-size", format!("{}", f.node_detail_size))];
+        if is_pk {
+            la.push(("font-weight", "bold".into()));
+            la.push(("fill", look.stroke.clone()));
+        } else {
+            la.push(("fill", look.title_color.clone()));
+        }
+        text_el(w, &la, left.trim())?;
+        if !right.trim().is_empty() {
+            text_el(
+                w,
+                &[("x", f1(nl.x + nl.width - 12.0)), ("y", f1(fy)), ("text-anchor", "end".into()), ("font-family", f.code_family.clone()), ("font-size", format!("{}", f.node_detail_size)), ("fill", look.detail_color.clone())],
+                right.trim(),
+            )?;
+        }
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Legend
+// ---------------------------------------------------------------------------
+
+pub(crate) fn draw_legend(w: &mut W, theme: &Theme, tokens: &DesignTokens, items: &[LegendItem], x0: f64, y0: f64, max_w: f64) -> Result<()> {
+    let f = &theme.font;
+    text_el(
+        w,
+        &[("x", f1(x0)), ("y", f1(y0 + tokens.line_height(f.group_title_size) * 0.8)), ("font-size", format!("{}", f.group_title_size)), ("font-weight", "bold".into()), ("fill", theme.text.primary.clone())],
+        "Legend",
+    )?;
+    let row_h = f.edge_label_size * 1.35 + 10.0;
+    let mut y = y0 + f.group_title_size * 1.35 + 6.0;
+    for row in legend_rows(items, theme, max_w).iter() {
+        let mut x = x0;
+        for (it, width) in row {
+            let mid = y + row_h / 2.0;
+            let label = match it {
+                LegendItem::Category { label, fill, fill_opacity, stroke, .. } => {
+                    el(
+                        w,
+                        "rect",
+                        &[("x", f1(x)), ("y", f1(mid - 7.0)), ("width", "22".into()), ("height", "14".into()), ("rx", "3".into()), ("fill", fill.clone()), ("fill-opacity", format!("{fill_opacity:.3}")), ("stroke", stroke.clone()), ("stroke-width", "1.25".into())],
+                    )?;
+                    label
+                }
+                LegendItem::Edge { label, look } => {
+                    let mut a = vec![("x1", f1(x)), ("y1", f1(mid)), ("x2", f1(x + 22.0)), ("y2", f1(mid)), ("stroke", look.color.clone()), ("stroke-width", f1(look.width))];
+                    a.extend(dash_attr(look.dash.as_deref()));
+                    el(w, "line", &a)?;
+                    label
+                }
+            };
+            text_el(
+                w,
+                &[("x", f1(x + 30.0)), ("y", f1(mid + f.edge_label_size * 0.35)), ("font-size", format!("{}", f.edge_label_size)), ("fill", theme.text.muted.clone())],
+                label,
+            )?;
+            x += width;
+        }
+        y += row_h;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1228,15 +756,20 @@ mod tests {
     }
 
     fn render(payload: &DiagramPayload, theme: &str) -> String {
-        let compiled = build_graph(payload).unwrap();
-        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let theme = rdg_render_core::theme::Theme::builtin(theme).unwrap();
+        let mut tokens = DesignTokens::default();
+        theme.apply_to_tokens(&mut tokens);
+        let mut compiled = build_graph(payload).unwrap();
+        rdg_render_core::look::prepare_graph(&theme, &mut compiled);
+        let config = LayoutConfig { tokens, ..LayoutConfig::default() };
+        let layout = compute_layout(&compiled, &config).unwrap();
         let edge_plans = rdg_render_core::routing::plan_all_edge_routes(
             &compiled,
             &layout,
             rdg_render_core::routing::RoutingAlgorithm::CornerHeuristic,
-            &DesignTokens::default(),
+            &tokens,
         );
-        render_svg(&compiled, &layout, &edge_plans, theme, None, &DesignTokens::default()).unwrap()
+        render_svg(&compiled, &layout, &edge_plans, &theme, None, &tokens).unwrap()
     }
 
     #[test]
@@ -1248,17 +781,32 @@ mod tests {
     }
 
     #[test]
+    fn test_logos_using_xlink_are_namespaced() {
+        // Some devicon logos (go, grpc, …) use `xlink:href`; strict parsers reject the file
+        // unless the root declares the prefix.
+        let mut p = payload_with_types(&[("n1", "service")]);
+        p.nodes[0].language = Some("go".into());
+        let xml = render(&p, "light");
+        if xml.contains("xlink:") {
+            assert!(xml.contains("xmlns:xlink=\"http://www.w3.org/1999/xlink\""));
+        }
+    }
+
+    #[test]
     fn test_database_and_table_share_accent_color_in_svg() {
         let db = render(&payload_with_types(&[("n1", "database")]), "standard");
         let table = render(&payload_with_types(&[("n1", "table")]), "standard");
-        assert!(db.contains("stroke=\"#0284c7\""));
-        assert!(table.contains("stroke=\"#0284c7\""));
+        let t = rdg_render_core::theme::Theme::builtin("light").unwrap();
+        let want = format!("stroke=\"{}\"", t.category("database").stroke);
+        assert!(db.contains(&want) && table.contains(&want));
     }
 
     #[test]
     fn test_card_shadow_and_cylinder_paths_present() {
-        let xml = render(&payload_with_types(&[("n1", "database")]), "standard");
+        // Shadows are a theme choice: on in `classic`, off in the flat themes.
+        let xml = render(&payload_with_types(&[("n1", "database")]), "classic");
         assert!(xml.contains("url(#card-shadow)"));
+        assert!(!render(&payload_with_types(&[("n1", "database")]), "light").contains("url(#card-shadow)"));
         assert!(xml.contains("<ellipse"));
     }
 

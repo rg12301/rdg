@@ -187,12 +187,171 @@ static ICONS: LazyLock<HashMap<&'static str, IconDef>> = LazyLock::new(|| {
         },
     );
 
+    // --- Category glyphs (rdg's own line icons) --------------------------------
+    // Minimal 24×24 stroke icons marking what a node *is* rather than whose product it
+    // is — drawn in the theme's ink so they carry meaning in black-and-white themes
+    // too. `currentColor` is replaced by the requested colour when rendered.
+    for (key, body) in GLYPHS {
+        m.insert(*key, IconDef { name: key, default_color: "#64748b", svg_body: body });
+    }
+
     m
 });
+
+/// Category glyph keys and their stroke bodies (see the loop above).
+const GLYPHS: &[(&str, &str)] = &[
+    ("glyph-service", r#"<path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>"#),
+    ("glyph-gateway", r#"<path d="M4 8h13l-3-3M20 16H7l3 3"/>"#),
+    ("glyph-database", r#"<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>"#),
+    ("glyph-cache", r#"<path d="M13 3 5 14h6l-1 7 8-11h-6l1-7z"/>"#),
+    ("glyph-queue", r#"<path d="M4 7h16M4 12h16M4 17h16"/>"#),
+    ("glyph-cloud", r#"<path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1 .25 8.5H7z"/>"#),
+    ("glyph-security", r#"<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3z"/>"#),
+    ("glyph-external", r#"<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>"#),
+    ("glyph-frontend", r#"<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>"#),
+    ("glyph-user", r#"<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>"#),
+    ("glyph-function", r#"<path d="M6 20 12 9M9 4h2l7 16"/>"#),
+    ("glyph-storage", r#"<path d="M4 8h16l-1.5 12h-13L4 8zM3 4h18v4H3z"/>"#),
+    ("glyph-decision", r#"<path d="M12 3l9 9-9 9-9-9z"/>"#),
+    ("glyph-generic", r#"<rect x="4" y="4" width="16" height="16" rx="3"/>"#),
+];
+
+include!(concat!(env!("OUT_DIR"), "/color_icons.rs"));
+
+/// How an icon is drawn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IconStyle<'a> {
+    /// The full-colour logo where one is vendored, else the glyph in its brand colour.
+    Color,
+    /// The single-colour glyph in this ink (e.g. `"#111827"`), for black-and-white themes.
+    Mono(&'a str),
+}
+
+fn color_logo(key: &str) -> Option<&'static str> {
+    let k = key.trim().to_ascii_lowercase();
+    COLOR_ICONS.binary_search_by(|(c, _)| c.cmp(&k.as_str())).ok().map(|i| COLOR_ICONS[i].1)
+}
+
+/// Whether `key` has a full-colour logo (a real product mark, as opposed to a glyph).
+pub fn has_color_logo(key: &str) -> bool {
+    color_logo(key).is_some()
+}
+
+/// Whether `key` is a category glyph (`glyph-*`) rather than a product mark.
+pub fn is_glyph(key: &str) -> bool {
+    key.starts_with("glyph-")
+}
+
+/// Replaces every fill/stroke colour (and `currentColor`) in a glyph body with `ink`.
+fn recolor(body: &str, ink: &str) -> String {
+    let mut out = body.replace("currentColor", ink);
+    for attr in ["fill=\"#", "stroke=\"#"] {
+        let mut res = String::with_capacity(out.len());
+        let mut rest = out.as_str();
+        while let Some(i) = rest.find(attr) {
+            res.push_str(&rest[..i + attr.len() - 1]);
+            let after = &rest[i + attr.len() - 1..];
+            let end = after[1..].find('"').map_or(after.len(), |e| e + 1);
+            res.push_str(ink);
+            rest = &after[end..];
+        }
+        res.push_str(rest);
+        out = res;
+    }
+    out
+}
+
+/// The icon as a standalone SVG document.
+pub fn icon_document(key: &str, style: IconStyle) -> Option<String> {
+    let glyph_doc = |icon: &IconDef, ink: Option<&str>| {
+        let stroke_glyph = is_glyph(icon.name);
+        let body = match ink {
+            Some(c) => recolor(icon.svg_body, c),
+            None if stroke_glyph => recolor(icon.svg_body, icon.default_color),
+            None => icon.svg_body.to_string(),
+        };
+        let wrap = if stroke_glyph {
+            r#" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor""#
+        } else {
+            ""
+        };
+        format!(r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><g{wrap}>{body}</g></svg>"#)
+            .replace("stroke=\"currentColor\"", &format!("stroke=\"{}\"", ink.unwrap_or(icon.default_color)))
+    };
+    match style {
+        IconStyle::Color => match color_logo(key) {
+            Some(doc) => Some(strip_prolog(doc).to_string()),
+            None => get_icon(key).map(|i| glyph_doc(i, None)),
+        },
+        IconStyle::Mono(ink) => match get_icon(key) {
+            Some(i) => Some(glyph_doc(i, Some(ink))),
+            // Only a colour logo exists: draw it desaturated.
+            None => color_logo(key).map(|doc| {
+                let (vb, inner) = split_svg(strip_prolog(doc));
+                format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}"><filter id="mono"><feColorMatrix type="saturate" values="0"/></filter><g filter="url(#mono)">{inner}</g></svg>"#
+                )
+            }),
+        },
+    }
+}
+
+fn strip_prolog(doc: &str) -> &str {
+    doc.find("<svg").map_or(doc, |i| &doc[i..])
+}
+
+/// `(viewBox, inner markup)` of a standalone SVG document.
+fn split_svg(doc: &str) -> (String, &str) {
+    let open_end = doc.find('>').map_or(0, |i| i + 1);
+    let open = &doc[..open_end];
+    let vb = open
+        .split("viewBox=\"")
+        .nth(1)
+        .and_then(|r| r.split('"').next())
+        .unwrap_or("0 0 24 24")
+        .to_string();
+    let close = doc.rfind("</svg>").unwrap_or(doc.len());
+    (vb, &doc[open_end..close])
+}
+
+/// Prefixes every `id` (and its `#id` references) so several copies of one icon can
+/// share an SVG document without their gradients/clip paths colliding.
+fn prefix_ids(markup: &str, prefix: &str) -> String {
+    let mut out = markup.replace("id=\"", &format!("id=\"{prefix}"));
+    out = out.replace("url(#", &format!("url(#{prefix}"));
+    out = out.replace("href=\"#", &format!("href=\"#{prefix}"));
+    out
+}
+
+/// The icon as a data URI (for draw.io image cells).
+pub fn icon_as_data_uri(key: &str, style: IconStyle) -> Option<String> {
+    let doc = icon_document(key, style)?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(doc.as_bytes());
+    Some(format!("data:image/svg+xml;base64,{b64}"))
+}
+
+/// The icon as a nested `<svg>` element at `(x, y)`, `size` px square, for embedding in
+/// an SVG document; `id_prefix` must be unique per embedded copy.
+pub fn render_icon_svg(key: &str, style: IconStyle, x: f64, y: f64, size: f64, id_prefix: &str) -> Option<String> {
+    let doc = icon_document(key, style)?;
+    let (vb, inner) = split_svg(&doc);
+    Some(format!(
+        r#"<svg class="node-tech-icon" x="{x:.1}" y="{y:.1}" width="{size:.1}" height="{size:.1}" viewBox="{vb}" preserveAspectRatio="xMidYMid meet">{}</svg>"#,
+        prefix_ids(inner, id_prefix)
+    ))
+}
 
 // ---------------------------------------------------------------------------
 // Detection & Lookup Helpers
 // ---------------------------------------------------------------------------
+
+/// Every icon key, sorted — what `icon:` accepts and what `rdg` can suggest from.
+pub fn icon_keys() -> Vec<&'static str> {
+    let mut keys: Vec<&'static str> = ICONS.keys().copied().chain(COLOR_ICONS.iter().map(|(k, _)| *k)).collect();
+    keys.sort_unstable();
+    keys.dedup();
+    keys
+}
 
 /// Retrieve an icon definition by key.
 pub fn get_icon(key: &str) -> Option<&'static IconDef> {
@@ -255,49 +414,49 @@ pub fn detect_language(
     let haystacks = [tech.unwrap_or(""), label, metadata.unwrap_or("")];
     for hay in haystacks {
         let lower = hay.to_ascii_lowercase();
-        if lower.contains("rust")
+        if has_word(&lower, "rust")
             || lower.contains("[rust]")
-            || lower.contains("tokio")
-            || lower.contains("axum")
+            || has_word(&lower, "tokio")
+            || has_word(&lower, "axum")
         {
             return Some("rust");
         }
-        if lower.contains("python")
+        if has_word(&lower, "python")
             || lower.contains("[python]")
-            || lower.contains("fastapi")
-            || lower.contains("django")
-            || lower.contains("flask")
+            || has_word(&lower, "fastapi")
+            || has_word(&lower, "django")
+            || has_word(&lower, "flask")
         {
             return Some("python");
         }
-        if lower.contains("golang")
+        if has_word(&lower, "golang")
             || lower.contains("[go]")
             || has_word(&lower, "gin")
-            || lower.contains("gorilla")
+            || has_word(&lower, "gorilla")
         {
             return Some("go");
         }
-        if lower.contains("typescript") || lower.contains("[ts]") || lower.contains("[typescript]")
+        if has_word(&lower, "typescript") || lower.contains("[ts]") || lower.contains("[typescript]")
         {
             return Some("typescript");
         }
-        if lower.contains("javascript")
+        if has_word(&lower, "javascript")
             || lower.contains("[js]")
-            || lower.contains("nodejs")
+            || has_word(&lower, "nodejs")
             || lower.contains("node.js")
         {
             return Some("node");
         }
-        if lower.contains("[java]") || has_word(&lower, "java") || lower.contains("spring") {
+        if lower.contains("[java]") || has_word(&lower, "java") || has_word(&lower, "spring") {
             return Some("java");
         }
-        if lower.contains("kotlin") || lower.contains("[kotlin]") {
+        if has_word(&lower, "kotlin") || lower.contains("[kotlin]") {
             return Some("kotlin");
         }
         let is_csharp_dotnet = lower.contains("c#")
             || lower.contains("[c#]")
-            || lower.contains("csharp")
-            || lower.contains("dotnet")
+            || has_word(&lower, "csharp")
+            || has_word(&lower, "dotnet")
             || lower.contains("[.net]")
             || lower.split_whitespace().any(|w| {
                 let trimmed =
@@ -310,10 +469,10 @@ pub fn detect_language(
         if is_csharp_dotnet {
             return Some("csharp");
         }
-        if lower.contains("c++") || lower.contains("cpp") {
+        if lower.contains("c++") || has_word(&lower, "cpp") {
             return Some("cpp");
         }
-        if has_word(&lower, "ruby") || lower.contains("rails") {
+        if has_word(&lower, "ruby") || has_word(&lower, "rails") {
             return Some("ruby");
         }
         if has_word(&lower, "swift") {
@@ -322,13 +481,13 @@ pub fn detect_language(
         if has_word(&lower, "php") || lower.contains("laravel") {
             return Some("php");
         }
-        if lower.contains("scala") || lower.contains("akka") {
+        if has_word(&lower, "scala") || has_word(&lower, "akka") {
             return Some("scala");
         }
-        if lower.contains("elixir") || lower.contains("phoenix") {
+        if has_word(&lower, "elixir") || has_word(&lower, "phoenix") {
             return Some("elixir");
         }
-        if lower.contains("flutter") || has_word(&lower, "dart") {
+        if has_word(&lower, "flutter") || has_word(&lower, "dart") {
             return Some("dart");
         }
         if has_word(&lower, "perl") {
@@ -440,64 +599,53 @@ pub fn detect_database(
 
 /// Generates a self-contained RFC 2397 Data URI (`data:image/svg+xml;base64,...`)
 /// for embedding in draw.io `<img>` elements.
-pub fn icon_as_data_uri(key: &str) -> Option<String> {
-    let icon = get_icon(key)?;
-    let svg_xml = format!(
-        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">{}</svg>"##,
-        icon.svg_body
-    );
-    let b64 = base64::engine::general_purpose::STANDARD.encode(svg_xml.as_bytes());
-    Some(format!("data:image/svg+xml;base64,{b64}"))
-}
-
 /// Renders the vector icon as an inline SVG `<g>` transformed to `(x, y)` with given size.
-pub fn render_icon_svg(key: &str, x: f64, y: f64, size: f64) -> Option<String> {
-    let icon = get_icon(key)?;
-    let scale = size / 24.0;
-    Some(format!(
-        r##"<g class="node-tech-icon" transform="translate({x:.1}, {y:.1}) scale({scale:.4})">{}</g>"##,
-        icon.svg_body
-    ))
-}
-
-/// Renders the vector icon centered at a vertex or edge `(vertex_x, vertex_y)` without a wrapper tile.
-///
-/// Strips away the background box tile, stroke border, and drop shadow so the raw vector icon alone is rendered cleanly.
-pub fn render_icon_badge_svg(
-    key: &str,
-    vertex_x: f64,
-    vertex_y: f64,
-    _is_dark: bool,
-) -> Option<String> {
-    let icon = get_icon(key)?;
-    let icon_size = 22.0;
-    let icon_x = vertex_x - icon_size / 2.0;
-    let icon_y = vertex_y - icon_size / 2.0;
-    let scale = icon_size / 24.0;
-
-    Some(format!(
-        r##"<g class="node-icon-badge">
-  <g class="node-tech-icon" transform="translate({icon_x:.1}, {icon_y:.1}) scale({scale:.4})">
-    {}
-  </g>
-</g>"##,
-        icon.svg_body
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    fn colour_logos_and_mono_glyphs() {
+        assert!(has_color_logo("postgres") && has_color_logo("kafka"));
+        let colour = icon_document("postgres", IconStyle::Color).unwrap();
+        assert!(colour.contains("viewBox=\"0 0 128 128\""), "devicon logo expected");
+        let mono = icon_document("postgres", IconStyle::Mono("#111111")).unwrap();
+        assert!(mono.contains("#111111") && !mono.contains("#4169E1"));
+        let glyph = icon_document("glyph-database", IconStyle::Mono("#222222")).unwrap();
+        assert!(glyph.contains("stroke=\"#222222\"") && !glyph.contains("currentColor"));
+        // Logo-only keys still render in mono, desaturated.
+        assert!(icon_document("zig", IconStyle::Mono("#000")).unwrap().contains("saturate"));
+    }
+
+    #[test]
+    fn inline_icons_get_unique_ids() {
+        let a = render_icon_svg("kubernetes", IconStyle::Color, 0.0, 0.0, 20.0, "n1-").unwrap();
+        assert!(a.starts_with("<svg class=\"node-tech-icon\" x=\"0.0\""));
+        if a.contains("id=\"") {
+            assert!(a.contains("id=\"n1-"));
+        }
+    }
+
+    #[test]
+    fn language_cues_match_whole_words_only() {
+        // Substrings of ordinary words used to pick an icon: "trails" → Ruby,
+        // "scalable" → Scala, "trust" → Rust.
+        for text in ["Audit log history, login trails", "highly scalable store", "zero trust gateway", "offspring"] {
+            assert_eq!(detect_language(None, None, text, None), None, "{text}");
+        }
+        assert_eq!(detect_language(None, Some("Rails 7"), "", None), Some("ruby"));
+        assert_eq!(detect_language(None, None, "Spring Boot service", None), Some("java"));
+    }
+
+    #[test]
     fn test_icon_lookup_and_data_uri() {
-        let rust_uri = icon_as_data_uri("rust").expect("rust icon must exist");
+        let rust_uri = icon_as_data_uri("rust", IconStyle::Color).expect("rust icon must exist");
         assert!(rust_uri.starts_with("data:image/svg+xml;base64,"));
 
-        let pg_uri = icon_as_data_uri("postgres").expect("postgres icon must exist");
+        let pg_uri = icon_as_data_uri("postgres", IconStyle::Color).expect("postgres icon must exist");
         assert!(pg_uri.starts_with("data:image/svg+xml;base64,"));
 
-        let user_uri = icon_as_data_uri("user").expect("user icon must exist");
+        let user_uri = icon_as_data_uri("user", IconStyle::Color).expect("user icon must exist");
         assert!(user_uri.starts_with("data:image/svg+xml;base64,"));
     }
 
@@ -529,18 +677,11 @@ mod tests {
 
     #[test]
     fn test_render_icon_svg() {
-        // Uses the hand-drawn "java" icon (stable color, not tied to a vendored dataset).
-        let svg_g = render_icon_svg("java", 10.0, 20.0, 16.0).expect("svg rendering");
-        assert!(svg_g.contains("translate(10.0, 20.0)"));
-        assert!(svg_g.contains("#5382a1"));
-    }
-
-    #[test]
-    fn test_render_icon_badge_svg() {
-        let badge = render_icon_badge_svg("java", 100.0, 200.0, false).expect("badge rendering");
-        assert!(badge.contains("node-icon-badge"));
-        assert!(badge.contains("translate(89.0, 189.0)"));
-        assert!(!badge.contains("<rect"));
+        let svg_g = render_icon_svg("java", IconStyle::Color, 10.0, 20.0, 16.0, "t-").expect("svg rendering");
+        assert!(svg_g.contains(r#"x="10.0" y="20.0" width="16.0""#));
+        // Mono falls back to the hand-drawn glyph, recoloured.
+        let mono = render_icon_svg("java", IconStyle::Mono("#123456"), 0.0, 0.0, 16.0, "t-").unwrap();
+        assert!(mono.contains("#123456") && !mono.contains("#5382a1"));
     }
 
     #[test]
@@ -721,7 +862,7 @@ mod tests {
     #[test]
     fn test_unknown_icon_key_returns_none() {
         assert!(get_icon("not-a-real-icon-key").is_none());
-        assert!(icon_as_data_uri("not-a-real-icon-key").is_none());
-        assert!(render_icon_svg("not-a-real-icon-key", 0.0, 0.0, 10.0).is_none());
+        assert!(icon_as_data_uri("not-a-real-icon-key", IconStyle::Color).is_none());
+        assert!(render_icon_svg("not-a-real-icon-key", IconStyle::Color, 0.0, 0.0, 10.0, "t-").is_none());
     }
 }

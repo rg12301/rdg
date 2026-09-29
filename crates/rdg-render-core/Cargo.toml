@@ -12,6 +12,10 @@ rdg-layout = { workspace = true }
 rdg-dispatch = { workspace = true }
 petgraph = { workspace = true }
 anyhow = { workspace = true }
+rdg-icons = { workspace = true }
+rdg-schema = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
 
 [dev-dependencies]
 rdg-schema = { workspace = true }

@@ -1,0 +1,29 @@
+# rdg built-in theme: classic — the original look: elevated white cards with a
+# coloured accent border, Inter type, soft shadows.
+extends: light
+name: classic
+font:
+  family: "Inter, Helvetica, Arial, sans-serif"
+  char_width_ratio: 0.55
+canvas: {background: "#f8fafc", grid: null}
+text: {primary: "#0f172a", muted: "#64748b", dim: "#94a3b8"}
+title: {color: "#0f172a", description_color: "#64748b"}
+node: {shadow: true, corner_radius: 8, detail_color: "#64748b"}
+group: {fill_opacity: 0.1}
+edge: {color: "#64748b", width: 1.5}
+edge_label: {color: "#475569", background: "#ffffff", use_edge_color: false}
+badge: {fill: "#0f172a", text: "#ffffff"}
+icon: {node_types: [], category_glyphs: false}
+categories:
+  frontend:   {fill: "#ffffff", stroke: "#60a5fa"}
+  backend:    {fill: "#ffffff", stroke: "#34d399"}
+  database:   {fill: "#ffffff", stroke: "#a78bfa"}
+  messagebus: {fill: "#ffffff", stroke: "#fb923c"}
+  cloud:      {fill: "#ffffff", stroke: "#22d3ee"}
+  security:   {fill: "#ffffff", stroke: "#f87171"}
+  external:   {fill: "#ffffff", stroke: "#94a3b8"}
+  neutral:    {fill: "#ffffff", stroke: "#cbd5e1"}
+shapes:
+  queue: ellipse
+  broker: ellipse
+  bus: ellipse

@@ -10,31 +10,24 @@ spacing:
 groups:
   - id: grp_cli
     label: "crates/rdg-cli (CLI & Ingestion)"
-    color: "#64748b"
     nodes: ["cli_args", "input_loader"]
   - id: grp_schema
     label: "crates/rdg-schema (Schema & Presets)"
-    color: "#0284c7"
     nodes: ["payload_parser", "style_presets"]
   - id: grp_graph
     label: "crates/rdg-graph (Graph IR & Cycle Breaking)"
-    color: "#059669"
     nodes: ["graph_builder", "fas_breaker"]
   - id: grp_layout
     label: "crates/rdg-layout (Hierarchical Layout Engine)"
-    color: "#d97706"
     nodes: ["sugiyama", "compound_grid", "straightening"]
   - id: grp_core
     label: "crates/rdg-render-core & rdg-icons (Routing & Style)"
-    color: "#7c3aed"
     nodes: ["icon_engine", "routing_engine", "review_loop"]
   - id: grp_drawio
     label: "crates/rdg-render-drawio"
-    color: "#2563eb"
     nodes: ["drawio_backend", "out_drawio"]
   - id: grp_svg
     label: "crates/rdg-render-svg"
-    color: "#db2777"
     nodes: ["svg_backend", "out_svg"]
 nodes:
   - id: cli_args
@@ -59,7 +52,7 @@ nodes:
     metadata: "Deserializes YAML into typed DiagramPayload with validation"
 
   - id: style_presets
-    label: "Preset Resolver\n(`node_styles` / `edge_styles`)"
+    label: "Preset Resolver\n(`node_styles` /\n`edge_styles`)"
     type: server
     language: rust
     technology: "HashMap"
@@ -101,7 +94,7 @@ nodes:
     metadata: "Aligns straight chains and centers sibling nodes within each rank"
 
   - id: icon_engine
-    label: "Brand Icon Badges\n(Simple Icons & Engine Detection)"
+    label: "Brand Icon Badges\n(Simple Icons &\nEngine Detection)"
     type: server
     language: rust
     technology: "60+ SVG Icons"

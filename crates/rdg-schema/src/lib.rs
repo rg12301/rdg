@@ -4,7 +4,7 @@
 //! corresponding serde structs and provides a [`DiagramPayload::from_yaml`]
 //! constructor that validates the input at the boundary.
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -33,6 +33,7 @@ use std::collections::HashMap;
 ///     label: "queries"
 /// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DiagramPayload {
     /// Optional human-readable title for the entire diagram.
     /// Rendered as a prominent title banner at the top of the canvas.
@@ -47,9 +48,14 @@ pub struct DiagramPayload {
     #[serde(default = "default_diagram_type", alias = "type", alias = "kind")]
     pub diagram_type: String,
 
-    /// Optional visual theme: `standard` (elevated white cards) or `dark` (slate-900).
+    /// Visual theme: a built-in name (`light`, `dark`, `mono-light`, `mono-dark`,
+    /// `classic`), or a mapping `{extends: <name>, …overrides}` — see `rdg --guide theming`.
     #[serde(default)]
-    pub theme: Option<String>,
+    pub theme: Option<serde_yaml::Value>,
+
+    /// Draw a legend of the node categories and edge styles used.
+    #[serde(default)]
+    pub legend: Option<bool>,
 
     /// Optional flow direction override: `tb` (top-to-bottom) or `lr` (left-to-right).
     /// Accepts aliases: `TB`, `LR`, `horizontal`, `vertical`.
@@ -90,8 +96,9 @@ pub struct DiagramPayload {
     #[serde(default, alias = "edge_classes", alias = "connector_styles")]
     pub edge_styles: HashMap<String, EdgeStyleOverride>,
 
-    /// Ordered list of node definitions.
-    #[serde(default)]
+    /// Ordered list of node definitions (sequence diagrams: the participants, left to
+    /// right).
+    #[serde(default, alias = "participants")]
     pub nodes: Vec<NodeDef>,
 
     /// Ordered list of directed edge definitions.
@@ -101,6 +108,171 @@ pub struct DiagramPayload {
     /// Optional list of visual group / swimlane containers.
     #[serde(default, alias = "containers", alias = "swimlanes")]
     pub groups: Vec<GroupDef>,
+
+    /// Sequence diagrams: the ordered script — messages, notes, fragments (alt / opt /
+    /// loop / par / critical / break / region) and dividers. Setting it makes the
+    /// diagram a sequence diagram. (Plain `edges` still work as a message list.)
+    #[serde(default)]
+    pub sequence: Vec<SeqStep>,
+}
+
+/// One step of a sequence diagram's script. Exactly one kind per step:
+/// a message (`from` + `to`), a note (`note`), a fragment (`alt`, `opt`, `loop`, `par`,
+/// `critical`, `break` or `region`, with nested `steps`) or a `divider`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeqStep {
+    // -- message --------------------------------------------------------------------
+    #[serde(default, alias = "source")]
+    pub from: Option<String>,
+    #[serde(default, alias = "target")]
+    pub to: Option<String>,
+    #[serde(default, alias = "text", alias = "message")]
+    pub label: Option<String>,
+    /// `flow` (sync call, default), `reply` / `return` (dashed), `async` (open head).
+    #[serde(default, alias = "style")]
+    pub edge_style: Option<String>,
+    /// Start an activation bar on the receiver at this message (default: calls do,
+    /// see `rdg --guide sequence`).
+    #[serde(default)]
+    pub activate: Option<bool>,
+    /// End the sender's current activation at this message (default: replies do).
+    #[serde(default)]
+    pub deactivate: Option<bool>,
+    /// The receiver is created by this message: its box appears here, not at the top.
+    #[serde(default)]
+    pub create: Option<bool>,
+    /// The receiver is destroyed by this message: its lifeline ends with an ✕.
+    #[serde(default)]
+    pub destroy: Option<bool>,
+    #[serde(default)]
+    pub color: Option<String>,
+
+    // -- note -------------------------------------------------------------------------
+    /// Note text (`\n` for line breaks). Place it with `over`, `left_of` or `right_of`.
+    #[serde(default)]
+    pub note: Option<String>,
+    /// Participant(s) the note spans: one id, or a list (spans first..last).
+    #[serde(default, deserialize_with = "one_or_many")]
+    pub over: Vec<String>,
+    #[serde(default)]
+    pub left_of: Option<String>,
+    #[serde(default)]
+    pub right_of: Option<String>,
+
+    // -- fragments (the value is the guard/label, e.g. `alt: "valid token"`) ----------
+    #[serde(default)]
+    pub alt: Option<String>,
+    #[serde(default)]
+    pub opt: Option<String>,
+    #[serde(default, rename = "loop")]
+    pub loop_: Option<String>,
+    #[serde(default)]
+    pub par: Option<String>,
+    #[serde(default)]
+    pub critical: Option<String>,
+    #[serde(default, rename = "break")]
+    pub break_: Option<String>,
+    /// A plain named box around steps (no special semantics).
+    #[serde(default, alias = "group", alias = "box")]
+    pub region: Option<String>,
+    /// The fragment's (first) body.
+    #[serde(default, alias = "do", alias = "then")]
+    pub steps: Vec<SeqStep>,
+    /// `alt` only: further branches, each `{label, steps}` (one mapping or a list).
+    #[serde(default, rename = "else", deserialize_with = "one_or_many")]
+    pub else_: Vec<SeqBranch>,
+    /// `par` only: further parallel branches, each `{label, steps}`.
+    #[serde(default, deserialize_with = "one_or_many")]
+    pub and: Vec<SeqBranch>,
+
+    // -- divider ----------------------------------------------------------------------
+    /// A full-width separator with this label (phases, "5 minutes later", …).
+    #[serde(default, alias = "separator", alias = "section")]
+    pub divider: Option<String>,
+}
+
+/// A further branch of an `alt` (`else`) or `par` (`and`) fragment.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeqBranch {
+    #[serde(default, alias = "guard", alias = "condition")]
+    pub label: Option<String>,
+    #[serde(default, alias = "do", alias = "then")]
+    pub steps: Vec<SeqStep>,
+}
+
+/// What a [`SeqStep`] is.
+#[derive(Debug, Clone, PartialEq)]
+pub enum SeqStepKind<'a> {
+    Message { from: &'a str, to: &'a str },
+    Note,
+    /// `kind` is the fragment keyword (`alt`, `loop`, …), `label` its guard.
+    Fragment { kind: &'static str, label: &'a str },
+    Divider(&'a str),
+}
+
+impl SeqStep {
+    /// The fragment keyword and guard this step sets, if any (all of them, so a step
+    /// setting two can be reported).
+    pub fn fragment_keys(&self) -> Vec<(&'static str, &str)> {
+        [
+            ("alt", &self.alt),
+            ("opt", &self.opt),
+            ("loop", &self.loop_),
+            ("par", &self.par),
+            ("critical", &self.critical),
+            ("break", &self.break_),
+            ("region", &self.region),
+        ]
+        .into_iter()
+        .filter_map(|(k, v)| v.as_deref().map(|v| (k, v)))
+        .collect()
+    }
+
+    /// Classify the step, or explain why it's ambiguous or empty.
+    pub fn kind(&self) -> std::result::Result<SeqStepKind<'_>, String> {
+        let frags = self.fragment_keys();
+        let is_msg = self.from.is_some() || self.to.is_some();
+        let kinds = usize::from(is_msg) + usize::from(self.note.is_some()) + usize::from(!frags.is_empty()) + usize::from(self.divider.is_some());
+        if kinds == 0 {
+            return Err("empty step: give `from`+`to` (message), `note`, a fragment (`alt`, `opt`, `loop`, `par`, `critical`, `break`, `region`) or `divider`".into());
+        }
+        if kinds > 1 || frags.len() > 1 {
+            return Err("a step must be exactly one of: message (`from`+`to`), `note`, one fragment keyword, or `divider`".into());
+        }
+        if is_msg {
+            return match (self.from.as_deref(), self.to.as_deref()) {
+                (Some(f), Some(t)) => Ok(SeqStepKind::Message { from: f, to: t }),
+                _ => Err("a message needs both `from` and `to`".into()),
+            };
+        }
+        if self.note.is_some() {
+            return Ok(SeqStepKind::Note);
+        }
+        if let Some(&(kind, label)) = frags.first() {
+            return Ok(SeqStepKind::Fragment { kind, label });
+        }
+        Ok(SeqStepKind::Divider(self.divider.as_deref().unwrap_or_default()))
+    }
+}
+
+/// Accepts one value or a list of them.
+fn one_or_many<'de, D, T>(d: D) -> std::result::Result<Vec<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum OneOrMany<T> {
+        Many(Vec<T>),
+        One(T),
+    }
+    Ok(match OneOrMany::<T>::deserialize(d)? {
+        OneOrMany::Many(v) => v,
+        OneOrMany::One(x) => vec![x],
+    })
 }
 
 /// Overall flow direction of the diagram, as resolved from the YAML payload.
@@ -124,6 +296,55 @@ fn default_node_type() -> String {
     "default".to_owned()
 }
 
+/// Rewrites serde's "unknown field `x`, expected one of `a`, `b`, … at line L column C"
+/// into a short "did you mean" when one expected field is close — an LLM's typo
+/// (`lable`, `langauge`) is almost always one or two edits from the real name, and the
+/// fix is more useful up front than a 50-name list of every alias.
+fn unknown_field_hint(msg: &str) -> Option<String> {
+    let (prefix, rest) = msg.split_once("unknown field `")?;
+    let (field, rest) = rest.split_once('`')?;
+    let expected: Vec<&str> = rest.split('`').skip(1).step_by(2).collect();
+    let best = closest_match(field, expected.iter().copied())?;
+    let location = rest.rfind(" at line ").map_or(String::new(), |i| format!(" ({})", rest[i + 1..].trim()));
+    Some(format!("{prefix}unknown field `{field}`{location} — did you mean `{best}`?"))
+}
+
+/// The candidate closest to `word` by edit distance, if it's close enough to plausibly
+/// be what was meant (at most a third of the word's length, minimum 2 edits).
+pub fn closest_match<'a>(word: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<&'a str> {
+    let w = word.to_ascii_lowercase();
+    let limit = (w.chars().count() / 3).max(2);
+    candidates
+        .into_iter()
+        .map(|c| (edit_distance(&w, &c.to_ascii_lowercase()), c))
+        .filter(|&(d, _)| d <= limit)
+        .min_by_key(|&(d, c)| (d, c.len()))
+        .map(|(_, c)| c)
+}
+
+/// Levenshtein distance, counting an adjacent transposition as one edit.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    let mut d = vec![vec![0usize; b.len() + 1]; a.len() + 1];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[0] = i;
+    }
+    for (j, cell) in d[0].iter_mut().enumerate() {
+        *cell = j;
+    }
+    for i in 1..=a.len() {
+        for j in 1..=b.len() {
+            let cost = usize::from(a[i - 1] != b[j - 1]);
+            d[i][j] = (d[i - 1][j] + 1).min(d[i][j - 1] + 1).min(d[i - 1][j - 1] + cost);
+            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
+                d[i][j] = d[i][j].min(d[i - 2][j - 2] + 1);
+            }
+        }
+    }
+    d[a.len()][b.len()]
+}
+
 impl DiagramPayload {
     /// Parse a YAML string into a [`DiagramPayload`].
     ///
@@ -131,7 +352,11 @@ impl DiagramPayload {
     ///
     /// Returns an error if the YAML is malformed or cannot be parsed.
     pub fn from_yaml(input: &str) -> Result<Self> {
-        serde_yaml::from_str(input).context("failed to deserialize YAML diagram payload")
+        serde_yaml::from_str(input).map_err(|e| {
+            let msg = e.to_string();
+            anyhow::anyhow!(unknown_field_hint(&msg).unwrap_or(msg))
+                .context("failed to deserialize YAML diagram payload")
+        })
     }
 
     /// Resolves the optional direction string into a [`Direction`].
@@ -151,6 +376,9 @@ impl DiagramPayload {
     /// Returns the resolved canonical diagram category.
     /// Values: `"flowchart"`, `"architecture"`, `"sequence"`, `"er"`, `"class"`, `"state"`.
     pub fn resolved_diagram_type(&self) -> &str {
+        if !self.sequence.is_empty() {
+            return "sequence";
+        }
         match self.diagram_type.to_ascii_lowercase().trim() {
             "seq" | "sequence" | "uml_sequence" => "sequence",
             "er" | "erd" | "database" | "schema" | "relational" => "er",
@@ -193,6 +421,9 @@ impl DiagramPayload {
         }
         if merged.icon.is_none() {
             merged.icon = preset.icon.clone();
+        }
+        if merged.category.is_none() {
+            merged.category = preset.category.clone();
         }
         if merged.width.is_none() {
             merged.width = preset.width;
@@ -267,11 +498,13 @@ impl Default for DiagramPayload {
             canvas: None,
             spacing: None,
             numbered: None,
+            legend: None,
             node_styles: HashMap::new(),
             edge_styles: HashMap::new(),
             nodes: Vec::new(),
             edges: Vec::new(),
             groups: Vec::new(),
+            sequence: Vec::new(),
         }
     }
 }
@@ -282,6 +515,7 @@ impl Default for DiagramPayload {
 
 /// Canvas-level rendering configuration.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CanvasConfig {
     /// Outer margin in pixels around the whole diagram (replaces the built-in default).
     #[serde(default)]
@@ -295,6 +529,7 @@ pub struct CanvasConfig {
 /// Grouped spacing configuration — an alternative to the flat `rank_spacing`/`node_spacing`
 /// top-level fields for payloads that want every spacing knob in one place.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SpacingConfig {
     /// Vertical gap between ranks/layers in pixels.
     #[serde(default)]
@@ -319,6 +554,7 @@ pub struct SpacingConfig {
 
 /// Visual container grouping a set of related nodes.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GroupDef {
     /// Unique identifier for the group container.
     pub id: String,
@@ -339,6 +575,10 @@ pub struct GroupDef {
     /// When specified or detected, member nodes sharing this stack do not display redundant icons.
     #[serde(default, alias = "lang")]
     pub language: Option<String>,
+
+    /// Semantic category (colour) of the container: `backend`, `database`, `cloud`, …
+    #[serde(default)]
+    pub category: Option<String>,
 
     /// Optional explicit brand or service icon for the group container header.
     #[serde(default)]
@@ -381,6 +621,7 @@ impl GroupDef {
 
 /// A named, reusable set of node styling fields. See [`DiagramPayload::node_styles`].
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NodeStyleOverride {
     #[serde(default, alias = "colour", alias = "stroke")]
     pub color: Option<String>,
@@ -390,6 +631,8 @@ pub struct NodeStyleOverride {
     pub language: Option<String>,
     #[serde(default, alias = "database_type", alias = "engine", alias = "db")]
     pub db_type: Option<String>,
+    #[serde(default)]
+    pub category: Option<String>,
     #[serde(default, alias = "logo", alias = "badge")]
     pub icon: Option<String>,
     #[serde(default)]
@@ -404,6 +647,7 @@ pub struct NodeStyleOverride {
 
 /// A named, reusable set of edge styling fields. See [`DiagramPayload::edge_styles`].
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EdgeStyleOverride {
     #[serde(default, alias = "style", alias = "type")]
     pub edge_style: Option<String>,
@@ -427,6 +671,7 @@ pub struct EdgeStyleOverride {
 
 /// A single semantic node as emitted by the LLM.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NodeDef {
     /// Unique identifier used to reference this node in edges.
     pub id: String,
@@ -510,6 +755,18 @@ pub struct NodeDef {
     #[serde(default, alias = "drawio_style", alias = "extra_style")]
     pub style_extra: Option<String>,
 
+    /// Semantic category (colour): `frontend`, `backend`, `database`, `messagebus`,
+    /// `cloud`, `security`, `external`, `neutral` (or any the theme defines). Default:
+    /// from `type`.
+    #[serde(default)]
+    pub category: Option<String>,
+
+    /// How to draw the node: `card` (a box), or `icon` (its logo, enlarged, with the
+    /// label underneath — for infrastructure with a recognisable mark). Default: the
+    /// theme decides by type.
+    #[serde(default, alias = "render_as")]
+    pub display: Option<String>,
+
     /// Optional URL. When set, the rendered shape becomes a clickable link (draw.io only).
     #[serde(default, alias = "url", alias = "href")]
     pub link: Option<String>,
@@ -535,6 +792,8 @@ impl Default for NodeDef {
             provider: None,
             class: None,
             style_extra: None,
+            category: None,
+            display: None,
             link: None,
         }
     }
@@ -632,22 +891,28 @@ impl NodeDef {
     }
 
     /// Resolves the icon key to render (language, database, user, or custom icon).
+    ///
+    /// Explicit fields win over anything guessed from free text: an explicit `icon`, then
+    /// an explicit `language`, then the database engine, then the cloud `provider`, and
+    /// only then a language inferred from the label/technology/metadata — so a Postgres
+    /// node whose tooltip mentions "login trails" stays a Postgres node.
     pub fn resolved_icon(&self) -> Option<String> {
         if let Some(i) = &self.icon {
             if !i.trim().is_empty() {
                 return Some(i.trim().to_ascii_lowercase());
             }
         }
-        if let Some(l) = self.resolved_language() {
-            return Some(l);
+        if let Some(l) = self.language.as_deref().and_then(|l| rdg_icons::detect_language(Some(l), None, "", None)) {
+            return Some(l.to_string());
         }
         if let Some(db) = self.resolved_db_type() {
             return Some(db);
         }
-        if let Some(p) = &self.provider {
-            if let Some(icon) = rdg_icons::detect_provider(p) {
-                return Some(icon.to_string());
-            }
+        if let Some(icon) = self.provider.as_deref().and_then(rdg_icons::detect_provider) {
+            return Some(icon.to_string());
+        }
+        if let Some(l) = self.resolved_language() {
+            return Some(l);
         }
         if matches!(
             self.node_type.to_ascii_lowercase().as_str(),
@@ -671,6 +936,7 @@ impl NodeDef {
 
 /// A directed edge between two nodes.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EdgeDef {
     /// Source node ID.
     #[serde(alias = "source", alias = "src")]
@@ -790,7 +1056,8 @@ const EXAMPLE_YAML: &str = r##"# ━━━━━━━━━━━━━━━�
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 diagram_type: architecture         # architecture | flowchart | sequence | erd | class | state
-theme: standard                    # standard (elevated white cards) | dark (slate-900)
+theme: light                       # light | dark | mono-light | mono-dark | classic, or {extends: dark, ...overrides}
+legend: true                       # legend of the categories / edge styles used
 direction: tb                      # tb (top-to-bottom) | lr (left-to-right)
 title: "Distributed Order Processing System"
 description: "High-level service architecture, persistent storage, and event streams"
@@ -802,19 +1069,18 @@ canvas:
 # Named style presets — define once, reference from any node/edge via `class:`.
 # A preset only fills in fields the node/edge didn't already set explicitly.
 node_styles:
-  critical:
-    color: "#ef4444"
-    style_extra: "strokeWidth=3;"
+  rust_service:
+    language: "rust"
+    technology: "Axum 0.7"
 
 groups:
+  # Containers are neutral; the colour of each node inside says what it is.
   - id: grp_ingress
     label: "Ingress Layer"
-    color: "#64748b"
     nodes: ["client", "api_gw"]
 
   - id: grp_core
     label: "Core Services"
-    color: "#0284c7"
     nodes: ["auth_svc", "order_svc", "order_queue", "inventory_db"]
 
 nodes:
@@ -833,6 +1099,7 @@ nodes:
   - id: auth_svc
     label: "Auth Service"
     type: service
+    category: security             # colour by meaning: frontend, backend, database, messagebus, cloud, security, external
     technology: "Go / Chi"
     language: "go"
     metadata: "OAuth2 / JWT token issuer"
@@ -840,9 +1107,7 @@ nodes:
   - id: order_svc
     label: "Order Service"
     type: service
-    technology: "Axum 0.7"
-    language: "rust"
-    class: critical                # inherits the `critical` preset above
+    class: rust_service            # inherits the `rust_service` preset above
     metadata: "Core transactional order processing"
 
   - id: order_queue
@@ -889,7 +1154,7 @@ edges:
     edge_style: data
 "##;
 
-const JSON_SCHEMA: &str = r#"{
+const JSON_SCHEMA: &str = r##"{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DiagramPayload",
   "description": "Token-optimized YAML/JSON schema for rdg (Render Diagram)",
@@ -910,10 +1175,18 @@ const JSON_SCHEMA: &str = r#"{
       "description": "Optional diagram subtitle / description"
     },
     "theme": {
-      "type": "string",
-      "enum": ["standard", "dark"],
-      "default": "standard",
-      "description": "Visual palette: standard (elevated white cards) or dark (slate-900)"
+      "oneOf": [
+        { "type": "string", "enum": ["light", "dark", "mono-light", "mono-dark", "classic"] },
+        { "type": "object", "properties": { "extends": { "type": "string" } }, "additionalProperties": true }
+      ],
+      "default": "light",
+      "description": "Built-in theme name, or {extends: <name>, ...overrides} — see `rdg --guide theming` / `rdg --print-theme <name>`"
+    },
+    "legend": { "type": "boolean", "description": "Draw a legend of the node categories and edge styles used" },
+    "sequence": {
+      "type": "array",
+      "description": "Sequence-diagram script, in order (setting it makes the diagram a sequence diagram). Each step is exactly one of: a message {from, to, label, style, activate, deactivate, create, destroy, color}; a note {note, over | left_of | right_of}; a fragment {alt|opt|loop|par|critical|break|region: guard, steps, else (alt), and (par)}; a divider {divider}. See `rdg --guide sequence`.",
+      "items": { "$ref": "#/definitions/seq_step" }
     },
     "direction": {
       "type": "string",
@@ -998,6 +1271,7 @@ const JSON_SCHEMA: &str = r#"{
           "id": { "type": "string", "description": "Unique container ID" },
           "label": { "type": "string", "description": "Group title banner" },
           "color": { "type": "string", "description": "Border / accent hex color" },
+          "category": { "type": "string", "description": "Semantic category (colour) of the container" },
           "nodes": {
             "type": "array",
             "items": { "type": "string" },
@@ -1045,6 +1319,8 @@ const JSON_SCHEMA: &str = r#"{
           "class": { "type": "string", "description": "Named style preset to inherit from (see node_styles)" },
           "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" },
           "link": { "type": "string", "description": "URL making the rendered shape clickable (draw.io only)" },
+          "category": { "type": "string", "description": "Semantic category (colour): frontend, backend, database, messagebus, cloud, security, external, neutral" },
+          "display": { "type": "string", "enum": ["card", "icon"], "description": "Draw as a box, or as its enlarged logo with the label below" },
           "fields": {
             "type": "array",
             "items": { "type": "string" },
@@ -1083,9 +1359,41 @@ const JSON_SCHEMA: &str = r#"{
       }
     }
   },
-  "required": ["nodes", "edges"]
+  "required": ["nodes", "edges"],
+  "definitions": {
+    "seq_branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "steps": { "type": "array", "items": { "$ref": "#/definitions/seq_step" } }
+      }
+    },
+    "seq_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string" }, "to": { "type": "string" },
+        "label": { "type": "string" },
+        "style": { "type": "string", "enum": ["flow", "reply", "return", "async"] },
+        "activate": { "type": "boolean" }, "deactivate": { "type": "boolean" },
+        "create": { "type": "boolean" }, "destroy": { "type": "boolean" },
+        "color": { "type": "string" },
+        "note": { "type": "string" },
+        "over": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "left_of": { "type": "string" }, "right_of": { "type": "string" },
+        "alt": { "type": "string" }, "opt": { "type": "string" }, "loop": { "type": "string" },
+        "par": { "type": "string" }, "critical": { "type": "string" }, "break": { "type": "string" },
+        "region": { "type": "string" },
+        "steps": { "type": "array", "items": { "$ref": "#/definitions/seq_step" } },
+        "else": { "oneOf": [{ "$ref": "#/definitions/seq_branch" }, { "type": "array", "items": { "$ref": "#/definitions/seq_branch" } }] },
+        "and": { "oneOf": [{ "$ref": "#/definitions/seq_branch" }, { "type": "array", "items": { "$ref": "#/definitions/seq_branch" } }] },
+        "divider": { "type": "string" }
+      }
+    }
+  }
 }
-"#;
+"##;
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -1116,7 +1424,7 @@ edges:
     fn test_round_trip_deserialization() {
         let payload = DiagramPayload::from_yaml(SAMPLE_YAML).expect("should parse");
         assert_eq!(payload.diagram_type, "flowchart");
-        assert_eq!(payload.theme.as_deref(), Some("aws_light"));
+        assert_eq!(payload.theme.as_ref().and_then(|t| t.as_str()), Some("aws_light"));
         assert_eq!(payload.nodes.len(), 2);
         assert_eq!(payload.edges.len(), 1);
     }
@@ -1479,18 +1787,35 @@ edges: []
     }
 
     #[test]
-    fn test_unknown_top_level_keys_are_ignored_not_errors() {
-        let yaml = r#"
-this_key_does_not_exist: true
-another_bogus_field:
-  nested: 1
-nodes:
-  - id: n1
-    label: "A"
-edges: []
-"#;
-        let payload = DiagramPayload::from_yaml(yaml).expect("unknown keys must not error");
-        assert_eq!(payload.nodes.len(), 1);
+    fn test_unknown_keys_are_rejected_with_a_did_you_mean_hint() {
+        // A typo'd key used to be dropped silently — an agent writing `lable:` got a
+        // blank node and exit 0. Now it's an error naming the closest real field.
+        let err = DiagramPayload::from_yaml("nodes:\n  - id: n1\n    lable: A\n").unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("unknown field `lable`"), "{msg}");
+        assert!(msg.contains("did you mean `label`?"), "{msg}");
+
+        let err = DiagramPayload::from_yaml("numbred: true\nnodes: []\n").unwrap_err();
+        assert!(format!("{err:#}").contains("did you mean `numbered`?"));
+
+        let err = DiagramPayload::from_yaml("nodes: []\nedges:\n  - {from: a, to: b, lable: x}\n").unwrap_err();
+        assert!(format!("{err:#}").contains("did you mean `label`?"));
+    }
+
+    #[test]
+    fn test_explicit_db_type_outranks_language_guessed_from_text() {
+        let yaml = "nodes:\n  - {id: a, label: A, type: database, db_type: postgres, metadata: written in rust}\n";
+        let p = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(p.nodes[0].resolved_icon().as_deref(), Some("postgres"));
+        let yaml = "nodes:\n  - {id: a, label: A, db_type: postgres, language: go}\n";
+        let p = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(p.nodes[0].resolved_icon().as_deref(), Some("go"));
+    }
+
+    #[test]
+    fn test_closest_match_rejects_unrelated_words() {
+        assert_eq!(closest_match("langauge", ["label", "language", "type"]), Some("language"));
+        assert_eq!(closest_match("zzzzzz", ["label", "language", "type"]), None);
     }
 
     #[test]

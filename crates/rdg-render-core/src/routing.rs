@@ -55,21 +55,62 @@ pub fn port_point(nl: &NodeLayout, side: Side, port_frac: f64) -> (f64, f64) {
     }
 }
 
-/// A point `distance` px out from a node's exit face, along the face's outward normal —
-/// where a flow-numbering badge sits, just past the exit point on an edge's way out.
-pub fn badge_point_near_exit(
+/// Where an arrow attached at `port_frac` along `side` actually meets the node's drawn
+/// `outline` — the bounding-box point [`port_point`] gives, pushed inward along the face
+/// normal onto the curve for round shapes, so arrows touch an ellipse or a cylinder cap
+/// instead of stopping in the empty corner of its bounding box.
+pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side, port_frac: f64) -> (f64, f64) {
+    use crate::style::Outline;
+    let (x, y) = port_point(nl, side, port_frac);
+    let (rx, ry) = (nl.width / 2.0, nl.height / 2.0);
+    let (cx, cy) = (nl.x + rx, nl.y + ry);
+    // Normalised offset along the face from its centre, in [-1, 1].
+    let t = match side {
+        Side::Top | Side::Bottom => ((x - cx) / rx).clamp(-1.0, 1.0),
+        Side::Left | Side::Right => ((y - cy) / ry).clamp(-1.0, 1.0),
+    };
+    // Inward depth from the bounding box to the outline.
+    let depth = match (outline, side) {
+        (Outline::Rect, _) => 0.0,
+        (Outline::Ellipse, Side::Top | Side::Bottom) => ry * (1.0 - (1.0 - t * t).sqrt()),
+        (Outline::Ellipse, _) => rx * (1.0 - (1.0 - t * t).sqrt()),
+        (Outline::Diamond, Side::Top | Side::Bottom) => ry * t.abs(),
+        (Outline::Diamond, _) => rx * t.abs(),
+        (Outline::Cylinder { cap }, Side::Top | Side::Bottom) => cap * (1.0 - (1.0 - t * t).sqrt()),
+        (Outline::Cylinder { .. }, _) => 0.0,
+        // The halo is centred at the top: the sides and the top meet it (on the circle,
+        // when round), the bottom meets the box under the label.
+        (Outline::Icon { halo, circle, .. }, Side::Left | Side::Right) => {
+            let r = halo / 2.0;
+            let dy = (y - (nl.y + r)).abs().min(r);
+            let reach = if circle { (r * r - dy * dy).sqrt() } else { r };
+            (rx - reach).max(0.0)
+        }
+        (Outline::Icon { halo, circle, .. }, Side::Top) => {
+            let r = halo / 2.0;
+            let dx = (x - cx).abs().min(r);
+            if circle { r - (r * r - dx * dx).sqrt() } else { 0.0 }
+        }
+        (Outline::Icon { .. }, Side::Bottom) => 0.0,
+    };
+    match side {
+        Side::Top => (x, y + depth),
+        Side::Bottom => (x, y - depth),
+        Side::Left => (x + depth, y),
+        Side::Right => (x - depth, y),
+    }
+}
+
+/// [`attach_point`] for node `idx` of `compiled`.
+pub fn node_attach_point(
+    compiled: &CompiledGraph,
+    idx: NodeIndex,
     nl: &NodeLayout,
     side: Side,
     port_frac: f64,
-    distance: f64,
+    tokens: &DesignTokens,
 ) -> (f64, f64) {
-    let (x, y) = port_point(nl, side, port_frac);
-    match side {
-        Side::Bottom => (x, y + distance),
-        Side::Top => (x, y - distance),
-        Side::Left => (x - distance, y),
-        Side::Right => (x + distance, y),
-    }
+    attach_point(nl, crate::style::outline_of(&compiled.graph[idx], tokens), side, port_frac)
 }
 
 /// How many ports fit on `side` of `nl` while keeping [`DesignTokens::min_port_pitch`]
@@ -369,12 +410,13 @@ pub fn compute_group_title_zones(
         let min_edge = tokens.px(1.25);
         let gx = (min_x - pad_h).max(min_edge);
         let gy = (min_y - pad_top).max(min_edge);
-        // The title's own font is slightly larger than the base body font (bold,
-        // more prominent than a field label), hence `* 1.2` here.
-        let title_font = tokens.font_size * 1.2;
-        let title_w = (group.label.chars().count() as f64 * tokens.char_width(title_font) + tokens.px(5.0))
-            .max(tokens.px(20.0));
-        let title_h = tokens.line_height(title_font) * 2.1;
+        // Just the title text as drawn (inset `px(1.5)` from the left, `px(1)` from the
+        // top) plus a small margin — a band any wider or taller would wall off the top
+        // faces of the nodes sitting under it.
+        let title_font = tokens.group_title_font_size;
+        let icon_w = if group.resolved_icon().is_some() { title_font + tokens.px(1.0) } else { 0.0 };
+        let title_w = group.label.chars().count() as f64 * tokens.char_width(title_font) + icon_w + tokens.px(2.5);
+        let title_h = tokens.px(1.0) + tokens.line_height(title_font) + tokens.px(1.25);
 
         zones.push(GroupTitleZone {
             min_x: gx,
@@ -624,6 +666,9 @@ pub struct EdgeRoutingPlan {
     /// reads this to flag an over-shared channel without re-deriving the bucketing key
     /// Step 4 already computed.
     pub corridor_bucket_size: usize,
+    /// Planned by the search router ([`crate::ortho`]), which already optimises bends,
+    /// crossings and lanes globally — the polish pass leaves such edges alone.
+    pub searched: bool,
 }
 
 /// Computes intelligent, obstacle-aware routing plans for all edges in the graph.
@@ -634,6 +679,24 @@ pub struct EdgeRoutingPlan {
 /// 3. Multi-channel corridor staggering (parallel horizontal segments have dedicated channels, zero overlapping lines).
 /// 4. Obstacle-aware vertical corridor allocation (prevents lines from routing through intermediate components).
 pub fn plan_all_edge_routes(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    algorithm: RoutingAlgorithm,
+    tokens: &DesignTokens,
+) -> HashMap<EdgeIndex, EdgeRoutingPlan> {
+    // The search-based router (`crate::ortho`) plans every edge it can; the heuristic
+    // planner below stays as the fallback for anything it leaves out (self-loops, a node
+    // boxed in completely, an oversize grid). `RDG_LEGACY_ROUTER=1` skips the new router,
+    // for A/B comparison.
+    let mut plans = plan_all_edge_routes_legacy(compiled, layout, algorithm, tokens);
+    if std::env::var_os("RDG_LEGACY_ROUTER").is_none() {
+        plans.extend(crate::ortho::route_orthogonal(compiled, layout, tokens));
+    }
+    plans
+}
+
+/// The original face-first heuristic planner — see [`plan_all_edge_routes`].
+fn plan_all_edge_routes_legacy(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     algorithm: RoutingAlgorithm,
@@ -1006,6 +1069,7 @@ pub fn plan_all_edge_routes(
                 corridor_x,
                 waypoints,
                 corridor_bucket_size,
+                searched: false,
             },
         );
     }
@@ -1315,133 +1379,6 @@ fn deoverlap_pass(
     }
 
     changed
-}
-
-/// The point half-way (by arc length, not by waypoint count) along the polyline
-/// `p1 -> waypoints -> p2`. This is the one label anchor: both render backends and the
-/// canvas bounds use it (the SVG backend used to pick its own, so a label could sit on a
-/// different leg than in draw.io). It needs to match what's actually drawn — the midpoint of the
-/// *longest* segment would put the label on a different leg of the path than the one
-/// a viewer's eye follows, and the midpoint of the waypoint list (rather than of the
-/// path's length) skews toward whichever end has more bends.
-pub fn polyline_midpoint(p1: (f64, f64), waypoints: &[(f64, f64)], p2: (f64, f64)) -> (f64, f64) {
-    let mut points = Vec::with_capacity(waypoints.len() + 2);
-    points.push(p1);
-    points.extend_from_slice(waypoints);
-    points.push(p2);
-
-    let seg_len = |a: (f64, f64), b: (f64, f64)| ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
-    let total: f64 = points.windows(2).map(|w| seg_len(w[0], w[1])).sum();
-    if total <= 0.0 {
-        return p1;
-    }
-
-    let mut remaining = total / 2.0;
-    for w in points.windows(2) {
-        let (a, b) = (w[0], w[1]);
-        let len = seg_len(a, b);
-        if remaining <= len {
-            let t = if len > 0.0 { remaining / len } else { 0.0 };
-            return (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
-        }
-        remaining -= len;
-    }
-    p2
-}
-
-/// Greedily resolves vertical collisions among a set of edge-label bounding boxes,
-/// additionally steering every label clear of a set of `fixed_obstacles` (node boxes)
-/// that never move and aren't part of `items` themselves.
-///
-/// `items` is `(anchor_x, anchor_y, box_w, box_h)` per label, each already at the
-/// position it would render at with zero adjustment — in a deterministic order (e.g.
-/// edge declaration order), since this is a greedy placement, not a global optimum,
-/// and the caller must get the same result on every run. Returns one `dy` nudge per
-/// item, same order/length as `items`: `0.0` when the label didn't collide with
-/// anything placed before it, otherwise the smallest vertical shift (searched in
-/// alternating up/down steps) that clears every already-placed label's box *and*
-/// every fixed obstacle.
-///
-/// This is the general form of what `rdg`'s draw.io backend used to do with a single
-/// hardcoded `y="-10"` offset on every edge label: that lifts a label clear of *its
-/// own* line, but does nothing when two unrelated edges' labels land at the same spot
-/// because their paths happen to pass close together — a real, recurring defect
-/// surfaced by visually reviewing rendered sample diagrams (two edge labels merging
-/// into illegible overlapping text, e.g. "SQL" + "invoke" reading as "SQLoke").
-///
-/// The `fixed_obstacles` argument closes a second, related gap: without it, a label
-/// could land squarely on top of a *node* rather than another label, and go
-/// undetected, since decluttering only ever checked labels against each other, with
-/// no notion of the node boxes on the canvas at all. Confirmed directly on a real
-/// diagram: two edges converging on the same destination had near-identical
-/// un-adjusted label anchors, and pushing the second one clear of the first landed it
-/// squarely on top of an unrelated node's card — technically "decluttered" (no
-/// label-label collision) but now hiding that node's own text under an opaque label
-/// background instead.
-pub fn declutter_label_positions_avoiding(
-    items: &[(f64, f64, f64, f64)],
-    fixed_obstacles: &[(f64, f64, f64, f64)],
-    tokens: &DesignTokens,
-) -> Vec<f64> {
-    // Step magnitude derives from the base line-height rather than a fixed pixel
-    // list, and the search now runs to +/-6 line-heights (was +/-4 at a hardcoded
-    // 16px each) — a real diagram surfaced a label sandwiched in a 6px gap between
-    // two vertically-stacked nodes, where the destination node alone was 140px
-    // tall; the old +/-64px ceiling could never clear it in either direction, so
-    // it always landed on the same doomed candidate.
-    let step_unit = tokens.line_height(tokens.font_size);
-    let steps: Vec<f64> = (1..=6)
-        .flat_map(|k| [-(k as f64) * step_unit, (k as f64) * step_unit])
-        .collect();
-    let mut all_steps = Vec::with_capacity(steps.len() + 1);
-    all_steps.push(0.0);
-    all_steps.extend(steps);
-
-    fn overlap_area(a: (f64, f64, f64, f64), b: (f64, f64, f64, f64)) -> f64 {
-        let (ax, ay, aw, ah) = a;
-        let (bx, by, bw, bh) = b;
-        let ox = (ax + aw).min(bx + bw) - ax.max(bx);
-        let oy = (ay + ah).min(by + bh) - ay.max(by);
-        if ox > 0.0 && oy > 0.0 { ox * oy } else { 0.0 }
-    }
-
-    let mut placed: Vec<(f64, f64, f64, f64)> = fixed_obstacles.to_vec();
-    let mut out = Vec::with_capacity(items.len());
-
-    for &(cx, cy, w, h) in items {
-        let rect_at = |dy: f64| (cx - w / 2.0, cy + dy - h / 2.0, w, h);
-
-        // Prefer the first fully clear step; if every step still collides with
-        // something (a tight sandwich between two obstacles bigger than the
-        // search range), fall back to whichever candidate intrudes the least,
-        // instead of blindly taking the last step tried regardless of how badly
-        // it collides.
-        let mut chosen_dy = all_steps[0];
-        let mut found_clear = false;
-        let mut best_dy = all_steps[0];
-        let mut best_overlap = f64::MAX;
-        for &dy in &all_steps {
-            let candidate = rect_at(dy);
-            let total_overlap: f64 = placed.iter().map(|&p| overlap_area(candidate, p)).sum();
-            if total_overlap <= 0.0 {
-                chosen_dy = dy;
-                found_clear = true;
-                break;
-            }
-            if total_overlap < best_overlap {
-                best_overlap = total_overlap;
-                best_dy = dy;
-            }
-        }
-        if !found_clear {
-            chosen_dy = best_dy;
-        }
-
-        placed.push(rect_at(chosen_dy));
-        out.push(chosen_dy);
-    }
-
-    out
 }
 
 // Minimum straight clearance stub extending perpendicularly from any component face
@@ -2504,54 +2441,6 @@ mod tests {
     }
 
     #[test]
-    fn test_polyline_midpoint_straight_line() {
-        let mid = polyline_midpoint((0.0, 0.0), &[], (100.0, 0.0));
-        assert!((mid.0 - 50.0).abs() < 1e-9 && mid.1.abs() < 1e-9);
-    }
-
-    #[test]
-    fn test_polyline_midpoint_with_waypoints_is_by_arc_length() {
-        // An L-shaped path: 90 units right, then 10 units down. Total length 100, so
-        // the midpoint (at length 50) should still be on the horizontal leg.
-        let mid = polyline_midpoint((0.0, 0.0), &[(90.0, 0.0)], (90.0, 10.0));
-        assert!((mid.0 - 50.0).abs() < 1e-9 && mid.1.abs() < 1e-9);
-    }
-
-    #[test]
-    fn test_declutter_no_collision_keeps_zero_offset() {
-        let items = [(0.0, 0.0, 40.0, 14.0), (500.0, 0.0, 40.0, 14.0)];
-        let dys = declutter_label_positions_avoiding(&items, &[], &DesignTokens::default());
-        assert_eq!(dys, vec![0.0, 0.0]);
-    }
-
-    #[test]
-    fn test_declutter_resolves_coincident_labels() {
-        // Two labels at the exact same anchor — the second must move.
-        let items = [(0.0, 0.0, 40.0, 14.0), (0.0, 0.0, 40.0, 14.0)];
-        let dys = declutter_label_positions_avoiding(&items, &[], &DesignTokens::default());
-        assert_eq!(dys[0], 0.0);
-        assert_ne!(dys[1], 0.0);
-
-        let rect_a = (0.0 - 20.0, dys[0] - 7.0, 40.0, 14.0);
-        let rect_b = (0.0 - 20.0, dys[1] - 7.0, 40.0, 14.0);
-        let overlap = rect_a.0 < rect_b.0 + rect_b.2
-            && rect_a.0 + rect_a.2 > rect_b.0
-            && rect_a.1 < rect_b.1 + rect_b.3
-            && rect_a.1 + rect_a.3 > rect_b.1;
-        assert!(!overlap, "labels should no longer overlap after decluttering");
-    }
-
-    #[test]
-    fn test_declutter_three_way_collision_all_distinct() {
-        let items = [(0.0, 0.0, 40.0, 14.0), (0.0, 0.0, 40.0, 14.0), (0.0, 0.0, 40.0, 14.0)];
-        let dys = declutter_label_positions_avoiding(&items, &[], &DesignTokens::default());
-        let mut sorted = dys.clone();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        sorted.dedup();
-        assert_eq!(sorted.len(), 3, "all three labels should end up at distinct offsets: {dys:?}");
-    }
-
-    #[test]
     fn test_side_parse() {
         assert_eq!(Side::parse("Top"), Some(Side::Top));
         assert_eq!(Side::parse("south"), Some(Side::Bottom));
@@ -2643,29 +2532,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_badge_point_near_exit_offsets_along_each_face_normal() {
-        let nl = NodeLayout {
-            x: 0.0,
-            y: 0.0,
-            width: 100.0,
-            height: 40.0,
-        };
-        assert_eq!(
-            badge_point_near_exit(&nl, Side::Bottom, 0.5, 14.0),
-            (50.0, 54.0)
-        );
-        assert_eq!(
-            badge_point_near_exit(&nl, Side::Top, 0.5, 14.0),
-            (50.0, -14.0)
-        );
-        assert_eq!(
-            badge_point_near_exit(&nl, Side::Left, 0.5, 14.0),
-            (-14.0, 20.0)
-        );
-        assert_eq!(
-            badge_point_near_exit(&nl, Side::Right, 0.5, 14.0),
-            (114.0, 20.0)
-        );
-    }
 }
