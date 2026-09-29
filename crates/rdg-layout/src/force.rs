@@ -23,7 +23,7 @@ use crate::{compute_node_sizes, hillclimb, ideal_edge_length, normalize_position
 /// infallible).
 pub fn compute_force_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
     if compiled.graph.node_count() == 0 {
-        return Ok(LayoutResult { positions: HashMap::new(), sequence_info: None });
+        return Ok(LayoutResult { positions: HashMap::new(), ..Default::default() });
     }
 
     let sizes = compute_node_sizes(compiled, config);
@@ -40,7 +40,7 @@ pub fn compute_force_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> 
 
     hillclimb::refine(&mut positions, compiled, &config.tokens, &HashMap::new());
 
-    let mut result = LayoutResult { positions, sequence_info: None };
+    let mut result = LayoutResult { positions, ..Default::default() };
     normalize_positions(&mut result, config, !compiled.groups.is_empty());
     Ok(result)
 }

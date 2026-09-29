@@ -181,7 +181,7 @@ pub(crate) fn layout_topological(
 
     Ok(LayoutResult {
         positions,
-        sequence_info: None,
+        ..Default::default()
     })
 }
 

@@ -119,11 +119,15 @@ impl Default for LayoutConfig {
 }
 
 /// Computed spatial positions for every node in the graph.
+#[derive(Default)]
 pub struct LayoutResult {
     /// Maps petgraph [`NodeIndex`] to its computed 2D layout box.
     pub positions: HashMap<NodeIndex, NodeLayout>,
     /// Optional sequence diagram layout metadata (when diagram_type == "sequence").
     pub sequence_info: Option<SequenceLayoutInfo>,
+    /// Width the layout gave each group it sized (by index into `groups`) — a group
+    /// can be wider than its content (see `groups::group_rects`, which honours it).
+    pub group_widths: HashMap<usize, f64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +147,7 @@ pub fn compute_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result
     if compiled.graph.node_count() == 0 {
         return Ok(LayoutResult {
             positions: HashMap::new(),
-            sequence_info: None,
+            ..Default::default()
         });
     }
 
@@ -730,7 +734,7 @@ edges:
         let compiled = build_graph(&DiagramPayload::from_yaml(NESTED).unwrap()).unwrap();
         let config = LayoutConfig { direction, ..LayoutConfig::default() };
         let layout = compute_layout(&compiled, &config).unwrap();
-        let rects = groups::group_rects(&compiled, &layout.positions, &config.tokens);
+        let rects = groups::group_rects(&compiled, &layout, &config.tokens);
         let inside = |(x, y, w, h): groups::Rect, (ox, oy, ow, oh): groups::Rect| x >= ox - 0.5 && y >= oy - 0.5 && x + w <= ox + ow + 0.5 && y + h <= oy + oh + 0.5;
         let overlap = |(x, y, w, h): groups::Rect, (ox, oy, ow, oh): groups::Rect| x < ox + ow && ox < x + w && y < oy + oh && oy < y + h;
         let node_rect = |n: &NodeIndex| {
@@ -778,16 +782,28 @@ edges:
     }
 
     #[test]
-    fn test_group_is_never_narrower_than_its_title() {
-        let yaml = "nodes: [{id: a, label: A}]\ngroups: [{id: g, label: A very long group title indeed, nodes: [a]}]\n";
-        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
-        let config = LayoutConfig::default();
-        let layout = compute_layout(&compiled, &config).unwrap();
-        let (x, _, w, _) = groups::group_rects(&compiled, &layout.positions, &config.tokens)[0].unwrap();
+    fn test_group_fits_its_title_and_keeps_its_content_centred() {
+        let rect_and_node = |yaml: &str| {
+            let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+            let config = LayoutConfig::default();
+            let layout = compute_layout(&compiled, &config).unwrap();
+            let r = groups::group_rects(&compiled, &layout, &config.tokens)[0].unwrap();
+            let a = layout.positions[&compiled.node_map["a"]].clone();
+            (r, a, compiled, config)
+        };
+        let group = "groups: [{id: g, label: A very long group title indeed, nodes: [a]}]\n";
+        // Fed from above: wide enough that an arrow dropping onto the centred node
+        // clears the title — and widened evenly, so the node stays centred.
+        let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: up, label: Up}}, {{id: a, label: A}}]\n{group}edges: [{{from: up, to: a}}]\n"));
         let t = &config.tokens;
-        let title_end = x + groups::group_title_inset(t).0 + 31.0 * t.char_width(t.group_title_font_size);
-        let a = &layout.positions[&compiled.node_map["a"]];
-        assert!(x + w >= title_end, "box ends before its title");
-        assert!(a.x + a.width / 2.0 > title_end, "the lone node's centre clears the title, so an arrow can drop onto it");
+        let title_end = r.0 + groups::group_title_inset(t).0 + 31.0 * t.char_width(t.group_title_font_size);
+        let centre = a.x + a.width / 2.0;
+        assert!(centre > title_end, "the arrow onto the node clears the title");
+        assert!((centre - (r.0 + r.2 / 2.0)).abs() < 1.0, "content centred: node {centre}, box {r:?}");
+        assert!(r.2 >= groups::title_clear_width(&compiled.groups[0], t) - 1.0);
+        // Not fed from above: just wide enough for its title, still centred.
+        let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: a, label: A}}]\n{group}"));
+        assert!((r.2 - groups::group_min_width(&compiled.groups[0], &config.tokens)).abs() < 1.0, "{r:?}");
+        assert!((a.x + a.width / 2.0 - (r.0 + r.2 / 2.0)).abs() < 1.0);
     }
 }

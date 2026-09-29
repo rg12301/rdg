@@ -58,7 +58,7 @@ pub fn content_bounds(
     for nl in layout.positions.values() {
         b.add_rect(nl.x, nl.y, nl.width, nl.height);
     }
-    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
         b.add_rect(x, y, w, h);
     }
     for plan in edge_plans.values() {
@@ -151,7 +151,7 @@ mod tests {
         for (idx, (x, y)) in compiled.graph.node_indices().zip(at) {
             positions.insert(idx, NodeLayout { x, y, width: 100.0, height: 40.0 });
         }
-        LayoutResult { positions, sequence_info: None }
+        LayoutResult { positions, ..Default::default() }
     }
 
     #[test]

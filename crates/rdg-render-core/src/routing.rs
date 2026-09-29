@@ -79,7 +79,7 @@ pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side,
         (Outline::Cylinder { cap }, Side::Top | Side::Bottom) => cap * (1.0 - (1.0 - t * t).sqrt()),
         (Outline::Cylinder { .. }, _) => 0.0,
         // The mark is centred at the top: the sides and the top meet it (on its curve or
-        // slant), the bottom meets the box under the caption.
+        // slant); the bottom face is under the caption.
         (Outline::Captioned { mark, shape }, Side::Left | Side::Right) => {
             let r = mark / 2.0;
             let dy = (y - (nl.y + r)).abs().min(r);
@@ -99,7 +99,8 @@ pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side,
                 MarkShape::Diamond => dx,
             }
         }
-        (Outline::Captioned { .. }, Side::Bottom) => 0.0,
+        // Under the caption: stop short of the text, so the line doesn't grow out of it.
+        (Outline::Captioned { .. }, Side::Bottom) => -CAPTION_CLEARANCE,
     };
     match side {
         Side::Top => (x, y + depth),
@@ -108,6 +109,9 @@ pub fn attach_point(nl: &NodeLayout, outline: crate::style::Outline, side: Side,
         Side::Right => (x - depth, y),
     }
 }
+
+/// Air between a captioned node's caption and an arrow leaving or entering under it, px.
+pub const CAPTION_CLEARANCE: f64 = 6.0;
 
 /// [`attach_point`] for node `idx` of `compiled`.
 pub fn node_attach_point(
@@ -390,7 +394,7 @@ pub fn compute_group_title_zones(
     layout: &LayoutResult,
     tokens: &DesignTokens,
 ) -> Vec<GroupTitleZone> {
-    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    let rects = rdg_layout::groups::group_rects(compiled, layout, tokens);
     rects
         .iter()
         .enumerate()

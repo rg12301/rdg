@@ -316,7 +316,7 @@ pub fn place_edge_annotations(
         .map(|t| (t.min_x, t.min_y, t.max_x - t.min_x, t.max_y - t.min_y))
         .collect();
     let mut borders = Vec::new();
-    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
         let (a, b, c, d) = ((x, y), (x + w, y), (x + w, y + h), (x, y + h));
         borders.extend([(a, b), (b, c), (c, d), (d, a)]);
     }

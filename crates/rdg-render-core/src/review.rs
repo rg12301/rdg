@@ -638,7 +638,7 @@ pub fn spacing_metrics(
                 .count();
         }
     }
-    for (gx, gy, gw, gh) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
+    for (gx, gy, gw, gh) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
         let lines = [(true, gy, gx, gx + gw), (true, gy + gh, gx, gx + gw), (false, gx, gy, gy + gh), (false, gx + gw, gy, gy + gh)];
         for p in &paths {
             for w in p.windows(2) {
@@ -809,7 +809,7 @@ pub fn compute_reviewed_layout(
                 }
                 let mut nudged_positions = layout.positions.clone();
                 refine_positions(&mut nudged_positions, compiled, &config.tokens, &extra_clearance);
-                let nudged_layout = LayoutResult { positions: nudged_positions, sequence_info: None };
+                let nudged_layout = LayoutResult { positions: nudged_positions, ..Default::default() };
                 let nudged_edge_plans =
                     plan_all_edge_routes(compiled, &nudged_layout, decision.routing.algorithm, &config.tokens);
                 let (nw, nh) = estimate_canvas_bounds(&nudged_layout);
@@ -950,7 +950,7 @@ mod tests {
         );
         let layout = LayoutResult {
             positions,
-            sequence_info: None,
+            ..Default::default()
         };
         let anomalies = detect_anomalies(&compiled, &layout, &Map::new(), 200.0, 100.0, &DesignTokens::default());
         assert!(anomalies.iter().any(|a| a.kind == AnomalyKind::NodeOverlap));
@@ -1062,7 +1062,7 @@ mod tests {
         );
         let layout = LayoutResult {
             positions,
-            sequence_info: None,
+            ..Default::default()
         };
         let edge_idx = compiled.edge_order[0];
         let mut edge_plans = Map::new();

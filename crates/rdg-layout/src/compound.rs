@@ -25,7 +25,7 @@ use std::collections::{HashMap, HashSet};
 
 use rdg_graph::CompiledGraph;
 
-use crate::groups::{Padding, group_padding, widen_for_title};
+use crate::groups::{Padding, group_min_width, group_padding, title_clear_width};
 use crate::sugiyama::order_layers;
 use crate::{LayoutConfig, LayoutDirection, LayoutResult, NodeLayout};
 
@@ -174,17 +174,49 @@ impl Compound<'_> {
         }
         let (layers, pos, content) = self.arrange(g, &items);
         let (w, h) = self.frame.swap(content);
-        let real_pad = group_padding(&self.config.tokens, w, h);
-        let pad = self.frame.pad(real_pad);
+        let pad = self.frame.pad(group_padding(&self.config.tokens, w, h));
         let mut inset = (pad[0], pad[2]);
         let mut size = (content.0 + pad[0] + pad[1], content.1 + pad[2] + pad[3]);
-        // Wide enough for the title, the extra on the left (real width is the cross axis
-        // top-to-bottom, the main axis left-to-right) — see `group_min_width`.
+        // At least as wide as the title; and when an arrow drops in from above onto the
+        // top of the content, wide enough that it clears the title. Widened evenly, so
+        // the content stays centred (real width is the cross axis top-to-bottom, the
+        // main axis left-to-right — where arrows arrive from the side, under the title).
+        let group = &self.compiled.groups[g];
+        let mut min_w = group_min_width(group, &self.config.tokens);
+        if !self.frame.lr && layers.first().is_some_and(|top| self.fed_from_upstream(g, top)) {
+            min_w = min_w.max(title_clear_width(group, &self.config.tokens));
+        }
         let (width, start) = if self.frame.lr { (&mut size.1, &mut inset.1) } else { (&mut size.0, &mut inset.0) };
-        let extra = widen_for_title(&self.compiled.groups[g], &self.config.tokens, w, real_pad, *width);
-        *start += extra;
-        *width += extra;
+        if *width < min_w {
+            *start += (min_w - *width) / 2.0;
+            *width = min_w;
+        }
         self.blocks[g] = Some(Block { size, inset, content, layers, pos });
+    }
+
+    /// Whether an edge enters one of the `top` items of group `g` from upstream: from
+    /// outside the group, with nothing in the group sending back to where it came from
+    /// (a group called both ways shares its tier and is entered from the side).
+    fn fed_from_upstream(&self, g: usize, top: &[Item]) -> bool {
+        let within = |n: NodeIndex| self.item_in(Some(g), n).is_some();
+        // The smallest scope holding both the group and `n`, and `n`'s item there.
+        let source_item = |n: NodeIndex| {
+            let mut scope = self.compiled.group_tree.parent[g];
+            loop {
+                if let Some(it) = self.item_in(scope, n) {
+                    return (scope, it);
+                }
+                scope = scope.and_then(|s| self.compiled.group_tree.parent[s]);
+            }
+        };
+        self.compiled.graph.edge_references().any(|e| {
+            let (a, b) = (e.source(), e.target());
+            if within(a) || !self.item_in(Some(g), b).is_some_and(|it| top.contains(&it)) {
+                return false;
+            }
+            let (scope, from) = source_item(a);
+            !self.compiled.graph.edge_references().any(|r| within(r.source()) && !within(r.target()) && self.item_in(scope, r.target()) == Some(from))
+        })
     }
 
     /// Layered arrangement of `items` inside group `g`: ranks by the edges between them,
@@ -616,7 +648,8 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
             (n, NodeLayout { x, y, width, height })
         })
         .collect();
-    Ok(LayoutResult { positions, sequence_info: None })
+    let group_widths = c.blocks.iter().enumerate().filter_map(|(g, b)| Some((g, frame.swap(b.as_ref()?.size).0))).collect();
+    Ok(LayoutResult { positions, group_widths, ..Default::default() })
 }
 
 #[cfg(test)]

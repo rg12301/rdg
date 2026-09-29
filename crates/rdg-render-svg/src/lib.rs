@@ -267,7 +267,7 @@ pub fn render_svg(
     }
 
     // --- Groups: outer boxes first, so inner ones are drawn over them ---------------------
-    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    let rects = rdg_layout::groups::group_rects(compiled, layout, tokens);
     let (inset_x, inset_y) = rdg_layout::groups::group_title_inset(tokens);
     let (icon_size, icon_gap) = rdg_layout::groups::group_icon_size(tokens);
     for gi in compiled.group_tree.outer_first() {

@@ -550,7 +550,7 @@ pub fn route_orthogonal(
     for tz in crate::routing::compute_group_title_zones(compiled, layout, tokens) {
         obstacles.push(Rect { x0: tz.min_x, y0: tz.min_y, x1: tz.max_x, y1: tz.max_y - tokens.px(0.5) });
     }
-    let groups: Vec<Rect> = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens)
+    let groups: Vec<Rect> = rdg_layout::groups::group_rects(compiled, layout, tokens)
         .into_iter()
         .flatten()
         .map(|(x, y, w, h)| Rect { x0: x, y0: y, x1: x + w, y1: y + h })
@@ -1249,7 +1249,7 @@ mod tests {
         for (id, x, y) in nodes {
             positions.insert(compiled.node_map[*id], NodeLayout { x: *x, y: *y, width: 120.0, height: 60.0 });
         }
-        (compiled, LayoutResult { positions, sequence_info: None })
+        (compiled, LayoutResult { positions, ..Default::default() })
     }
 
     #[test]
@@ -1306,7 +1306,7 @@ mod tests {
         let mut positions = HashMap::new();
         positions.insert(compiled.node_map["a"], NodeLayout { x: 100.0, y: 100.0, width: 120.0, height: 60.0 });
         positions.insert(compiled.node_map["b"], NodeLayout { x: 100.0, y: 300.0, width: 120.0, height: 60.0 });
-        let plans = route_orthogonal(&compiled, &LayoutResult { positions, sequence_info: None }, &DesignTokens::default());
+        let plans = route_orthogonal(&compiled, &LayoutResult { positions, ..Default::default() }, &DesignTokens::default());
         let p = plans.values().next().unwrap();
         assert_eq!((p.src_side, p.dst_side), (Side::Right, Side::Right));
     }

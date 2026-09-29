@@ -199,7 +199,7 @@ fn classical_mds(dist: &DMatrix<f64>) -> Vec<(f64, f64)> {
 /// infallible).
 pub fn compute_fcose_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
     if compiled.graph.node_count() == 0 {
-        return Ok(LayoutResult { positions: HashMap::new(), sequence_info: None });
+        return Ok(LayoutResult { positions: HashMap::new(), ..Default::default() });
     }
 
     let sizes = compute_node_sizes(compiled, config);
@@ -252,7 +252,7 @@ pub fn compute_fcose_layout(compiled: &CompiledGraph, config: &LayoutConfig) -> 
     separate_overlapping_clusters(&mut positions, &clusters, config);
     pack_components_into_grid(&mut positions, &components, config, !compiled.groups.is_empty());
 
-    let mut result = LayoutResult { positions, sequence_info: None };
+    let mut result = LayoutResult { positions, ..Default::default() };
     normalize_positions(&mut result, config, !compiled.groups.is_empty());
     Ok(result)
 }

@@ -3,14 +3,14 @@
 //!
 //! The diagram is laid out and routed first, with no band reserved for either block.
 //! Then everything drawn — node boxes, containers, arrow paths, edge labels, flow
-//! badges — becomes an obstacle, and each block is fitted into the **largest white
-//! patch** that can hold it: a few box shapes are tried (the description wrapped at
-//! different widths, the legend at different row lengths), every candidate position
-//! scanned over the diagram's extent, and a spot kept only if it clears every obstacle
-//! by [`separation`]. Among those, the one sitting in the biggest free area wins; ties
-//! go to reading order (top, then left). When no patch fits, the title goes above the
-//! diagram and the legend below it. The canvas margin is then applied evenly around
-//! everything, blocks included.
+//! badges — becomes an obstacle, and the blocks go into a **corner** of the diagram's
+//! extent, flush to its two edges: as far from the diagram as the canvas allows, where
+//! a reader looks for a title, never in a gap between groups. Corners are tried in
+//! reading order — top-left, bottom-left (a caption), top-right, bottom-right — first
+//! for the title with the legend stacked under it, then for each block on its own; a
+//! spot counts only if it clears every obstacle by [`separation`]. A block no corner can
+//! hold goes outside the diagram: the title above it, the legend below it. The canvas
+//! margin is then applied evenly around everything, blocks included.
 //!
 //! Placement is translation-invariant (the scan is anchored to the content's own
 //! corner), so [`place_frame`] can shift the scene onto the margin and the renderers
@@ -104,7 +104,7 @@ pub fn separation(tokens: &DesignTokens) -> f64 {
 /// Obstacles: everything the diagram draws, as rectangles (arrow segments as thin ones).
 fn obstacles(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens) -> Vec<Rect> {
     let mut out: Vec<Rect> = layout.positions.values().map(|n| (n.x, n.y, n.x + n.width, n.y + n.height)).collect();
-    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, &layout.positions, tokens).into_iter().flatten() {
+    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
         out.push((x, y, x + w, y + h));
     }
     for &e in &compiled.edge_order {
@@ -133,81 +133,31 @@ fn rect_dist(a: Rect, b: Rect) -> f64 {
     dx.hypot(dy)
 }
 
-/// How big the white patch around `r` is: the larger of the two free rectangles grown
-/// out from it (sideways first then up/down, and up/down first then sideways), inside
-/// `area`.
-fn patch_area(r: Rect, obs: &[Rect], area: Rect) -> f64 {
-    let overlaps_y = |o: &Rect, y0: f64, y1: f64| o.1 < y1 && o.3 > y0;
-    let overlaps_x = |o: &Rect, x0: f64, x1: f64| o.0 < x1 && o.2 > x0;
-    let sideways = |y0: f64, y1: f64| {
-        let left = obs.iter().filter(|o| o.2 <= r.0 && overlaps_y(o, y0, y1)).map(|o| o.2).fold(area.0, f64::max);
-        let right = obs.iter().filter(|o| o.0 >= r.2 && overlaps_y(o, y0, y1)).map(|o| o.0).fold(area.2, f64::min);
-        (left, right)
-    };
-    let vertical = |x0: f64, x1: f64| {
-        let up = obs.iter().filter(|o| o.3 <= r.1 && overlaps_x(o, x0, x1)).map(|o| o.3).fold(area.1, f64::max);
-        let down = obs.iter().filter(|o| o.1 >= r.3 && overlaps_x(o, x0, x1)).map(|o| o.1).fold(area.3, f64::min);
-        (up, down)
-    };
-    let (l, rr) = sideways(r.1, r.3);
-    let (u, d) = vertical(l, rr);
-    let a = (rr - l).max(0.0) * (d - u).max(0.0);
-    let (u2, d2) = vertical(r.0, r.2);
-    let (l2, r2) = sideways(u2, d2);
-    let b = (r2 - l2).max(0.0) * (d2 - u2).max(0.0);
-    a.max(b)
+/// Corners a block may sit in, in the order a reader looks for a title: top-left, then
+/// bottom-left (where a caption goes), top-right, bottom-right.
+const CORNERS: [(bool, bool); 4] = [(false, false), (false, true), (true, false), (true, true)];
+
+/// Top-left of a `w`×`h` block in a corner of `area` (`right`, `bottom` pick which),
+/// and the side its lines align to.
+fn corner_spot((right, bottom): (bool, bool), w: f64, h: f64, area: Rect) -> (f64, f64, Align) {
+    let x = if right { area.2 - w } else { area.0 };
+    let y = if bottom { area.3 - h } else { area.1 };
+    (x, y, if right { Align::Right } else { Align::Left })
 }
 
-/// Best spot for a `w`×`h` block inside `area`, clear of `obs` by `sep`: one in the
-/// biggest free patch (patch sizes compared in `4 × step` px buckets, so spots within
-/// one patch tie), then the highest, then the leftmost — the patch's top-left corner.
-/// Returns `(score, x, y)`; `None` when nothing fits.
-fn best_spot(w: f64, h: f64, obs: &[Rect], area: Rect, sep: f64, step: f64) -> Option<(f64, f64, f64)> {
-    let bucket = 4.0 * step;
-    let (x_lo, y_lo, x_hi, y_hi) = (area.0, area.1, area.2 - w, area.3 - h);
-    if x_hi < x_lo || y_hi < y_lo {
-        return None;
-    }
-    let mut best: Option<(f64, f64, f64)> = None; // (score, x, y)
-    let nx = ((x_hi - x_lo) / step).floor() as usize;
-    let ny = ((y_hi - y_lo) / step).floor() as usize;
-    for j in 0..=ny {
-        let y = y_lo + j as f64 * step;
-        for i in 0..=nx {
-            let x = x_lo + i as f64 * step;
-            let r = (x, y, x + w, y + h);
-            if obs.iter().any(|&o| rect_dist(r, o) < sep) {
-                continue;
-            }
-            // Score by the free area around (in px², square-rooted to a length), so a
-            // spot in a big empty region beats a snug one in a small gap.
-            let score = (patch_area(r, obs, area).sqrt() / bucket).round() * bucket;
-            // Scanned top-down, left-right: a tie keeps the earlier (higher, then left).
-            if best.is_none_or(|(s, _, _)| score > s + 1e-6) {
-                best = Some((score, x, y));
-            }
-        }
-    }
-    best
+/// Distance from `r` to the nearest obstacle.
+fn clearance(r: Rect, obs: &[Rect]) -> f64 {
+    obs.iter().map(|&o| rect_dist(r, o)).fold(f64::MAX, f64::min)
 }
 
-/// Align a block to the canvas edge it sits nearest, the layout convention of anchoring
-/// text to the frame it shares with the content: in the left third of the canvas it
-/// reads left and moves flush to the left edge, in the right third it reads right and
-/// moves flush to the right edge, in between it is centred on the canvas. It only
-/// slides along its own row, as far as the free space there allows.
-fn align_to_canvas(x: f64, y: f64, w: f64, h: f64, obs: &[Rect], area: Rect, sep: f64) -> (f64, Align) {
-    let rows = |o: &&Rect| o.1 < y + h + sep && o.3 > y - sep;
-    let fl = obs.iter().filter(rows).filter(|o| o.2 <= x + 0.5).map(|o| o.2 + sep).fold(area.0, f64::max);
-    let fr = obs.iter().filter(rows).filter(|o| o.0 >= x + w - 0.5).map(|o| o.0 - sep).fold(area.2, f64::min);
-    let rel = (x + w / 2.0 - area.0) / (area.2 - area.0).max(1.0);
-    if rel < 1.0 / 3.0 {
-        (fl, Align::Left)
-    } else if rel > 2.0 / 3.0 {
-        ((fr - w).max(fl), Align::Right)
-    } else {
-        (((area.0 + area.2 - w) / 2.0).clamp(fl, (fr - w).max(fl)), Align::Center)
-    }
+/// Rows a legend shape takes when wrapped at its width.
+fn legend_line_count(&(max_w, _, _): &(f64, f64, f64), items: &[LegendItem], theme: &Theme) -> usize {
+    crate::look::legend_rows(items, theme, max_w).len().max(1)
+}
+
+/// Whether `r` clears every obstacle by `sep`.
+fn clear(r: Rect, obs: &[Rect], sep: f64) -> bool {
+    obs.iter().all(|&o| rect_dist(r, o) >= sep)
 }
 
 /// Title block shapes to try: the description on one line, then wrapped narrower.
@@ -259,82 +209,112 @@ fn title_shapes(title: &str, description: Option<&str>, theme: &Theme, tokens: &
 pub fn compute_frame(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, theme: &Theme, tokens: &DesignTokens) -> Option<Frame> {
     let b = crate::canvas::content_bounds(compiled, layout, plans, tokens)?;
     let sep = separation(tokens);
-    let step = tokens.px(1.0);
-    let mut obs = obstacles(compiled, layout, plans, tokens);
-    // The white patches are inside the diagram's own extent.
+    let obs = obstacles(compiled, layout, plans, tokens);
     let area: Rect = (b.min_x, b.min_y, b.max_x, b.max_y);
-    let (mut min_x, mut min_y, mut max_x, mut max_y) = area;
 
-    // --- Title + description --------------------------------------------------------
-    let title = compiled.title.as_deref().map(|t| {
-        let shapes = title_shapes(t, compiled.description.as_deref(), theme, tokens);
-        // Fewer, longer lines read better: each extra wrap costs a little.
-        let fit = shapes
-            .iter()
-            .enumerate()
-            .filter_map(|(i, s)| best_spot(s.w, s.h, &obs, area, sep, step).map(|(score, x, y)| (score - i as f64 * tokens.px(2.0), x, y, i)))
-            .max_by(|a, b| a.0.total_cmp(&b.0).then(b.2.total_cmp(&a.2)).then(b.1.total_cmp(&a.1)));
-        let mut block = match fit {
-            Some((_, x, y, i)) => {
-                let mut s = shapes[i].clone();
-                (s.x, s.y) = (x, y);
-                s
-            }
-            // No patch holds it: above the diagram, a separation clear of it. Keep
-            // the description on one line up to the diagram's width.
-            None => {
-                let mut s = shapes.iter().find(|s| s.w <= (area.2 - area.0).max(tokens.px(40.0))).unwrap_or(&shapes[shapes.len() - 1]).clone();
-                (s.x, s.y) = (area.0, area.1 - sep - s.h);
-                s
-            }
-        };
-        (block.x, block.align) = align_to_canvas(block.x, block.y, block.w, block.h, &obs, area, sep);
-        block.x = block.x.round();
-        block.y = block.y.round();
-        obs.push((block.x, block.y, block.x + block.w, block.y + block.h));
-        block
-    });
-    if let Some(t) = &title {
-        (min_x, min_y, max_x, max_y) = (min_x.min(t.x), min_y.min(t.y), max_x.max(t.x + t.w), max_y.max(t.y + t.h));
-    }
-
-    // --- Legend -----------------------------------------------------------------------
-    let legend = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty()).map(|items| {
+    // Candidate shapes: the title's description on one line, then wrapped narrower; the
+    // legend in one row, then in narrower columns.
+    let titles = compiled.title.as_deref().map(|t| title_shapes(t, compiled.description.as_deref(), theme, tokens)).unwrap_or_default();
+    let items = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty());
+    let legends: Vec<(f64, f64, f64)> = items.as_ref().map_or_else(Vec::new, |items| {
         let full = (area.2 - area.0).max(tokens.px(40.0));
         let mut shapes: Vec<(f64, f64, f64)> = Vec::new(); // (max_w, w, h)
-        for frac in [1.0, 0.6, 0.4, 0.25] {
-            let (w, h) = legend_size(&items, theme, full * frac);
+        for frac in [1.0, 0.6, 0.4, 0.3, 0.2, 0.12] {
+            let (w, h) = legend_size(items, theme, full * frac);
             if !shapes.iter().any(|s| (s.1 - w).abs() < 1.0 && (s.2 - h).abs() < 1.0) {
                 shapes.push((full * frac, w, h));
             }
         }
-        let fit = shapes
-            .iter()
-            .filter_map(|&(mw, w, h)| best_spot(w, h, &obs, area, sep, step).map(|(score, x, y)| (score, x, y, mw, w, h)))
-            .max_by(|a, b| a.0.total_cmp(&b.0).then(a.2.total_cmp(&b.2)).then(b.1.total_cmp(&a.1)));
-        let (x, y, mw, w, h) = match fit {
-            Some((_, x, y, mw, w, h)) => (x, y, mw, w, h),
-            None => {
-                let (mw, w, h) = shapes[0];
-                (area.0, max_y.max(area.3) + sep, mw, w, h)
-            }
-        };
-        let (mut x, mut align) = align_to_canvas(x, y, w, h, &obs, area, sep);
-        // Stacked right under (or over) the title: share its alignment and edge, so the
-        // two read as one block — when that spot is just as clear.
-        if let Some(t) = &title {
-            let stacked = x < t.x + t.w && x + w > t.x && (y - (t.y + t.h)).abs().min((t.y - (y + h)).abs()) < 3.0 * sep;
-            let snapped = t.align.line_x(t.x, t.w, w);
-            let r = (snapped, y, snapped + w, y + h);
-            let own = (t.x, t.y, t.x + t.w, t.y + t.h);
-            if stacked && obs.iter().filter(|&&o| o != own).all(|&o| rect_dist(r, o) >= sep) && snapped >= area.0 && snapped + w <= area.2.max(t.x + t.w) {
-                (x, align) = (snapped, t.align);
+        shapes
+    });
+    let stack_gap = tokens.px(2.0);
+    // Clearance beyond this reads as "apart from the diagram"; each extra line of text,
+    // and each step down the corner order, costs a little.
+    let (comfort, line_cost, corner_cost) = (tokens.px(10.0), tokens.px(0.75), tokens.px(0.5));
+    let place_title = |s: &TitleBlock, x: f64, y: f64, align: Align| TitleBlock { x: x.round(), y: y.round(), align, ..s.clone() };
+    let place_legend = |&(max_w, w, h): &(f64, f64, f64), x: f64, y: f64, align: Align| LegendBlock {
+        x: x.round(),
+        y: y.round(),
+        w,
+        h,
+        align,
+        max_w,
+        items: items.clone().unwrap_or_default(),
+    };
+
+    // --- Together: the title with the legend under it, in one corner -----------------
+    // Every corner × every wrapping is scored: clearance from the diagram first (up to a
+    // comfortable distance — a long one-line description or one-row legend reaching back
+    // over the diagram loses to a narrower, taller block tucked into the corner), then
+    // fewer lines, then reading order among corners.
+    let mut title: Option<TitleBlock> = None;
+    let mut legend: Option<LegendBlock> = None;
+    let score = |r: Rect, obs: &[Rect], lines: usize, corner: usize| clearance(r, obs).min(comfort) - lines as f64 * line_cost - corner as f64 * corner_cost;
+    if !titles.is_empty() && !legends.is_empty() {
+        let mut best: Option<(f64, TitleBlock, LegendBlock)> = None;
+        for (ci, &corner) in CORNERS.iter().enumerate() {
+            for t in &titles {
+                for l in &legends {
+                    let (w, h) = (t.w.max(l.1), t.h + stack_gap + l.2);
+                    let (x, y, align) = corner_spot(corner, w, h, area);
+                    let r = (x, y, x + w, y + h);
+                    if !clear(r, &obs, sep) {
+                        continue;
+                    }
+                    let sc = score(r, &obs, t.description_lines.len() + legend_line_count(l, items.as_deref().unwrap_or_default(), theme), ci);
+                    if best.as_ref().is_none_or(|b| sc > b.0 + 1e-6) {
+                        best = Some((sc, place_title(t, align.line_x(x, w, t.w), y, align), place_legend(l, align.line_x(x, w, l.1), y + t.h + stack_gap, align)));
+                    }
+                }
             }
         }
-        LegendBlock { x: x.round(), y: y.round(), w, h, align, max_w: mw, items }
-    });
-    if let Some(l) = &legend {
-        (min_x, min_y, max_x, max_y) = (min_x.min(l.x), min_y.min(l.y), max_x.max(l.x + l.w), max_y.max(l.y + l.h));
+        if let Some((_, t, l)) = best {
+            (title, legend) = (Some(t), Some(l));
+        }
+    }
+
+    // --- Otherwise each on its own: a free corner, else outside the diagram ----------
+    let mut obs = obs;
+    if title.is_none() && !titles.is_empty() {
+        let spot = CORNERS
+            .iter()
+            .enumerate()
+            .flat_map(|(ci, &c)| titles.iter().map(move |t| (ci, c, t)))
+            .filter_map(|(ci, c, t)| {
+                let (x, y, align) = corner_spot(c, t.w, t.h, area);
+                let r = (x, y, x + t.w, y + t.h);
+                clear(r, &obs, sep).then(|| (score(r, &obs, t.description_lines.len(), ci), place_title(t, x, y, align)))
+            })
+            .fold(None::<(f64, TitleBlock)>, |b, c| if b.as_ref().is_none_or(|b| c.0 > b.0 + 1e-6) { Some(c) } else { b })
+            .map(|(_, t)| t);
+        // Above the diagram, the description on one line up to the diagram's width.
+        title = spot.or_else(|| {
+            let t = titles.iter().find(|s| s.w <= (area.2 - area.0).max(tokens.px(40.0))).unwrap_or(&titles[titles.len() - 1]);
+            Some(place_title(t, area.0, area.1 - sep - t.h, Align::Left))
+        });
+        if let Some(t) = &title {
+            obs.push((t.x, t.y, t.x + t.w, t.y + t.h));
+        }
+    }
+    if legend.is_none() && !legends.is_empty() {
+        let spot = CORNERS
+            .iter()
+            .enumerate()
+            .flat_map(|(ci, &c)| legends.iter().map(move |l| (ci, c, l)))
+            .filter_map(|(ci, c, l)| {
+                let (x, y, align) = corner_spot(c, l.1, l.2, area);
+                let r = (x, y, x + l.1, y + l.2);
+                clear(r, &obs, sep).then(|| (score(r, &obs, legend_line_count(l, items.as_deref().unwrap_or_default(), theme), ci), place_legend(l, x, y, align)))
+            })
+            .fold(None::<(f64, LegendBlock)>, |b, c| if b.as_ref().is_none_or(|b| c.0 > b.0 + 1e-6) { Some(c) } else { b })
+            .map(|(_, l)| l);
+        // Below the diagram.
+        legend = spot.or_else(|| Some(place_legend(&legends[0], area.0, area.3 + sep, Align::Left)));
+    }
+
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = area;
+    for (x, y, w, h) in title.iter().map(|t| (t.x, t.y, t.w, t.h)).chain(legend.iter().map(|l| (l.x, l.y, l.w, l.h))) {
+        (min_x, min_y, max_x, max_y) = (min_x.min(x), min_y.min(y), max_x.max(x + w), max_y.max(y + h));
     }
     Some(Frame { title, legend, min_x, min_y, max_x, max_y })
 }
@@ -375,17 +355,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn patch_prefers_the_bigger_gap() {
-        // Two free regions: a small one at the top-left, a big one at the right.
+    fn corners_are_tried_in_reading_order() {
         let area = (0.0, 0.0, 1000.0, 400.0);
-        let obs = vec![(0.0, 120.0, 400.0, 400.0), (400.0, 0.0, 420.0, 400.0)];
-        let (_, x, _) = best_spot(150.0, 40.0, &obs, area, 24.0, 8.0).unwrap();
-        assert!(x > 420.0, "picked the large right-hand patch, got x={x}");
-    }
-
-    #[test]
-    fn nothing_fits_when_the_area_is_full() {
-        let area = (0.0, 0.0, 300.0, 200.0);
-        assert!(best_spot(150.0, 40.0, &[(0.0, 0.0, 300.0, 200.0)], area, 24.0, 8.0).is_none());
+        // The top-left is taken: the block goes to the bottom-left, flush to both edges.
+        let obs = [(0.0, 0.0, 300.0, 200.0)];
+        let spot = CORNERS.iter().map(|&c| corner_spot(c, 150.0, 40.0, area)).find(|&(x, y, _)| clear((x, y, x + 150.0, y + 40.0), &obs, 24.0));
+        assert_eq!(spot, Some((0.0, 360.0, Align::Left)));
+        // Both left corners taken: top-right, aligned right.
+        let obs = [(0.0, 0.0, 300.0, 400.0)];
+        let spot = CORNERS.iter().map(|&c| corner_spot(c, 150.0, 40.0, area)).find(|&(x, y, _)| clear((x, y, x + 150.0, y + 40.0), &obs, 24.0));
+        assert_eq!(spot, Some((850.0, 0.0, Align::Right)));
     }
 }

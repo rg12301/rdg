@@ -296,7 +296,7 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
     let t = &config.tokens;
     let m = Metrics::new(t);
     if compiled.graph.node_count() == 0 {
-        return Ok(LayoutResult { positions: HashMap::new(), sequence_info: None });
+        return Ok(LayoutResult { positions: HashMap::new(), ..Default::default() });
     }
 
     // --- Participants, a group's members together --------------------------------
@@ -747,6 +747,7 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
             min_x: min_x + dx,
             max_x: max_x + dx,
         }),
+        ..Default::default()
     })
 }
 

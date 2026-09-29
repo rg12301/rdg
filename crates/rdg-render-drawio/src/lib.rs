@@ -149,7 +149,7 @@ pub fn render_drawio(
     // --- Group / Swimlane container cells -----------------------------------
     // Outer groups first; each cell sits in its enclosing group's cell (draw.io
     // coordinates are relative to the parent), so moving a group moves what's inside.
-    let rects = rdg_layout::groups::group_rects(compiled, &layout.positions, tokens);
+    let rects = rdg_layout::groups::group_rects(compiled, layout, tokens);
     // A group's cell id and absolute top-left, for the cells placed inside it.
     let cell_of = |g: usize| rects[g].map(|(x, y, _, _)| (compiled.groups[g].id.as_str(), (x.round(), y.round())));
     let parent_of = |g: Option<usize>| g.and_then(cell_of).unwrap_or(("1", (0.0, 0.0)));

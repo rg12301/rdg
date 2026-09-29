@@ -197,7 +197,7 @@ mv rdg ~/.local/bin/
 
 ```bash
 rdg --version
-# rdg 1.2.0
+# rdg 1.2.1
 
 rdg --help
 # Prints the full LLM-friendly usage guide

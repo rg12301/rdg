@@ -4,14 +4,10 @@
 //! draw the boxes from [`group_rects`], so none of them can disagree about where a
 //! container is.
 
-use std::collections::HashMap;
-
-use petgraph::stable_graph::NodeIndex;
-
 use rdg_graph::CompiledGraph;
 use rdg_schema::GroupDef;
 
-use crate::{DesignTokens, NodeLayout};
+use crate::{DesignTokens, LayoutResult};
 
 /// `(x, y, width, height)`.
 pub type Rect = (f64, f64, f64, f64);
@@ -50,22 +46,16 @@ fn title_text_width(group: &GroupDef, tokens: &DesignTokens) -> f64 {
     group.label.chars().count() as f64 * tokens.char_width(font) + icon_w
 }
 
-/// The narrowest a group's box may be, for content `content_w` wide with `pad` around
-/// it: its title fits, and the centre of the content clears the title's end (by a stub),
-/// so an arrow dropping into the middle of the group — onto a lone node, say — never
-/// crosses the title. When the box must grow for this, the extra width goes on the
-/// left, under the title (see [`widen_for_title`]).
-pub fn group_min_width(group: &GroupDef, tokens: &DesignTokens, content_w: f64, pad: Padding) -> f64 {
-    let inset = group_title_inset(tokens).0;
-    let text = title_text_width(group, tokens);
-    let title_end = inset + text + tokens.stub_clearance();
-    (text + 2.0 * inset).max(title_end + content_w / 2.0 + pad.right).ceil()
+/// The narrowest a group's box may be: its title, inset on both sides.
+pub fn group_min_width(group: &GroupDef, tokens: &DesignTokens) -> f64 {
+    (title_text_width(group, tokens) + 2.0 * group_title_inset(tokens).0).ceil()
 }
 
-/// How much wider than its content-plus-padding width `w` a group must be drawn —
-/// added on the left, so the content sits right of the title.
-pub fn widen_for_title(group: &GroupDef, tokens: &DesignTokens, content_w: f64, pad: Padding, w: f64) -> f64 {
-    (group_min_width(group, tokens, content_w, pad) - w).max(0.0)
+/// Width at which a group's centre line clears the end of its title (by a stub), so an
+/// arrow dropping from above onto content centred in the box — a lone node, say — never
+/// crosses the title. The layout widens a group to this (evenly) when it's fed from above.
+pub fn title_clear_width(group: &GroupDef, tokens: &DesignTokens) -> f64 {
+    (2.0 * (group_title_inset(tokens).0 + title_text_width(group, tokens) + tokens.stub_clearance())).ceil()
 }
 
 /// The title's own box inside a group drawn at `rect` — what arrows and edge labels
@@ -81,8 +71,9 @@ pub fn group_title_rect(group: &GroupDef, rect: Rect, tokens: &DesignTokens) -> 
 /// Every group's drawn rectangle, indexed like `compiled.groups`; `None` for a group
 /// with no laid-out node inside it at any depth. Inner groups are measured first: a
 /// group's content is its own nodes plus its inner groups' boxes, padded by
-/// [`group_padding`] and widened on the left to [`group_min_width`].
-pub fn group_rects(compiled: &CompiledGraph, positions: &HashMap<NodeIndex, NodeLayout>, tokens: &DesignTokens) -> Vec<Option<Rect>> {
+/// [`group_padding`] and widened evenly — content stays centred — to the larger of
+/// [`group_min_width`] and the width the layout gave it (`layout.group_widths`).
+pub fn group_rects(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &DesignTokens) -> Vec<Option<Rect>> {
     let mut rects: Vec<Option<Rect>> = vec![None; compiled.groups.len()];
     for g in compiled.group_tree.outer_first().into_iter().rev() {
         let mut ext: Option<(f64, f64, f64, f64)> = None;
@@ -91,7 +82,7 @@ pub fn group_rects(compiled: &CompiledGraph, positions: &HashMap<NodeIndex, Node
             *e = (e.0.min(x), e.1.min(y), e.2.max(x + w), e.3.max(y + h));
         };
         for n in &compiled.group_nodes[g] {
-            if let Some(nl) = positions.get(n) {
+            if let Some(nl) = layout.positions.get(n) {
                 add((nl.x, nl.y, nl.width, nl.height));
             }
         }
@@ -104,8 +95,9 @@ pub fn group_rects(compiled: &CompiledGraph, positions: &HashMap<NodeIndex, Node
         let (cw, ch) = (x1 - x0, y1 - y0);
         let pad = group_padding(tokens, cw, ch);
         let w = cw + pad.left + pad.right;
-        let extra = widen_for_title(&compiled.groups[g], tokens, cw, pad, w);
-        rects[g] = Some((x0 - pad.left - extra, y0 - pad.top, w + extra, ch + pad.top + pad.bottom));
+        let min_w = group_min_width(&compiled.groups[g], tokens).max(layout.group_widths.get(&g).copied().unwrap_or(0.0));
+        let extra = (min_w - w).max(0.0);
+        rects[g] = Some((x0 - pad.left - extra / 2.0, y0 - pad.top, w + extra, ch + pad.top + pad.bottom));
     }
     rects
 }
