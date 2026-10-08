@@ -1,0 +1,37 @@
+title: "CI pipeline with retries"
+diagram_type: flowchart
+numbered: true
+nodes:
+  - {id: start, title: "Push to main", type: start}
+  - {id: build, title: "Build image", type: service}
+  - {id: build_ok, title: "Build OK?", type: decision}
+  - {id: test, title: "Run tests", type: service}
+  - {id: test_ok, title: "Tests pass?", type: decision}
+  - {id: flaky, title: "Flaky retry\n< 3 attempts?", type: decision}
+  - {id: deploy_stg, title: "Deploy to staging", type: service}
+  - {id: smoke, title: "Smoke tests", type: service}
+  - {id: smoke_ok, title: "Smoke OK?", type: decision}
+  - {id: approve, title: "Manual approval", type: user}
+  - {id: deploy_prod, title: "Deploy to prod", type: service}
+  - {id: rollback, title: "Rollback", type: function}
+  - {id: notify_fail, title: "Notify #ci-alerts", type: function}
+  - {id: done, title: "Released", type: end}
+  - {id: failed, title: "Failed", type: end}
+edges:
+  - {from: start, to: build}
+  - {from: build, to: build_ok}
+  - {from: build_ok, to: test, label: "yes"}
+  - {from: build_ok, to: notify_fail, label: "no", edge_style: error}
+  - {from: test, to: test_ok}
+  - {from: test_ok, to: deploy_stg, label: "yes"}
+  - {from: test_ok, to: flaky, label: "no"}
+  - {from: flaky, to: test, label: "retry", edge_style: fallback}
+  - {from: flaky, to: notify_fail, label: "give up", edge_style: error}
+  - {from: deploy_stg, to: smoke}
+  - {from: smoke, to: smoke_ok}
+  - {from: smoke_ok, to: approve, label: "yes"}
+  - {from: smoke_ok, to: rollback, label: "no", edge_style: error}
+  - {from: rollback, to: notify_fail, edge_style: error}
+  - {from: approve, to: deploy_prod, label: "approved"}
+  - {from: deploy_prod, to: done}
+  - {from: notify_fail, to: failed}

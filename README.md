@@ -28,6 +28,29 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
+- **v1.3.0 — layout quality pass** (battle-tested on 16 new diagrams, easy to very
+  complex, every diagram type):
+  - *Cycles break where the author expects*: a returning edge ("retry" back to "run
+    tests") is the one reversed, never the forward step — the chart no longer puts a
+    retry decision at the top. Class diagrams rank parents above children: inheritance
+    and realization arrows point up.
+  - *Tiers*: two groups wired both ways follow the direction with more edges; two
+    groups fed by the same unit stay side by side across a light link (a replication
+    arrow between regions); a group of unwired nodes becomes a landscape grid; tiers
+    fill a 3:2 canvas instead of a one-group-per-row stack; a node fed from above is
+    kept clear of its group's title; sources sit next to the first node they feed.
+  - *Dense graphs* (more than 2 edges per node) fill a compact block of ranks instead of
+    a chain or a force-directed tangle.
+  - *Routing*: an arrow never cuts through a container it does not belong to; a crowded
+    face spreads its ports before an arrow sets off against the flow; decision-branch
+    labels stay next to the decision.
+  - *Cards*: a table or class card is exactly as tall as its rows (no blank band);
+    operations such as `+ process(txn: Transaction): Result` are never split at their
+    first colon and get their own UML compartment; ER crow's feet fan onto the entity.
+  - *Layout hints* when the automatic tiers are not what you meant: `same_rank:` lists,
+    `rank:` on a node or group, `constraint: false` on an edge (`rdg --guide layout`).
+  - *Schema*: `type: state`, `title: ""` for a caption-less start/end marker, `and:` /
+    `else:` as a plain list of steps, every `--list-icons` key accepted by `icon:`.
 - **Sequence diagrams, properly**: an ordered `sequence:` script with notes, fragments
   (`alt`/`else`, `opt`, `loop`, `par`/`and`, `critical`, `break`, `region`), dividers,
   participant groups, actors, automatic activation bars (a call with a reply activates
@@ -66,9 +89,10 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
   `--guide <topic>` and `--list-icons` replace the old 27 KB help page.
 - **Topology-dispatched layout**: `rdg` inspects each input graph (cyclicity, edge
   density, compound/nested group structure, connected components) and automatically
-  picks between three layout frameworks — the original Sugiyama layered layout, a
-  Barnes-Hut force-directed engine, and an fCoSE-style compound spring embedder (edges
-  are then routed by the search router above). `--layout auto` (the default) reports its choice
+  picks between three layout frameworks — the Sugiyama layered layout (dense webs get
+  it too, as a compact block of ranks), a Barnes-Hut force-directed engine (`--layout
+  force`, or very large graphs), and an fCoSE-style compound spring embedder for
+  disconnected components (edges are then routed by the search router above). `--layout auto` (the default) reports its choice
   on stderr; `--layout sugiyama|force|fcose` forces one explicitly. See
   [`crates/rdg-dispatch`](crates/rdg-dispatch) for the decision logic.
 - **Self-review**: every render runs a deterministic geometry check (overlaps, edges

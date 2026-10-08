@@ -25,17 +25,37 @@ use std::collections::{HashMap, HashSet};
 
 use rdg_graph::CompiledGraph;
 
-use crate::groups::{Padding, group_min_width, group_padding, title_clear_width};
+use crate::groups::{Padding, group_min_width, group_padding, title_clear_x};
 use crate::sugiyama::order_layers;
 use crate::{LayoutConfig, LayoutDirection, LayoutResult, NodeLayout};
 
 /// A tier may grow to this multiple of the widest single unit before the next unit
-/// wraps onto a tier of its own.
-const ROW_WIDTH_SLACK: f64 = 1.3;
+/// wraps onto a tier of its own (see also [`ROW_AREA_FACTOR`]).
+const ROW_WIDTH_SLACK: f64 = 2.0;
+/// A tier may also grow to the square root of this multiple of all units' area — a
+/// landscape canvas (about 3:2) rather than a tall stack of one group per tier.
+const ROW_AREA_FACTOR: f64 = 2.5;
+/// Up to this many edges from one group to a sibling group (both fed by the same unit)
+/// is a link drawn across the tier they share, not a reason to stack them.
+const SIBLING_LINK_MAX: usize = 2;
+/// A group whose items have no edges between them lays them out in a grid (rows of
+/// about the square root of their count, landscape) from this many items up, instead of
+/// one long row that would widen every tier.
+const GRID_FROM: usize = 5;
 /// Placement sweeps (units, then items within groups) — enough for positions to settle.
 const SWEEPS: usize = 4;
 /// A gap widened for crossing edge labels grows to at most this many group gaps.
 const MAX_LABEL_GAP_FACTOR: f64 = 5.0;
+
+/// The author's layout hints for one set of items (see `DiagramPayload::same_rank`,
+/// `NodeDef::rank`, `GroupDef::rank`).
+#[derive(Debug, Default)]
+struct RankHints {
+    /// Pinned rank per item, by index.
+    pinned: Vec<Option<usize>>,
+    /// Lists of item indices that share a rank.
+    same: Vec<Vec<usize>>,
+}
 
 /// Something placed inside a group, or at the top level: a node, or an inner group's box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -76,6 +96,9 @@ struct Block {
     layers: Vec<Vec<Item>>,
     /// Item corners relative to the content origin.
     pos: HashMap<Item, (f64, f64)>,
+    /// Extra left padding (part of `inset.0`) that keeps nodes fed from above clear
+    /// of the title — reported to the renderer as `LayoutResult::group_title_shift`.
+    title_shift: f64,
 }
 
 /// The layout under construction; every coordinate is in the flow frame.
@@ -122,6 +145,47 @@ impl Compound<'_> {
                 None => return None,
             }
         }
+    }
+
+    /// The item directly inside `scope` that holds the node or group with this id.
+    fn item_for_id(&self, scope: Option<usize>, id: &str) -> Option<Item> {
+        if let Some(&n) = self.compiled.node_map.get(id) {
+            return self.item_in(scope, n);
+        }
+        let g = self.compiled.groups.iter().position(|g| g.id == id)?;
+        let mut it = Item::Group(g);
+        loop {
+            match self.container(it) {
+                c if c == scope => return Some(it),
+                Some(p) => it = Item::Group(p),
+                None => return None,
+            }
+        }
+    }
+
+    /// The author's rank hints for `items` (inside `scope`): pinned ranks per item and
+    /// the `same_rank` lists resolved to item indices.
+    fn hints(&self, scope: Option<usize>, items: &[Item], index: &HashMap<Item, usize>) -> RankHints {
+        let pinned = items
+            .iter()
+            .map(|it| match *it {
+                Item::Node(n) => self.compiled.graph[n].rank.map(|r| r as usize),
+                Item::Group(g) => self.compiled.groups[g].rank.map(|r| r as usize),
+            })
+            .collect();
+        let same = self
+            .compiled
+            .same_rank
+            .iter()
+            .map(|ids| {
+                let mut set: Vec<usize> = ids.iter().filter_map(|id| self.item_for_id(scope, id)).filter_map(|it| index.get(&it).copied()).collect();
+                set.sort_unstable();
+                set.dedup();
+                set
+            })
+            .filter(|s| s.len() > 1)
+            .collect();
+        RankHints { pinned, same }
     }
 
     fn corner(&self, it: Item) -> (f64, f64) {
@@ -177,27 +241,36 @@ impl Compound<'_> {
         let pad = self.frame.pad(group_padding(&self.config.tokens, w, h));
         let mut inset = (pad[0], pad[2]);
         let mut size = (content.0 + pad[0] + pad[1], content.1 + pad[2] + pad[3]);
-        // At least as wide as the title; and when an arrow drops in from above onto the
-        // top of the content, wide enough that it clears the title. Widened evenly, so
-        // the content stays centred (real width is the cross axis top-to-bottom, the
-        // main axis left-to-right — where arrows arrive from the side, under the title).
         let group = &self.compiled.groups[g];
-        let mut min_w = group_min_width(group, &self.config.tokens);
-        if !self.frame.lr && layers.first().is_some_and(|top| self.fed_from_upstream(g, top)) {
-            min_w = min_w.max(title_clear_width(group, &self.config.tokens));
+        // Top-to-bottom, an arrow dropping in from above onto a node in the top layer
+        // must not cross the title: the content is shifted right until every such
+        // node's centre is past the title's end (real width is the cross axis
+        // top-to-bottom; left-to-right arrows arrive from the side, under the title).
+        let mut title_shift = 0.0_f64;
+        if !self.frame.lr {
+            let clear = title_clear_x(group, &self.config.tokens);
+            let fed = layers.first().map_or(Vec::new(), |top| self.fed_items(g, top));
+            for it in fed {
+                title_shift = title_shift.max(clear - (inset.0 + pos[&it].0 + self.size(it).0 / 2.0));
+            }
+            title_shift = title_shift.max(0.0).round();
+            inset.0 += title_shift;
+            size.0 += title_shift;
         }
+        // At least as wide as the title, widened evenly so the content stays centred.
+        let min_w = group_min_width(group, &self.config.tokens);
         let (width, start) = if self.frame.lr { (&mut size.1, &mut inset.1) } else { (&mut size.0, &mut inset.0) };
         if *width < min_w {
             *start += (min_w - *width) / 2.0;
             *width = min_w;
         }
-        self.blocks[g] = Some(Block { size, inset, content, layers, pos });
+        self.blocks[g] = Some(Block { size, inset, content, layers, pos, title_shift });
     }
 
-    /// Whether an edge enters one of the `top` items of group `g` from upstream: from
-    /// outside the group, with nothing in the group sending back to where it came from
-    /// (a group called both ways shares its tier and is entered from the side).
-    fn fed_from_upstream(&self, g: usize, top: &[Item]) -> bool {
+    /// The `top` items of group `g` an edge enters from upstream: from outside the
+    /// group, with nothing in the group sending back to where it came from (a group
+    /// called both ways shares its tier and is entered from the side).
+    fn fed_items(&self, g: usize, top: &[Item]) -> Vec<Item> {
         let within = |n: NodeIndex| self.item_in(Some(g), n).is_some();
         // The smallest scope holding both the group and `n`, and `n`'s item there.
         let source_item = |n: NodeIndex| {
@@ -209,14 +282,20 @@ impl Compound<'_> {
                 scope = scope.and_then(|s| self.compiled.group_tree.parent[s]);
             }
         };
-        self.compiled.graph.edge_references().any(|e| {
+        let mut fed: Vec<Item> = Vec::new();
+        for e in self.compiled.graph.edge_references() {
             let (a, b) = (e.source(), e.target());
-            if within(a) || !self.item_in(Some(g), b).is_some_and(|it| top.contains(&it)) {
-                return false;
+            if within(a) {
+                continue;
             }
+            let Some(it) = self.item_in(Some(g), b).filter(|it| top.contains(it)) else { continue };
             let (scope, from) = source_item(a);
-            !self.compiled.graph.edge_references().any(|r| within(r.source()) && !within(r.target()) && self.item_in(scope, r.target()) == Some(from))
-        })
+            let answered = self.compiled.graph.edge_references().any(|r| within(r.source()) && !within(r.target()) && self.item_in(scope, r.target()) == Some(from));
+            if !answered && !fed.contains(&it) {
+                fed.push(it);
+            }
+        }
+        fed
     }
 
     /// Layered arrangement of `items` inside group `g`: ranks by the edges between them,
@@ -226,6 +305,7 @@ impl Compound<'_> {
     fn arrange(&self, g: usize, items: &[Item]) -> (Vec<Vec<Item>>, HashMap<Item, (f64, f64)>, (f64, f64)) {
         let index: HashMap<Item, usize> = items.iter().enumerate().map(|(i, &it)| (it, i)).collect();
         let mut edges: Vec<(Item, Item)> = Vec::new();
+        let mut rank_edges: Vec<(Item, Item)> = Vec::new();
         let mut labels: Vec<(Item, Item, &str)> = Vec::new();
         for e in self.compiled.graph.edge_references() {
             let (Some(a), Some(b)) = (self.item_in(Some(g), e.source()), self.item_in(Some(g), e.target())) else {
@@ -233,13 +313,26 @@ impl Compound<'_> {
             };
             if a != b {
                 edges.push((a, b));
+                if e.weight().constraint {
+                    rank_edges.push((a, b));
+                }
                 if let Some(l) = e.weight().label.as_deref().map(str::trim).filter(|l| !l.is_empty()) {
                     labels.push((a, b, l));
                 }
             }
         }
-        let rank = unit_ranks(items.len(), &edges.iter().map(|(a, b)| (index[a], index[b])).collect::<Vec<_>>());
-        let n_ranks = rank.iter().copied().max().map_or(0, |m| m + 1);
+        let is_group: Vec<bool> = items.iter().map(|it| matches!(it, Item::Group(_))).collect();
+        let hints = self.hints(Some(g), items, &index);
+        let mut rank = unit_ranks(items.len(), &rank_edges.iter().map(|(a, b)| (index[a], index[b])).collect::<Vec<_>>(), &is_group, &hints);
+        let mut n_ranks = rank.iter().copied().max().map_or(0, |m| m + 1);
+        // Unwired items (a tier of stores, a box of replicas): a landscape grid.
+        if n_ranks == 1 && edges.is_empty() && items.len() >= GRID_FROM {
+            let n = items.len();
+            let rows = n.div_ceil(((n as f64 * 2.0).sqrt()).ceil() as usize);
+            let cols = n.div_ceil(rows);
+            rank = (0..n).map(|i| i / cols).collect();
+            n_ranks = rows;
+        }
         let mut layers: Vec<Vec<Item>> = vec![Vec::new(); n_ranks];
         for (i, &it) in items.iter().enumerate() {
             layers[rank[i]].push(it);
@@ -285,8 +378,9 @@ impl Compound<'_> {
         for li in 0..layer_count {
             let layer = self.block(g).layers[li].clone();
             let mut desired: HashMap<Item, (f64, f64)> = HashMap::new();
+            let mut order_key: HashMap<Item, f64> = HashMap::new();
             for &it in &layer {
-                let (mut sum, mut cnt) = (0.0, 0.0);
+                let (mut sum, mut cnt, mut centre_sum) = (0.0, 0.0, 0.0);
                 let item_cross = self.corner(it).0;
                 for e in self.compiled.graph.edge_references() {
                     for (mine, theirs) in [(e.source(), e.target()), (e.target(), e.source())] {
@@ -299,18 +393,18 @@ impl Compound<'_> {
                         // Where this item's corner would put `mine` straight across from `theirs`.
                         let offset = self.center(mine).0 - item_cross;
                         sum += self.center(theirs).0 - offset - origin;
+                        centre_sum += self.center(theirs).0;
                         cnt += 1.0;
                     }
                 }
                 let cur = self.block(g).pos[&it].0;
                 desired.insert(it, if cnt > 0.0 { (sum / cnt, cnt) } else { (cur, 0.05) });
+                // Ordered by where the neighbours are (ties — siblings fed by one node —
+                // keep their declared order); placed by the offset-aware target.
+                order_key.insert(it, if cnt > 0.0 { (centre_sum / cnt * 4.0).round() / 4.0 } else { origin + cur + self.size(it).0 / 2.0 });
             }
             let mut sorted = layer;
-            sorted.sort_by(|a, b| {
-                let ca = desired[a].0 + self.size(*a).0 / 2.0;
-                let cb = desired[b].0 + self.size(*b).0 / 2.0;
-                ca.total_cmp(&cb).then(a.cmp(b))
-            });
+            sorted.sort_by(|a, b| order_key[a].total_cmp(&order_key[b]).then(a.cmp(b)));
             let widths: Vec<f64> = sorted.iter().map(|&it| self.size(it).0).collect();
             let used = widths.iter().sum::<f64>() + gap * widths.len().saturating_sub(1) as f64;
             let want: Vec<f64> = sorted.iter().map(|it| desired[it].0).collect();
@@ -343,7 +437,7 @@ fn label_box(label: &str, tokens: &crate::DesignTokens) -> (f64, f64) {
 /// `Σ weight·(x - desired)²` subject to box `i+1` starting at least `gaps[i]` after
 /// box `i` ends (pool-adjacent-violators on gap-shifted coordinates), then clamps
 /// into `[lo, hi]` (on the shifted axis, when bounds are given). Returns left edges.
-fn place_in_order(widths: &[f64], desired: &[f64], weights: &[f64], gaps: &[f64], bounds: Option<(f64, f64)>) -> Vec<f64> {
+pub(crate) fn place_in_order(widths: &[f64], desired: &[f64], weights: &[f64], gaps: &[f64], bounds: Option<(f64, f64)>) -> Vec<f64> {
     let n = widths.len();
     let mut prefix = vec![0.0; n];
     for i in 1..n {
@@ -382,9 +476,35 @@ fn place_in_order(widths: &[f64], desired: &[f64], weights: &[f64], gaps: &[f64]
 /// Longest-path rank per unit over the unit graph, with mutually-reachable units
 /// (strongly connected components) sharing one rank, and pure sources pulled down to
 /// sit directly above the earliest unit they feed.
-fn unit_ranks(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
+///
+/// Two units wired both ways follow the majority: the direction with more edges ranks
+/// them (a pipeline stage that writes four stores and reads one back sits *above* the
+/// stores); only a tie keeps them side by side on one tier.
+///
+/// Two *groups* fed by the same unit (sibling regions under one router, say) stay side
+/// by side when only a light link (at most [`SIBLING_LINK_MAX`] edges) runs from one to
+/// the other — a replication arrow between regions is drawn across, not as a reason to
+/// stack the second region under the first.
+fn unit_ranks(n: usize, edges: &[(usize, usize)], is_group: &[bool], hints: &RankHints) -> Vec<usize> {
     use petgraph::algo::tarjan_scc;
     use petgraph::graph::DiGraph;
+    let mut count: HashMap<(usize, usize), usize> = HashMap::new();
+    for &(a, b) in edges {
+        *count.entry((a, b)).or_default() += 1;
+    }
+    let edges: Vec<(usize, usize)> = edges
+        .iter()
+        .copied()
+        .filter(|&(a, b)| count.get(&(b, a)).is_none_or(|&back| back <= count[&(a, b)]))
+        .collect();
+    let feeders = |u: usize| edges.iter().filter(move |&&(p, q)| q == u && p != u).map(|&(p, _)| p);
+    let siblings = |a: usize, b: usize| feeders(a).any(|p| p != b && feeders(b).any(|q| q == p));
+    let edges: Vec<(usize, usize)> = edges
+        .iter()
+        .copied()
+        .filter(|&(a, b)| !(is_group[a] && is_group[b] && count[&(a, b)] <= SIBLING_LINK_MAX && siblings(a, b)))
+        .collect();
+    let edges = &edges[..];
     let mut g: DiGraph<(), ()> = DiGraph::new();
     let idx: Vec<_> = (0..n).map(|_| g.add_node(())).collect();
     for &(a, b) in edges {
@@ -419,7 +539,39 @@ fn unit_ranks(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
             }
         }
     }
-    (0..n).map(|u| rank[comp[u]]).collect()
+    let mut rank: Vec<usize> = (0..n).map(|u| rank[comp[u]]).collect();
+    // Author's hints: pinned ranks hold, `same_rank` lists level to their deepest
+    // member, and whatever either feeds is pushed down again until nothing moves.
+    let pinned: Vec<Option<usize>> = (0..n).map(|u| hints.pinned.get(u).copied().flatten()).collect();
+    if pinned.iter().any(Option::is_some) || !hints.same.is_empty() {
+        for (u, p) in pinned.iter().enumerate() {
+            if let Some(r) = p {
+                rank[u] = *r;
+            }
+        }
+        for _ in 0..(n + hints.same.len() + 2) {
+            let mut changed = false;
+            for &(a, b) in edges {
+                if comp[a] != comp[b] && pinned[b].is_none() && rank[b] < rank[a] + 1 {
+                    rank[b] = rank[a] + 1;
+                    changed = true;
+                }
+            }
+            for set in &hints.same {
+                let m = set.iter().filter_map(|&u| rank.get(u)).copied().max().unwrap_or(0);
+                for &u in set {
+                    if u < n && rank[u] != m {
+                        rank[u] = m;
+                        changed = true;
+                    }
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+    }
+    rank
 }
 
 /// Tiered placement for diagrams with visual groups — see the module docs.
@@ -463,17 +615,22 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
             continue;
         }
         cross.push((a, b));
-        unit_edges.push((ua, ub));
+        if e.weight().constraint {
+            unit_edges.push((ua, ub));
+        }
         if let Some(l) = e.weight().label.as_deref().map(str::trim).filter(|l| !l.is_empty()) {
             labelled.push((ua, ub, c.label_across(l), c.label_along(l)));
         }
     }
-    let rank = unit_ranks(nu, &unit_edges);
+    let is_group: Vec<bool> = (0..nu).map(bordered).collect();
+    let hints = c.hints(None, &units, &unit_index);
+    let rank = unit_ranks(nu, &unit_edges, &is_group, &hints);
 
     // --- Tiers: one per rank, wrapped when too wide ------------------------------
     let max_w = (0..nu).map(|u| usize_of(u).0).fold(0.0, f64::max);
     let area: f64 = (0..nu).map(|u| usize_of(u).0 * usize_of(u).1).sum();
-    let row_budget = (max_w * ROW_WIDTH_SLACK).max((area * 1.5).sqrt());
+    // Always room for two of the widest units side by side.
+    let row_budget = (max_w * ROW_WIDTH_SLACK + gap_cross).max((area * ROW_AREA_FACTOR).sqrt());
     let max_rank = rank.iter().copied().max().unwrap_or(0);
     let mut rows: Vec<Vec<usize>> = Vec::new();
     for r in 0..=max_rank {
@@ -522,18 +679,25 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
             let settled = |other: usize| {
                 if sweep == 0 { row_of[other] < ri } else if sweep == 1 { row_of[other] > ri } else { true }
             };
+            // Two targets per unit: where its *neighbours* are (the order across the
+            // tier — so two groups fed by one node tie exactly and keep their declared
+            // order), and where its corner would put each wired node straight across from
+            // its partner (the position within that order).
             let mut desired_sum: HashMap<usize, (f64, f64)> = HashMap::new();
+            let mut order_sum: HashMap<usize, (f64, f64)> = HashMap::new();
             for &(a, b) in &cross {
                 for (mine, theirs) in [(a, b), (b, a)] {
                     let (um, ut) = (unit_of[&mine], unit_of[&theirs]);
                     if row_of[um] != ri || !settled(ut) || (row_of[ut] == ri && sweep < 2) {
                         continue;
                     }
-                    // Where this unit's corner would put `mine` straight across from `theirs`.
                     let offset = c.center(mine).0 - c.top_pos[&units[um]].0;
                     let e = desired_sum.entry(um).or_insert((0.0, 0.0));
                     e.0 += c.center(theirs).0 - offset;
                     e.1 += 1.0;
+                    let o = order_sum.entry(um).or_insert((0.0, 0.0));
+                    o.0 += c.center(theirs).0;
+                    o.1 += 1.0;
                 }
             }
             let mut row = rows[ri].clone();
@@ -544,11 +708,55 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
                     None => (u, (c.top_pos[&units[u]].0, 0.05)),
                 })
                 .collect();
-            row.sort_by(|&a, &b| {
-                let ca = desired[&a].0 + usize_of(a).0 / 2.0;
-                let cb = desired[&b].0 + usize_of(b).0 / 2.0;
-                ca.total_cmp(&cb).then(a.cmp(&b))
-            });
+            let order_key = |u: usize| match order_sum.get(&u) {
+                Some(&(s, w)) => (s / w * 4.0).round() / 4.0,
+                None => c.top_pos[&units[u]].0 + usize_of(u).0 / 2.0,
+            };
+            row.sort_by(|&a, &b| order_key(a).total_cmp(&order_key(b)).then(a.cmp(&b)));
+            // Then swap neighbours while that removes crossings with the settled tiers
+            // (a wide group's barycentre can put a narrow one on the far side of edges
+            // it then has to cross).
+            let crossings = |row: &[usize]| -> usize {
+                let idx: HashMap<usize, usize> = row.iter().enumerate().map(|(i, &u)| (u, i)).collect();
+                let mut ends: Vec<(usize, usize, f64)> = Vec::new();
+                for &(a, b) in &cross {
+                    for (mine, theirs) in [(a, b), (b, a)] {
+                        let (um, ut) = (unit_of[&mine], unit_of[&theirs]);
+                        if row_of[um] != ri || !settled(ut) || row_of[ut] == ri {
+                            continue;
+                        }
+                        ends.push((row_of[ut], idx[&um], c.center(theirs).0));
+                    }
+                }
+                let mut n = 0;
+                for i in 0..ends.len() {
+                    for j in i + 1..ends.len() {
+                        let ((ra, ia, xa), (rb, ib, xb)) = (ends[i], ends[j]);
+                        if ra == rb && ia != ib && (xa - xb).abs() > 0.5 && ((ia < ib) != (xa < xb)) {
+                            n += 1;
+                        }
+                    }
+                }
+                n
+            };
+            for _ in 0..4 {
+                let mut improved = false;
+                for k in 0..row.len().saturating_sub(1) {
+                    let before = crossings(&row);
+                    if before == 0 {
+                        break;
+                    }
+                    row.swap(k, k + 1);
+                    if crossings(&row) < before {
+                        improved = true;
+                    } else {
+                        row.swap(k, k + 1);
+                    }
+                }
+                if !improved {
+                    break;
+                }
+            }
             let widths: Vec<f64> = row.iter().map(|&u| usize_of(u).0).collect();
             let want: Vec<f64> = row.iter().map(|&u| desired[&u].0).collect();
             let wts: Vec<f64> = row.iter().map(|&u| desired[&u].1).collect();
@@ -649,7 +857,8 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
         })
         .collect();
     let group_widths = c.blocks.iter().enumerate().filter_map(|(g, b)| Some((g, frame.swap(b.as_ref()?.size).0))).collect();
-    Ok(LayoutResult { positions, group_widths, ..Default::default() })
+    let group_title_shift = c.blocks.iter().enumerate().filter_map(|(g, b)| b.as_ref().filter(|b| b.title_shift > 0.0).map(|b| (g, b.title_shift))).collect();
+    Ok(LayoutResult { positions, group_widths, group_title_shift, ..Default::default() })
 }
 
 #[cfg(test)]
@@ -670,9 +879,36 @@ mod tests {
     }
 
     #[test]
+    fn mutual_units_follow_the_majority_direction() {
+        // 0 -> 1 three times, 1 -> 0 once: 1 sits below 0.
+        let r = unit_ranks(2, &[(0, 1), (0, 1), (0, 1), (1, 0)], &[false; 2], &RankHints::default());
+        assert_eq!(r, vec![0, 1]);
+        // A tie keeps them side by side.
+        let r = unit_ranks(2, &[(0, 1), (1, 0)], &[false; 2], &RankHints::default());
+        assert_eq!(r[0], r[1]);
+    }
+
+    #[test]
+    fn sibling_groups_with_a_light_link_share_a_tier_but_nodes_do_not() {
+        let edges = [(0, 1), (0, 2), (1, 2)];
+        let groups = unit_ranks(3, &edges, &[false, true, true], &RankHints::default());
+        assert_eq!(groups[1], groups[2]);
+        let nodes = unit_ranks(3, &edges, &[false; 3], &RankHints::default());
+        assert_eq!(nodes[2], nodes[1] + 1);
+    }
+
+    #[test]
+    fn hints_pin_and_level_units() {
+        let hints = RankHints { pinned: vec![None, None, Some(0)], same: vec![vec![0, 1]] };
+        let r = unit_ranks(3, &[(0, 1), (1, 2)], &[false; 3], &hints);
+        assert_eq!(r[0], r[1], "same_rank levels 0 and 1");
+        assert_eq!(r[2], 0, "pinned despite being fed");
+    }
+
+    #[test]
     fn mutually_calling_units_share_a_rank_and_sources_sit_above_targets() {
         // 0 -> 1 <-> 2 -> 3, and a source 4 that only feeds 3.
-        let r = unit_ranks(5, &[(0, 1), (1, 2), (2, 1), (2, 3), (4, 3)]);
+        let r = unit_ranks(5, &[(0, 1), (1, 2), (2, 1), (2, 3), (4, 3)], &[false; 5], &RankHints::default());
         assert_eq!(r[1], r[2]);
         assert_eq!(r[0] + 1, r[1]);
         assert_eq!(r[3], r[1] + 1);

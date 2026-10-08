@@ -100,9 +100,10 @@ pub fn format_html_label_with_details(nd: &NodeData, theme: &Theme, look: &NodeL
 
 /// A table (ER entity) or class card: a tinted header with the name, then one row per
 /// field. Primary-key fields are set in the node's category hue.
-pub fn format_html_table_or_class(label: &str, fields: &[String], theme: &Theme, look: &NodeLook, node_type: &str) -> String {
+pub fn format_html_table_or_class(label: &str, fields: &[String], theme: &Theme, look: &NodeLook, tokens: &DesignTokens, node_type: &str) -> String {
     let header_bg = rgba(&look.stroke, 0.12);
     let border = &theme.text.dim;
+    let is_class = matches!(node_type.to_ascii_lowercase().as_str(), "class" | "interface" | "abstract_class" | "struct");
     let title_prefix = if node_type.eq_ignore_ascii_case("interface") {
         "&lt;&lt;interface&gt;&gt;<br/>"
     } else if node_type.eq_ignore_ascii_case("abstract_class") {
@@ -111,42 +112,49 @@ pub fn format_html_table_or_class(label: &str, fields: &[String], theme: &Theme,
         ""
     };
     let f = &theme.font;
+    // Row and header heights match the `field_*` tokens the card was sized with, so the
+    // table fills its box with no blank band under the last row.
+    let side = tokens.field_side_pad();
+    let head_pad = ((tokens.field_header_height() - tokens.line_height(f.node_title_size)) / 2.0).max(0.0);
+    let row_pad = ((tokens.field_row_height() - tokens.line_height(f.node_detail_size)) / 2.0).max(0.0);
     let mut html = format!(
-        "<table style=\"width:100%;height:100%;border-collapse:collapse;font-family:{};\">\
+        "<table style=\"width:100%;border-collapse:collapse;font-family:{};line-height:{};\">\
          <tr style=\"background:{header_bg};\">\
-           <td colspan=\"2\" style=\"padding:6px 8px;border-bottom:1px solid {border};text-align:center;color:{};font-size:{}px;\">\
+           <td colspan=\"2\" style=\"padding:{head_pad:.1}px {side:.1}px;border-bottom:1px solid {border};text-align:center;color:{};font-size:{}px;\">\
              <b>{title_prefix}{label}</b>\
            </td>\
          </tr>",
-        f.family, look.title_color, f.node_title_size
+        f.family, tokens.line_height_ratio, look.title_color, f.node_title_size
     );
-    for field in fields {
-        let clean = rdg_layout::strip_markdown_tokens(field);
-        let (left, right) = clean.split_once(':').unwrap_or((clean.as_str(), ""));
-        let upper = clean.to_ascii_uppercase();
+    let cleaned: Vec<String> = fields.iter().map(|f| rdg_layout::strip_markdown_tokens(f)).collect();
+    let rows: Vec<rdg_layout::FieldRow> = cleaned.iter().map(|c| rdg_layout::field_row(c)).collect();
+    let split = if is_class { rdg_layout::field_compartment_split(&rows) } else { None };
+    for (i, row) in rows.iter().enumerate() {
+        let upper = cleaned[i].to_ascii_uppercase();
         let is_pk = upper.contains("[PK]") || upper.contains("PRIMARY KEY");
         let name_style = if is_pk {
             format!("font-family:{};font-size:{}px;font-weight:bold;color:{};", f.code_family, f.node_detail_size, look.stroke)
         } else {
             format!("font-family:{};font-size:{}px;color:{};", f.code_family, f.node_detail_size, look.title_color)
         };
-        let right_html = if right.trim().is_empty() {
-            String::new()
-        } else {
-            format!(
-                "<td style=\"padding:2px 8px;text-align:right;color:{};font-size:{}px;font-family:{};\">{}</td>",
-                look.detail_color,
-                f.node_detail_size,
-                f.code_family,
-                right.trim()
-            )
+        // The attribute / operation compartment line sits on the first operation row.
+        let row_border = if split == Some(i) { format!("border-top:1.5px solid {border};") } else { String::new() };
+        let (left, right_html) = match row {
+            rdg_layout::FieldRow::Attribute { name, ty } if !ty.is_empty() => (
+                *name,
+                format!(
+                    "<td style=\"padding:{row_pad:.1}px {side:.1}px;text-align:right;color:{};font-size:{}px;font-family:{};\">{ty}</td>",
+                    look.detail_color, f.node_detail_size, f.code_family
+                ),
+            ),
+            rdg_layout::FieldRow::Attribute { name, .. } => (*name, String::new()),
+            rdg_layout::FieldRow::Operation(sig) => (*sig, String::new()),
         };
         let colspan = if right_html.is_empty() { "colspan=\"2\"" } else { "" };
         html.push_str(&format!(
-            "<tr style=\"border-bottom:1px solid {border};\">\
-               <td {colspan} style=\"padding:2px 8px;text-align:left;{name_style}\">{}</td>{right_html}\
-             </tr>",
-            left.trim()
+            "<tr style=\"{row_border}\">\
+               <td {colspan} style=\"padding:{row_pad:.1}px {side:.1}px;text-align:left;{name_style}\">{left}</td>{right_html}\
+             </tr>"
         ));
     }
     html.push_str("</table>");

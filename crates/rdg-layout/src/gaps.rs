@@ -67,8 +67,7 @@ mod tests {
 
     #[test]
     fn test_gap_floors_at_two_stubs() {
-        let mut c = LayoutConfig::default();
-        c.rank_spacing = 10;
+        let c = LayoutConfig { rank_spacing: 10, ..LayoutConfig::default() };
         assert_eq!(gap_for(1, &c), 2.0 * c.tokens.stub_clearance());
     }
 
@@ -81,8 +80,7 @@ mod tests {
 
     #[test]
     fn test_explicit_large_spacing_is_respected() {
-        let mut c = LayoutConfig::default();
-        c.rank_spacing = 300;
+        let c = LayoutConfig { rank_spacing: 300, ..LayoutConfig::default() };
         assert_eq!(gap_for(3, &c), 300.0);
     }
 }

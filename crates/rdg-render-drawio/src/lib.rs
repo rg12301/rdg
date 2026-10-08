@@ -209,8 +209,8 @@ pub fn render_drawio(
 
         // Build HTML label: title line + detail lines, typography, code spans.
         let html_value = if !node_data.fields.is_empty() {
-            style.push_str("spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;");
-            format_html_table_or_class(node_data.heading(), &node_data.fields, theme, &look, &node_data.node_type)
+            style.push_str("spacingTop=0;spacingBottom=0;spacingLeft=0;spacingRight=0;overflow=hidden;verticalAlign=top;");
+            format_html_table_or_class(node_data.heading(), &node_data.fields, theme, &look, tokens, &node_data.node_type)
         } else {
             format_html_label_with_details(node_data, theme, &look, tokens, inline_icon)
         };

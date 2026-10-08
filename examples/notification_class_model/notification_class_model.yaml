@@ -1,0 +1,23 @@
+title: "Notification domain model"
+diagram_type: class
+nodes:
+  - {id: notifier, label: Notifier, type: interface, fields: ["+ send(msg: Message): Result", "+ supports(channel: Channel): bool"]}
+  - {id: base, label: BaseNotifier, type: abstract_class, fields: ["# retries: int", "# logger: Logger", "+ send(msg: Message): Result", "# deliver(msg: Message): Result"]}
+  - {id: email, label: EmailNotifier, type: class, fields: ["- smtp: SmtpClient", "# deliver(msg: Message): Result"]}
+  - {id: sms, label: SmsNotifier, type: class, fields: ["- gateway: SmsGateway", "# deliver(msg: Message): Result"]}
+  - {id: push, label: PushNotifier, type: class, fields: ["- fcm: FcmClient", "# deliver(msg: Message): Result"]}
+  - {id: message, label: Message, type: class, fields: ["- id: UUID", "- to: Recipient", "- body: String", "- channel: Channel", "+ render(): String"]}
+  - {id: recipient, label: Recipient, type: class, fields: ["- email: String", "- phone: String", "- deviceToken: String"]}
+  - {id: channel, label: Channel, type: class, fields: ["EMAIL", "SMS", "PUSH"]}
+  - {id: template, label: Template, type: class, fields: ["- name: String", "- body: String", "+ fill(vars: Map): String"]}
+  - {id: dispatcher, label: Dispatcher, type: class, fields: ["- notifiers: List<Notifier>", "+ dispatch(msg: Message): void"]}
+edges:
+  - {from: base, to: notifier, edge_style: realization}
+  - {from: email, to: base, edge_style: inheritance}
+  - {from: sms, to: base, edge_style: inheritance}
+  - {from: push, to: base, edge_style: inheritance}
+  - {from: message, to: recipient, edge_style: composition, label: "to"}
+  - {from: message, to: channel, edge_style: aggregation}
+  - {from: message, to: template, edge_style: dependency, label: "rendered from"}
+  - {from: dispatcher, to: notifier, edge_style: aggregation, label: "1..*"}
+  - {from: dispatcher, to: message, edge_style: dependency}

@@ -13,9 +13,9 @@ use petgraph::{
     Direction,
     algo::is_cyclic_directed,
     stable_graph::{EdgeIndex, NodeIndex, StableDiGraph},
-    visit::{EdgeRef, IntoEdgeReferences},
+    visit::EdgeRef,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use rdg_schema::{DiagramPayload, GroupDef, GroupTree, NodeText};
 
@@ -63,6 +63,8 @@ pub struct NodeData {
     pub category: Option<String>,
     /// `card` / `icon` (else the theme decides).
     pub display: Option<String>,
+    /// Layout hint: the rank the author pinned this node to.
+    pub rank: Option<u32>,
     /// Drawn shape, resolved from the theme before layout: `card`, `cylinder`,
     /// `ellipse`, `diamond`, `icon`, or a marker (`start`, `end`, `choice`). `None`
     /// before resolution — consumers then fall back to the node type.
@@ -98,6 +100,9 @@ pub struct EdgeData {
     /// Flow-step badge text (`3`, `3a`, `3.1`) — see [`rdg_schema::resolve_steps`];
     /// `None` means no badge.
     pub step: Option<String>,
+    /// Whether the edge takes part in ranking (`constraint: false` in the YAML opts out:
+    /// the edge is routed and drawn, but never pushes its target to a later rank).
+    pub constraint: bool,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -125,6 +130,9 @@ pub struct CompiledGraph {
     pub edge_order: Vec<petgraph::stable_graph::EdgeIndex>,
     /// Draw a legend (`None`: the theme decides).
     pub legend: Option<bool>,
+    /// Layout hint: lists of node/group ids that share a rank (`same_rank:` as written;
+    /// the layout resolves ids to nodes or tiers).
+    pub same_rank: Vec<Vec<String>>,
     /// Sequence diagrams: the script in order (messages refer to graph edges). Built
     /// from `sequence:`, or from `edges` as a plain list of messages.
     pub sequence: Vec<SeqItem>,
@@ -285,6 +293,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             link: node_def.link.clone(),
             category: node_def.category.clone(),
             display: node_def.display.clone(),
+            rank: node_def.rank,
             shape: None,
         };
         let idx = graph.add_node(data);
@@ -302,13 +311,19 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         let dst = node_map.get(&edge_def.to).copied().ok_or_else(|| {
             anyhow::anyhow!("edge references unknown target node id '{}'", edge_def.to)
         })?;
+        // UML draws the generalisation arrow from the child up to its parent: the edge
+        // is stored parent -> child (so the layout ranks the parent above) and flagged
+        // `reversed`, which the renderers undo when they draw it.
+        let style = edge_def.resolved_style();
+        let points_up = !is_sequence && style.as_deref().is_some_and(|s| matches!(s.to_ascii_lowercase().as_str(), "inheritance" | "realization" | "generalization" | "extends" | "implements"));
+        let (src, dst) = if points_up { (dst, src) } else { (src, dst) };
         let e_idx = graph.add_edge(
             src,
             dst,
             EdgeData {
                 label: edge_def.label.clone(),
-                edge_style: edge_def.resolved_style(),
-                reversed: false,
+                edge_style: style,
+                reversed: points_up,
                 color: edge_def.color.clone(),
                 width: edge_def.width,
                 line_style: edge_def.line_style.clone(),
@@ -318,6 +333,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 target_port: edge_def.target_port.clone(),
                 style_extra: edge_def.style_extra.clone(),
                 step,
+                constraint: edge_def.constraint.unwrap_or(true),
             },
         );
         edge_order.push(e_idx);
@@ -366,6 +382,7 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         diagram_type,
         edge_order,
         legend: payload.legend,
+        same_rank: payload.same_rank.clone(),
         sequence,
     })
 }
@@ -403,6 +420,7 @@ fn compile_steps(
                         target_port: None,
                         style_extra: None,
                         step: numbered.then(|| counter.to_string()),
+                        constraint: true,
                     },
                 );
                 edge_order.push(edge);
@@ -449,120 +467,46 @@ fn compile_steps(
 /// ELS guarantees an O(V + E) runtime and preserves the primary flow of the graph
 /// much better than arbitrary DFS back-edge reversal.
 fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
-    let all_nodes: Vec<NodeIndex> = graph.node_indices().collect();
-    if all_nodes.is_empty() {
-        return;
-    }
-
-    let mut remaining: HashSet<NodeIndex> = all_nodes.iter().copied().collect();
-
-    // Sequences s1 (left, sources) and s2 (right, sinks)
-    let mut s1: Vec<NodeIndex> = Vec::new();
-    let mut s2: Vec<NodeIndex> = Vec::new();
-
-    // Every scan below iterates `all_nodes` (a `Vec`, fixed insertion order) filtered by
-    // `remaining.contains(..)`, not `remaining.iter()` directly — `remaining` is a
-    // `HashSet`, whose iteration order is randomized per process (Rust's default hasher
-    // seeds itself from the OS on each run). A dense graph with many same-degree nodes
-    // (ties are the common case, not the exception) hits that order at three points here:
-    // which simultaneous sinks/sources get appended to s1/s2 in what order, and — worse —
-    // `max_by_key`'s tie-break, which returns the *last* maximal element seen, so a tied
-    // "net-source" pick silently changed between runs too. Any of those reorders `s1`,
-    // which decides which edges get flagged as back-edges and reversed — changing the
-    // DAG orientation, and downstream layout, for a diagram whose YAML never changed.
-    while !remaining.is_empty() {
-        // 1. Sink elimination: nodes with out-degree 0 among remaining
-        let mut sink_found = true;
-        while sink_found {
-            sink_found = false;
-            let sinks: Vec<NodeIndex> = all_nodes
-                .iter()
-                .copied()
-                .filter(|u| remaining.contains(u))
-                .filter(|&u| {
-                    graph
-                        .edges_directed(u, Direction::Outgoing)
-                        .filter(|e| remaining.contains(&e.target()))
-                        .count()
-                        == 0
-                })
-                .collect();
-
-            for u in sinks {
-                remaining.remove(&u);
-                s2.push(u);
-                sink_found = true;
-            }
-        }
-
-        if remaining.is_empty() {
-            break;
-        }
-
-        // 2. Source elimination: nodes with in-degree 0 among remaining
-        let mut source_found = true;
-        while source_found {
-            source_found = false;
-            let sources: Vec<NodeIndex> = all_nodes
-                .iter()
-                .copied()
-                .filter(|u| remaining.contains(u))
-                .filter(|&u| {
-                    graph
-                        .edges_directed(u, Direction::Incoming)
-                        .filter(|e| remaining.contains(&e.source()))
-                        .count()
-                        == 0
-                })
-                .collect();
-
-            for u in sources {
-                remaining.remove(&u);
-                s1.push(u);
-                source_found = true;
-            }
-        }
-
-        if remaining.is_empty() {
-            break;
-        }
-
-        // 3. Net-source selection: pick node maximizing out_deg - in_deg
-        if let Some(best) = all_nodes
-            .iter()
-            .copied()
-            .filter(|u| remaining.contains(u))
-            .max_by_key(|&u| {
-                let out_deg = graph
-                    .edges_directed(u, Direction::Outgoing)
-                    .filter(|e| remaining.contains(&e.target()))
-                    .count() as i64;
-                let in_deg = graph
-                    .edges_directed(u, Direction::Incoming)
-                    .filter(|e| remaining.contains(&e.source()))
-                    .count() as i64;
-                out_deg - in_deg
-            })
-        {
-            remaining.remove(&best);
-            s1.push(best);
-        }
-    }
-
-    // Linear sequence: s1 ++ reverse(s2)
-    s2.reverse();
-    s1.extend(s2);
-
-    let pos: HashMap<NodeIndex, usize> = s1.iter().enumerate().map(|(i, &n)| (n, i)).collect();
-
-    // Identify edges pointing backwards in the sequence
+    // Depth-first search in declaration order (nodes as listed, each node's edges as
+    // listed): an edge back to a node still on the search stack closes a cycle and is
+    // reversed. Authors list a flow in its reading order, so this reverses the edge
+    // that *returns* ("retry" back to "run tests"), never the forward step — a
+    // degree-based feedback-arc heuristic can pick either, and once put a retry
+    // decision at the top of the chart it belonged at the bottom of. Deterministic:
+    // only declaration order is consulted (no hash-map iteration).
+    /// A node on the search stack with its out-edges (declaration order) and how many
+    /// of them were taken.
+    type Frame = (NodeIndex, Vec<(EdgeIndex, NodeIndex)>, usize);
+    let nodes: Vec<NodeIndex> = graph.node_indices().collect();
+    let mut state: HashMap<NodeIndex, u8> = nodes.iter().map(|&n| (n, 0u8)).collect(); // 0 new, 1 on stack, 2 done
+    let out_edges = |g: &StableDiGraph<NodeData, EdgeData>, u: NodeIndex| -> Vec<(EdgeIndex, NodeIndex)> {
+        let mut out: Vec<(EdgeIndex, NodeIndex)> = g.edges_directed(u, Direction::Outgoing).map(|e| (e.id(), e.target())).collect();
+        out.sort_by_key(|&(e, _)| e);
+        out
+    };
     let mut back_edges: Vec<(EdgeIndex, NodeIndex, NodeIndex)> = Vec::new();
-    for edge in graph.edge_references() {
-        let src = edge.source();
-        let dst = edge.target();
-        if let (Some(&src_pos), Some(&dst_pos)) = (pos.get(&src), pos.get(&dst)) {
-            if src_pos > dst_pos {
-                back_edges.push((edge.id(), src, dst));
+    for &root in &nodes {
+        match state.get_mut(&root) {
+            Some(s) if *s == 0 => *s = 1,
+            _ => continue,
+        }
+        let mut stack: Vec<Frame> = vec![(root, out_edges(graph, root), 0)];
+        while let Some((u, edges, next)) = stack.last_mut() {
+            if *next < edges.len() {
+                let (e, v) = edges[*next];
+                *next += 1;
+                match state.get(&v).copied().unwrap_or(2) {
+                    0 => {
+                        state.insert(v, 1);
+                        let es = out_edges(graph, v);
+                        stack.push((v, es, 0));
+                    }
+                    1 if v != *u => back_edges.push((e, *u, v)),
+                    _ => {}
+                }
+            } else {
+                state.insert(*u, 2);
+                stack.pop();
             }
         }
     }
@@ -576,7 +520,7 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                 EdgeData {
                     label: data.label,
                     edge_style: data.edge_style,
-                    reversed: true,
+                    reversed: !data.reversed,
                     color: data.color,
                     width: data.width,
                     line_style: data.line_style,
@@ -586,6 +530,7 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                     target_port: data.target_port,
                     style_extra: data.style_extra,
                     step: data.step,
+                    constraint: data.constraint,
                 },
             );
         }
@@ -599,6 +544,7 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use petgraph::visit::IntoEdgeReferences;
     use rdg_schema::{DiagramPayload, EdgeDef, NodeDef};
 
     fn make_payload(nodes: &[(&str, &str)], edges: &[(&str, &str)]) -> DiagramPayload {
@@ -643,6 +589,43 @@ mod tests {
     fn test_unknown_target_node_returns_error() {
         let payload = make_payload(&[("n1", "Node 1")], &[("n1", "ghost")]);
         assert!(build_graph(&payload).is_err());
+    }
+
+    #[test]
+    fn test_cycle_breaking_reverses_the_returning_edge() {
+        // A retry loop written in reading order: the edge that *returns* (flaky -> test)
+        // is the one reversed, never the forward step.
+        let yaml = "nodes: [{id: start}, {id: test}, {id: ok}, {id: flaky}, {id: done}]\nedges: [{from: start, to: test}, {from: test, to: ok}, {from: ok, to: flaky}, {from: flaky, to: test}, {from: ok, to: done}]\n";
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        assert!(compiled.had_cycles);
+        let reversed: Vec<(String, String)> = compiled
+            .graph
+            .edge_references()
+            .filter(|e| e.weight().reversed)
+            .map(|e| (compiled.graph[e.source()].id.clone(), compiled.graph[e.target()].id.clone()))
+            .collect();
+        // Stored test -> flaky (so the layout ranks flaky below test) and drawn flaky -> test.
+        assert_eq!(reversed, vec![("test".to_string(), "flaky".to_string())]);
+    }
+
+    #[test]
+    fn test_inheritance_is_stored_parent_to_child_and_drawn_child_to_parent() {
+        let yaml = "nodes: [{id: child, type: class}, {id: base, type: class}]\nedges: [{from: child, to: base, edge_style: inheritance}]\n";
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        assert!(!compiled.had_cycles);
+        let e = compiled.graph.edge_references().next().unwrap();
+        assert_eq!(compiled.graph[e.source()].id, "base");
+        assert_eq!(compiled.graph[e.target()].id, "child");
+        assert!(e.weight().reversed, "drawn from the child up to its parent");
+    }
+
+    #[test]
+    fn test_edge_constraint_and_same_rank_reach_the_compiled_graph() {
+        let yaml = "same_rank: [[a, c]]\nnodes: [{id: a}, {id: b}, {id: c}]\nedges: [{from: a, to: b, constraint: false}, {from: b, to: c}]\n";
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        assert_eq!(compiled.same_rank, vec![vec!["a".to_string(), "c".to_string()]]);
+        let flags: Vec<bool> = compiled.edge_order.iter().map(|&e| compiled.graph[e].constraint).collect();
+        assert_eq!(flags, vec![false, true]);
     }
 
     #[test]

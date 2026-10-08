@@ -1,0 +1,17 @@
+title: "Hints: same_rank, rank, constraint"
+numbered: true
+same_rank: [[primary, replica]]
+nodes:
+  - {id: lb, title: "Load balancer", type: proxy}
+  - {id: app, title: "app", type: service, language: go}
+  - {id: primary, title: "primary", type: database, db_type: postgres, display: card}
+  - {id: replica, title: "replica", type: database, db_type: postgres, display: card}
+  - {id: mon, title: "monitoring", type: service, rank: 0}
+  - {id: cache, title: "cache", type: cache, db_type: redis, display: card}
+edges:
+  - {from: lb, to: app}
+  - {from: app, to: primary, edge_style: data}
+  - {from: primary, to: replica, label: "replicate", edge_style: stream}
+  - {from: app, to: cache, edge_style: data}
+  - {from: mon, to: app, label: "scrape", constraint: false, line_style: dotted}
+  - {from: mon, to: primary, label: "scrape", constraint: false, line_style: dotted}

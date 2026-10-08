@@ -370,8 +370,16 @@ pub fn place_edge_annotations(
 
     let place = |scene: &Scene, i: usize| -> Option<LabelSpot> {
         let (edge_idx, path) = &scene.paths[i];
-        let text = compiled.graph[*edge_idx].label.as_deref()?.trim();
+        let data = &compiled.graph[*edge_idx];
+        let text = data.label.as_deref()?.trim();
         let total = path_len(path);
+        // A branch label ("yes", "declined") belongs next to the decision it leaves,
+        // not halfway down a long arrow: a drift cost per px from the start.
+        let from_decision = compiled.graph.edge_endpoints(*edge_idx).is_some_and(|(a, b)| {
+            let src = if data.reversed { b } else { a };
+            compiled.graph[src].shape.as_deref() == Some("diamond")
+        });
+        let drift = if from_decision { 0.35 } else { 0.0 };
         // Keep clear of the arrowhead and the badge/stub at the start.
         let end_clear = (total * 0.2).min(14.0);
         // Text variants, each with its own penalty: as written, then wrapped onto two
@@ -429,6 +437,7 @@ pub fn place_edge_annotations(
                             let soft = if horizontal { 0.0 } else { 30.0 }
                                 + 0.1 * (s - seg_mid).abs()
                                 + 0.05 * (s - total / 2.0).abs()
+                                + drift * s
                                 + wrap_pen
                                 + gap_pen
                                 + k;

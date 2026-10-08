@@ -1,0 +1,34 @@
+title: "Clickstream analytics pipeline"
+numbered: true
+direction: lr
+groups:
+  - {id: ingest, label: "Ingest", nodes: [sdk, collector, raw]}
+  - {id: process, label: "Processing", nodes: [stream, batch, enrich]}
+  - {id: store, label: "Storage", nodes: [lake, warehouse, feature]}
+  - {id: serve, label: "Serving", nodes: [bi, api, ml]}
+nodes:
+  - {id: sdk, title: "Web / Mobile SDK", type: client}
+  - {id: collector, title: "event-collector", subtitle: "HTTP ingest", type: service, language: go}
+  - {id: raw, title: "raw-events", type: queue, db_type: kafka}
+  - {id: stream, title: "stream-processor", subtitle: "Flink", type: service, language: java}
+  - {id: enrich, title: "geo / device enrichment", type: function, language: python}
+  - {id: batch, title: "nightly-batch", subtitle: "Spark", type: service, icon: spark}
+  - {id: lake, title: "data lake", subtitle: "Parquet", type: storage, provider: aws}
+  - {id: warehouse, title: "warehouse", type: database, db_type: clickhouse}
+  - {id: feature, title: "feature store", type: cache, db_type: redis}
+  - {id: bi, title: "Dashboards", type: client, icon: grafana}
+  - {id: api, title: "analytics-api", type: service, language: rust}
+  - {id: ml, title: "recommender", type: service, language: python}
+edges:
+  - {from: sdk, to: collector, label: "POST /events"}
+  - {from: collector, to: raw, label: "produce", edge_style: async}
+  - {from: raw, to: stream, label: "consume", edge_style: async}
+  - {from: stream, to: enrich, label: "lookup"}
+  - {from: stream, to: warehouse, label: "insert", edge_style: data}
+  - {from: stream, to: lake, label: "sink", edge_style: data}
+  - {from: lake, to: batch, label: "read", edge_style: data}
+  - {from: batch, to: feature, label: "write features", edge_style: data}
+  - {from: batch, to: warehouse, label: "aggregates", edge_style: data}
+  - {from: warehouse, to: bi, label: "SQL"}
+  - {from: warehouse, to: api, label: "SQL"}
+  - {from: feature, to: ml, label: "features", edge_style: data}

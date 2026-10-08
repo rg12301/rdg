@@ -232,6 +232,12 @@ fn color_logo(key: &str) -> Option<&'static str> {
     COLOR_ICONS.binary_search_by(|(c, _)| c.cmp(&k.as_str())).ok().map(|i| COLOR_ICONS[i].1)
 }
 
+/// Whether `key` names any icon rdg can draw: a glyph, a hand-drawn mark or a
+/// full-colour logo (the set `--list-icons` prints).
+pub fn has_icon(key: &str) -> bool {
+    get_icon(key).is_some() || has_color_logo(key)
+}
+
 /// Whether `key` has a full-colour logo (a real product mark, as opposed to a glyph).
 pub fn has_color_logo(key: &str) -> bool {
     color_logo(key).is_some()

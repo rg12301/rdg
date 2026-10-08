@@ -223,14 +223,14 @@ fn test_layout_fcose_renders_successfully() {
 }
 
 #[test]
-fn test_layout_auto_on_dense_graph_reports_force_directed() {
+fn test_layout_auto_on_dense_graph_reports_capped_layered() {
     let out_path = std::env::temp_dir().join("rdg_cli_test_layout_auto_dense.svg");
     // 5 nodes, 12 edges: density 2.4, above the dispatcher's dense threshold.
     let yaml = "nodes:\n  - {id: a, label: A}\n  - {id: b, label: B}\n  - {id: c, label: C}\n  - {id: d, label: D}\n  - {id: e, label: E}\nedges:\n  - {from: a, to: b}\n  - {from: a, to: c}\n  - {from: a, to: d}\n  - {from: b, to: c}\n  - {from: b, to: d}\n  - {from: b, to: e}\n  - {from: c, to: d}\n  - {from: c, to: e}\n  - {from: d, to: e}\n  - {from: a, to: e}\n  - {from: d, to: a}\n  - {from: e, to: c}\n";
     let output = run_with_stdin(&["-o", out_path.to_str().unwrap(), "--svg-engine", "native"], yaml);
     assert!(output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("force-directed"), "expected auto-dispatch to force-directed, got: {stderr}");
+    assert!(stderr.contains("layered with ranks capped"), "expected a dense graph to stay layered with capped ranks, got: {stderr}");
     let _ = std::fs::remove_file(&out_path);
 }
 
@@ -366,9 +366,13 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
             checked += 1;
         }
     }
-    assert!(checked >= 8, "expected to check the bundled fixtures, checked {checked}");
+    // Budgets re-baselined for v1.3.0's 21 fixtures (measured: jogs 1, crossings 66 —
+    // 41 of them in the 46-edge `marketplace_platform`, 13 in the dense `social_graph`
+    // block — crossings at a bend 9, border hugs 1): a regression doubles a number, a
+    // routing tweak moves it by a few.
+    assert!(checked >= 20, "expected to check the bundled fixtures, checked {checked}");
     assert!(total_jogs <= 3.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 3)");
-    assert!(total_crossings <= 30.0, "crossings across bundled diagrams: {total_crossings} (budget 30)");
-    assert!(total_near_bend <= 6.0, "crossings at a bend/arrow end: {total_near_bend} (budget 6)");
+    assert!(total_crossings <= 72.0, "crossings across bundled diagrams: {total_crossings} (budget 72)");
+    assert!(total_near_bend <= 11.0, "crossings at a bend/arrow end: {total_near_bend} (budget 11)");
     assert!(total_border_hugs <= 1.0, "arrows tracing a group border: {total_border_hugs} (budget 1)");
 }

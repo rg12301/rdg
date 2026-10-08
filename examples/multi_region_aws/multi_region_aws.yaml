@@ -1,0 +1,30 @@
+title: "Multi-region deployment"
+groups:
+  - {id: aws, label: "AWS", nodes: [use1, euw1, route53]}
+  - {id: use1, label: "us-east-1", parent: aws, nodes: [use1_vpc]}
+  - {id: use1_vpc, label: "VPC 10.0.0.0/16", parent: use1, nodes: [use1_pub, use1_priv]}
+  - {id: use1_pub, label: "public subnet", parent: use1_vpc, nodes: [alb1]}
+  - {id: use1_priv, label: "private subnet", parent: use1_vpc, nodes: [app1a, app1b, rds1]}
+  - {id: euw1, label: "eu-west-1", parent: aws, nodes: [euw1_vpc]}
+  - {id: euw1_vpc, label: "VPC 10.1.0.0/16", parent: euw1, nodes: [alb2, app2, rds2]}
+nodes:
+  - {id: users, title: "Users", type: client}
+  - {id: route53, title: "Route 53", subtitle: "latency routing", type: proxy, provider: aws}
+  - {id: alb1, title: "ALB", type: proxy}
+  - {id: app1a, title: "app (az-a)", type: service, language: java}
+  - {id: app1b, title: "app (az-b)", type: service, language: java}
+  - {id: rds1, title: "RDS primary", type: database, db_type: postgres, display: card}
+  - {id: alb2, title: "ALB", type: proxy}
+  - {id: app2, title: "app", type: service, language: java}
+  - {id: rds2, title: "RDS replica", type: database, db_type: postgres, display: card}
+edges:
+  - {from: users, to: route53, label: "DNS"}
+  - {from: route53, to: alb1}
+  - {from: route53, to: alb2}
+  - {from: alb1, to: app1a}
+  - {from: alb1, to: app1b}
+  - {from: app1a, to: rds1, edge_style: data}
+  - {from: app1b, to: rds1, edge_style: data}
+  - {from: alb2, to: app2}
+  - {from: app2, to: rds2, edge_style: data}
+  - {from: rds1, to: rds2, label: "async replication", edge_style: stream}

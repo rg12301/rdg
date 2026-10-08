@@ -1113,12 +1113,10 @@ mod tests {
     #[test]
     fn test_incremental_nudge_reduces_anomalies_on_congested_force_directed_layout() {
         let compiled = build_graph(&dense_mesh_payload()).unwrap();
-        let decision = dispatch_for(&compiled);
-        assert_eq!(
-            decision.framework,
-            LayoutFramework::ForceDirected,
-            "fixture should dispatch to ForceDirected for this test to be meaningful"
-        );
+        // A dense graph is laid out layered by default now; this test exercises the
+        // force-directed path (`--layout force`), where the overlapping routes arise.
+        let mut decision = dispatch_for(&compiled);
+        decision.framework = LayoutFramework::ForceDirected;
 
         // Polish is a separate, later stage that also edits routes; this test isolates the
         // review loop's own incremental nudge, so it runs with polish off.

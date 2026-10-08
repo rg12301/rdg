@@ -176,6 +176,38 @@ pub fn classify_label(label: &str, max_chars: usize) -> Vec<LabelLine> {
 /// Strips inline markdown tokens (` ``, `**`, `*`, `__`, `~~`, `~`, `^`, `$`, `\(` etc.)
 /// and maps common LaTeX symbols to short glyph equivalents so that text width measurement
 /// accurately reflects visible rendered glyphs.
+/// How one entry of a table's or class's `fields` is drawn.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FieldRow<'a> {
+    /// `name: Type` — the name in the left column, the type right-aligned (an entry
+    /// without a colon is a name alone).
+    Attribute { name: &'a str, ty: &'a str },
+    /// An operation (anything with parentheses) — drawn whole, left-aligned, so a
+    /// signature such as `+ process(txn: Transaction): Result` is never split at its
+    /// first colon.
+    Operation(&'a str),
+}
+
+/// Classifies a `fields` entry (markdown tokens already stripped or not — only the
+/// punctuation matters) into the row the renderers draw.
+pub fn field_row(field: &str) -> FieldRow<'_> {
+    let text = field.trim();
+    if text.contains('(') {
+        FieldRow::Operation(text)
+    } else if let Some((name, ty)) = text.split_once(':') {
+        FieldRow::Attribute { name: name.trim(), ty: ty.trim() }
+    } else {
+        FieldRow::Attribute { name: text, ty: "" }
+    }
+}
+
+/// Index of the first operation row when a class lists attributes before operations
+/// (UML's two compartments, divided by a line); `None` when there is nothing to divide.
+pub fn field_compartment_split(rows: &[FieldRow<'_>]) -> Option<usize> {
+    let first_op = rows.iter().position(|r| matches!(r, FieldRow::Operation(_)))?;
+    (first_op > 0).then_some(first_op)
+}
+
 pub fn strip_markdown_tokens(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let chars: Vec<char> = text.chars().collect();
@@ -369,28 +401,30 @@ fn estimate_from_lines(
     let is_table = matches!(lower_type.as_str(), "table" | "entity" | "record" | "schema");
     let is_class = matches!(lower_type.as_str(), "class" | "interface" | "abstract_class" | "struct");
 
-    // A field row needs to fit one line of field text plus a little breathing room;
-    // the table variant's header additionally needs headroom for the cylinder's top
-    // ellipse cap and curved bottom, which the plain class card doesn't have.
-    let field_row_h = tokens.line_height(tokens.font_size) + tokens.px(0.75);
-    let table_header_h = tokens.line_height(tokens.font_size) * 2.0 + tokens.px(2.0);
-    let table_bottom_pad = tokens.px(2.25);
-    let class_header_h = tokens.line_height(tokens.font_size) * 2.0 + tokens.px(0.5);
-    let class_bottom_pad = tokens.px(1.5);
-
     if (is_table || is_class) && !fields.is_empty() {
-        let max_field_chars = fields.iter().map(|f| f.chars().count()).max().unwrap_or(0);
-        let title_chars = strip_markdown_tokens(label).chars().count();
-        let max_chars = title_chars.max(max_field_chars);
-        let width = (max_chars as f64 * tokens.char_width(tokens.font_size) + tokens.px(5.0))
-            .max(min_width.max(tokens.px(20.0)))
-            .min(tokens.px(45.0));
-        let height = if is_table {
-            table_header_h + (fields.len() as f64 * field_row_h) + table_bottom_pad
-        } else {
-            class_header_h + (fields.len() as f64 * field_row_h) + class_bottom_pad
-        };
-        return (snap(width, tokens), snap(height, tokens));
+        let rows: Vec<FieldRow> = fields.iter().map(|f| field_row(f)).collect();
+        // Width: the title at the body font, or the widest row — an attribute's name and
+        // type columns plus the gap between them, an operation as one line.
+        let cw = tokens.char_width(tokens.detail_font_size);
+        let row_w = rows
+            .iter()
+            .map(|r| match r {
+                FieldRow::Attribute { name, ty } if !ty.is_empty() => (name.chars().count() + ty.chars().count()) as f64 * cw + tokens.px(3.0),
+                FieldRow::Attribute { name, .. } => name.chars().count() as f64 * cw,
+                FieldRow::Operation(text) => text.chars().count() as f64 * cw,
+            })
+            .fold(0.0, f64::max);
+        let title_w = strip_markdown_tokens(label).chars().count() as f64 * tokens.char_width(tokens.font_size);
+        let width = (row_w.max(title_w) + 2.0 * tokens.field_side_pad()).max(min_width.max(tokens.px(20.0))).min(tokens.px(45.0));
+        // Height: exactly what the renderers draw (see the `field_*` tokens).
+        let stereotype = matches!(lower_type.as_str(), "interface" | "abstract_class");
+        let compartments = is_class && field_compartment_split(&rows).is_some();
+        let height = tokens.field_header_height()
+            + if stereotype { tokens.field_stereotype_height() } else { 0.0 }
+            + rows.len() as f64 * tokens.field_row_height()
+            + if compartments { tokens.field_divider_height() } else { 0.0 }
+            + tokens.field_bottom_pad();
+        return (snap(width, tokens), height.round());
     }
 
     let is_diamond = is_diamond_type(&lower_type);
@@ -464,6 +498,28 @@ fn snap(value: f64, tokens: &DesignTokens) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_field_rows_split_attributes_but_never_operations() {
+        assert_eq!(field_row("id: UUID [PK]"), FieldRow::Attribute { name: "id", ty: "UUID [PK]" });
+        assert_eq!(field_row("EMAIL"), FieldRow::Attribute { name: "EMAIL", ty: "" });
+        assert_eq!(field_row("+ process(txn: Transaction): Result"), FieldRow::Operation("+ process(txn: Transaction): Result"));
+        let rows = vec![field_row("- id: UUID"), field_row("+ render(): String")];
+        assert_eq!(field_compartment_split(&rows), Some(1));
+        assert_eq!(field_compartment_split(&rows[1..]), None, "operations alone need no divider");
+    }
+
+    #[test]
+    fn test_field_card_height_is_exactly_its_rows() {
+        let t = DesignTokens::default();
+        let fields: Vec<String> = ["- id: UUID", "- amount: Money", "+ render(): String"].iter().map(|s| s.to_string()).collect();
+        let (_, h) = estimate_node_size_with_fields("Txn", "class", &fields, 100.0, 40.0, None, None, &t);
+        let expected = t.field_header_height() + 3.0 * t.field_row_height() + t.field_divider_height() + t.field_bottom_pad();
+        assert!((h - expected.round()).abs() < 0.5, "{h} vs {expected}");
+        let (_, h) = estimate_node_size_with_fields("users", "table", &fields[..2], 100.0, 40.0, None, None, &t);
+        let expected = t.field_header_height() + 2.0 * t.field_row_height() + t.field_bottom_pad();
+        assert!((h - expected.round()).abs() < 0.5, "{h} vs {expected}");
+    }
 
     fn roles(lines: &[LabelLine]) -> Vec<bool> {
         lines.iter().map(|l| l.is_subtitle).collect()

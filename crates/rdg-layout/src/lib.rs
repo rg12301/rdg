@@ -25,7 +25,7 @@ pub use sequence::{
 pub use tokens::DesignTokens;
 pub use wrap::{
     estimate_node_box, estimate_node_size, estimate_node_size_with_details, estimate_node_size_with_fields,
-    explicit_lines, marker_shape, node_lines, wrap_chars_for, LabelLine, SUBTITLE_WRAP_FACTOR, classify_label,
+    explicit_lines, field_compartment_split, field_row, marker_shape, node_lines, wrap_chars_for, FieldRow, LabelLine, SUBTITLE_WRAP_FACTOR, classify_label,
     strip_markdown_tokens, wrap_label,
 };
 
@@ -128,6 +128,10 @@ pub struct LayoutResult {
     /// Width the layout gave each group it sized (by index into `groups`) — a group
     /// can be wider than its content (see `groups::group_rects`, which honours it).
     pub group_widths: HashMap<usize, f64>,
+    /// Extra padding on the left of a group (by index into `groups`) that moves its
+    /// content right of the group's title, so the nodes fed from above can be entered
+    /// from above without the arrow crossing the title text.
+    pub group_title_shift: HashMap<usize, f64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -770,6 +774,54 @@ edges:
         assert_groups_contain_their_members(LayoutDirection::LeftToRight);
     }
 
+    fn layout_of(yaml: &str) -> (CompiledGraph, LayoutResult) {
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        let layout = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        (compiled, layout)
+    }
+
+    #[test]
+    fn test_same_rank_levels_nodes_and_constraint_false_does_not_push() {
+        let (c, l) = layout_of("same_rank: [[c, d]]\nnodes: [{id: a}, {id: b}, {id: c}, {id: d}, {id: e}]\nedges: [{from: a, to: b}, {from: b, to: c}, {from: a, to: d}, {from: d, to: e, constraint: false}]\n");
+        let y = |id: &str| l.positions[&c.node_map[id]].y;
+        assert!((y("c") - y("d")).abs() < 0.5, "same_rank: c {} d {}", y("c"), y("d"));
+        assert!(y("d") > y("b") - 0.5, "levelled to the deeper member");
+        assert!((y("e") - y("a")).abs() < 0.5, "an unconstrained edge leaves its target at the top: e {} a {}", y("e"), y("a"));
+    }
+
+    #[test]
+    fn test_pinned_rank_holds_and_pushes_what_it_feeds() {
+        let (c, l) = layout_of("nodes: [{id: a}, {id: b}, {id: m, rank: 0}]\nedges: [{from: a, to: b}, {from: b, to: m}]\n");
+        let y = |id: &str| l.positions[&c.node_map[id]].y;
+        assert!((y("m") - y("a")).abs() < 0.5, "pinned to the first rank despite being fed from below");
+    }
+
+    #[test]
+    fn test_sibling_groups_share_a_tier_across_a_light_link() {
+        let (c, l) = layout_of("groups: [{id: g1, label: One, nodes: [a]}, {id: g2, label: Two, nodes: [b]}]\nnodes: [{id: r}, {id: a}, {id: b}]\nedges: [{from: r, to: a}, {from: r, to: b}, {from: a, to: b, label: replicate}]\n");
+        let y = |id: &str| l.positions[&c.node_map[id]].y;
+        assert!((y("a") - y("b")).abs() < 0.5, "a {} b {}", y("a"), y("b"));
+        assert!(l.positions[&c.node_map["a"]].x < l.positions[&c.node_map["b"]].x, "declared order left to right");
+    }
+
+    #[test]
+    fn test_dense_graph_fills_a_block_of_ranks() {
+        // 9 nodes wired every which way: not a chain of 9 ranks but about √n per rank.
+        let ids: Vec<String> = (0..9).map(|i| format!("n{i}")).collect();
+        let mut edges = Vec::new();
+        for i in 0..9 {
+            for d in [1, 2, 4] {
+                edges.push(format!("{{from: {}, to: {}}}", ids[i], ids[(i + d) % 9]));
+            }
+        }
+        let yaml = format!("nodes: [{}]\nedges: [{}]\n", ids.iter().map(|i| format!("{{id: {i}}}")).collect::<Vec<_>>().join(", "), edges.join(", "));
+        let (_, l) = layout_of(&yaml);
+        let mut ys: Vec<i64> = l.positions.values().map(|p| p.y.round() as i64).collect();
+        ys.sort_unstable();
+        ys.dedup();
+        assert!(ys.len() <= 3, "{} ranks for 9 nodes", ys.len());
+    }
+
     #[test]
     fn test_marker_caption_is_part_of_its_box() {
         let compiled = build_graph(&DiagramPayload::from_yaml(NESTED).unwrap()).unwrap();
@@ -782,7 +834,7 @@ edges:
     }
 
     #[test]
-    fn test_group_fits_its_title_and_keeps_its_content_centred() {
+    fn test_group_fits_its_title_and_keeps_fed_nodes_clear_of_it() {
         let rect_and_node = |yaml: &str| {
             let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
             let config = LayoutConfig::default();
@@ -792,15 +844,16 @@ edges:
             (r, a, compiled, config)
         };
         let group = "groups: [{id: g, label: A very long group title indeed, nodes: [a]}]\n";
-        // Fed from above: wide enough that an arrow dropping onto the centred node
-        // clears the title — and widened evenly, so the node stays centred.
+        // Fed from above: the content is shifted right so an arrow dropping onto the
+        // node clears the title — no wider than that needs (not widened evenly).
         let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: up, label: Up}}, {{id: a, label: A}}]\n{group}edges: [{{from: up, to: a}}]\n"));
         let t = &config.tokens;
         let title_end = r.0 + groups::group_title_inset(t).0 + 31.0 * t.char_width(t.group_title_font_size);
         let centre = a.x + a.width / 2.0;
         assert!(centre > title_end, "the arrow onto the node clears the title");
-        assert!((centre - (r.0 + r.2 / 2.0)).abs() < 1.0, "content centred: node {centre}, box {r:?}");
-        assert!(r.2 >= groups::title_clear_width(&compiled.groups[0], t) - 1.0);
+        let clear = r.0 + groups::title_clear_x(&compiled.groups[0], t);
+        assert!(centre >= clear - 1.0 && centre <= clear + a.width, "shifted just past the title: node {centre}, clear {clear}");
+        assert!(r.2 < 2.0 * groups::title_clear_x(&compiled.groups[0], t), "not widened evenly: {r:?}");
         // Not fed from above: just wide enough for its title, still centred.
         let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: a, label: A}}]\n{group}"));
         assert!((r.2 - groups::group_min_width(&compiled.groups[0], &config.tokens)).abs() < 1.0, "{r:?}");

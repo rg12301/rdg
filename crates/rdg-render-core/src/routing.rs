@@ -1127,7 +1127,7 @@ pub(crate) fn parallel_overlap_len(
 /// caller widen `[lo, hi]` past the direct `a..b` span (a densely-packed corridor may
 /// have no clear gap within it at all) while `nearest_clear_position` still knows what
 /// midpoint the search is actually centered on.
-fn nearest_clear_position(a: f64, b: f64, lo: f64, hi: f64, blocked: &mut Vec<(f64, f64)>) -> f64 {
+fn nearest_clear_position(a: f64, b: f64, lo: f64, hi: f64, blocked: &mut [(f64, f64)]) -> f64 {
     let target = (a + b) / 2.0;
     if blocked.is_empty() {
         return target;
@@ -1246,6 +1246,7 @@ pub(crate) fn has_fold_back(pts: &[(f64, f64)]) -> bool {
 
 /// One sweep of [`deoverlap_edge_plans`]' all-pairs scan; returns whether any edge's
 /// waypoints were changed.
+#[expect(clippy::too_many_arguments, reason = "one sweep over the full routing context; a struct would only rename the arguments")]
 fn deoverlap_pass(
     plans: &mut HashMap<EdgeIndex, EdgeRoutingPlan>,
     compiled: &CompiledGraph,

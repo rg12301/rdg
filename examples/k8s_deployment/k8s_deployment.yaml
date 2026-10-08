@@ -1,0 +1,40 @@
+title: "Kubernetes deployment"
+groups:
+  - {id: cluster, label: "Production cluster", nodes: [ns_ingress, ns_app, ns_data, ns_mon]}
+  - {id: ns_ingress, label: "ns: ingress", parent: cluster, nodes: [ingress]}
+  - {id: ns_app, label: "ns: shop", parent: cluster, nodes: [web_dep, api_dep, worker_dep]}
+  - {id: web_dep, label: "Deployment: web (3 replicas)", parent: ns_app, nodes: [web1, web2, web3]}
+  - {id: api_dep, label: "Deployment: api (2 replicas)", parent: ns_app, nodes: [api1, api2]}
+  - {id: worker_dep, label: "Deployment: worker", parent: ns_app, nodes: [worker1]}
+  - {id: ns_data, label: "ns: data", parent: cluster, nodes: [pg, redis, kafka]}
+  - {id: ns_mon, label: "ns: monitoring", parent: cluster, nodes: [prom, grafana]}
+nodes:
+  - {id: lb, title: "Cloud load balancer", type: proxy, provider: gcp}
+  - {id: ingress, title: "ingress-nginx", type: proxy, icon: nginx}
+  - {id: web1, title: "web-0", type: service, language: typescript}
+  - {id: web2, title: "web-1", type: service, language: typescript}
+  - {id: web3, title: "web-2", type: service, language: typescript}
+  - {id: api1, title: "api-0", type: service, language: go}
+  - {id: api2, title: "api-1", type: service, language: go}
+  - {id: worker1, title: "worker-0", type: service, language: python}
+  - {id: pg, title: "postgres", subtitle: "StatefulSet", type: database, db_type: postgres}
+  - {id: redis, title: "redis", subtitle: "StatefulSet", type: cache, db_type: redis}
+  - {id: kafka, title: "kafka", subtitle: "StatefulSet", type: queue, db_type: kafka}
+  - {id: prom, title: "prometheus", type: service, icon: prometheus}
+  - {id: grafana, title: "grafana", type: client, icon: grafana}
+edges:
+  - {from: lb, to: ingress}
+  - {from: ingress, to: web1}
+  - {from: ingress, to: web2}
+  - {from: ingress, to: web3}
+  - {from: web1, to: api1, label: "REST"}
+  - {from: web2, to: api1, label: "REST"}
+  - {from: web3, to: api2, label: "REST"}
+  - {from: api1, to: pg, edge_style: data}
+  - {from: api2, to: pg, edge_style: data}
+  - {from: api1, to: redis, edge_style: data}
+  - {from: api2, to: kafka, edge_style: async}
+  - {from: kafka, to: worker1, edge_style: async}
+  - {from: worker1, to: pg, edge_style: data}
+  - {from: prom, to: api1, label: "scrape", line_style: dotted}
+  - {from: prom, to: grafana}

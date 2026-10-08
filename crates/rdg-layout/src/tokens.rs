@@ -400,8 +400,9 @@ impl DesignTokens {
         // Whole pixels: a group box is `node bbox - pad`, so an integer pad keeps its
         // corner on the same pixel grid as the (snapped) nodes inside it — draw.io rounds
         // every cell and group-relative coordinate independently, and a fractional pad is
-        // how a child ended up half a pixel off its container.
-        (scale * self.group_pad_fraction).max(self.group_pad()).round()
+        // how a child ended up half a pixel off its container. Capped: a cluster the size
+        // of the canvas still needs only a comfortable margin, not a 150px empty band.
+        (scale * self.group_pad_fraction).clamp(self.group_pad(), self.group_pad() * 2.0).round()
     }
     /// Content-aware counterpart to [`Self::group_pad_top`] — see
     /// [`Self::group_pad_for`].
@@ -421,6 +422,36 @@ impl DesignTokens {
     pub fn title_line_height(&self, has_icon: bool) -> f64 {
         let lh = self.line_height(self.font_size);
         if has_icon { lh.max(self.icon_size + 4.0) } else { lh }
+    }
+
+    /// Geometry of a table / class card — a title header over one row per field —
+    /// shared by the size estimator and both renderers, so a card is exactly as tall as
+    /// what it draws (an estimate that disagreed with the renderer left a blank band
+    /// under the last row).
+    ///
+    /// Height of the header band: the title line plus its padding.
+    pub fn field_header_height(&self) -> f64 {
+        (self.line_height(self.font_size) + self.px(1.5)).round()
+    }
+    /// Extra header height for a «stereotype» line above the title.
+    pub fn field_stereotype_height(&self) -> f64 {
+        self.line_height(self.detail_font_size).round()
+    }
+    /// Height of one field row.
+    pub fn field_row_height(&self) -> f64 {
+        (self.line_height(self.detail_font_size) + self.px(0.5)).round()
+    }
+    /// Padding under the last row.
+    pub fn field_bottom_pad(&self) -> f64 {
+        self.px(1.0)
+    }
+    /// Padding between a row's text and the card's side.
+    pub fn field_side_pad(&self) -> f64 {
+        self.px(1.5)
+    }
+    /// Height of the divider between a class's attributes and its operations.
+    pub fn field_divider_height(&self) -> f64 {
+        self.px(0.75)
     }
 
     /// [`Self::title_band`] plus room for the one-line description drawn under the title,
@@ -485,8 +516,7 @@ mod tests {
 
     #[test]
     fn test_px_helper_scales_with_unit() {
-        let mut t = DesignTokens::default();
-        t.unit = 10.0;
+        let t = DesignTokens { unit: 10.0, ..DesignTokens::default() };
         assert_eq!(t.px(2.0), 20.0);
     }
 }

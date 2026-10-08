@@ -1,0 +1,57 @@
+title: "Checkout with payment and fulfilment"
+numbered: true
+participants:
+  - {id: user, label: Shopper, type: actor}
+  - {id: web, label: Web App, type: client, language: typescript}
+  - {id: gw, label: API Gateway, type: gateway}
+  - {id: orders, label: orders-api, type: service, language: go}
+  - {id: pay, label: payments-api, type: service, language: kotlin}
+  - {id: psp, label: Stripe, type: external}
+  - {id: db, label: orders, type: database, db_type: postgres}
+  - {id: bus, label: events, type: queue, db_type: kafka}
+  - {id: ful, label: fulfilment-worker, type: service, language: python}
+groups:
+  - {id: backend, label: Backend, nodes: [orders, pay]}
+  - {id: data, label: Data, nodes: [db, bus]}
+sequence:
+  - {from: user, to: web, label: "place order"}
+  - {from: web, to: gw, label: "POST /checkout"}
+  - {from: gw, to: orders, label: "createOrder()"}
+  - {note: "Idempotency-Key header\ndeduplicates retries", right_of: orders}
+  - {from: orders, to: db, label: "INSERT order (pending)"}
+  - {from: db, to: orders, label: "order_id", style: reply}
+  - {from: orders, to: pay, label: "authorize(amount)"}
+  - {from: pay, to: psp, label: "POST /payment_intents"}
+  - alt: "card accepted"
+    steps:
+      - {from: psp, to: pay, label: "succeeded", style: reply}
+      - {from: pay, to: orders, label: "authorized", style: reply}
+      - {from: orders, to: db, label: "UPDATE status=paid"}
+      - {from: orders, to: bus, label: "OrderPaid", style: async}
+      - {from: orders, to: gw, label: "201 Created", style: reply}
+      - {from: gw, to: web, label: "201", style: reply}
+      - {from: web, to: user, label: "confirmation page", style: reply}
+    else:
+      label: "declined"
+      steps:
+        - {from: psp, to: pay, label: "card_declined", style: reply}
+        - {from: pay, to: orders, label: "declined", style: reply}
+        - {from: orders, to: db, label: "UPDATE status=failed"}
+        - {from: orders, to: gw, label: "402 Payment Required", style: reply}
+        - {from: gw, to: web, label: "402", style: reply}
+        - {from: web, to: user, label: "retry with another card", style: reply}
+  - divider: "asynchronously"
+  - loop: "poll every 1s"
+    steps:
+      - {from: ful, to: bus, label: "consume OrderPaid"}
+      - {from: bus, to: ful, label: "event", style: reply}
+      - opt: "warehouse has stock"
+        steps:
+          - {from: ful, to: ful, label: "pick & pack"}
+          - {from: ful, to: db, label: "UPDATE status=shipped"}
+          - {from: ful, to: bus, label: "OrderShipped", style: async}
+  - par: "notify"
+    steps:
+      - {from: orders, to: user, label: "email receipt", style: async}
+    and:
+      - {from: orders, to: user, label: "push notification", style: async}

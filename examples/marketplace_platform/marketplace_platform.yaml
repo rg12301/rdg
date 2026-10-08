@@ -1,0 +1,98 @@
+title: "Marketplace platform — full system"
+description: "Web + mobile, edge, 12 services, async pipelines, 3 data stores, observability"
+legend: true
+groups:
+  - {id: clients, label: "Clients", nodes: [web, ios, android, partner]}
+  - {id: edge, label: "Edge & security", nodes: [cdn, waf, gw, idp]}
+  - {id: commerce, label: "Commerce domain", nodes: [catalog, cart, checkout, pricing, promo]}
+  - {id: fulfil, label: "Fulfilment domain", nodes: [orders, inventory, shipping, returns]}
+  - {id: money, label: "Payments domain", nodes: [payments, ledger, fraud]}
+  - {id: async, label: "Async", nodes: [bus, search_indexer, email_worker, analytics_worker]}
+  - {id: stores, label: "Data stores", nodes: [pg_commerce, pg_orders, pg_ledger, redis, es, s3, wh]}
+  - {id: obs, label: "Observability", nodes: [otel, prom, grafana, sentry]}
+  - {id: ext, label: "Third parties", nodes: [stripe, carrier, mailgun]}
+nodes:
+  - {id: web, title: "Web", type: client, language: typescript}
+  - {id: ios, title: "iOS", type: client, language: swift}
+  - {id: android, title: "Android", type: client, language: kotlin}
+  - {id: partner, title: "Partner API clients", type: external}
+  - {id: cdn, title: "CDN", type: cdn, icon: cloudflare}
+  - {id: waf, title: "WAF", type: firewall}
+  - {id: gw, title: "API Gateway", type: gateway, technology: "Kong"}
+  - {id: idp, title: "Identity", subtitle: "OIDC", type: auth, icon: auth0}
+  - {id: catalog, title: "catalog-service", type: service, language: go}
+  - {id: cart, title: "cart-service", type: service, language: go}
+  - {id: checkout, title: "checkout-service", type: service, language: java}
+  - {id: pricing, title: "pricing-service", type: service, language: python}
+  - {id: promo, title: "promo-service", type: service, language: python}
+  - {id: orders, title: "orders-service", type: service, language: java}
+  - {id: inventory, title: "inventory-service", type: service, language: rust}
+  - {id: shipping, title: "shipping-service", type: service, language: go}
+  - {id: returns, title: "returns-service", type: service, language: kotlin}
+  - {id: payments, title: "payments-service", type: service, language: kotlin}
+  - {id: ledger, title: "ledger-service", type: service, language: rust}
+  - {id: fraud, title: "fraud-scoring", type: function, language: python}
+  - {id: bus, title: "event bus", type: queue, db_type: kafka}
+  - {id: search_indexer, title: "search-indexer", type: function, language: go}
+  - {id: email_worker, title: "email-worker", type: function, language: python}
+  - {id: analytics_worker, title: "analytics-worker", type: function, language: python}
+  - {id: pg_commerce, title: "commerce", type: database, db_type: postgres}
+  - {id: pg_orders, title: "orders", type: database, db_type: postgres}
+  - {id: pg_ledger, title: "ledger", type: database, db_type: postgres}
+  - {id: redis, title: "carts · sessions", type: cache, db_type: redis}
+  - {id: es, title: "search", type: database, db_type: elasticsearch}
+  - {id: s3, title: "media", type: storage, provider: aws}
+  - {id: wh, title: "warehouse", type: database, db_type: clickhouse}
+  - {id: otel, title: "otel-collector", type: service, icon: opentelemetry}
+  - {id: prom, title: "Prometheus", type: service, icon: prometheus}
+  - {id: grafana, title: "Grafana", type: client, icon: grafana}
+  - {id: sentry, title: "Sentry", type: external, icon: sentry}
+  - {id: stripe, title: "Stripe", type: external, icon: stripe}
+  - {id: carrier, title: "Carrier APIs", type: external}
+  - {id: mailgun, title: "Mailgun", type: external}
+edges:
+  - {from: web, to: cdn, label: "static"}
+  - {from: web, to: waf, label: "HTTPS"}
+  - {from: ios, to: waf, label: "HTTPS"}
+  - {from: android, to: waf, label: "HTTPS"}
+  - {from: partner, to: waf, label: "HTTPS"}
+  - {from: waf, to: gw}
+  - {from: gw, to: idp, label: "verify JWT"}
+  - {from: gw, to: catalog}
+  - {from: gw, to: cart}
+  - {from: gw, to: checkout}
+  - {from: gw, to: orders}
+  - {from: gw, to: returns}
+  - {from: cart, to: redis, edge_style: data}
+  - {from: cart, to: pricing, label: "price"}
+  - {from: pricing, to: promo, label: "apply"}
+  - {from: catalog, to: pg_commerce, edge_style: data}
+  - {from: catalog, to: es, label: "query", edge_style: data}
+  - {from: catalog, to: s3, label: "images", edge_style: data}
+  - {from: checkout, to: cart}
+  - {from: checkout, to: payments, label: "authorize"}
+  - {from: checkout, to: inventory, label: "reserve"}
+  - {from: checkout, to: orders, label: "create"}
+  - {from: payments, to: fraud, label: "score"}
+  - {from: payments, to: stripe, label: "charge"}
+  - {from: payments, to: ledger, label: "post"}
+  - {from: ledger, to: pg_ledger, edge_style: data}
+  - {from: orders, to: pg_orders, edge_style: data}
+  - {from: orders, to: bus, label: "OrderCreated", edge_style: async}
+  - {from: orders, to: shipping, label: "ship"}
+  - {from: shipping, to: carrier, label: "book"}
+  - {from: inventory, to: pg_orders, edge_style: data}
+  - {from: returns, to: orders}
+  - {from: returns, to: payments, label: "refund"}
+  - {from: bus, to: search_indexer, edge_style: async}
+  - {from: bus, to: email_worker, edge_style: async}
+  - {from: bus, to: analytics_worker, edge_style: async}
+  - {from: search_indexer, to: es, edge_style: data}
+  - {from: email_worker, to: mailgun, label: "send"}
+  - {from: analytics_worker, to: wh, edge_style: data}
+  - {from: catalog, to: otel, edge_style: async, label: "traces"}
+  - {from: checkout, to: otel, edge_style: async, label: "traces"}
+  - {from: orders, to: otel, edge_style: async, label: "traces"}
+  - {from: otel, to: prom, label: "metrics"}
+  - {from: otel, to: sentry, label: "errors"}
+  - {from: prom, to: grafana, label: "query"}

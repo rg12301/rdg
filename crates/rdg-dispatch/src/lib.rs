@@ -212,10 +212,10 @@ pub fn dispatch(sig: &TopologySignature, tokens: &DesignTokens) -> AlgorithmDeci
         LayoutFramework::FCose
     } else if sig.is_dense {
         steps.push(format!(
-            "density {:.2} edges/node exceeds {:.1} — too dense for layered ranking",
+            "density {:.2} edges/node exceeds {:.1} — layered with ranks capped at about √n nodes (a compact block, not a chain)",
             sig.density, tokens.density_threshold
         ));
-        LayoutFramework::ForceDirected
+        LayoutFramework::Sugiyama
     } else {
         steps.push(if sig.is_chronological {
             "predominantly numbered edges — chronological process flow".into()
@@ -405,10 +405,11 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_dense_takes_priority_over_connected_compound() {
+    fn test_dispatch_dense_connected_compound_stays_layered() {
         let sig = signature(50, 200, true, false, false, true, 1);
         let decision = dispatch(&sig, &DesignTokens::default());
-        assert_eq!(decision.framework, LayoutFramework::ForceDirected);
+        assert_eq!(decision.framework, LayoutFramework::Sugiyama);
+        assert!(decision.preprocessing_steps.iter().any(|s| s.contains("ranks capped")), "{:?}", decision.preprocessing_steps);
     }
 
     #[test]
@@ -426,10 +427,10 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_dense_flat_graph_dispatches_force_directed() {
+    fn test_dispatch_dense_flat_graph_stays_layered_with_capped_ranks() {
         let sig = signature(20, 60, true, false, false, false, 1);
         let decision = dispatch(&sig, &DesignTokens::default());
-        assert_eq!(decision.framework, LayoutFramework::ForceDirected);
+        assert_eq!(decision.framework, LayoutFramework::Sugiyama);
     }
 
     #[test]

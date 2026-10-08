@@ -818,9 +818,7 @@ impl<'a> Polisher<'a> {
             // one-edge move is judged against the pair's *current* combined score.
             let mut judged = overrides.clone();
             for e in [a, b] {
-                if !judged.contains_key(&e) {
-                    judged.insert(e, self.paths[&e].clone());
-                }
+                judged.entry(e).or_insert_with(|| self.paths[&e].clone());
             }
             let new_score = self.score_with(&judged);
             if !new_score.better_than(&cur) {

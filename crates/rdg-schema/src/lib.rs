@@ -85,6 +85,11 @@ pub struct DiagramPayload {
     #[serde(default)]
     pub numbered: Option<bool>,
 
+    /// Layout hint: lists of node or group ids that share a rank — drawn side by side
+    /// on one tier, e.g. `same_rank: [[primary, replica], [api, worker]]`.
+    #[serde(default, alias = "align", alias = "same_tier", alias = "same_layer")]
+    pub same_rank: Vec<Vec<String>>,
+
     /// Named, reusable node style presets. A node opts in via `class: <name>`; any field the
     /// node doesn't already set explicitly is filled in from the preset. Existing keys are
     /// never overwritten by a preset — this exists to de-duplicate repeated per-node styling,
@@ -179,17 +184,62 @@ pub struct SeqStep {
     /// The fragment's (first) body.
     #[serde(default, alias = "do", alias = "then")]
     pub steps: Vec<SeqStep>,
-    /// `alt` only: further branches, each `{label, steps}` (one mapping or a list).
-    #[serde(default, rename = "else", deserialize_with = "one_or_many")]
+    /// `alt` only: further branches, each `{label, steps}` (one mapping or a list) —
+    /// or just a list of steps, which is one unlabelled branch.
+    #[serde(default, rename = "else", deserialize_with = "branches")]
     pub else_: Vec<SeqBranch>,
-    /// `par` only: further parallel branches, each `{label, steps}`.
-    #[serde(default, deserialize_with = "one_or_many")]
+    /// `par` only: further parallel branches, each `{label, steps}` — or just a list of
+    /// steps, which is one more branch.
+    #[serde(default, deserialize_with = "branches")]
     pub and: Vec<SeqBranch>,
 
     // -- divider ----------------------------------------------------------------------
     /// A full-width separator with this label (phases, "5 minutes later", …).
     #[serde(default, alias = "separator", alias = "section")]
     pub divider: Option<String>,
+}
+
+/// `else:` / `and:` — one branch mapping, a list of branch mappings, or a plain list
+/// of steps (one unlabelled branch; an agent's natural first attempt, and ambiguous
+/// with nothing, since a step has no `steps`/`label`-only shape).
+fn branches<'de, D>(d: D) -> Result<Vec<SeqBranch>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum BranchOrStep {
+        Branch(SeqBranch),
+        Step(Box<SeqStep>),
+    }
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Shape {
+        Many(Vec<BranchOrStep>),
+        One(SeqBranch),
+    }
+    Ok(match Shape::deserialize(d)? {
+        Shape::One(b) => vec![b],
+        Shape::Many(items) => {
+            let mut out: Vec<SeqBranch> = Vec::new();
+            let mut steps: Vec<SeqStep> = Vec::new();
+            for item in items {
+                match item {
+                    BranchOrStep::Branch(b) => {
+                        if !steps.is_empty() {
+                            out.push(SeqBranch { label: None, steps: std::mem::take(&mut steps) });
+                        }
+                        out.push(b);
+                    }
+                    BranchOrStep::Step(s) => steps.push(*s),
+                }
+            }
+            if !steps.is_empty() {
+                out.push(SeqBranch { label: None, steps });
+            }
+            out
+        }
+    })
 }
 
 /// A further branch of an `alt` (`else`) or `par` (`and`) fragment.
@@ -562,6 +612,7 @@ impl Default for DiagramPayload {
             canvas: None,
             spacing: None,
             numbered: None,
+            same_rank: Vec::new(),
             legend: None,
             node_styles: HashMap::new(),
             edge_styles: HashMap::new(),
@@ -652,6 +703,10 @@ pub struct GroupDef {
     /// Optional explicit brand or service icon for the group container header.
     #[serde(default)]
     pub icon: Option<String>,
+
+    /// Layout hint: pin the group to this tier (0 = the first along the flow).
+    #[serde(default, alias = "tier", alias = "layer")]
+    pub rank: Option<u32>,
 }
 
 impl GroupDef {
@@ -1043,6 +1098,11 @@ pub struct NodeDef {
     /// Optional URL. When set, the rendered shape becomes a clickable link (draw.io only).
     #[serde(default, alias = "url", alias = "href")]
     pub link: Option<String>,
+
+    /// Layout hint: pin the node to this rank (0 = the first tier along the flow).
+    /// Nodes it feeds are pushed below it; nothing pushes it.
+    #[serde(default, alias = "tier", alias = "layer")]
+    pub rank: Option<u32>,
 }
 
 impl Default for NodeDef {
@@ -1069,6 +1129,7 @@ impl Default for NodeDef {
             category: None,
             display: None,
             link: None,
+            rank: None,
         }
     }
 }
@@ -1106,6 +1167,11 @@ impl NodeDef {
         let (subtitle, description) = (non_blank(&self.subtitle), non_blank(&self.description));
         let title = non_blank(&self.title);
         if title.is_none() && subtitle.is_none() && description.is_none() {
+            // `title: ""` (written out) is a node with no text at all — a start/end
+            // marker without a caption; a missing title falls back to label and id.
+            if self.title.as_deref().is_some_and(|t| t.trim().is_empty()) && self.label.trim().is_empty() {
+                return Some(NodeText { title: String::new(), subtitle: None, description: None });
+            }
             return None;
         }
         let title = title.or_else(|| non_blank(&Some(self.label.clone()))).unwrap_or_else(|| self.id.clone());
@@ -1302,6 +1368,12 @@ pub struct EdgeDef {
     /// diagram sets `numbered: true` (see [`resolve_steps`]).
     #[serde(default, alias = "order", alias = "sequence", deserialize_with = "step_label")]
     pub step: Option<String>,
+
+    /// Layout hint: `false` keeps this edge from pushing its target to a later rank
+    /// (it is still routed and drawn) — for a back-reference, a side link between
+    /// peers, or a monitoring arrow that should not shape the tiers.
+    #[serde(default, alias = "ranked", alias = "ranks")]
+    pub constraint: Option<bool>,
 
     /// Optional named style preset to inherit from — see [`DiagramPayload::edge_styles`].
     #[serde(default, alias = "preset")]
@@ -1510,6 +1582,11 @@ const JSON_SCHEMA: &str = r##"{
       "default": false,
       "description": "Number edges 1, 2, 3... in declaration order (or per-edge `step`) so a reader can trace the flow"
     },
+    "same_rank": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "string" } },
+      "description": "Layout hint: lists of node/group ids drawn side by side on one tier"
+    },
     "canvas": {
       "type": "object",
       "description": "Canvas-level configuration",
@@ -1572,6 +1649,7 @@ const JSON_SCHEMA: &str = r##"{
           "id": { "type": "string", "description": "Unique container ID" },
           "label": { "type": "string", "description": "Group title banner" },
           "parent": { "type": "string", "description": "Id of the group this one is drawn inside (same as listing this id in the parent's nodes)" },
+          "rank": { "type": "integer", "minimum": 0, "description": "Layout hint: pin the group to this tier (0 = first along the flow)" },
           "color": { "type": "string", "description": "Border / accent hex color" },
           "category": { "type": "string", "description": "Semantic category (colour) of the container" },
           "nodes": {
@@ -1622,6 +1700,7 @@ const JSON_SCHEMA: &str = r##"{
           "class": { "type": "string", "description": "Named style preset to inherit from (see node_styles)" },
           "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" },
           "link": { "type": "string", "description": "URL making the rendered shape clickable (draw.io only)" },
+          "rank": { "type": "integer", "minimum": 0, "description": "Layout hint: pin the node to this rank (0 = first along the flow)" },
           "category": { "type": "string", "description": "Semantic category (colour): frontend, backend, database, messagebus, cloud, security, external, neutral" },
           "display": { "type": "string", "enum": ["card", "icon"], "description": "Draw as a box, or as its enlarged logo with the label below" },
           "fields": {
@@ -1655,6 +1734,7 @@ const JSON_SCHEMA: &str = r##"{
             "description": "Visual connector style with semantic arrowheads (ER crow's foot, UML markers, async dashed)"
           },
           "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" },
+          "constraint": { "type": "boolean", "default": true, "description": "Layout hint: false keeps this edge from pushing its target to a later rank" },
           "step": {
             "type": ["integer", "number", "string"],
             "pattern": "^[0-9]+[0-9A-Za-z.]{0,5}$",
@@ -1726,6 +1806,36 @@ edges:
     to: n2
     label: "queries"
 "#;
+
+    #[test]
+    fn test_par_and_and_alt_else_accept_a_plain_list_of_steps() {
+        let yaml = "participants: [{id: a}, {id: b}]\nsequence:\n  - par: fan-out\n    steps: [{from: a, to: b, label: one}]\n    and: [{from: b, to: a, label: two}, {from: a, to: b, label: three}]\n  - alt: ok\n    steps: [{from: a, to: b}]\n    else: [{from: b, to: a}]\n";
+        let p = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(p.sequence[0].and.len(), 1, "a list of steps is one more branch");
+        assert_eq!(p.sequence[0].and[0].steps.len(), 2);
+        assert_eq!(p.sequence[1].else_.len(), 1);
+        assert_eq!(p.sequence[1].else_[0].steps.len(), 1);
+        // The mapping forms still work.
+        let yaml = "participants: [{id: a}, {id: b}]\nsequence:\n  - par: x\n    steps: [{from: a, to: b}]\n    and: {label: y, steps: [{from: b, to: a}]}\n";
+        let p = DiagramPayload::from_yaml(yaml).unwrap();
+        assert_eq!(p.sequence[0].and[0].label.as_deref(), Some("y"));
+    }
+
+    #[test]
+    fn test_explicitly_empty_title_is_a_node_without_a_caption() {
+        let p = DiagramPayload::from_yaml("nodes: [{id: init, title: \"\", type: start}, {id: x, type: start}]\n").unwrap();
+        assert_eq!(p.nodes[0].text().unwrap().title, "");
+        assert_eq!(p.nodes[0].resolved_label(), "");
+        assert_eq!(p.nodes[1].resolved_label(), "x", "a missing title still falls back to the id");
+    }
+
+    #[test]
+    fn test_layout_hint_fields_parse() {
+        let p = DiagramPayload::from_yaml("same_rank: [[a, g]]\ngroups: [{id: g, label: G, nodes: [b], tier: 2}]\nnodes: [{id: a, rank: 1}, {id: b}]\nedges: [{from: a, to: b, constraint: false}]\n").unwrap();
+        assert_eq!(p.nodes[0].rank, Some(1));
+        assert_eq!(p.groups[0].rank, Some(2));
+        assert_eq!(p.edges[0].constraint, Some(false));
+    }
 
     #[test]
     fn test_round_trip_deserialization() {

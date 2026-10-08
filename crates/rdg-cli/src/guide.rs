@@ -40,22 +40,23 @@ MINIMAL YAML
 NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type, category, display (card|icon), technology, language,
               db_type, icon, provider (aws|gcp), metadata (tooltip), fields (table rows /
               class members), color, width, height, link, class (a node_styles preset),
-              style_extra (raw draw.io style)
+              style_extra (raw draw.io style), rank (layout hint: pin to a tier)
 EDGE FIELDS   from, to, label, edge_style, color, width, line_style (solid|dashed|dotted),
               head, tail, source_port / target_port (top|bottom|left|right),
-              step (3, or a branch: 3a, 3b, 3.1),
-              class (an edge_styles preset), style_extra
+              step (3, or a branch: 3a, 3b, 3.1), constraint (false: the edge is drawn
+              but does not push its target down a rank), class (an edge_styles preset),
+              style_extra
 TOP LEVEL     title, description, diagram_type, direction, theme, legend, numbered,
-              groups (id, label, nodes: node or group ids, parent), nodes, edges,
-              node_styles, edge_styles, canvas {margin, background},
-              spacing {rank, node, group_gap_x, group_gap_y}
+              groups (id, label, nodes: node or group ids, parent, rank), nodes, edges,
+              same_rank (lists of ids to draw side by side), node_styles, edge_styles,
+              canvas {margin, background}, spacing {rank, node, group_gap_x, group_gap_y}
 Unknown keys are errors (with a did-you-mean), so a typo can't silently drop a field.
 
 NODE TYPES    service|server|backend  proxy|gateway|api  database|db|storage (cylinder)
               table|entity|record (cylinder)  queue|broker|bus (ellipse)  cache|redis
               function|lambda|faas  client|user|browser  decision|condition (diamond)
-              start  end  choice  class|interface|abstract_class|struct  participant|actor
-              Anything else renders as a neutral card (and --check warns).
+              start  end  choice  state  class|interface|abstract_class|struct
+              participant|actor   Anything else renders as a neutral card (--check warns).
 EDGE STYLES   flow (default)  async  sync|call  reply|return  data|stream  error|fallback
               bidirectional  one_to_many  many_to_many  one_to_one  zero_to_many
               inheritance  realization  composition  aggregation  dependency
@@ -412,6 +413,17 @@ LAYOUT
   components). The choice is printed to stderr.
   direction: tb | lr sets the main flow.
   Spacing scales with node size; override with rank_spacing / node_spacing (px).
+
+Hints (when the automatic tiers are not what you meant)
+  same_rank: [[primary, replica], [api, worker]]   ids (nodes or groups) drawn side by
+    side on one tier — the list is levelled to its deepest member.
+  rank: 2 on a node or group pins it to that tier (0 = first along the flow); what it
+    feeds still moves below it, nothing pushes it.
+  constraint: false on an edge keeps it from pushing its target to a later rank (a back
+    reference, a side link between peers, a monitoring arrow); it is routed as usual.
+  Groups: a group sits one tier below whatever feeds it; two groups fed by the same unit
+  stay side by side when at most two edges run between them; two groups wired both ways
+  follow the direction with more edges; a group of unwired nodes is laid out as a grid.
 
 Self-review
   After layout rdg checks for overlapping nodes, arrows through nodes, arrows drawn on

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1290" height="703" viewBox="0 0 1290 703" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-uml-triangle-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-diamond-2" viewBox="-1 -1 16 9" refX="14" refY="3.5" markerWidth="16" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 3.5 L7 0 L14 3.5 L7 7 Z" fill="none" stroke="#8b95a5" stroke-width="1"/></marker><marker id="marker-diamond-1" viewBox="-1 -1 16 9" refX="14" refY="3.5" markerWidth="16" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 3.5 L7 0 L14 3.5 L7 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1"/></marker><marker id="marker-open-3" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#8b95a5" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
+  <text x="24.0" y="47.0" text-anchor="start" font-size="18" font-weight="bold" fill="#111827">Notification domain model</text>
+  <path d="M 491.0 393.0 L 491.0 278.9 Q 491.0 266.0 503.9 266.0 L 537.0 266.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 632.0 597.0 L 632.0 569.6 Q 632.0 559.0 621.4 559.0 L 501.6 559.0 Q 491.0 559.0 491.0 548.4 L 491.0 521.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 417.0 597.0 L 417.0 521.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 202.0 597.0 L 202.0 516.0 Q 202.0 502.0 216.0 502.0 L 312.0 502.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1005.0 283.0 L 1108.0 283.0 Q 1122.0 283.0 1122.0 297.0 L 1122.0 412.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 925.0 303.0 L 925.0 412.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 869.0 303.0 L 869.0 342.0 Q 869.0 356.0 855.0 356.0 L 768.0 356.0 Q 754.0 356.0 754.0 370.0 L 754.0 409.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 731.0 106.0 L 731.0 194.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 862.0 94.0 L 880.0 94.0 Q 887.0 94.0 887.0 101.0 L 887.0 171.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="537.0" y="194.0" width="230.0" height="86.0" rx="6.0"/>
+  <text x="652.0" y="205.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«interface»</text>
+  <text x="652.0" y="226.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Notifier</text>
+  <line x1="537.0" y1="236.0" x2="767.0" y2="236.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="549.0" y="248.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ send(msg: Message): Result</text>
+  <text x="549.0" y="266.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ supports(channel: Channel): bool</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="312.0" y="393.0" width="210.0" height="128.0" rx="6.0"/>
+  <text x="417.0" y="404.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«abstract»</text>
+  <text x="417.0" y="425.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827" font-style="italic">BaseNotifier</text>
+  <line x1="312.0" y1="435.0" x2="522.0" y2="435.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="324.0" y="447.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># retries</text>
+  <text x="510.0" y="447.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">int</text>
+  <text x="324.0" y="465.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># logger</text>
+  <text x="510.0" y="465.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Logger</text>
+  <line x1="312.0" y1="474.0" x2="522.0" y2="474.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="324.0" y="489.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ send(msg: Message): Result</text>
+  <text x="324.0" y="507.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># deliver(msg: Message): Result</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="600.0" y="597.0" width="210.0" height="78.0" rx="6.0"/>
+  <text x="705.0" y="615.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">EmailNotifier</text>
+  <line x1="600.0" y1="625.0" x2="810.0" y2="625.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="612.0" y="637.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- smtp</text>
+  <text x="798.0" y="637.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">SmtpClient</text>
+  <line x1="600.0" y1="646.0" x2="810.0" y2="646.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="612.0" y="661.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># deliver(msg: Message): Result</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="312.0" y="597.0" width="210.0" height="78.0" rx="6.0"/>
+  <text x="417.0" y="615.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">SmsNotifier</text>
+  <line x1="312.0" y1="625.0" x2="522.0" y2="625.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="324.0" y="637.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- gateway</text>
+  <text x="510.0" y="637.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">SmsGateway</text>
+  <line x1="312.0" y1="646.0" x2="522.0" y2="646.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="324.0" y="661.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># deliver(msg: Message): Result</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="597.0" width="210.0" height="78.0" rx="6.0"/>
+  <text x="129.0" y="615.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">PushNotifier</text>
+  <line x1="24.0" y1="625.0" x2="234.0" y2="625.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="36.0" y="637.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- fcm</text>
+  <text x="222.0" y="637.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">FcmClient</text>
+  <line x1="24.0" y1="646.0" x2="234.0" y2="646.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="36.0" y="661.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># deliver(msg: Message): Result</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="845.0" y="171.0" width="160.0" height="132.0" rx="6.0"/>
+  <text x="925.0" y="189.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Message</text>
+  <line x1="845.0" y1="199.0" x2="1005.0" y2="199.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="857.0" y="211.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- id</text>
+  <text x="993.0" y="211.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID</text>
+  <text x="857.0" y="229.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- to</text>
+  <text x="993.0" y="229.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Recipient</text>
+  <text x="857.0" y="247.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- body</text>
+  <text x="993.0" y="247.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="857.0" y="265.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- channel</text>
+  <text x="993.0" y="265.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Channel</text>
+  <line x1="845.0" y1="274.0" x2="1005.0" y2="274.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="857.0" y="289.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ render(): String</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1096.0" y="412.0" width="170.0" height="90.0" rx="6.0"/>
+  <text x="1181.0" y="430.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Recipient</text>
+  <line x1="1096.0" y1="440.0" x2="1266.0" y2="440.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1108.0" y="452.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- email</text>
+  <text x="1254.0" y="452.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="1108.0" y="470.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- phone</text>
+  <text x="1254.0" y="470.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="1108.0" y="488.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- deviceToken</text>
+  <text x="1254.0" y="488.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="858.0" y="412.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="938.0" y="430.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Channel</text>
+  <line x1="858.0" y1="440.0" x2="1018.0" y2="440.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="870.0" y="452.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">EMAIL</text>
+  <text x="870.0" y="470.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">SMS</text>
+  <text x="870.0" y="488.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">PUSH</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="600.0" y="409.0" width="180.0" height="96.0" rx="6.0"/>
+  <text x="690.0" y="427.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Template</text>
+  <line x1="600.0" y1="437.0" x2="780.0" y2="437.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="612.0" y="449.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- name</text>
+  <text x="768.0" y="449.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="612.0" y="467.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- body</text>
+  <text x="768.0" y="467.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <line x1="600.0" y1="476.0" x2="780.0" y2="476.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="612.0" y="491.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ fill(vars: Map): String</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="652.0" y="28.0" width="210.0" height="78.0" rx="6.0"/>
+  <text x="757.0" y="46.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Dispatcher</text>
+  <line x1="652.0" y1="56.0" x2="862.0" y2="56.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="664.0" y="68.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- notifiers</text>
+  <text x="850.0" y="68.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">List&lt;Notifier&gt;</text>
+  <line x1="652.0" y1="77.0" x2="862.0" y2="77.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="664.0" y="92.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ dispatch(msg: Message): void</text>
+  <rect x="1053.5" y="263.5" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1063.5" y="274.8" text-anchor="middle" font-size="10" fill="#8b95a5">to</text>
+  <rect x="769.5" y="336.5" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="811.5" y="347.8" text-anchor="middle" font-size="10" fill="#8b95a5">rendered from</text>
+  <rect x="735.0" y="142.2" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="750.0" y="153.5" text-anchor="middle" font-size="10" fill="#8b95a5">1..*</text>
+</svg>

@@ -21,26 +21,39 @@ pub(crate) fn layout_topological(
         anyhow::anyhow!("topological sort failed — unexpected cycle after FAS pass")
     })?;
 
+    // Longest path over the ranking edges (`constraint: false` edges are drawn but
+    // never push their target down a rank).
+    let ranked_preds = |node: NodeIndex| {
+        compiled.graph.edges_directed(node, petgraph::Direction::Incoming).filter(|e| e.weight().constraint).map(|e| e.source())
+    };
+    // A dense web (more than `density_threshold` edges per node) laid out by longest
+    // path becomes one long chain with most arrows looping back up it — nearly every
+    // node has a predecessor one rank up. Such a graph has no real hierarchy to show,
+    // so its nodes fill a compact block instead: about √n per rank, in topological
+    // (that is, declaration) order, and the arrows go where they go.
+    let n = compiled.graph.node_count();
+    let density = compiled.graph.edge_count() as f64 / n.max(1) as f64;
+    let per_rank = if density > config.tokens.density_threshold { Some(((n as f64 * 1.3).sqrt().ceil() as usize).max(2)) } else { None };
     let mut layer: HashMap<NodeIndex, usize> = HashMap::with_capacity(topo_order.len());
-    for &node in &topo_order {
-        let pred_max = compiled
-            .graph
-            .neighbors_directed(node, petgraph::Direction::Incoming)
-            .filter_map(|p| layer.get(&p).copied())
-            .max()
-            .unwrap_or(0);
-        let node_layer = if compiled
-            .graph
-            .neighbors_directed(node, petgraph::Direction::Incoming)
-            .next()
-            .is_some()
-        {
-            pred_max + 1
-        } else {
-            0
+    for (i, &node) in topo_order.iter().enumerate() {
+        let node_layer = match per_rank {
+            Some(w) => i / w,
+            None => ranked_preds(node).filter_map(|p| layer.get(&p).copied()).max().map_or(0, |m| m + 1),
         };
         layer.insert(node, node_layer);
     }
+
+    // A pure source sits directly above the first node it feeds (not at the very top,
+    // which strands a lookup table several ranks away from the one table that uses it).
+    if per_rank.is_none() {
+        let sources: Vec<NodeIndex> = topo_order.iter().copied().filter(|&n| ranked_preds(n).next().is_none()).collect();
+        for n in sources {
+            if let Some(first) = compiled.graph.neighbors_directed(n, petgraph::Direction::Outgoing).filter_map(|s| layer.get(&s).copied()).min() {
+                layer.insert(n, first.saturating_sub(1));
+            }
+        }
+    }
+    apply_rank_hints(compiled, &mut layer, &topo_order);
 
     let max_layer = layer.values().copied().max().unwrap_or(0);
     let mut layer_buckets: Vec<Vec<NodeIndex>> = vec![Vec::new(); max_layer + 1];
@@ -222,11 +235,125 @@ pub(crate) fn order_layers<T: Copy + Eq + std::hash::Hash>(layer_buckets: &mut [
             layer_buckets[i].sort_by(|&a, &b| median(a, &next, false).total_cmp(&median(b, &next, false)));
         }
     }
+    transpose(layer_buckets, &preds, &succs);
+}
+
+/// Crossings between two adjacent layers, given each layer's order and the edges
+/// between them (as neighbour lists on the lower layer's items).
+fn crossings_between<T: Copy + Eq + std::hash::Hash>(upper: &[T], lower: &[T], preds: &HashMap<T, Vec<T>>) -> usize {
+    let pos: HashMap<T, usize> = upper.iter().enumerate().map(|(i, &n)| (n, i)).collect();
+    let mut ends: Vec<(usize, usize)> = Vec::new();
+    for (j, item) in lower.iter().enumerate() {
+        for p in preds.get(item).into_iter().flatten() {
+            if let Some(&i) = pos.get(p) {
+                ends.push((j, i));
+            }
+        }
+    }
+    let mut count = 0;
+    for a in 0..ends.len() {
+        for b in a + 1..ends.len() {
+            let ((j1, i1), (j2, i2)) = (ends[a], ends[b]);
+            if (j1 < j2 && i1 > i2) || (j1 > j2 && i1 < i2) {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+/// Sugiyama's *transpose* step: swap adjacent items of a layer whenever that removes
+/// crossings with the layers on either side, until nothing improves. The median sort
+/// above is blind to ties and to the two neighbouring layers at once; this catches the
+/// crossings it leaves (two fan-outs from side-by-side sources crossing each other).
+fn transpose<T: Copy + Eq + std::hash::Hash>(layers: &mut [Vec<T>], preds: &HashMap<T, Vec<T>>, succs: &HashMap<T, Vec<T>>) {
+    let n = layers.len();
+    let around = |layers: &[Vec<T>], i: usize| -> usize {
+        let mut c = 0;
+        if i > 0 {
+            c += crossings_between(&layers[i - 1], &layers[i], preds);
+        }
+        if i + 1 < n {
+            c += crossings_between(&layers[i + 1], &layers[i], succs);
+        }
+        c
+    };
+    for _round in 0..8 {
+        let mut improved = false;
+        for i in 0..n {
+            for k in 0..layers[i].len().saturating_sub(1) {
+                let before = around(layers, i);
+                if before == 0 {
+                    break;
+                }
+                layers[i].swap(k, k + 1);
+                if around(layers, i) < before {
+                    improved = true;
+                } else {
+                    layers[i].swap(k, k + 1);
+                }
+            }
+        }
+        if !improved {
+            break;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Chain straightening (lightweight stand-in for Brandes–Köpf coordinate assignment)
 // ---------------------------------------------------------------------------
+
+/// Applies the author's layout hints to longest-path ranks: a node's `rank:` pins it
+/// (nothing pushes it; what it feeds still moves below it), and every `same_rank`
+/// list is levelled to its deepest member — then successors are pushed down again
+/// until nothing moves.
+fn apply_rank_hints(compiled: &CompiledGraph, layer: &mut HashMap<NodeIndex, usize>, order: &[NodeIndex]) {
+    let sets: Vec<Vec<NodeIndex>> = compiled
+        .same_rank
+        .iter()
+        .map(|ids| ids.iter().filter_map(|id| compiled.node_map.get(id).copied()).collect::<Vec<_>>())
+        .filter(|s| s.len() > 1)
+        .collect();
+    let pinned: HashMap<NodeIndex, usize> = order.iter().filter_map(|&n| compiled.graph[n].rank.map(|r| (n, r as usize))).collect();
+    if sets.is_empty() && pinned.is_empty() {
+        return;
+    }
+    for (&n, &r) in &pinned {
+        layer.insert(n, r);
+    }
+    for _ in 0..(order.len() + sets.len() + 2) {
+        let mut changed = false;
+        for &n in order {
+            if pinned.contains_key(&n) {
+                continue;
+            }
+            let need = compiled
+                .graph
+                .edges_directed(n, petgraph::Direction::Incoming)
+                .filter(|e| e.weight().constraint)
+                .filter_map(|e| layer.get(&e.source()).map(|r| r + 1))
+                .max()
+                .unwrap_or(0);
+            if layer.get(&n).is_some_and(|&r| r < need) {
+                layer.insert(n, need);
+                changed = true;
+            }
+        }
+        for s in &sets {
+            let m = s.iter().filter_map(|n| layer.get(n)).copied().max().unwrap_or(0);
+            for n in s {
+                if layer.get(n) != Some(&m) {
+                    layer.insert(*n, m);
+                    changed = true;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+}
 
 /// Which coordinate is the "cross" axis being straightened — X for a top-to-bottom
 /// layout (ranks stack in Y, siblings spread in X), Y for left-to-right (ranks stack in
@@ -286,78 +413,89 @@ fn straighten_layers(
 
     for _pass in 0..2 {
         for layer in layer_buckets.iter().skip(1) {
-            sweep_layer(
-                positions,
-                layer,
-                compiled,
-                Direction::Incoming,
-                cross_spacing,
-                axis,
-            );
+            sweep_layer(positions, layer, compiled, Some(Direction::Incoming), cross_spacing, axis);
         }
         for layer in layer_buckets[..layer_buckets.len() - 1].iter().rev() {
-            sweep_layer(
-                positions,
-                layer,
-                compiled,
-                Direction::Outgoing,
-                cross_spacing,
-                axis,
-            );
+            sweep_layer(positions, layer, compiled, Some(Direction::Outgoing), cross_spacing, axis);
+        }
+    }
+    // Then settle every rank between its neighbours on both sides: a one-way sweep
+    // leaves whichever direction ran last winning (a node pulled under its children
+    // but off its parent), and a leaf rank aligned only to its parents.
+    for _pass in 0..4 {
+        for layer in layer_buckets.iter() {
+            sweep_layer(positions, layer, compiled, None, cross_spacing, axis);
+        }
+    }
+    if std::env::var_os("RDG_DEBUG_STRAIGHTEN").is_some() {
+        for (i, layer) in layer_buckets.iter().enumerate() {
+            let row: Vec<String> = layer.iter().map(|n| format!("{}@{:.0}", compiled.graph[*n].id, cross_pos(&positions[n], axis) + cross_size(&positions[n], axis) / 2.0)).collect();
+            eprintln!("straighten rank {i}: {}", row.join("  "));
         }
     }
 }
 
+/// `direction`: which neighbours pull — predecessors, successors, or (`None`) both.
 fn sweep_layer(
     positions: &mut HashMap<NodeIndex, NodeLayout>,
     layer: &[NodeIndex],
     compiled: &CompiledGraph,
-    direction: petgraph::Direction,
+    direction: Option<petgraph::Direction>,
     cross_spacing: f64,
     axis: Axis,
 ) {
     // Desired center is computed from a read-only snapshot first — mutating `positions`
     // mid-sweep would make later same-layer lookups see already-shifted neighbors instead
     // of the rank being aligned against.
-    let desired: Vec<(NodeIndex, f64, f64)> = layer
+    let snapshot: &HashMap<NodeIndex, NodeLayout> = positions;
+    let desired: Vec<(NodeIndex, f64, f64, bool)> = layer
         .iter()
         .map(|&node| {
-            let nl = &positions[&node];
+            let nl = &snapshot[&node];
             let size = cross_size(nl, axis);
             let current_center = cross_pos(nl, axis) + size / 2.0;
-            let neighbor_centers: Vec<f64> = compiled
-                .graph
-                .edges_directed(node, direction)
-                .filter_map(|e| {
-                    let neighbor = match direction {
-                        petgraph::Direction::Incoming => e.source(),
-                        petgraph::Direction::Outgoing => e.target(),
-                    };
-                    positions
-                        .get(&neighbor)
-                        .map(|n| cross_pos(n, axis) + cross_size(n, axis) / 2.0)
+            // A back edge (reversed to break a cycle — a retry loop) barely pulls: the
+            // forward chain stays straight and the loop goes round it.
+            let dirs: &[petgraph::Direction] = match direction {
+                Some(petgraph::Direction::Incoming) => &[petgraph::Direction::Incoming],
+                Some(petgraph::Direction::Outgoing) => &[petgraph::Direction::Outgoing],
+                None => &[petgraph::Direction::Incoming, petgraph::Direction::Outgoing],
+            };
+            let neighbor_centers: Vec<(f64, f64)> = dirs
+                .iter()
+                .flat_map(|&dir| {
+                    compiled.graph.edges_directed(node, dir).filter_map(move |e| {
+                        let neighbor = match dir {
+                            petgraph::Direction::Incoming => e.source(),
+                            petgraph::Direction::Outgoing => e.target(),
+                        };
+                        let weight = if e.weight().reversed { 0.15 } else { 1.0 };
+                        snapshot.get(&neighbor).map(|n| (cross_pos(n, axis) + cross_size(n, axis) / 2.0, weight))
+                    })
                 })
+                .filter(|&(_, w)| w > 0.0)
                 .collect();
+            let total_weight: f64 = neighbor_centers.iter().map(|&(_, w)| w).sum();
             let target_center = if neighbor_centers.is_empty() {
                 current_center
             } else {
-                neighbor_centers.iter().sum::<f64>() / neighbor_centers.len() as f64
+                neighbor_centers.iter().map(|&(c, w)| c * w).sum::<f64>() / total_weight
             };
-            (node, target_center, size)
+            (node, target_center, size, !neighbor_centers.is_empty())
         })
         .collect();
 
-    // Left-to-right (or top-to-bottom) sweep in the rank's existing, crossing-minimized
-    // order: each node takes its desired position unless that would overlap the sibling
-    // already placed before it, in which case it's pushed just past that sibling.
-    let mut trailing_edge = f64::MIN;
-    for (node, target_center, size) in desired {
-        let mut new_pos = (target_center - size / 2.0).max(0.0);
-        if trailing_edge > f64::MIN {
-            new_pos = new_pos.max(trailing_edge + cross_spacing);
-        }
-        set_cross_pos(positions.get_mut(&node).unwrap(), axis, new_pos);
-        trailing_edge = new_pos + size;
+    // The rank keeps its crossing-minimised order; within it every node lands as close
+    // to its target as the spacing allows, a crowded run sharing the shortfall both
+    // ways (weighted isotonic regression — pushing only rightward from the first node
+    // let every rank creep right each pass, and the parents follow, without end).
+    let widths: Vec<f64> = desired.iter().map(|d| d.2).collect();
+    let wants: Vec<f64> = desired.iter().map(|d| d.1 - d.2 / 2.0).collect();
+    let weights: Vec<f64> = desired.iter().map(|d| if d.3 { 1.0 } else { 0.05 }).collect();
+    let gaps = vec![cross_spacing; widths.len().saturating_sub(1)];
+    let xs = crate::compound::place_in_order(&widths, &wants, &weights, &gaps, None);
+    for ((node, _, _, _), x) in desired.into_iter().zip(xs) {
+        set_cross_pos(positions.get_mut(&node).unwrap(), axis, x);
     }
 }
 

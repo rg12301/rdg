@@ -104,9 +104,11 @@ impl Markers {
             let fill = if *filled { color.as_str() } else { "none" };
             // Drawn pointing right, tip at (s, s/2); `auto-start-reverse` flips tails.
             let (vw, vh, body) = match kind.as_str() {
+                // Crow's foot: three prongs fanning out *onto* the entity (tip side), from a
+                // point one head back along the line.
                 "ermany" => (s * 1.6, s * 1.6, format!(
-                    r#"<path d="M0 0 L{a} {h} L0 {b} M{a} 0 V{b}" fill="none" stroke="{color}" stroke-width="1.2"/>"#,
-                    a = s * 1.4, h = s * 0.8, b = s * 1.6
+                    r#"<path d="M{x} {h} L{a} 0 M{x} {h} L{a} {b} M0 {h} L{a} {h}" fill="none" stroke="{color}" stroke-width="1.2"/>"#,
+                    x = s * 0.3, a = s * 1.6, h = s * 0.8, b = s * 1.6
                 )),
                 "erone" | "ermandone" => (s * 1.6, s * 1.6, format!(
                     r#"<path d="M{a} 0 V{b} M{c} 0 V{b}" fill="none" stroke="{color}" stroke-width="1.2"/>"#,
@@ -506,7 +508,7 @@ pub(crate) fn draw_node(
     }
 
     if !nd.fields.is_empty() {
-        return field_card(w, theme, nd, nl, look);
+        return field_card(w, theme, tokens, nd, nl, look);
     }
     // Vertically centred in the box (a cylinder's body, below its cap); the icon sits
     // inline before the first line, the pair centred together.
@@ -616,47 +618,64 @@ fn node_text(
     Ok(())
 }
 
-/// Table / class card body: name header, divider, one row per field.
-fn field_card(w: &mut W, theme: &Theme, nd: &NodeData, nl: &NodeLayout, look: &NodeLook) -> Result<()> {
+/// Table / class card body: name header, divider, one row per field — laid out with the
+/// same `field_*` tokens the size estimator used, so the rows fill the card exactly.
+fn field_card(w: &mut W, theme: &Theme, tokens: &DesignTokens, nd: &NodeData, nl: &NodeLayout, look: &NodeLook) -> Result<()> {
     let f = &theme.font;
     let lower = nd.node_type.to_ascii_lowercase();
+    let is_class = matches!(lower.as_str(), "class" | "interface" | "abstract_class" | "struct");
     let cx = nl.x + nl.width / 2.0;
-    let mut y = nl.y + if look.shape == "cylinder" { 2.0 * theme.node.cylinder_cap } else { 0.0 } + 16.0;
+    let (x_left, x_right) = (nl.x + tokens.field_side_pad(), nl.x + nl.width - tokens.field_side_pad());
+    let divider = |w: &mut W, y: f64| {
+        el(w, "line", &[("x1", f1(nl.x)), ("y1", f1(y)), ("x2", f1(nl.x + nl.width)), ("y2", f1(y)), ("stroke", look.stroke.clone()), ("stroke-opacity", "0.4".into())])
+    };
+    let mut y = nl.y;
     if let Some(st) = match lower.as_str() {
         "interface" => Some("«interface»"),
         "abstract_class" => Some("«abstract»"),
         _ => None,
     } {
-        text_el(w, &[("x", f1(cx)), ("y", f1(y)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_detail_size)), ("font-style", "italic".into()), ("fill", look.detail_color.clone())], st)?;
-        y += 14.0;
+        let sh = tokens.field_stereotype_height();
+        text_el(w, &[("x", f1(cx)), ("y", f1(y + sh * 0.85)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_detail_size)), ("font-style", "italic".into()), ("fill", look.detail_color.clone())], st)?;
+        y += sh;
     }
-    let mut title = vec![("x", f1(cx)), ("y", f1(y)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_title_size)), ("font-weight", "bold".into()), ("fill", look.title_color.clone())];
+    let header_h = tokens.field_header_height();
+    let mut title = vec![("x", f1(cx)), ("y", f1(y + header_h / 2.0 + f.node_title_size * 0.35)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_title_size)), ("font-weight", "bold".into()), ("fill", look.title_color.clone())];
     if lower == "abstract_class" {
         title.push(("font-style", "italic".into()));
     }
     text_el(w, &title, nd.heading())?;
-    y += 8.0;
-    el(w, "line", &[("x1", f1(nl.x)), ("y1", f1(y)), ("x2", f1(nl.x + nl.width)), ("y2", f1(y)), ("stroke", look.stroke.clone()), ("stroke-opacity", "0.4".into())])?;
-    for (i, field) in nd.fields.iter().enumerate() {
-        let fy = y + 16.0 + i as f64 * 18.0;
-        let clean = rdg_layout::strip_markdown_tokens(field);
-        let (left, right) = clean.split_once(':').unwrap_or((clean.as_str(), ""));
-        let is_pk = clean.to_ascii_uppercase().contains("[PK]");
-        let mut la = vec![("x", f1(nl.x + 12.0)), ("y", f1(fy)), ("font-family", f.code_family.clone()), ("font-size", format!("{}", f.node_detail_size))];
-        if is_pk {
-            la.push(("font-weight", "bold".into()));
-            la.push(("fill", look.stroke.clone()));
-        } else {
-            la.push(("fill", look.title_color.clone()));
+    y += header_h;
+    divider(w, y)?;
+    let cleaned: Vec<String> = nd.fields.iter().map(|f| rdg_layout::strip_markdown_tokens(f)).collect();
+    let rows: Vec<rdg_layout::FieldRow> = cleaned.iter().map(|c| rdg_layout::field_row(c)).collect();
+    let split = if is_class { rdg_layout::field_compartment_split(&rows) } else { None };
+    let row_h = tokens.field_row_height();
+    for (i, row) in rows.iter().enumerate() {
+        if split == Some(i) {
+            let dh = tokens.field_divider_height();
+            divider(w, y + dh / 2.0)?;
+            y += dh;
         }
-        text_el(w, &la, left.trim())?;
-        if !right.trim().is_empty() {
-            text_el(
-                w,
-                &[("x", f1(nl.x + nl.width - 12.0)), ("y", f1(fy)), ("text-anchor", "end".into()), ("font-family", f.code_family.clone()), ("font-size", format!("{}", f.node_detail_size)), ("fill", look.detail_color.clone())],
-                right.trim(),
-            )?;
+        let baseline = y + row_h / 2.0 + f.node_detail_size * 0.35;
+        let text = |w: &mut W, x: f64, anchor: &str, bold: bool, color: &str, s: &str| {
+            let mut a = vec![("x", f1(x)), ("y", f1(baseline)), ("text-anchor", anchor.into()), ("font-family", f.code_family.clone()), ("font-size", format!("{}", f.node_detail_size)), ("fill", color.into())];
+            if bold {
+                a.push(("font-weight", "bold".into()));
+            }
+            text_el(w, &a, s)
+        };
+        match row {
+            rdg_layout::FieldRow::Attribute { name, ty } => {
+                let is_pk = cleaned[i].to_ascii_uppercase().contains("[PK]");
+                text(w, x_left, "start", is_pk, if is_pk { &look.stroke } else { &look.title_color }, name)?;
+                if !ty.is_empty() {
+                    text(w, x_right, "end", false, &look.detail_color, ty)?;
+                }
+            }
+            rdg_layout::FieldRow::Operation(sig) => text(w, x_left, "start", false, &look.title_color, sig)?,
         }
+        y += row_h;
     }
     Ok(())
 }

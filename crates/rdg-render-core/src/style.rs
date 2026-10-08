@@ -12,7 +12,7 @@ pub const NODE_TYPES: &[&str] = &[
     "entity", "record", "queue", "broker", "bus", "function", "lambda", "faas", "decision",
     "condition", "client", "user", "browser", "start", "start_state", "initial", "initial_state",
     "end", "end_state", "final", "final_state", "choice", "branch", "cache", "redis", "memcache",
-    "class", "interface", "abstract_class", "struct", "participant", "actor", "default",
+    "class", "interface", "abstract_class", "struct", "participant", "actor", "state", "default",
 ];
 
 /// Every `edge_style` the renderers understand (aliases included).

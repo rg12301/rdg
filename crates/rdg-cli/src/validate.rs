@@ -89,6 +89,18 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
 
     // --- groups: members (nodes or nested groups), nesting --------------------------
     let group_ids: Vec<&str> = payload.groups.iter().map(|g| g.id.as_str()).collect();
+    for (i, set) in payload.same_rank.iter().enumerate() {
+        for (j, id) in set.iter().enumerate() {
+            if !node_set.contains(id.as_str()) && !group_ids.contains(&id.as_str()) {
+                push(
+                    Level::Error,
+                    format!("same_rank[{i}][{j}]"),
+                    format!("unknown node or group id `{id}`"),
+                    did_you_mean(id, node_ids.iter().chain(&group_ids).copied()),
+                );
+            }
+        }
+    }
     for (i, g) in payload.groups.iter().enumerate() {
         for (j, id) in g.nodes.iter().enumerate() {
             if !node_set.contains(id.as_str()) && !group_ids.contains(&id.as_str()) {
@@ -156,7 +168,7 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
             }
         }
         if let Some(icon) = n.icon.as_deref().filter(|d| !d.trim().is_empty()) {
-            if rdg_icons::get_icon(icon).is_none() {
+            if !rdg_icons::has_icon(icon) {
                 push(
                     Level::Warning,
                     format!("nodes[{i}].icon"),

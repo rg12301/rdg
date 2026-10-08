@@ -1,0 +1,26 @@
+title: "Library schema"
+diagram_type: erd
+nodes:
+  - {id: members, label: members, type: table, fields: ["id: UUID [PK]", "email: TEXT", "joined_at: TIMESTAMP", "tier_id: INT [FK]"]}
+  - {id: tiers, label: membership_tiers, type: table, fields: ["id: INT [PK]", "name: TEXT", "max_loans: INT"]}
+  - {id: books, label: books, type: table, fields: ["id: UUID [PK]", "isbn: TEXT", "title: TEXT", "publisher_id: UUID [FK]"]}
+  - {id: authors, label: authors, type: table, fields: ["id: UUID [PK]", "name: TEXT"]}
+  - {id: book_authors, label: book_authors, type: table, fields: ["book_id: UUID [FK]", "author_id: UUID [FK]"]}
+  - {id: publishers, label: publishers, type: table, fields: ["id: UUID [PK]", "name: TEXT", "country: TEXT"]}
+  - {id: copies, label: copies, type: table, fields: ["id: UUID [PK]", "book_id: UUID [FK]", "branch_id: UUID [FK]", "condition: TEXT"]}
+  - {id: branches, label: branches, type: table, fields: ["id: UUID [PK]", "name: TEXT", "city: TEXT"]}
+  - {id: loans, label: loans, type: table, fields: ["id: UUID [PK]", "copy_id: UUID [FK]", "member_id: UUID [FK]", "due_at: DATE", "returned_at: DATE"]}
+  - {id: fines, label: fines, type: table, fields: ["id: UUID [PK]", "loan_id: UUID [FK]", "amount: DECIMAL", "paid: BOOL"]}
+  - {id: reservations, label: reservations, type: table, fields: ["id: UUID [PK]", "book_id: UUID [FK]", "member_id: UUID [FK]", "expires_at: TIMESTAMP"]}
+edges:
+  - {from: tiers, to: members, edge_style: one_to_many, label: "has"}
+  - {from: publishers, to: books, edge_style: one_to_many, label: "publishes"}
+  - {from: books, to: book_authors, edge_style: one_to_many}
+  - {from: authors, to: book_authors, edge_style: one_to_many}
+  - {from: books, to: copies, edge_style: one_to_many, label: "printed as"}
+  - {from: branches, to: copies, edge_style: one_to_many, label: "holds"}
+  - {from: copies, to: loans, edge_style: one_to_many, label: "lent in"}
+  - {from: members, to: loans, edge_style: one_to_many, label: "borrows"}
+  - {from: loans, to: fines, edge_style: one_to_one, label: "may incur"}
+  - {from: books, to: reservations, edge_style: one_to_many}
+  - {from: members, to: reservations, edge_style: one_to_many, label: "reserves"}
