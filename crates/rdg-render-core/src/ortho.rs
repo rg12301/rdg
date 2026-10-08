@@ -44,16 +44,55 @@ type FacePins = HashMap<(NodeIndex, Side), Vec<(f64, Pt, Pt)>>;
 // Cost weights, in px-equivalents: a bend "costs" as much as 40px of extra length, a
 // crossing as much as 60px — so a route takes a modest detour to save a crossing but not
 // a lap of the canvas.
-const W_BEND: f64 = 40.0;
-const W_CROSS: f64 = 60.0;
-/// Per px of running in the same lane as another edge.
-const W_SHARE: f64 = 1.5;
+// A crossing stays dearer than a bend (Purchase 1997: crossings hurt reading most,
+// bends next), and both dearer than before so a route takes a modest detour, not a
+// lap of the canvas, to save one.
+const W_BEND: f64 = 55.0;
+const W_CROSS: f64 = 100.0;
+
+/// A router weight, overridable for tuning runs with `RDG_TUNE_<NAME>=<value>` (e.g.
+/// `RDG_TUNE_W_BEND=40`); the constants above are the shipped values.
+fn tune(name: &str, default: f64) -> f64 {
+    std::env::var(format!("RDG_TUNE_{name}")).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
+}
+
+/// The weights one search uses (see [`tune`]).
+#[derive(Clone, Copy)]
+struct Weights {
+    bend: f64,
+    cross: f64,
+    share: f64,
+    crowd: f64,
+    along_border: f64,
+    along_node: f64,
+}
+
+impl Weights {
+    fn load() -> Self {
+        Weights {
+            bend: tune("W_BEND", W_BEND),
+            cross: tune("W_CROSS", W_CROSS),
+            share: tune("W_SHARE", W_SHARE),
+            crowd: tune("W_CROWD", W_CROWD),
+            along_border: tune("W_ALONG_BORDER", W_ALONG_BORDER),
+            along_node: tune("W_ALONG_NODE", W_ALONG_NODE),
+        }
+    }
+}
+/// Per px of running in the same lane as another edge. Small: the lanes are fanned
+/// out afterwards (`nudge`), so sharing is a drawing problem the search need not
+/// detour a canvas-width to avoid — at 1.5 px/px a 300 px shared run once cost more
+/// than five bends, and routes zigzagged round the diagram to dodge each other.
+const W_SHARE: f64 = 0.8;
 /// Per px of running within a lane's width of a parallel route (a corridor filling up).
-const W_CROWD: f64 = 0.6;
+const W_CROWD: f64 = 0.15;
 /// Parallel lines closer than this are drawn as one smeared line.
 const SAME_LANE: f64 = 4.0;
 /// Per px of running along a group's dashed border.
 const W_ALONG_BORDER: f64 = 2.0;
+/// Per px of running along a node's face (just outside its clearance): the line reads
+/// as part of the box. A channel midline is the place for it.
+const W_ALONG_NODE: f64 = 0.5;
 /// A crossing within [`NEAR_BEND`] of a bend or port of either route — where a reader
 /// can't tell which line turns and which carries on.
 const W_CROSS_NEAR_BEND: f64 = 70.0;
@@ -175,6 +214,10 @@ struct Grid {
     /// (on it included) — running parallel there reads as tracing the container.
     near_vborder: Vec<bool>,
     near_hborder: Vec<bool>,
+    /// Point lies alongside a node's vertical / horizontal face, within the clearance
+    /// band plus a lane — running parallel there hugs the box.
+    near_vnode: Vec<bool>,
+    near_hnode: Vec<bool>,
 }
 
 impl Grid {
@@ -296,6 +339,7 @@ struct Router<'a> {
     clearance: f64,
     /// Minimum distance between two ports on one face.
     pitch: f64,
+    w: Weights,
 }
 
 impl Router<'_> {
@@ -305,7 +349,7 @@ impl Router<'_> {
     fn crowding(&self, i: usize, j: usize, ni: usize, nj: usize, horizontal: bool, occ: &Occupancy) -> f64 {
         let g = &self.grid;
         let lane = self.tokens.channel_pitch().max(10.0);
-        let rate = |d: f64, k: u32| k as f64 * if d < SAME_LANE { W_SHARE } else { W_CROWD };
+        let rate = |d: f64, k: u32| k as f64 * if d < SAME_LANE { self.w.share } else { self.w.crowd };
         let mut c = 0.0;
         if horizontal {
             let (a, y) = (i.min(ni), g.ys[j]);
@@ -445,17 +489,17 @@ impl Router<'_> {
                 let len = (g.xs[ni] - g.xs[i]).abs() + (g.ys[nj] - g.ys[j]).abs();
                 let mut c = len;
                 if nd != d {
-                    c += W_BEND;
+                    c += self.w.bend;
                 }
                 if let Some(&k) = shared {
-                    c += W_SHARE * len * k as f64;
+                    c += self.w.share * len * k as f64;
                 }
                 // Crowding: parallel routes on nearby grid lines within one lane width.
                 c += len * self.crowding(i, j, ni, nj, nd.horizontal(), occ);
                 // Crossing: another route passes perpendicular through the point we reach.
                 let perp = if nd.horizontal() { occ.v_pass.get(&nid) } else { occ.h_pass.get(&nid) };
                 if let Some(&k) = perp.filter(|&&k| k > 0) {
-                    c += W_CROSS * k as f64;
+                    c += self.w.cross * k as f64;
                     // …worse when it lands right at a bend or port (theirs), or just
                     // after our own bend.
                     if self.bend_near(ni, nj, occ) || (nd != d && len < NEAR_BEND) {
@@ -475,14 +519,20 @@ impl Router<'_> {
                         c += if g.vborder_groups[nid] & !own_groups != 0 { W_FOREIGN_BORDER } else { W_BORDER_CROSS };
                     }
                     if g.near_hborder[nid] && g.near_hborder[g.id(i, j)] {
-                        c += W_ALONG_BORDER * len;
+                        c += self.w.along_border * len;
+                    }
+                    if g.near_hnode[nid] && g.near_hnode[g.id(i, j)] {
+                        c += self.w.along_node * len;
                     }
                 } else {
                     if g.on_hborder[nid] {
                         c += if g.hborder_groups[nid] & !own_groups != 0 { W_FOREIGN_BORDER } else { W_BORDER_CROSS };
                     }
                     if g.near_vborder[nid] && g.near_vborder[g.id(i, j)] {
-                        c += W_ALONG_BORDER * len;
+                        c += self.w.along_border * len;
+                    }
+                    if g.near_vnode[nid] && g.near_vnode[g.id(i, j)] {
+                        c += self.w.along_node * len;
                     }
                 }
                 let ns = state(ni, nj, nd);
@@ -786,7 +836,11 @@ pub fn route_orthogonal(
     let mut near_hborder = vec![false; nx * ny];
     let mut vborder_groups = vec![0u64; nx * ny];
     let mut hborder_groups = vec![0u64; nx * ny];
-    let border_lane = tokens.channel_pitch().max(10.0);
+    let mut near_vnode = vec![false; nx * ny];
+    let mut near_hnode = vec![false; nx * ny];
+    let border_lane = tokens.channel_pitch().max(10.0) * tune("BORDER_LANES", 1.25);
+    let node_zone = clearance + tokens.channel_pitch() * tune("NODE_ZONE", 0.75);
+    let node_rects: Vec<Rect> = node_ids.iter().map(|n| Rect::of(&layout.positions[n])).collect();
     for j in 0..ny {
         for i in 0..nx {
             let id = j * nx + i;
@@ -810,6 +864,12 @@ pub fn route_orthogonal(
             }
             on_vborder[id] = vborder_groups[id] != 0;
             on_hborder[id] = hborder_groups[id] != 0;
+            near_vnode[id] = node_rects.iter().any(|r| {
+                ((p.0 < r.x0 && p.0 >= r.x0 - node_zone) || (p.0 > r.x1 && p.0 <= r.x1 + node_zone)) && p.1 >= r.y0 && p.1 <= r.y1
+            });
+            near_hnode[id] = node_rects.iter().any(|r| {
+                ((p.1 < r.y0 && p.1 >= r.y0 - node_zone) || (p.1 > r.y1 && p.1 <= r.y1 + node_zone)) && p.0 >= r.x0 && p.0 <= r.x1
+            });
             near_vborder[id] = groups.iter().any(|g| {
                 ((p.0 - g.x0).abs() < border_lane || (p.0 - g.x1).abs() < border_lane) && p.1 >= g.y0 && p.1 <= g.y1
             });
@@ -818,8 +878,8 @@ pub fn route_orthogonal(
             });
         }
     }
-    let grid = Grid { xs, ys, blocked, hblock, vblock, on_vborder, on_hborder, vborder_groups, hborder_groups, near_vborder, near_hborder };
-    let router = Router { grid, tokens, clearance, pitch };
+    let grid = Grid { xs, ys, blocked, hblock, vblock, on_vborder, on_hborder, vborder_groups, hborder_groups, near_vborder, near_hborder, near_vnode, near_hnode };
+    let router = Router { grid, tokens, clearance, pitch, w: Weights::load() };
 
     let pins_for = |n: NodeIndex, exit: bool| -> Vec<Pin> {
         let nl = &layout.positions[&n];
@@ -929,6 +989,7 @@ pub fn route_orthogonal(
         })
         .collect();
     nudge(&mut paths, &nudge_obstacles, &borders, &router, pitch);
+    simplify_routes(&mut paths, &nudge_obstacles, &borders, &router);
     if debug {
         for ((e, after, _, _), b) in paths.iter().zip(&before) {
             let (s, d) = compiled.graph.edge_endpoints(*e).unwrap();
@@ -989,6 +1050,197 @@ fn simplify(pts: Vec<Pt>) -> Vec<Pt> {
         out.push(p);
     }
     out
+}
+
+/// Replaces every route by the simplest alternative between its two ports — a straight
+/// line, an L, a Z (the middle leg on any grid line) or a U — whenever that alternative
+/// is clear of nodes, does not lie in another route's lane, crosses no more routes and
+/// no more group borders than the route it replaces. The search weighs a dozen things
+/// per grid step and the lane nudge moves legs afterwards, so a four-bend route often
+/// sits where a two-bend one would do; a reader judges the final line by its bends.
+fn simplify_routes(paths: &mut [(EdgeIndex, Vec<Pt>, Pin, Pin)], obstacles: &[Rect], borders: &[(Pt, Pt)], router: &Router) {
+    // `skip_a` / `skip_b`: leave that much of the leg untested at its start / end — a
+    // port leg begins on its own node's face, inside the node's inflated obstacle.
+    let clear = |a: Pt, b: Pt, skip_a: f64, skip_b: f64| {
+        let len = (a.0 - b.0).abs() + (a.1 - b.1).abs();
+        if len <= skip_a + skip_b {
+            return true;
+        }
+        let n = ((len - skip_a - skip_b) / 6.0).ceil().clamp(2.0, 400.0) as usize;
+        (0..=n).all(|k| {
+            let t = (skip_a + (len - skip_a - skip_b) * k as f64 / n as f64) / len;
+            let p = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+            !obstacles.iter().any(|o| o.strictly_contains(p))
+        })
+    };
+    let border_crossings = |pts: &[Pt]| -> usize {
+        let mut n = 0;
+        for w in pts.windows(2) {
+            for &(a, b) in borders {
+                n += crate::polish::crossing_points(&[w[0], w[1]], &[a, b]).len();
+            }
+        }
+        n
+    };
+    // Two collinear legs closer than a lane, overlapping along their length.
+    let shares_lane = |pts: &[Pt], others: &[&Vec<Pt>]| -> bool {
+        for w in pts.windows(2) {
+            let horiz = (w[0].1 - w[1].1).abs() < 0.01;
+            let (at, lo, hi) = if horiz { (w[0].1, w[0].0.min(w[1].0), w[0].0.max(w[1].0)) } else { (w[0].0, w[0].1.min(w[1].1), w[0].1.max(w[1].1)) };
+            for o in others {
+                for v in o.windows(2) {
+                    if ((v[0].1 - v[1].1).abs() < 0.01) != horiz {
+                        continue;
+                    }
+                    let (oat, olo, ohi) = if horiz { (v[0].1, v[0].0.min(v[1].0), v[0].0.max(v[1].0)) } else { (v[0].0, v[0].1.min(v[1].1), v[0].1.max(v[1].1)) };
+                    if (oat - at).abs() < SAME_LANE && hi.min(ohi) - lo.max(olo) > 2.0 {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    };
+    let leg_ok = |a: Pt, b: Pt, d: Dir| {
+        let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+        let len = dx.abs() + dy.abs();
+        if len < router.clearance - 0.5 {
+            return false;
+        }
+        match d {
+            Dir::Right => dy.abs() < 0.01 && dx > 0.0,
+            Dir::Left => dy.abs() < 0.01 && dx < 0.0,
+            Dir::Down => dx.abs() < 0.01 && dy > 0.0,
+            Dir::Up => dx.abs() < 0.01 && dy < 0.0,
+        }
+    };
+    let bends_of = |pts: &[Pt]| pts.len().saturating_sub(2);
+    let xs = &router.grid.xs;
+    let ys = &router.grid.ys;
+
+    for pi in 0..paths.len() {
+        let (p0, pn) = (paths[pi].1[0], *paths[pi].1.last().expect("a route has two ends"));
+        let (out_dir, in_dir) = (Dir::out_of(paths[pi].2.side), Dir::out_of(paths[pi].3.side).opposite());
+        let cur_bends = bends_of(&paths[pi].1);
+        if cur_bends < 1 {
+            continue;
+        }
+        let others: Vec<&Vec<Pt>> = paths.iter().enumerate().filter(|(qi, _)| *qi != pi).map(|(_, q)| &q.1).collect();
+        // Crossings, and crossings within a few px of a bend or an end of either route
+        // (where a reader cannot tell which line turns): neither may grow.
+        let crossings_with = |pts: &[Pt]| -> (usize, usize) {
+            let (mut all, mut near) = (0, 0);
+            for o in &others {
+                for x in crate::polish::crossing_points(pts, o) {
+                    all += 1;
+                    if pts.iter().chain(o.iter()).any(|c| (c.0 - x.0).abs() + (c.1 - x.1).abs() < NEAR_BEND) {
+                        near += 1;
+                    }
+                }
+            }
+            (all, near)
+        };
+        let (cur_cross, cur_near) = crossings_with(&paths[pi].1);
+        let cur_border = border_crossings(&paths[pi].1);
+        let cur_len: f64 = paths[pi].1.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum();
+
+        let mut candidates: Vec<Vec<Pt>> = Vec::new();
+        // Straight.
+        candidates.push(vec![p0, pn]);
+        // L: one corner.
+        candidates.push(vec![p0, (p0.0, pn.1), pn]);
+        candidates.push(vec![p0, (pn.0, p0.1), pn]);
+        // Z / U: the middle leg on a grid line (faces parallel). Three bends: the two
+        // middle legs on grid lines (faces at right angles, or a detour round a box) —
+        // only grid lines near the route's own extent, and only for a route with more
+        // bends than that.
+        let horizontal_out = matches!(out_dir, Dir::Left | Dir::Right);
+        let horizontal_in = matches!(in_dir, Dir::Left | Dir::Right);
+        let (lo_x, hi_x) = (p0.0.min(pn.0) - 220.0, p0.0.max(pn.0) + 220.0);
+        let (lo_y, hi_y) = (p0.1.min(pn.1) - 220.0, p0.1.max(pn.1) + 220.0);
+        let near_xs: Vec<f64> = xs.iter().copied().filter(|x| (lo_x..=hi_x).contains(x)).collect();
+        let near_ys: Vec<f64> = ys.iter().copied().filter(|y| (lo_y..=hi_y).contains(y)).collect();
+        if horizontal_out == horizontal_in {
+            if horizontal_out {
+                for &x in &near_xs {
+                    candidates.push(vec![p0, (x, p0.1), (x, pn.1), pn]);
+                }
+            } else {
+                for &y in &near_ys {
+                    candidates.push(vec![p0, (p0.0, y), (pn.0, y), pn]);
+                }
+            }
+        }
+        if cur_bends >= 4 {
+            if horizontal_out {
+                for &x in &near_xs {
+                    for &y in &near_ys {
+                        candidates.push(vec![p0, (x, p0.1), (x, y), (pn.0, y), pn]);
+                    }
+                }
+            } else {
+                for &y in &near_ys {
+                    for &x in &near_xs {
+                        candidates.push(vec![p0, (p0.0, y), (x, y), (x, pn.1), pn]);
+                    }
+                }
+            }
+        }
+        let mut best: Option<(usize, usize, f64, Vec<Pt>)> = None;
+        // Why candidates were dropped: bends, legs, jog, blocked, lane, crossings, length.
+        let mut rejected = [0usize; 7];
+        let n_cand = candidates.len();
+        for cand in candidates {
+            let cand = simplify(cand);
+            if cand.len() < 2 {
+                continue;
+            }
+            let b = bends_of(&cand);
+            if b >= cur_bends {
+                rejected[0] += 1;
+                continue;
+            }
+            if !leg_ok(cand[0], cand[1], out_dir) || !leg_ok(cand[cand.len() - 1], cand[cand.len() - 2], in_dir.opposite()) {
+                rejected[1] += 1;
+                continue;
+            }
+            // Interior legs must be at least a stub long (a tiny step is a jog).
+            if cand.windows(2).skip(1).take(cand.len().saturating_sub(3)).any(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs() < router.clearance) {
+                rejected[2] += 1;
+                continue;
+            }
+            let stub = router.clearance;
+            let last = cand.len() - 2;
+            if !cand.windows(2).enumerate().all(|(k, w)| clear(w[0], w[1], if k == 0 { stub } else { 0.0 }, if k == last { stub } else { 0.0 })) {
+                rejected[3] += 1;
+                continue;
+            }
+            if shares_lane(&cand, &others) {
+                rejected[4] += 1;
+                continue;
+            }
+            let (c, near) = crossings_with(&cand);
+            if c > cur_cross || near > cur_near || border_crossings(&cand) > cur_border {
+                rejected[5] += 1;
+                continue;
+            }
+            let len: f64 = cand.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum();
+            if len > cur_len * 1.15 + 40.0 {
+                rejected[6] += 1;
+                continue;
+            }
+            let key = (b, c, len);
+            if best.as_ref().is_none_or(|(bb, bc, bl, _)| (key.0, key.1) < (*bb, *bc) || ((key.0, key.1) == (*bb, *bc) && key.2 < *bl - 1e-6)) {
+                best = Some((b, c, len, cand));
+            }
+        }
+        if std::env::var_os("RDG_DEBUG_ORTHO").is_some() {
+            eprintln!("simplify: {cur_bends} bends, {n_cand} candidates, rejected [bends,legs,jog,blocked,lane,cross,len]={rejected:?}, kept={}", best.as_ref().map_or("none".to_string(), |(b, _, _, _)| b.to_string()));
+        }
+        if let Some((_, _, _, cand)) = best {
+            paths[pi].1 = cand;
+        }
+    }
 }
 
 /// One interior segment of a routed path that may slide perpendicular to itself.
@@ -1327,6 +1579,41 @@ mod tests {
         let p = plans.values().next().unwrap();
         assert_eq!((p.src_side, p.dst_side), (Side::Bottom, Side::Top));
         assert!(p.waypoints.is_empty(), "{p:?}");
+    }
+
+    #[test]
+    fn a_route_round_nothing_is_simplified_to_its_fewest_bends() {
+        // Three nodes in a column, nothing in the way: a -> c must be straight, and a
+        // detour handed to the simplifier (as the search might leave after rip-up)
+        // collapses to the straight line too.
+        let (c, l) = layout_of(&[("a", 100.0, 100.0), ("c", 100.0, 500.0)], &[("a", "c")]);
+        let tokens = DesignTokens::default();
+        let plans = route_orthogonal(&c, &l, &tokens);
+        assert!(plans.values().next().unwrap().waypoints.is_empty());
+        let (e, s, d) = (c.edge_order[0], c.node_map["a"], c.node_map["c"]);
+        let src = Pin { node: s, side: Side::Bottom, port: (160.0, 160.0), grid: (0, 0), cost: 0.0 };
+        let dst = Pin { node: d, side: Side::Top, port: (160.0, 500.0), grid: (0, 0), cost: 0.0 };
+        let detour = vec![(160.0, 160.0), (160.0, 250.0), (260.0, 250.0), (260.0, 400.0), (160.0, 400.0), (160.0, 500.0)];
+        let mut paths = vec![(e, detour, src, dst)];
+        let obstacles: Vec<Rect> = l.positions.values().map(|nl| Rect::of(nl).inflate(18.0)).collect();
+        let grid = Grid {
+            xs: vec![60.0, 160.0, 260.0],
+            ys: vec![100.0, 160.0, 250.0, 330.0, 400.0, 500.0],
+            blocked: vec![false; 18],
+            hblock: vec![false; 18],
+            vblock: vec![false; 18],
+            on_vborder: vec![false; 18],
+            on_hborder: vec![false; 18],
+            vborder_groups: vec![0; 18],
+            hborder_groups: vec![0; 18],
+            near_vborder: vec![false; 18],
+            near_hborder: vec![false; 18],
+            near_vnode: vec![false; 18],
+            near_hnode: vec![false; 18],
+        };
+        let router = Router { grid, tokens: &tokens, clearance: tokens.stub_clearance(), pitch: 16.0, w: Weights::load() };
+        simplify_routes(&mut paths, &obstacles, &[], &router);
+        assert_eq!(paths[0].1, vec![(160.0, 160.0), (160.0, 500.0)], "{:?}", paths[0].1);
     }
 
     #[test]

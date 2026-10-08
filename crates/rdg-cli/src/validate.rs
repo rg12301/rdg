@@ -353,6 +353,15 @@ pub fn validate_against_theme(payload: &DiagramPayload, theme: &rdg_render_core:
         }
     }
     for (i, n) in payload.nodes.iter().enumerate() {
+        const SHAPES: [&str; 7] = ["card", "rounded", "cylinder", "ellipse", "diamond", "tile", "icon"];
+        if let Some(s) = n.shape.as_deref().filter(|s| !SHAPES.contains(&s.to_ascii_lowercase().as_str())) {
+            out.push(Diagnostic {
+                level: Level::Warning,
+                path: format!("nodes[{i}].shape"),
+                message: format!("unknown shape `{s}`; the theme's shape is used"),
+                hint: did_you_mean(s, SHAPES.iter().copied()),
+            });
+        }
         if let Some(d) = n.display.as_deref().filter(|d| !["tile", "card", "icon"].contains(&d.to_ascii_lowercase().as_str())) {
             out.push(Diagnostic {
                 level: Level::Warning,

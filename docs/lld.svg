@@ -20,7 +20,7 @@
   <path d="M 429.0 1177.0 L 429.0 1321.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 429.0 1391.0 L 429.0 1447.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 429.0 1517.0 L 429.0 1573.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
-  <path d="M 514.0 1633.0 L 630.0 1633.0 Q 644.0 1633.0 644.0 1647.0 L 644.0 1930.0 Q 644.0 1944.0 630.0 1944.0 L 509.0 1944.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 514.0 1633.0 L 643.0 1633.0 Q 657.0 1633.0 657.0 1647.0 L 657.0 1930.0 Q 657.0 1944.0 643.0 1944.0 L 509.0 1944.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 429.0 1877.0 L 429.0 1933.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 429.0 2003.0 L 429.0 2059.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 367.0 2225.6 L 367.0 2319.0 Q 367.0 2333.0 353.0 2333.0 L 315.0 2333.0 Q 301.0 2333.0 301.0 2347.0 L 301.0 2413.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -194,8 +194,8 @@
   <text x="472.0" y="1422.5" text-anchor="middle" font-size="10" fill="#7c3aed">ranked ranks</text>
   <rect x="433.0" y="1537.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="457.0" y="1548.5" text-anchor="middle" font-size="10" fill="#7c3aed">2D grid</text>
-  <rect x="543.5" y="1924.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="576.5" y="1935.8" text-anchor="middle" font-size="10" fill="#7c3aed">NodeLayout</text>
+  <rect x="550.0" y="1924.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="583.0" y="1935.8" text-anchor="middle" font-size="10" fill="#7c3aed">NodeLayout</text>
   <rect x="433.0" y="1897.2" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="469.0" y="1908.5" text-anchor="middle" font-size="10" fill="#7c3aed">icon badges</text>
   <rect x="433.0" y="2023.2" width="96.0" height="15.5" rx="2" fill="#f7f8fa"/>

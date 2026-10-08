@@ -85,6 +85,13 @@ pub struct DiagramPayload {
     #[serde(default)]
     pub numbered: Option<bool>,
 
+    /// Custom icons: name → an SVG file path (relative to the YAML file) or inline
+    /// `<svg …>` markup. A name here can then be used anywhere an icon key can
+    /// (`icon:`, `db_type:`, a group's `icon:`). A node's `icon:` ending in `.svg` is
+    /// loaded as a file directly.
+    #[serde(default, alias = "custom_icons")]
+    pub icons: HashMap<String, String>,
+
     /// Layout hint: lists of node or group ids that share a rank — drawn side by side
     /// on one tier, e.g. `same_rank: [[primary, replica], [api, worker]]`.
     #[serde(default, alias = "align", alias = "same_tier", alias = "same_layer")]
@@ -535,6 +542,24 @@ impl DiagramPayload {
         if merged.color.is_none() {
             merged.color = preset.color.clone();
         }
+        if merged.fill.is_none() {
+            merged.fill = preset.fill.clone();
+        }
+        if merged.text_color.is_none() {
+            merged.text_color = preset.text_color.clone();
+        }
+        if merged.font.is_none() {
+            merged.font = preset.font.clone();
+        }
+        if merged.font_size.is_none() {
+            merged.font_size = preset.font_size;
+        }
+        if merged.stroke_width.is_none() {
+            merged.stroke_width = preset.stroke_width;
+        }
+        if merged.shape.is_none() {
+            merged.shape = preset.shape.clone();
+        }
         if merged.technology.is_none() {
             merged.technology = preset.technology.clone();
         }
@@ -575,6 +600,15 @@ impl DiagramPayload {
         let Some(preset) = self.edge_styles.get(class) else {
             return merged;
         };
+        if merged.label_color.is_none() {
+            merged.label_color = preset.label_color.clone();
+        }
+        if merged.font.is_none() {
+            merged.font = preset.font.clone();
+        }
+        if merged.font_size.is_none() {
+            merged.font_size = preset.font_size;
+        }
         if merged.edge_style.is_none() {
             merged.edge_style = preset.edge_style.clone();
         }
@@ -623,6 +657,7 @@ impl Default for DiagramPayload {
             canvas: None,
             spacing: None,
             numbered: None,
+            icons: HashMap::new(),
             same_rank: Vec::new(),
             legend: None,
             node_styles: HashMap::new(),
@@ -690,7 +725,7 @@ pub struct GroupDef {
     pub label: String,
 
     /// Optional accent color for container background/border (e.g. `#0284c7`).
-    #[serde(default, alias = "border", alias = "fill", alias = "accent")]
+    #[serde(default, alias = "border", alias = "accent")]
     pub color: Option<String>,
 
     /// Members: node ids, and ids of groups nested inside this one.
@@ -718,6 +753,25 @@ pub struct GroupDef {
     /// Layout hint: pin the group to this tier (0 = the first along the flow).
     #[serde(default, alias = "tier", alias = "layer")]
     pub rank: Option<u32>,
+
+    /// Fill colour of the container (`#rrggbb`, `#rrggbbaa` or `@category`).
+    #[serde(default, alias = "background")]
+    pub fill: Option<String>,
+    /// Title text colour.
+    #[serde(default, alias = "font_color")]
+    pub text_color: Option<String>,
+    /// Title font family.
+    #[serde(default, alias = "font_family")]
+    pub font: Option<String>,
+    /// Title font size in px.
+    #[serde(default)]
+    pub font_size: Option<f64>,
+    /// Border width in px.
+    #[serde(default, alias = "border_width")]
+    pub stroke_width: Option<f64>,
+    /// Border pattern: `solid`, `dashed` or `dotted`.
+    #[serde(default, alias = "border_style")]
+    pub line_style: Option<String>,
 }
 
 impl GroupDef {
@@ -955,6 +1009,18 @@ impl DiagramPayload {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NodeStyleOverride {
+    #[serde(default, alias = "background")]
+    pub fill: Option<String>,
+    #[serde(default, alias = "font_color")]
+    pub text_color: Option<String>,
+    #[serde(default, alias = "font_family")]
+    pub font: Option<String>,
+    #[serde(default)]
+    pub font_size: Option<f64>,
+    #[serde(default, alias = "border_width")]
+    pub stroke_width: Option<f64>,
+    #[serde(default)]
+    pub shape: Option<String>,
     #[serde(default, alias = "colour", alias = "stroke")]
     pub color: Option<String>,
     #[serde(default, alias = "tech", alias = "stack", alias = "framework")]
@@ -981,6 +1047,12 @@ pub struct NodeStyleOverride {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EdgeStyleOverride {
+    #[serde(default, alias = "font_color")]
+    pub label_color: Option<String>,
+    #[serde(default, alias = "font_family")]
+    pub font: Option<String>,
+    #[serde(default)]
+    pub font_size: Option<f64>,
     #[serde(default, alias = "style", alias = "type")]
     pub edge_style: Option<String>,
     #[serde(default, alias = "colour", alias = "stroke")]
@@ -1032,7 +1104,6 @@ pub struct NodeDef {
         rename = "type",
         alias = "node_type",
         alias = "kind",
-        alias = "shape",
         default = "default_node_type"
     )]
     pub node_type: String,
@@ -1114,6 +1185,28 @@ pub struct NodeDef {
     /// Nodes it feeds are pushed below it; nothing pushes it.
     #[serde(default, alias = "tier", alias = "layer")]
     pub rank: Option<u32>,
+
+    /// Fill colour of the shape (`#rrggbb`, `#rrggbbaa`, or `@category`), overriding
+    /// the category tint. Appearance overrides exist for the odd component that must
+    /// stand out; colour normally means category (see `rdg --guide nodes`).
+    #[serde(default, alias = "background")]
+    pub fill: Option<String>,
+    /// Colour of the title and detail text.
+    #[serde(default, alias = "font_color")]
+    pub text_color: Option<String>,
+    /// Font family for this node's text (e.g. `Inter`, `monospace`).
+    #[serde(default, alias = "font_family")]
+    pub font: Option<String>,
+    /// Title font size in px (detail lines scale with it; the box is sized to fit).
+    #[serde(default)]
+    pub font_size: Option<f64>,
+    /// Border width in px.
+    #[serde(default, alias = "border_width")]
+    pub stroke_width: Option<f64>,
+    /// Shape: `card`, `rounded`, `cylinder`, `ellipse`, `diamond`, `tile` or `icon`
+    /// (the theme's choice by type otherwise).
+    #[serde(default)]
+    pub shape: Option<String>,
 }
 
 impl Default for NodeDef {
@@ -1141,6 +1234,12 @@ impl Default for NodeDef {
             display: None,
             link: None,
             rank: None,
+            fill: None,
+            text_color: None,
+            font: None,
+            font_size: None,
+            stroke_width: None,
+            shape: None,
         }
     }
 }
@@ -1386,6 +1485,16 @@ pub struct EdgeDef {
     #[serde(default, alias = "ranked", alias = "ranks")]
     pub constraint: Option<bool>,
 
+    /// Colour of the label text (default: the line's colour, or the theme's).
+    #[serde(default, alias = "font_color")]
+    pub label_color: Option<String>,
+    /// Font family of the label.
+    #[serde(default, alias = "font_family")]
+    pub font: Option<String>,
+    /// Label font size in px.
+    #[serde(default)]
+    pub font_size: Option<f64>,
+
     /// Optional named style preset to inherit from — see [`DiagramPayload::edge_styles`].
     #[serde(default, alias = "preset")]
     pub class: Option<String>,
@@ -1593,6 +1702,11 @@ const JSON_SCHEMA: &str = r##"{
       "default": false,
       "description": "Number edges 1, 2, 3... in declaration order (or per-edge `step`) so a reader can trace the flow"
     },
+    "icons": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Custom icons: name → SVG file path (relative to the YAML) or inline <svg> markup, usable wherever an icon key is"
+    },
     "same_rank": {
       "type": "array",
       "items": { "type": "array", "items": { "type": "string" } },
@@ -1661,6 +1775,12 @@ const JSON_SCHEMA: &str = r##"{
           "label": { "type": "string", "description": "Group title banner" },
           "parent": { "type": "string", "description": "Id of the group this one is drawn inside (same as listing this id in the parent's nodes)" },
           "rank": { "type": "integer", "minimum": 0, "description": "Layout hint: pin the group to this tier (0 = first along the flow)" },
+          "fill": { "type": "string", "description": "Container fill colour" },
+          "text_color": { "type": "string", "description": "Title colour" },
+          "font": { "type": "string", "description": "Title font family" },
+          "font_size": { "type": "number", "description": "Title font size in px" },
+          "stroke_width": { "type": "number", "description": "Border width in px" },
+          "line_style": { "type": "string", "enum": ["solid", "dashed", "dotted"], "description": "Border pattern" },
           "color": { "type": "string", "description": "Border / accent hex color" },
           "category": { "type": "string", "description": "Semantic category (colour) of the container" },
           "nodes": {
@@ -1712,6 +1832,12 @@ const JSON_SCHEMA: &str = r##"{
           "style_extra": { "type": "string", "description": "Raw draw.io style fragment appended verbatim (draw.io only)" },
           "link": { "type": "string", "description": "URL making the rendered shape clickable (draw.io only)" },
           "rank": { "type": "integer", "minimum": 0, "description": "Layout hint: pin the node to this rank (0 = first along the flow)" },
+          "fill": { "type": "string", "description": "Fill colour (#rrggbb, #rrggbbaa or @category)" },
+          "text_color": { "type": "string", "description": "Title and detail text colour" },
+          "font": { "type": "string", "description": "Font family" },
+          "font_size": { "type": "number", "description": "Title font size in px (the box is sized to fit)" },
+          "stroke_width": { "type": "number", "description": "Border width in px" },
+          "shape": { "type": "string", "enum": ["card", "rounded", "cylinder", "ellipse", "diamond", "tile", "icon"], "description": "Shape override" },
           "category": { "type": "string", "description": "Semantic category (colour): frontend, backend, database, messagebus, cloud, security, external, neutral" },
           "display": { "type": "string", "enum": ["tile", "card", "icon"], "description": "Draw as a category-coloured tile with the caption below, as a box with the text inside, or as its enlarged logo" },
           "fields": {
@@ -1746,6 +1872,9 @@ const JSON_SCHEMA: &str = r##"{
           },
           "bidirectional": { "type": "boolean", "description": "Render arrows on both ends" },
           "constraint": { "type": "boolean", "default": true, "description": "Layout hint: false keeps this edge from pushing its target to a later rank" },
+          "label_color": { "type": "string", "description": "Label text colour" },
+          "font": { "type": "string", "description": "Label font family" },
+          "font_size": { "type": "number", "description": "Label font size in px" },
           "step": {
             "type": ["integer", "number", "string"],
             "pattern": "^[0-9]+[0-9A-Za-z.]{0,5}$",
@@ -1854,6 +1983,23 @@ edges:
     }
 
     #[test]
+    fn test_appearance_overrides_and_presets_merge() {
+        let p = DiagramPayload::from_yaml(
+            "icons: {acme: ./acme.svg}\nnode_styles: {legacy: {fill: '#fef3c7', text_color: '#78350f', font: Georgia, font_size: 15, stroke_width: 2, shape: rounded}}\n\
+             groups: [{id: g, label: G, nodes: [a], fill: '#eef2ff', font_size: 14, line_style: solid, text_color: '#111'}]\n\
+             nodes: [{id: a, class: legacy}, {id: b, fill: '@backend', shape: tile}]\n\
+             edges: [{from: a, to: b, label_color: '#dc2626', font: Georgia, font_size: 12}]\n",
+        )
+        .unwrap();
+        assert_eq!(p.icons.get("acme").map(String::as_str), Some("./acme.svg"));
+        let a = p.effective_node(&p.nodes[0]);
+        assert_eq!((a.fill.as_deref(), a.font.as_deref(), a.font_size, a.stroke_width, a.shape.as_deref()), (Some("#fef3c7"), Some("Georgia"), Some(15.0), Some(2.0), Some("rounded")));
+        assert_eq!(p.nodes[1].fill.as_deref(), Some("@backend"));
+        assert_eq!((p.groups[0].fill.as_deref(), p.groups[0].font_size, p.groups[0].line_style.as_deref()), (Some("#eef2ff"), Some(14.0), Some("solid")));
+        assert_eq!((p.edges[0].label_color.as_deref(), p.edges[0].font_size), (Some("#dc2626"), Some(12.0)));
+    }
+
+    #[test]
     fn test_layout_hint_fields_parse() {
         let p = DiagramPayload::from_yaml("same_rank: [[a, g]]\ngroups: [{id: g, label: G, nodes: [b], tier: 2}]\nnodes: [{id: a, rank: 1}, {id: b}]\nedges: [{from: a, to: b, constraint: false}]\n").unwrap();
         assert_eq!(p.nodes[0].rank, Some(1));
@@ -1939,7 +2085,7 @@ nodes:
   - id: n1
     title: "API Proxy"
     subtitle: "Kong"
-    shape: proxy
+    kind: proxy
     description: "Routes external traffic"
   - id: n2
     label: "Main Database"

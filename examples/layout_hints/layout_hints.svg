@@ -5,7 +5,7 @@
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="47.0" text-anchor="start" font-size="18" font-weight="bold" fill="#111827">Hints: same_rank, rank, constraint</text>
   <path d="M 282.0 154.0 L 282.0 231.6 Q 282.0 245.0 268.6 245.0 L 234.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 184.0 285.0 L 130.0 285.0 Q 116.0 285.0 116.0 299.0 L 116.0 540.7" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 184.0 285.0 L 112.0 285.0 Q 98.0 285.0 98.0 299.0 L 98.0 540.1" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 154.0 579.0 L 204.0 579.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 209.0 330.0 L 209.0 416.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 149.0 154.0 L 149.0 235.2 Q 149.0 245.0 158.8 245.0 L 184.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="2 3" marker-end="url(#marker-arrow-0)"/>

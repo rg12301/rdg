@@ -1,0 +1,20 @@
+title: "Custom icons and per-component styling"
+icons:
+  acme: |
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#f59e0b"/><path d="M9 20l7-10 7 10z" fill="#fff"/></svg>
+  ledger: ./ledger.svg
+node_styles:
+  legacy: {fill: "#fef3c7", color: "#b45309", text_color: "#78350f", font: "Georgia, serif"}
+nodes:
+  - {id: web, title: "Storefront", type: client, icon: acme}
+  - {id: api, title: "orders-api", type: service, language: go, font_size: 15}
+  - {id: old, title: "Mainframe bridge", subtitle: "COBOL · 1987", type: service, class: legacy, shape: rounded}
+  - {id: db, title: "ledger", type: database, db_type: ledger}
+  - {id: q, title: "events", type: queue, db_type: kafka, display: card, stroke_width: 3}
+groups:
+  - {id: core, label: "Core (custom look)", nodes: [api, old], fill: "#eef2ff", color: "#4338ca", font: "Georgia, serif", font_size: 14, line_style: solid}
+edges:
+  - {from: web, to: api, label: "HTTPS", label_color: "#dc2626", font_size: 12}
+  - {from: api, to: old, label: "SOAP", font: "Georgia, serif"}
+  - {from: api, to: db, edge_style: data}
+  - {from: api, to: q, edge_style: async}

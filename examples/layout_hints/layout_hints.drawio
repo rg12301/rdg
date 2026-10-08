@@ -66,10 +66,10 @@
         <mxCell id="step_e_app_primary" value="2" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
           <mxGeometry x="153" y="262" width="18" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_app_primary" value="" style="exitX=0.15278;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.70769;entryY=0.01033;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="app" target="primary" parent="1">
+        <mxCell id="e_app_primary" value="" style="exitX=0.15278;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.56923;entryY=0.00110;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="app" target="primary" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="116.0" y="285.0"/>
+              <mxPoint x="98.0" y="285.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

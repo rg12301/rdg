@@ -236,6 +236,11 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
         "YAML payload does not match the rdg schema — see `rdg --help` or `rdg --guide schema`",
     )?;
 
+    // --- 2a. Custom icons: the `icons:` map, plus any `icon: *.svg` on a node or group,
+    // registered before validation so `--check` accepts them.
+    let base_dir = cli.input.as_deref().or(cli.input_pos.as_deref()).filter(|p| *p != "-").and_then(|p| std::path::Path::new(p).parent().map(std::path::Path::to_path_buf));
+    load_custom_icons(&payload, base_dir.as_deref())?;
+
     // --- 2b. Semantic checks: report every problem at once, fail on errors ---------
     let diagnostics = validate::validate(&payload);
     for d in &diagnostics {
@@ -390,7 +395,7 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
         let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
         let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
         eprintln!(
-            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={}  [arrow: {}; pitch: {}]",
+            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={} bends={} len={:.0}  [arrow: {}; pitch: {}]",
             fmt(m.min_arrow_len),
             fmt(m.min_node_gap),
             fmt(m.min_port_pitch),
@@ -398,6 +403,8 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
             m.crossings,
             m.crossings_near_bend,
             m.border_hugs,
+            m.bends,
+            m.total_len,
             m.min_arrow_edge.as_deref().unwrap_or("-"),
             m.min_pitch_face.as_deref().unwrap_or("-")
         );
@@ -446,6 +453,32 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
 /// The theme to render with. A theme *file* on the command line is used as written; a
 /// theme *name* on the command line replaces the YAML's name but keeps its overrides
 /// (so one diagram renders in any theme); otherwise the YAML's `theme:` decides.
+/// Registers the diagram's custom icons: every `icons:` entry (an SVG file path relative
+/// to the YAML's directory, or inline `<svg>` markup) and every node or group `icon:`
+/// that names a `.svg` file.
+fn load_custom_icons(payload: &DiagramPayload, base_dir: Option<&std::path::Path>) -> Result<()> {
+    let load = |key: &str, value: &str| -> Result<()> {
+        let v = value.trim();
+        let svg = if v.starts_with('<') {
+            v.to_string()
+        } else {
+            let path = base_dir.map_or_else(|| std::path::PathBuf::from(v), |d| d.join(v));
+            fs::read_to_string(&path).with_context(|| format!("icon `{key}`: cannot read '{}'", path.display()))?
+        };
+        rdg_icons::register_icon(key, &svg).map_err(anyhow::Error::msg)
+    };
+    for (key, value) in &payload.icons {
+        load(key, value)?;
+    }
+    let file_icons = payload.nodes.iter().filter_map(|n| n.icon.as_deref()).chain(payload.groups.iter().filter_map(|g| g.icon.as_deref()));
+    for icon in file_icons {
+        if icon.to_ascii_lowercase().ends_with(".svg") && !payload.icons.contains_key(icon) {
+            load(icon, icon)?;
+        }
+    }
+    Ok(())
+}
+
 fn resolve_theme(cli: Option<&str>, yaml: Option<&serde_yaml::Value>) -> Result<rdg_render_core::theme::Theme> {
     use rdg_render_core::theme::{DEFAULT_THEME, Theme};
     use serde_yaml::Value;

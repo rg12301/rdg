@@ -19,8 +19,8 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
             pct(opacity),
             look.stroke_width,
             u8::from(look.shadow),
-            f.family,
-            f.node_title_size,
+            look.font.as_deref().unwrap_or(&f.family),
+            look.title_size,
             look.title_color,
         )
     };
@@ -33,6 +33,7 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
             cap = theme.node.cylinder_cap
         ),
         "ellipse" => format!("ellipse;{}align=center;verticalAlign=middle;{pad}", common(&look.fill, look.fill_opacity, &look.stroke)),
+        "rounded" => format!("rounded=1;arcSize=40;{}align=center;verticalAlign=middle;{pad}", common(&look.fill, look.fill_opacity, &look.stroke)),
         "diamond" => format!(
             "rhombus;{}align=center;verticalAlign=middle;spacingLeft=12;spacingRight=12;",
             common(&look.fill, look.fill_opacity, &look.stroke),
@@ -82,8 +83,8 @@ pub fn group_style(theme: &Theme, g: &GroupLook) -> String {
         pct(g.fill_opacity),
         g.stroke,
         g.stroke_width,
-        theme.font.family,
-        theme.font.group_title_size,
+        g.font.as_deref().unwrap_or(&theme.font.family),
+        g.title_size,
         u8::from(g.title_bold),
         g.title_color,
     )
@@ -96,7 +97,7 @@ pub fn edge_style(theme: &Theme, e: &ResolvedEdge) -> String {
         Some(t) => format!("startArrow={t};startFill={};startSize={};", u8::from(e.tail_fill), theme.edge.head_size),
         None => "startArrow=none;".to_string(),
     };
-    let label_color = if theme.edge_label.use_edge_color { e.color.as_str() } else { theme.edge_label.color.as_str() };
+    let label_color = e.label_color.as_deref().unwrap_or(if theme.edge_label.use_edge_color { e.color.as_str() } else { theme.edge_label.color.as_str() });
     format!(
         "edgeStyle=none;html=1;rounded={};jumpStyle={};jumpSize=6;\
          strokeColor={};strokeWidth={};{dash}endArrow={};endFill={};endSize={};{tail}\
@@ -110,8 +111,8 @@ pub fn edge_style(theme: &Theme, e: &ResolvedEdge) -> String {
         u8::from(e.head_fill),
         theme.edge.head_size,
         theme.edge_label.background,
-        theme.font.family,
-        theme.font.edge_label_size,
+        e.font.as_deref().unwrap_or(&theme.font.family),
+        e.label_size,
     )
 }
 

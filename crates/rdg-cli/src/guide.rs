@@ -40,14 +40,18 @@ MINIMAL YAML
 NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type, category, display (card|icon), technology, language,
               db_type, icon, provider (aws|gcp), metadata (tooltip), fields (table rows /
               class members), color, width, height, link, class (a node_styles preset),
-              style_extra (raw draw.io style), rank (layout hint: pin to a tier)
+              style_extra (raw draw.io style), rank (layout hint: pin to a tier),
+              appearance: fill, text_color, font, font_size, stroke_width, shape
 EDGE FIELDS   from, to, label, edge_style, color, width, line_style (solid|dashed|dotted),
+              label_color, font, font_size,
               head, tail, source_port / target_port (top|bottom|left|right),
               step (3, or a branch: 3a, 3b, 3.1), constraint (false: the edge is drawn
               but does not push its target down a rank), class (an edge_styles preset),
               style_extra
 TOP LEVEL     title, description, diagram_type, direction, theme, legend, numbered,
-              groups (id, label, nodes: node or group ids, parent, rank), nodes, edges,
+              icons (name: svg file or inline <svg>), groups (id, label, nodes: node or
+              group ids, parent, rank, fill, text_color, font, font_size, stroke_width,
+              line_style), nodes, edges,
               same_rank (lists of ids to draw side by side), node_styles, edge_styles,
               canvas {margin, background}, spacing {rank, node, group_gap_x, group_gap_y}
 Unknown keys are errors (with a did-you-mean), so a typo can't silently drop a field.
@@ -298,6 +302,18 @@ Icons
   Chosen from, in order: `icon`, `language`, `db_type`, `provider`, then a language
   named in technology/label/metadata. In a box the icon sits inline before the title.
   `rdg --list-icons` prints every key.
+  Custom icons: a top-level `icons:` map of name → SVG file (relative to the YAML) or
+  inline `<svg …>` markup; the name then works anywhere a key does (`icon:`,
+  `db_type:`, a group's `icon:`). A node's `icon: ./logo.svg` loads the file directly.
+  Custom icons are drawn as full-colour logos (a database with one is drawn as it).
+
+Appearance (per node, or once in a `node_styles` preset via `class:`)
+  fill, text_color (#rrggbb, #rrggbbaa or @category), font, font_size (the box is
+  sized to fit), stroke_width, shape (card | rounded | cylinder | ellipse | diamond |
+  tile | icon). Groups take fill, text_color, font, font_size, stroke_width and
+  line_style (solid | dashed | dotted); edges take label_color, font, font_size.
+  Colour means category by default — override it for the odd component that must
+  stand out, not to decorate (--check warns). Black-and-white themes ignore colours.
 ";
 
 const EDGES: &str = "\
@@ -325,7 +341,8 @@ Placement (automatic)
 
 Overrides
   source_port / target_port: top | bottom | left | right — pin an end to one face.
-  color, width, line_style, head, tail, style_extra — per-edge styling.
+  color, width, line_style, head, tail, style_extra — the line; label_color, font,
+  font_size — the label. An `edge_styles` preset (`class:`) sets any of these once.
 ";
 
 const GROUPS: &str = "\
@@ -431,6 +448,16 @@ Hints (when the automatic tiers are not what you meant)
   Groups: a group sits one tier below whatever feeds it; two groups fed by the same unit
   stay side by side when at most two edges run between them; two groups wired both ways
   follow the direction with more edges; a group of unwired nodes is laid out as a grid.
+
+Routing
+  Every arrow is an orthogonal search over node outlines and channel midlines that
+  weighs length, bends, crossings (dearest), shared lanes, running along a node's
+  face or a container border, and cutting through a container neither end is in;
+  a final pass replaces each route by the simplest clear line between its ports
+  (straight, L, Z, U or three bends) when that adds no crossing. For tuning runs the
+  weights can be overridden with RDG_TUNE_W_BEND, W_CROSS, W_SHARE, W_CROWD,
+  W_ALONG_BORDER, W_ALONG_NODE, BORDER_LANES, NODE_ZONE (RDG_DEBUG_SPACING=1 prints
+  the bends, length, crossings and hugs to judge them by).
 
 Self-review
   After layout rdg checks for overlapping nodes, arrows through nodes, arrows drawn on

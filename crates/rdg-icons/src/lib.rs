@@ -14,7 +14,7 @@
 
 use base64::Engine as _;
 use std::collections::HashMap;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, RwLock};
 
 /// Definition of a single flat vector icon.
 #[derive(Debug, Clone)]
@@ -227,20 +227,51 @@ pub enum IconStyle<'a> {
     Mono(&'a str),
 }
 
+/// Icons registered at run time (`icons:` in the YAML, or a node's `icon: file.svg`):
+/// key → standalone SVG document. They behave like full-colour logos.
+static CUSTOM: LazyLock<RwLock<HashMap<String, String>>> = LazyLock::new(|| RwLock::new(HashMap::new()));
+
+/// Registers (or replaces) a custom icon under `key` (case-insensitive). `svg` must be a
+/// standalone `<svg>` document; it is drawn as a full-colour logo wherever `key` is used.
+///
+/// # Errors
+/// When `svg` holds no `<svg` element.
+pub fn register_icon(key: &str, svg: &str) -> Result<(), String> {
+    let doc = strip_prolog(svg.trim());
+    if !doc.starts_with("<svg") || !doc.contains("</svg>") {
+        return Err(format!("icon `{key}`: not an SVG document (expected `<svg …>…</svg>`)"));
+    }
+    let mut doc = doc.to_string();
+    // A document without a viewBox scales by width/height; give it one so the renderers
+    // can fit it into any box.
+    if !doc[..doc.find('>').unwrap_or(doc.len())].contains("viewBox") {
+        let dim = |name: &str| doc[..doc.find('>').unwrap_or(doc.len())].split(&format!("{name}=\"")).nth(1).and_then(|r| r.split('"').next()).and_then(|v| v.trim_end_matches("px").parse::<f64>().ok());
+        let (w, h) = (dim("width").unwrap_or(24.0), dim("height").unwrap_or(24.0));
+        doc = doc.replacen("<svg", &format!("<svg viewBox=\"0 0 {w} {h}\""), 1);
+    }
+    CUSTOM.write().map_err(|e| e.to_string())?.insert(key.trim().to_ascii_lowercase(), doc);
+    Ok(())
+}
+
+fn custom_icon(key: &str) -> Option<String> {
+    CUSTOM.read().ok()?.get(&key.trim().to_ascii_lowercase()).cloned()
+}
+
 fn color_logo(key: &str) -> Option<&'static str> {
     let k = key.trim().to_ascii_lowercase();
     COLOR_ICONS.binary_search_by(|(c, _)| c.cmp(&k.as_str())).ok().map(|i| COLOR_ICONS[i].1)
 }
 
-/// Whether `key` names any icon rdg can draw: a glyph, a hand-drawn mark or a
-/// full-colour logo (the set `--list-icons` prints).
+/// Whether `key` names any icon rdg can draw: a glyph, a hand-drawn mark, a
+/// full-colour logo (the set `--list-icons` prints) or a registered custom icon.
 pub fn has_icon(key: &str) -> bool {
     get_icon(key).is_some() || has_color_logo(key)
 }
 
-/// Whether `key` has a full-colour logo (a real product mark, as opposed to a glyph).
+/// Whether `key` has a full-colour logo (a real product mark or a custom icon, as
+/// opposed to a glyph).
 pub fn has_color_logo(key: &str) -> bool {
-    color_logo(key).is_some()
+    color_logo(key).is_some() || custom_icon(key).is_some()
 }
 
 /// Whether `key` is a category glyph (`glyph-*`) rather than a product mark.
@@ -284,6 +315,12 @@ pub fn icon_document(key: &str, style: IconStyle) -> Option<String> {
         format!(r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><g{wrap}>{body}</g></svg>"#)
             .replace("stroke=\"currentColor\"", &format!("stroke=\"{}\"", ink.unwrap_or(icon.default_color)))
     };
+    if let Some(doc) = custom_icon(key) {
+        return Some(match style {
+            IconStyle::Color => doc,
+            IconStyle::Mono(ink) => recolor(&doc, ink),
+        });
+    }
     match style {
         IconStyle::Color => match color_logo(key) {
             Some(doc) => Some(strip_prolog(doc).to_string()),
@@ -618,6 +655,14 @@ mod tests {
         let mono = icon_document("postgres", IconStyle::Mono("#111111")).unwrap();
         assert!(mono.contains("#111111") && !mono.contains("#4169E1"));
         let glyph = icon_document("glyph-database", IconStyle::Mono("#222222")).unwrap();
+        // A custom icon registered at run time is a colour logo under its key, in any
+        // case, and gains a viewBox when it had none.
+        register_icon("Acme", r##"<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="14" fill="#f59e0b"/></svg>"##).unwrap();
+        assert!(has_icon("acme") && has_color_logo("ACME") && !is_glyph("acme"));
+        let doc = icon_document("acme", IconStyle::Color).unwrap();
+        assert!(doc.contains("viewBox=\"0 0 32 32\"") && doc.contains("#f59e0b"));
+        assert!(icon_document("acme", IconStyle::Mono("#000000")).unwrap().contains("fill=\"#000000\""));
+        assert!(register_icon("bad", "not svg").is_err());
         assert!(glyph.contains("stroke=\"#222222\"") && !glyph.contains("currentColor"));
         // Logo-only keys still render in mono, desaturated.
         assert!(icon_document("zig", IconStyle::Mono("#000")).unwrap().contains("saturate"));

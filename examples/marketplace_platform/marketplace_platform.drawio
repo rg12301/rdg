@@ -507,14 +507,14 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_web_waf" value="HTTPS" style="exitX=0.27273;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.77174;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="web" target="waf" parent="1">
-          <mxGeometry x="0.5192" y="-11.8" relative="1" as="geometry">
+        <mxCell id="e_web_waf" value="HTTPS" style="exitX=0.27273;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.77174;entryY=0.34722;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="web" target="waf" parent="1">
+          <mxGeometry x="0.1379" y="-11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="935.0" y="49.0"/>
               <mxPoint x="883.0" y="49.0"/>
-              <mxPoint x="883.0" y="308.0"/>
-              <mxPoint x="807.0" y="308.0"/>
-              <mxPoint x="807.0" y="337.0"/>
+              <mxPoint x="883.0" y="243.0"/>
+              <mxPoint x="807.0" y="243.0"/>
+              <mxPoint x="807.0" y="357.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -533,8 +533,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_partner_waf" value="HTTPS" style="exitX=0.35256;exitY=1.08333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.77174;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="partner" target="waf" parent="1">
-          <mxGeometry x="0.0000" y="22.0" relative="1" as="geometry"/>
+        <mxCell id="e_partner_waf" value="HTTPS" style="exitX=0.64744;exitY=1.08333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.77174;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="partner" target="waf" parent="1">
+          <mxGeometry x="-0.5000" y="22.0" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="801.0" y="337.0"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="e_waf_gw" value="" style="exitX=0.63043;exitY=1.08333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.30172;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="waf" target="gw" parent="1">
           <mxGeometry relative="1" as="geometry"/>
@@ -584,8 +588,8 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="828.0" y="1033.0"/>
-              <mxPoint x="828.0" y="1630.0"/>
-              <mxPoint x="1164.0" y="1630.0"/>
+              <mxPoint x="828.0" y="1641.0"/>
+              <mxPoint x="1164.0" y="1641.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -599,36 +603,34 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="807.0" y="881.0"/>
-              <mxPoint x="807.0" y="1641.0"/>
-              <mxPoint x="1003.0" y="1641.0"/>
+              <mxPoint x="807.0" y="1293.0"/>
+              <mxPoint x="1003.0" y="1293.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_catalog_es" value="query" style="exitX=0.70161;exitY=0.05952;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25000;entryY=0.07977;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="catalog" target="es" parent="1">
-          <mxGeometry x="0.6463" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.8412" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="901.0" y="861.0"/>
-              <mxPoint x="901.0" y="1694.0"/>
-              <mxPoint x="955.0" y="1694.0"/>
+              <mxPoint x="906.0" y="861.0"/>
+              <mxPoint x="906.0" y="1384.0"/>
+              <mxPoint x="955.0" y="1384.0"/>
               <mxPoint x="955.0" y="1827.0"/>
               <mxPoint x="990.0" y="1827.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_catalog_s3" value="images" style="exitX=0.70161;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.13235;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="catalog" target="s3" parent="1">
-          <mxGeometry x="0.9171" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="0.9131" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="785.0" y="900.0"/>
-              <mxPoint x="785.0" y="1636.0"/>
-              <mxPoint x="758.0" y="1636.0"/>
+              <mxPoint x="758.0" y="900.0"/>
               <mxPoint x="758.0" y="1867.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_checkout_cart" value="" style="exitX=0.34848;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25962;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="checkout" target="cart" parent="1">
+        <mxCell id="e_checkout_cart" value="" style="exitX=0.65152;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25962;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="checkout" target="cart" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="467.0" y="993.0"/>
+              <mxPoint x="507.0" y="993.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -648,11 +650,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_checkout_orders" value="create" style="exitX=0.65152;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.34167;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="checkout" target="orders" parent="1">
-          <mxGeometry x="-0.0494" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_checkout_orders" value="create" style="exitX=0.68939;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.34167;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="checkout" target="orders" parent="1">
+          <mxGeometry x="-0.0496" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="507.0" y="964.0"/>
-              <mxPoint x="990.0" y="964.0"/>
+              <mxPoint x="579.0" y="900.0"/>
+              <mxPoint x="579.0" y="961.0"/>
+              <mxPoint x="990.0" y="961.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -686,26 +689,23 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_orders_bus" value="OrderCreated" style="exitX=0.66667;exitY=1.06522;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.27381;entryY=0.07104;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="orders" target="bus" parent="1">
-          <mxGeometry x="0.2537" y="-11.8" relative="1" as="geometry">
+        <mxCell id="e_orders_bus" value="OrderCreated" style="exitX=0.70833;exitY=0.27174;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.19048;entryY=0.15165;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="orders" target="bus" parent="1">
+          <mxGeometry x="-0.3016" y="43.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1029.0" y="1111.0"/>
-              <mxPoint x="1127.0" y="1111.0"/>
+              <mxPoint x="1127.0" y="1013.0"/>
               <mxPoint x="1127.0" y="1694.0"/>
-              <mxPoint x="1083.0" y="1694.0"/>
-              <mxPoint x="1083.0" y="1856.0"/>
-              <mxPoint x="1100.0" y="1856.0"/>
+              <mxPoint x="1093.0" y="1694.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_orders_shipping" value="ship" style="exitX=0.50833;exitY=1.06522;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.46212;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="orders" target="shipping" parent="1">
-          <mxGeometry x="0.0000" y="-19.0" relative="1" as="geometry"/>
+          <mxGeometry x="0.0000" y="19.0" relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_shipping_carrier" value="book" style="exitX=0.34091;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50962;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="shipping" target="carrier" parent="1">
-          <mxGeometry x="-0.5321" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_shipping_carrier" value="book" style="exitX=0.65152;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50962;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="shipping" target="carrier" parent="1">
+          <mxGeometry x="-0.2499" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="994.0" y="1477.0"/>
-              <mxPoint x="737.0" y="1477.0"/>
+              <mxPoint x="1035.0" y="1621.0"/>
+              <mxPoint x="737.0" y="1621.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -720,10 +720,10 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_returns_payments" value="refund" style="exitX=0.29839;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.68939;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="returns" target="payments" parent="1">
-          <mxGeometry x="0.8940" y="-19.8" relative="1" as="geometry">
+          <mxGeometry x="-0.1084" y="-25.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="881.0" y="900.0"/>
-              <mxPoint x="881.0" y="1601.0"/>
+              <mxPoint x="887.0" y="900.0"/>
+              <mxPoint x="887.0" y="1601.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -753,11 +753,11 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_email_worker_mailgun" value="send" style="exitX=0.25962;exitY=0.05952;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.79412;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="email_worker" target="mailgun" parent="1">
-          <mxGeometry x="0.0665" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="0.0515" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="873.0" y="2299.0"/>
-              <mxPoint x="873.0" y="2273.0"/>
-              <mxPoint x="615.0" y="2273.0"/>
+              <mxPoint x="869.0" y="2299.0"/>
+              <mxPoint x="869.0" y="2093.0"/>
+              <mxPoint x="615.0" y="2093.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -765,28 +765,29 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_catalog_otel" value="traces" style="exitX=0.29839;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.70833;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="catalog" target="otel" parent="1">
-          <mxGeometry x="0.3227" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.2361" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="578.0" y="900.0"/>
-              <mxPoint x="578.0" y="1441.0"/>
-              <mxPoint x="340.0" y="1441.0"/>
-              <mxPoint x="340.0" y="1601.0"/>
+              <mxPoint x="582.0" y="900.0"/>
+              <mxPoint x="582.0" y="1133.0"/>
+              <mxPoint x="323.0" y="1133.0"/>
+              <mxPoint x="323.0" y="1601.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_checkout_otel" value="traces" style="exitX=0.31061;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="checkout" target="otel" parent="1">
-          <mxGeometry x="-0.7171" y="-11.8" relative="1" as="geometry">
+        <mxCell id="e_checkout_otel" value="traces" style="exitX=0.31061;exitY=0.52381;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.65833;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="checkout" target="otel" parent="1">
+          <mxGeometry x="-0.7105" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="207.0" y="900.0"/>
+              <mxPoint x="226.0" y="900.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_orders_otel" value="traces" style="exitX=0.29167;exitY=0.48913;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.65833;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="orders" target="otel" parent="1">
-          <mxGeometry x="0.2050" y="-11.8" relative="1" as="geometry">
+        <mxCell id="e_orders_otel" value="traces" style="exitX=0.29167;exitY=0.48913;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.70833;entryY=0.34722;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="orders" target="otel" parent="1">
+          <mxGeometry x="0.1799" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="923.0" y="1033.0"/>
-              <mxPoint x="923.0" y="1459.0"/>
-              <mxPoint x="226.0" y="1459.0"/>
+              <mxPoint x="925.0" y="1033.0"/>
+              <mxPoint x="925.0" y="1466.0"/>
+              <mxPoint x="328.0" y="1466.0"/>
+              <mxPoint x="328.0" y="1621.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

@@ -225,15 +225,20 @@ pub(crate) fn layout_node_size(
     config: &LayoutConfig,
 ) -> (f64, f64) {
     let data = &compiled.graph[idx];
+    // A node's own font size scales its text metrics (detail lines in proportion).
+    let tokens = match data.font_size {
+        Some(fs) => DesignTokens { font_size: fs, detail_font_size: fs * config.tokens.detail_font_size / config.tokens.font_size, ..config.tokens },
+        None => config.tokens,
+    };
     // A mark with its caption underneath: a logo node (the logo in its halo) or a
     // flowchart marker. The box holds both, so groups, routing and labels all make room
     // for the caption; arrows attach to the mark (see `rdg_render_core::style::Outline`).
-    if let Some(mark) = caption_mark(data, &config.tokens) {
-        let (w, h) = captioned_size(data, mark, &config.tokens);
+    if let Some(mark) = caption_mark(data, &tokens) {
+        let (w, h) = captioned_size(data, mark, &tokens);
         return grow_for_degree(compiled, idx, (w, h), config);
     }
     // Only `icon` is drawn (a node's language can be shown on its group instead).
-    let (w, h) = estimate_node_box(data, data.icon.is_some(), config.node_width, config.node_height, &config.tokens);
+    let (w, h) = estimate_node_box(data, data.icon.is_some(), config.node_width, config.node_height, &tokens);
     grow_for_degree(compiled, idx, (w, h), config)
 }
 

@@ -223,6 +223,29 @@ fn test_layout_fcose_renders_successfully() {
 }
 
 #[test]
+fn test_custom_icons_from_file_and_inline_svg() {
+    let dir = std::env::temp_dir().join("rdg_cli_test_custom_icons");
+    let _ = std::fs::create_dir_all(&dir);
+    std::fs::write(dir.join("ledger.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\"><rect width=\"48\" height=\"48\" fill=\"#0f766e\"/></svg>").unwrap();
+    let yaml = dir.join("d.yaml");
+    std::fs::write(
+        &yaml,
+        "icons:\n  acme: '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><circle cx=\"5\" cy=\"5\" r=\"4\" fill=\"#f59e0b\"/></svg>'\nnodes:\n  - {id: w, title: Web, type: client, icon: acme}\n  - {id: d, title: ledger, type: database, db_type: ledger.svg}\n  - {id: x, title: Other, type: service, icon: ./ledger.svg}\nedges: [{from: w, to: d}, {from: w, to: x}]\n",
+    )
+    .unwrap();
+    let out_path = dir.join("d.svg");
+    let output = Command::new(bin()).args(["-i", yaml.to_str().unwrap(), "-o", out_path.to_str().unwrap(), "--svg-engine", "native"]).output().expect("run rdg");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "{stderr}");
+    assert!(!stderr.contains("unknown icon"), "custom icons must validate: {stderr}");
+    let svg = std::fs::read_to_string(&out_path).unwrap();
+    assert!(svg.contains("#f59e0b") && svg.contains("#0f766e"), "both custom icons drawn");
+    let check = Command::new(bin()).args(["--check", "-i", yaml.to_str().unwrap()]).output().expect("run rdg");
+    assert!(check.status.success());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
 fn test_layout_auto_on_dense_graph_reports_capped_layered() {
     let out_path = std::env::temp_dir().join("rdg_cli_test_layout_auto_dense.svg");
     // 5 nodes, 12 edges: density 2.4, above the dispatcher's dense threshold.
@@ -376,5 +399,7 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     assert!(total_jogs <= 8.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 8)");
     assert!(total_crossings <= 72.0, "crossings across bundled diagrams: {total_crossings} (budget 72)");
     assert!(total_near_bend <= 11.0, "crossings at a bend/arrow end: {total_near_bend} (budget 11)");
-    assert!(total_border_hugs <= 1.0, "arrows tracing a group border: {total_border_hugs} (budget 1)");
+    // A "hug" is now a leg within one lane (22px) of a border for over 24px, not within
+    // 8px (measured: 12 over 21 fixtures, the router pays 2px/px to avoid them).
+    assert!(total_border_hugs <= 14.0, "arrows tracing a group border: {total_border_hugs} (budget 14)");
 }

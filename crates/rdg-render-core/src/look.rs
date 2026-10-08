@@ -38,7 +38,9 @@ pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
                 && theme.icon.node_types.iter().any(|t| t.eq_ignore_ascii_case(&ty))
                 && brand.as_deref().is_some_and(|k| mono || rdg_icons::has_color_logo(k));
             let themed = theme.shapes.get(&ty).cloned().unwrap_or_else(|| "card".to_string());
-            if display.as_deref() == Some("icon") || auto_icon {
+            if let Some(s) = nd.shape_override.clone() {
+                s
+            } else if display.as_deref() == Some("icon") || auto_icon {
                 "icon".to_string()
             } else if !nd.fields.is_empty() {
                 "card".to_string()
@@ -50,7 +52,7 @@ pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
         };
         // In a sequence diagram every participant is a card (or an actor figure).
         let shape = if is_sequence && shape != "actor" { "card".to_string() } else { shape };
-        let is_box = matches!(shape.as_str(), "card" | "cylinder" | "ellipse" | "diamond");
+        let is_box = matches!(shape.as_str(), "card" | "rounded" | "cylinder" | "ellipse" | "diamond");
         if nd.icon.is_none() && ((is_box && theme.icon.category_glyphs && nd.fields.is_empty()) || shape == "icon") {
             nd.icon = Some(theme.category(&category).glyph.clone());
         }
@@ -70,6 +72,11 @@ pub struct NodeLook {
     pub shape: String,
     /// The category's glyph key (what a tile shows).
     pub glyph: String,
+    /// Font family override for this node's text.
+    pub font: Option<String>,
+    /// Title font size; detail lines scale with it.
+    pub title_size: f64,
+    pub detail_size: f64,
     pub fill: String,
     /// 0–1.
     pub fill_opacity: f64,
@@ -95,21 +102,34 @@ pub fn node_look(theme: &Theme, nd: &NodeData) -> NodeLook {
     }
     let shape = nd.shape.clone().unwrap_or_else(|| "card".into());
     let ink = theme.text.primary.clone();
-    let (fill, fill_opacity, stroke) = match shape.as_str() {
+    let (mut fill, mut fill_opacity, stroke) = match shape.as_str() {
         "start" | "end" => (ink.clone(), 1.0, ink.clone()),
         _ => (fill, fill_opacity, stroke),
     };
+    // Per-node appearance overrides (honoured unless the theme is monochrome).
+    if let Some(f) = nd.fill.as_ref().filter(|_| theme.custom_colors) {
+        let (c, a) = split_alpha(&theme.color_ref(f));
+        fill = c;
+        fill_opacity = a;
+    }
+    let title_color = nd.text_color.clone().filter(|_| theme.custom_colors).map(|c| theme.color_ref(&c)).or_else(|| cat.text.clone()).unwrap_or(ink);
+    let detail_color = nd.text_color.clone().filter(|_| theme.custom_colors).map(|c| theme.color_ref(&c)).unwrap_or_else(|| theme.node.detail_color.clone());
+    let title_size = nd.font_size.unwrap_or(theme.font.node_title_size);
+    let detail_size = title_size * theme.font.node_detail_size / theme.font.node_title_size;
     NodeLook {
         shape,
         glyph: cat.glyph.clone(),
+        font: nd.font.clone(),
+        title_size,
+        detail_size,
         fill,
         fill_opacity,
         stroke,
-        stroke_width: theme.node.stroke_width,
+        stroke_width: nd.stroke_width.unwrap_or(theme.node.stroke_width),
         corner_radius: theme.node.corner_radius,
         shadow: theme.node.shadow,
-        title_color: cat.text.clone().unwrap_or(ink),
-        detail_color: theme.node.detail_color.clone(),
+        title_color,
+        detail_color,
         category,
     }
 }
@@ -126,22 +146,38 @@ pub struct GroupLook {
     pub title_color: String,
     pub title_bold: bool,
     pub title: String,
+    /// Title font overrides.
+    pub font: Option<String>,
+    pub title_size: f64,
 }
 
 pub fn group_look(theme: &Theme, g: &GroupDef) -> GroupLook {
     let cat = theme.category(g.category.as_deref().unwrap_or(&theme.group.default_category));
-    let stroke = g.color.clone().filter(|_| theme.custom_colors).unwrap_or_else(|| cat.stroke.clone());
+    let custom = theme.custom_colors;
+    let stroke = g.color.clone().filter(|_| custom).map(|c| theme.color_ref(&c)).unwrap_or_else(|| cat.stroke.clone());
     let title = if theme.group.title_uppercase { g.label.to_uppercase() } else { g.label.clone() };
+    let (fill, fill_opacity) = match g.fill.as_ref().filter(|_| custom) {
+        Some(f) => split_alpha(&theme.color_ref(f)),
+        None => (split_alpha(&stroke).0, theme.group.fill_opacity),
+    };
+    let dash = match g.line_style.as_deref().map(str::to_ascii_lowercase).as_deref() {
+        Some("solid") => None,
+        Some("dashed") => Some("6 4".to_string()),
+        Some("dotted") => Some("2 3".to_string()),
+        _ => theme.group.dash.clone(),
+    };
     GroupLook {
-        fill: split_alpha(&stroke).0,
-        title_color: cat.text.clone().unwrap_or_else(|| stroke.clone()),
+        fill,
+        title_color: g.text_color.clone().filter(|_| custom).map(|c| theme.color_ref(&c)).or_else(|| cat.text.clone()).unwrap_or_else(|| stroke.clone()),
         stroke,
-        fill_opacity: theme.group.fill_opacity,
-        stroke_width: theme.group.stroke_width,
-        dash: theme.group.dash.clone(),
+        fill_opacity,
+        stroke_width: g.stroke_width.unwrap_or(theme.group.stroke_width),
+        dash,
         corner_radius: theme.group.corner_radius,
         title_bold: theme.group.title_bold,
         title,
+        font: g.font.clone(),
+        title_size: g.font_size.unwrap_or(theme.font.group_title_size),
     }
 }
 
@@ -165,6 +201,13 @@ pub fn edge_look(theme: &Theme, ed: &EdgeData) -> ResolvedEdge {
     }
     if let Some(t) = &ed.tail {
         e.tail = Some(t.clone());
+    }
+    if let Some(c) = ed.label_color.as_ref().filter(|_| theme.custom_colors) {
+        e.label_color = Some(theme.color_ref(c));
+    }
+    e.font = ed.font.clone();
+    if let Some(s) = ed.font_size {
+        e.label_size = s;
     }
     e
 }
@@ -201,8 +244,8 @@ pub fn legend_items(theme: &Theme, compiled: &CompiledGraph) -> Vec<LegendItem> 
         let nd = &compiled.graph[idx];
         // Only colours actually on the page: boxes (not logos or markers) that aren't
         // wearing a custom `color:`.
-        let coloured = matches!(nd.shape.as_deref(), Some("card" | "cylinder" | "ellipse" | "diamond" | "actor" | "tile") | None);
-        if marker_shape(&nd.node_type).is_some() || !coloured || (theme.custom_colors && nd.color.is_some()) {
+        let coloured = matches!(nd.shape.as_deref(), Some("card" | "rounded" | "cylinder" | "ellipse" | "diamond" | "actor" | "tile") | None);
+        if marker_shape(&nd.node_type).is_some() || !coloured || (theme.custom_colors && (nd.color.is_some() || nd.fill.is_some())) {
             continue;
         }
         let c = nd.category.clone().unwrap_or_else(|| theme.category_of(&nd.node_type, None).to_string());

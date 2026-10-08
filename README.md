@@ -30,6 +30,19 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 - **v1.3.0 — tiles, clean connections, layout quality pass** (battle-tested on 16 new
   diagrams, easy to very complex, every diagram type):
+  - *Every component is configurable*: per node `fill`, `text_color`, `font`,
+    `font_size`, `stroke_width` and `shape` (`card`, `rounded`, `cylinder`, `ellipse`,
+    `diamond`, `tile`, `icon`); per group `fill`, `text_color`, `font`, `font_size`,
+    `stroke_width`, `line_style`; per edge `label_color`, `font`, `font_size`; all of
+    them in `node_styles` / `edge_styles` presets too. States are pills.
+  - *Custom icons*: an `icons:` map of name → SVG file or inline `<svg>` (or
+    `icon: ./logo.svg` on a node) adds any mark the library lacks; it is drawn as a
+    full-colour logo, as a tile badge, or as the node itself for a database.
+  - *Routes*: a final simplification pass replaces a route by the simplest clear line
+    between its ports (straight, L, Z, U or three bends) when that adds no crossing;
+    running alongside a node's face or a container border costs the search per pixel;
+    sharing a lane costs a quarter of what it did, so routes stop zigzagging to avoid
+    each other and let the lane fan-out separate them instead.
   - *Components as tiles*: in an architecture diagram a service, client or gateway is a
     small square in its category colour with the category glyph and the caption under
     it, its language or product logo as a corner badge — colour says what kind, the

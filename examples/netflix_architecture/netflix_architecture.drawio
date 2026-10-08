@@ -154,10 +154,9 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_device_playback_svc" value="gRPC manifest req" style="exitX=0.33108;exitY=0.62500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.59091;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="device" target="playback_svc" parent="1">
-          <mxGeometry x="0.2816" y="58.0" relative="1" as="geometry">
+          <mxGeometry x="0.4195" y="58.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="134.0" y="121.0"/>
-              <mxPoint x="134.0" y="198.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

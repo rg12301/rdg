@@ -475,8 +475,8 @@ impl Theme {
             }
         }
         for (t, sh) in &self.shapes {
-            if !["card", "cylinder", "ellipse", "diamond"].contains(&sh.as_str()) {
-                bail!("shapes.{t}: unknown shape `{sh}` (card, cylinder, ellipse, diamond)");
+            if !["card", "rounded", "cylinder", "ellipse", "diamond"].contains(&sh.as_str()) {
+                bail!("shapes.{t}: unknown shape `{sh}` (card, rounded, cylinder, ellipse, diamond)");
             }
         }
         for (s, l) in &self.edge_styles {
@@ -528,6 +528,9 @@ impl Theme {
             head_fill: look.head_fill.unwrap_or(true),
             tail: look.tail.clone(),
             tail_fill: look.tail_fill.unwrap_or(true),
+            label_color: None,
+            font: None,
+            label_size: self.font.edge_label_size,
         }
     }
 
@@ -582,6 +585,11 @@ pub struct ResolvedEdge {
     pub head_fill: bool,
     pub tail: Option<String>,
     pub tail_fill: bool,
+    /// Label colour override (else the line's colour or the theme's label colour).
+    pub label_color: Option<String>,
+    /// Label font overrides.
+    pub font: Option<String>,
+    pub label_size: f64,
 }
 
 #[cfg(test)]

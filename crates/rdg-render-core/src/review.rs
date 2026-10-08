@@ -583,8 +583,12 @@ pub struct SpacingMetrics {
     /// Crossings within 16px of a bend or an end of either edge — where a reader can't
     /// tell which line turns and which carries on.
     pub crossings_near_bend: usize,
-    /// Edge segments running parallel within 8px of a group border for over 24px.
+    /// Edge segments running parallel within a lane of a group border for over 24px.
     pub border_hugs: usize,
+    /// Bends over all routed edges.
+    pub bends: usize,
+    /// Total routed length, px.
+    pub total_len: f64,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -627,6 +631,8 @@ pub fn spacing_metrics(
         .collect();
     let min_jog = tokens.polish_min_jog();
     for (i, pa) in paths.iter().enumerate() {
+        m.bends += pa.len().saturating_sub(2);
+        m.total_len += pa.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum::<f64>();
         m.micro_jogs += crate::polish::micro_jog_segments(pa, min_jog).len();
         for pb in &paths[i + 1..] {
             let pts = crate::polish::crossing_points(pa, pb);
@@ -649,7 +655,7 @@ pub fn spacing_metrics(
                         continue;
                     }
                     let (c, s0, s1) = if horiz { (a.1, a.0.min(b.0), a.0.max(b.0)) } else { (a.0, a.1.min(b.1), a.1.max(b.1)) };
-                    if (c - at).abs() < 8.0 && s1.min(hi) - s0.max(lo) > 24.0 {
+                    if (c - at).abs() < tokens.channel_pitch() * 1.25 && s1.min(hi) - s0.max(lo) > 24.0 {
                         m.border_hugs += 1;
                     }
                 }

@@ -205,7 +205,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_web3_api2" value="REST" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.20833;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="web3" target="api2" parent="1">
-          <mxGeometry x="-0.3069" y="19.0" relative="1" as="geometry">
+          <mxGeometry x="0.5644" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="664.0" y="964.0"/>
               <mxPoint x="700.0" y="964.0"/>
@@ -216,8 +216,8 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="660.0" y="1035.0"/>
-              <mxPoint x="660.0" y="1317.0"/>
-              <mxPoint x="684.0" y="1317.0"/>
+              <mxPoint x="660.0" y="1206.0"/>
+              <mxPoint x="684.0" y="1206.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -227,38 +227,32 @@
         <mxCell id="e_api1_redis" value="" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.72619;entryY=0.06251;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="api1" target="redis" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_api2_kafka" value="" style="exitX=0.84722;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.26190;entryY=0.07020;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="api2" target="kafka" parent="1">
+        <mxCell id="e_api2_kafka" value="" style="exitX=0.84722;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="api2" target="kafka" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="825.0" y="1035.0"/>
+              <mxPoint x="845.0" y="1035.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_kafka_worker1" value="" style="exitX=0.80653;exitY=0.13000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.82895;entryY=0.53571;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="kafka" target="worker1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="942.0" y="1357.0"/>
-              <mxPoint x="942.0" y="779.0"/>
-            </Array>
-          </mxGeometry>
+        <mxCell id="e_kafka_worker1" value="" style="exitX=0.72619;exitY=0.06251;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.30263;entryY=1.07143;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="kafka" target="worker1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_worker1_pg" value="" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.80653;entryY=0.13000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="worker1" target="pg" parent="1">
+        <mxCell id="e_worker1_pg" value="" style="exitX=0.17105;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.80653;entryY=0.13000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="worker1" target="pg" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="879.0" y="1209.0"/>
-              <mxPoint x="777.0" y="1209.0"/>
+              <mxPoint x="816.0" y="779.0"/>
+              <mxPoint x="816.0" y="1320.0"/>
+              <mxPoint x="777.0" y="1320.0"/>
               <mxPoint x="777.0" y="1357.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_prom_api1" value="scrape" style="exitX=0.78409;exitY=0.62500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.71739;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=1;dashPattern=2 3;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="prom" target="api1" parent="1">
-          <mxGeometry x="-0.0652" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="0.4494" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="797.0" y="337.0"/>
-              <mxPoint x="797.0" y="665.0"/>
-              <mxPoint x="765.0" y="665.0"/>
-              <mxPoint x="765.0" y="962.0"/>
-              <mxPoint x="602.0" y="962.0"/>
+              <mxPoint x="768.0" y="337.0"/>
+              <mxPoint x="768.0" y="850.0"/>
+              <mxPoint x="602.0" y="850.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

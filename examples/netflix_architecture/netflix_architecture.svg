@@ -11,7 +11,7 @@
   <rect x="24.0" y="582.0" width="240.0" height="618.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
   <text x="36.0" y="601.9" font-size="11" font-weight="bold" fill="#94a3b8">Content Operations</text>
   <path d="M 257.0 121.0 L 320.0 121.0 Q 334.0 121.0 334.0 135.0 L 334.0 228.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 207.0 121.0 L 148.0 121.0 Q 134.0 121.0 134.0 135.0 L 134.0 191.3 Q 134.0 198.0 134.0 204.7 L 134.0 222.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 207.0 121.0 L 148.0 121.0 Q 134.0 121.0 134.0 135.0 L 134.0 222.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 123.0 312.0 L 123.0 400.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 147.0 267.0 L 210.0 267.0 Q 224.0 267.0 224.0 281.0 L 224.0 332.0 Q 224.0 346.0 238.0 346.0 L 302.0 346.0 Q 316.0 346.0 316.0 360.0 L 316.0 403.5" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 342.0 306.0 L 342.0 399.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -94,8 +94,8 @@
   </text>
   <rect x="338.0" y="166.8" width="120.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="398.0" y="178.0" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS segment fetch</text>
-  <rect x="138.0" y="151.8" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="192.0" y="163.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC manifest req</text>
+  <rect x="138.0" y="163.8" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="192.0" y="175.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC manifest req</text>
   <rect x="127.0" y="348.2" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="142.0" y="359.5" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
   <rect x="231.0" y="326.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>

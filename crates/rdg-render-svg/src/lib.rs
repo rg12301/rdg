@@ -296,17 +296,17 @@ pub fn render_svg(
                 tx += icon_size + icon_gap;
             }
         }
-        text_el(
-            &mut w,
-            &[
-                ("x", f1(tx)),
-                ("y", f1(ty)),
-                ("font-size", format!("{}", f.group_title_size)),
-                ("font-weight", if look.title_bold { "bold" } else { "normal" }.into()),
-                ("fill", look.title_color.clone()),
-            ],
-            &look.title,
-        )?;
+        let mut title_attrs = vec![
+            ("x", f1(tx)),
+            ("y", f1(ty)),
+            ("font-size", format!("{}", look.title_size)),
+            ("font-weight", if look.title_bold { "bold" } else { "normal" }.into()),
+            ("fill", look.title_color.clone()),
+        ];
+        if let Some(font) = &look.font {
+            title_attrs.push(("font-family", font.clone()));
+        }
+        text_el(&mut w, &title_attrs, &look.title)?;
     }
 
     // --- Edges (under nodes) -----------------------------------------------------------
@@ -348,22 +348,22 @@ pub fn render_svg(
             "rect",
             &[("x", f1(x)), ("y", f1(y)), ("width", f1(pw)), ("height", f1(ph)), ("rx", "2".into()), ("fill", theme.edge_label.background.clone())],
         )?;
-        let color = if theme.edge_label.use_edge_color { e.look.color.clone() } else { theme.edge_label.color.clone() };
+        let color = e.look.label_color.clone().unwrap_or_else(|| if theme.edge_label.use_edge_color { e.look.color.clone() } else { theme.edge_label.color.clone() });
         let lines: Vec<&str> = spot.text.lines().collect();
         let line_h = ph / lines.len().max(1) as f64;
         for (i, line) in lines.iter().enumerate() {
-            let baseline = y + line_h * (i as f64 + 0.5) + f.edge_label_size * 0.35;
-            text_el(
-                &mut w,
-                &[
-                    ("x", f1(spot.cx)),
-                    ("y", f1(baseline)),
-                    ("text-anchor", "middle".into()),
-                    ("font-size", format!("{}", f.edge_label_size)),
-                    ("fill", color.clone()),
-                ],
-                line,
-            )?;
+            let baseline = y + line_h * (i as f64 + 0.5) + e.look.label_size * 0.35;
+            let mut attrs = vec![
+                ("x", f1(spot.cx)),
+                ("y", f1(baseline)),
+                ("text-anchor", "middle".into()),
+                ("font-size", format!("{}", e.look.label_size)),
+                ("fill", color.clone()),
+            ];
+            if let Some(font) = &e.look.font {
+                attrs.push(("font-family", font.clone()));
+            }
+            text_el(&mut w, &attrs, line)?;
         }
     }
     for edge_idx in compiled.graph.edge_indices() {
@@ -415,7 +415,6 @@ pub(crate) fn draw_node(
     n: usize,
     shadow_attr: &dyn Fn() -> Option<(&'static str, String)>,
 ) -> Result<()> {
-    let f = &theme.font;
     let (cx, cy) = (nl.x + nl.width / 2.0, nl.y + nl.height / 2.0);
     let paint = |extra: &[(&'static str, String)]| {
         let mut a = vec![
@@ -496,6 +495,14 @@ pub(crate) fn draw_node(
             let top = nl.y + tokens.tile_mark() + rdg_layout::caption_gap(tokens);
             return node_text(w, theme, tokens, nd, look, cx, top, None, None);
         }
+        "rounded" => {
+            // A pill: the UML state shape.
+            el(
+                w,
+                "rect",
+                &paint(&[("x", f1(nl.x)), ("y", f1(nl.y)), ("width", f1(nl.width)), ("height", f1(nl.height)), ("rx", f1((nl.height * 0.4).min(nl.width / 2.0)))]),
+            )?;
+        }
         "icon" => {
             let halo = tokens.icon_halo_size();
             if let Some(plate) = &theme.icon.backdrop {
@@ -540,17 +547,17 @@ pub(crate) fn draw_node(
     let text_h: f64 = lines
         .iter()
         .enumerate()
-        .map(|(i, l)| if i == 0 { first_line_height(tokens, f, l.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(if l.is_subtitle { f.node_detail_size } else { f.node_title_size }) })
+        .map(|(i, l)| if i == 0 { first_line_height(tokens, look, l.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(if l.is_subtitle { look.detail_size } else { look.title_size }) })
         .sum::<f64>()
-        + tech.map_or(0.0, |_| tokens.line_height(f.node_detail_size));
+        + tech.map_or(0.0, |_| tokens.line_height(look.detail_size));
     let (top, bottom) = if look.shape == "cylinder" { (nl.y + 2.0 * theme.node.cylinder_cap, nl.y + nl.height - theme.node.cylinder_cap) } else { (nl.y, nl.y + nl.height) };
     let start = top + ((bottom - top) - text_h) / 2.0;
     node_text(w, theme, tokens, nd, look, cx, start, Some(lines), inline_icon.map(|k| (k, n)))
 }
 
 /// Height of a label's first line: its text, or the inline icon beside it if taller.
-fn first_line_height(tokens: &DesignTokens, f: &rdg_render_core::theme::Fonts, is_subtitle: bool, has_icon: bool) -> f64 {
-    let lh = tokens.line_height(if is_subtitle { f.node_detail_size } else { f.node_title_size });
+fn first_line_height(tokens: &DesignTokens, look: &NodeLook, is_subtitle: bool, has_icon: bool) -> f64 {
+    let lh = tokens.line_height(if is_subtitle { look.detail_size } else { look.title_size });
     if has_icon { lh.max(tokens.icon_size + 4.0) } else { lh }
 }
 
@@ -571,8 +578,8 @@ fn node_text(
     let lines = lines.unwrap_or_else(|| rdg_layout::node_lines(nd, tokens.wrap_chars_normal));
     let mut y = top;
     for (i, pl) in lines.iter().enumerate() {
-        let size = if pl.is_subtitle { f.node_detail_size } else { f.node_title_size };
-        let lh = if i == 0 { first_line_height(tokens, f, pl.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(size) };
+        let size = if pl.is_subtitle { look.detail_size } else { look.title_size };
+        let lh = if i == 0 { first_line_height(tokens, look, pl.is_subtitle, inline_icon.is_some()) } else { tokens.line_height(size) };
         // Text sits centred in its line box (the line box is taller beside an icon).
         let baseline = y + lh / 2.0 + size * 0.35;
         let mut cx = cx;
@@ -592,11 +599,11 @@ fn node_text(
         y += lh;
         let color = if pl.is_subtitle { &look.detail_color } else { &look.title_color };
         let weight = if !pl.is_subtitle && theme.node.title_bold { "bold" } else { "normal" };
-        open(
-            w,
-            "text",
-            &[("x", f1(cx)), ("y", f1(baseline)), ("text-anchor", "middle".into()), ("font-size", format!("{size}")), ("font-weight", weight.into()), ("fill", color.clone())],
-        )?;
+        let mut text_attrs = vec![("x", f1(cx)), ("y", f1(baseline)), ("text-anchor", "middle".into()), ("font-size", format!("{size}")), ("font-weight", weight.into()), ("fill", color.clone())];
+        if let Some(font) = &look.font {
+            text_attrs.push(("font-family", font.clone()));
+        }
+        open(w, "text", &text_attrs)?;
         for span in parse_inline_spans(&pl.text) {
             let t = if span.style.is_math {
                 latex_to_unicode(&span.text)
@@ -630,13 +637,14 @@ fn node_text(
         close(w, "text")?;
     }
     if let Some(t) = nd.technology.as_deref().filter(|t| !nd.label.contains(*t)) {
-        let lh = tokens.line_height(f.node_detail_size);
-        text_el(
-            w,
-            &[("x", f1(cx)), ("y", f1(y + lh * 0.75)), ("text-anchor", "middle".into()), ("font-size", format!("{}", f.node_detail_size)), ("fill", look.detail_color.clone())],
-            &format!("[{t}]"),
-        )?;
+        let lh = tokens.line_height(look.detail_size);
+        let mut attrs = vec![("x", f1(cx)), ("y", f1(y + lh * 0.75)), ("text-anchor", "middle".into()), ("font-size", format!("{}", look.detail_size)), ("fill", look.detail_color.clone())];
+        if let Some(font) = &look.font {
+            attrs.push(("font-family", font.clone()));
+        }
+        text_el(w, &attrs, &format!("[{t}]"))?;
     }
+    let _ = f;
     Ok(())
 }
 
@@ -853,6 +861,25 @@ mod tests {
         // The classic theme keeps boxes.
         let classic = render(&payload, "classic");
         assert!(classic.contains("fill-opacity"), "{classic}");
+    }
+
+    #[test]
+    fn test_per_component_fonts_colours_and_shapes_reach_the_svg() {
+        let payload = DiagramPayload::from_yaml(
+            "diagram_type: flowchart\ngroups: [{id: g, label: Core, nodes: [a], fill: '#eef2ff', font: Georgia, font_size: 14, line_style: solid}]\n\
+             nodes: [{id: a, title: Bridge, type: service, fill: '#fef3c7', text_color: '#78350f', font: Georgia, font_size: 15, stroke_width: 3, shape: rounded}, {id: s, title: Idle, type: state}]\n\
+             edges: [{from: a, to: s, label: go, label_color: '#dc2626', font_size: 12, font: Georgia}]\n",
+        )
+        .unwrap();
+        let xml = render(&payload, "light");
+        assert!(xml.contains("fill=\"#fef3c7\"") && xml.contains("fill=\"#78350f\"") && xml.contains("stroke-width=\"3.0\""), "{xml}");
+        assert!(xml.contains("font-family=\"Georgia\"") && xml.contains("font-size=\"15\"") && xml.contains("font-size=\"14\"") && xml.contains("font-size=\"12\""));
+        assert!(xml.contains("fill=\"#dc2626\""), "edge label colour");
+        assert!(xml.contains("fill=\"#eef2ff\""), "group fill");
+        // Two pills: the overridden shape and the `state` type's theme shape.
+        assert!(xml.matches("rx=\"20.0\"").count() + xml.matches("rx=\"24.0\"").count() >= 1, "{xml}");
+        let mono = render(&payload, "mono-light");
+        assert!(!mono.contains("#fef3c7"), "a monochrome theme ignores custom colours");
     }
 
     #[test]

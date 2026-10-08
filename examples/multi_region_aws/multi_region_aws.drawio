@@ -135,10 +135,11 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_route53_alb2" value="" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.13235;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="route53" target="alb2" parent="1">
+        <mxCell id="e_route53_alb2" value="" style="exitX=0.73148;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.86765;entryY=0.06944;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="route53" target="alb2" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="580.0" y="608.0"/>
+              <mxPoint x="799.0" y="284.0"/>
+              <mxPoint x="799.0" y="608.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -168,11 +169,10 @@
         <mxCell id="e_app2_rds2" value="" style="exitX=0.51471;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.37857;entryY=0.00342;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="app2" target="rds2" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_rds1_rds2" value="async replication" style="exitX=1.00000;exitY=0.31429;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.80000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="rds1" target="rds2" parent="1">
-          <mxGeometry x="0.7572" y="-31.8" relative="1" as="geometry">
+        <mxCell id="e_rds1_rds2" value="async&lt;br&gt;replication" style="exitX=0.84286;exitY=0.03110;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.55714;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="rds1" target="rds2" parent="1">
+          <mxGeometry x="0.1087" y="18.5" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="586.0" y="951.0"/>
-              <mxPoint x="586.0" y="911.0"/>
+              <mxPoint x="439.0" y="894.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

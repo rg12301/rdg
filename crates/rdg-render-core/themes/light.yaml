@@ -59,6 +59,7 @@ shapes:
   record: cylinder
   decision: diamond
   condition: diamond
+  state: rounded           # UML state: a pill
 
 edge:
   color: "#8b95a5"

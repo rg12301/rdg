@@ -82,10 +82,8 @@ pub fn format_html_label(nd: &NodeData, theme: &Theme, look: &NodeLook, tokens: 
 }
 
 fn detail_line(theme: &Theme, look: &NodeLook, html: &str) -> String {
-    format!(
-        "<font style=\"font-size:{}px;color:{};font-weight:normal;\">{html}</font>",
-        theme.font.node_detail_size, look.detail_color
-    )
+    let _ = theme;
+    format!("<font style=\"font-size:{}px;color:{};font-weight:normal;\">{html}</font>", look.detail_size, look.detail_color)
 }
 
 /// A node's text plus its `[technology]` detail line.

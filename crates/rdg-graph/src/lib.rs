@@ -65,6 +65,14 @@ pub struct NodeData {
     pub display: Option<String>,
     /// Layout hint: the rank the author pinned this node to.
     pub rank: Option<u32>,
+    /// Appearance overrides, as written (see `rdg_schema::NodeDef`).
+    pub fill: Option<String>,
+    pub text_color: Option<String>,
+    pub font: Option<String>,
+    pub font_size: Option<f64>,
+    pub stroke_width: Option<f64>,
+    /// The author's shape (`card`, `rounded`, `cylinder`, …), winning over the theme.
+    pub shape_override: Option<String>,
     /// Drawn shape, resolved from the theme before layout: `card`, `cylinder`,
     /// `ellipse`, `diamond`, `icon`, or a marker (`start`, `end`, `choice`). `None`
     /// before resolution — consumers then fall back to the node type.
@@ -103,6 +111,10 @@ pub struct EdgeData {
     /// Whether the edge takes part in ranking (`constraint: false` in the YAML opts out:
     /// the edge is routed and drawn, but never pushes its target to a later rank).
     pub constraint: bool,
+    /// Label appearance overrides, as written.
+    pub label_color: Option<String>,
+    pub font: Option<String>,
+    pub font_size: Option<f64>,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -294,6 +306,12 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
             category: node_def.category.clone(),
             display: node_def.display.clone(),
             rank: node_def.rank,
+            fill: node_def.fill.clone(),
+            text_color: node_def.text_color.clone(),
+            font: node_def.font.clone(),
+            font_size: node_def.font_size,
+            stroke_width: node_def.stroke_width,
+            shape_override: node_def.shape.as_deref().map(str::to_ascii_lowercase),
             shape: None,
         };
         let idx = graph.add_node(data);
@@ -334,6 +352,9 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
                 style_extra: edge_def.style_extra.clone(),
                 step,
                 constraint: edge_def.constraint.unwrap_or(true),
+                label_color: edge_def.label_color.clone(),
+                font: edge_def.font.clone(),
+                font_size: edge_def.font_size,
             },
         );
         edge_order.push(e_idx);
@@ -421,6 +442,9 @@ fn compile_steps(
                         style_extra: None,
                         step: numbered.then(|| counter.to_string()),
                         constraint: true,
+                        label_color: None,
+                        font: None,
+                        font_size: None,
                     },
                 );
                 edge_order.push(edge);
@@ -531,6 +555,9 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                     style_extra: data.style_extra,
                     step: data.step,
                     constraint: data.constraint,
+                    label_color: data.label_color,
+                    font: data.font,
+                    font_size: data.font_size,
                 },
             );
         }
