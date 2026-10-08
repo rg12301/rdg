@@ -40,7 +40,7 @@ pub fn node_style(theme: &Theme, look: &NodeLook, label_top: f64) -> String {
         // Drawn as its mark with the caption underneath (a logo, or a start/end/choice
         // marker): an invisible box; the mark is a child cell (see `marker_style`), the
         // caption starts under it.
-        "icon" | "start" | "end" | "choice" => format!(
+        "icon" | "tile" | "start" | "end" | "choice" => format!(
             "rounded=0;{}align=center;verticalAlign=top;spacingTop={label_top:.0};spacingBottom=0;spacingLeft=0;spacingRight=0;",
             common("none", 1.0, "none")
         ),

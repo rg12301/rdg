@@ -32,6 +32,7 @@ title:
   description_color: "#5b6474"
 
 node:
+  style: tile              # components as category-coloured tiles with a caption (card: boxes)
   corner_radius: 6
   cylinder_cap: 8
   stroke_width: 1.5
@@ -92,6 +93,11 @@ icon:
   # says; black-and-white themes turn them on, where they carry the meaning instead.
   category_glyphs: false
   backdrop: null
+  tile:                    # a component drawn as a tile (node.style: tile)
+    size: 44
+    glyph_scale: 0.56
+    radius: 10
+    badge_size: 18         # brand badge at the tile's corner; 0 hides it
 
 legend:
   # Explain what the colours mean. Shown when there are at least 2 things to explain

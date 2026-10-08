@@ -1,105 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="393" height="1028" viewBox="0 0 393 1028" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="411" height="1094" viewBox="0 0 411 1094" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#dc2626" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="47.0" text-anchor="start" font-size="18" font-weight="bold" fill="#111827">Food Delivery Order Flow</text>
-  <path d="M 207.0 130.0 L 207.0 172.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 207.0 282.0 L 207.0 330.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 167.0 380.0 L 167.0 443.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 272.0 373.0 L 291.4 373.0 Q 299.0 373.0 299.0 380.6 L 299.0 442.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 299.0 500.0 L 299.0 556.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 114.0 493.0 L 114.0 556.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 114.0 606.0 L 114.0 654.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 114.0 704.0 L 114.0 752.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 114.0 802.0 L 114.0 850.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 114.0 900.0 L 114.0 948.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <circle cx="208.0" cy="90.0" r="12.0" fill="#111827"/>
-  <text x="208.0" y="118.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <path d="M 216.0 134.0 L 216.0 176.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 216.0 296.0 L 216.0 344.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 173.0 394.0 L 173.0 471.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 286.0 387.0 L 304.7 387.0 Q 312.0 387.0 312.0 394.3 L 312.0 468.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 312.0 530.0 L 312.0 603.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 119.0 521.0 L 119.0 598.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 119.0 658.0 L 119.0 706.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 119.0 766.0 L 119.0 814.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 119.0 864.0 L 119.0 912.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 119.0 962.0 L 119.0 1010.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <circle cx="216.0" cy="90.0" r="12.0" fill="#111827"/>
+  <text x="216.0" y="120.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Order Placed</tspan>
   </text>
-  <path fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" d="M 207.0 172.0 L 347.0 227.0 L 207.0 282.0 L 67.0 227.0 Z"/>
-  <text x="207.0" y="223.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <path fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" d="M 216.0 176.0 L 356.0 236.0 L 216.0 296.0 L 76.0 236.0 Z"/>
+  <text x="216.0" y="232.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Validate Cart</tspan>
   </text>
-  <text x="207.0" y="239.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="216.0" y="248.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>&amp; Address</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="142.0" y="330.0" width="130.0" height="50.0" rx="6.0"/>
-  <text x="207.0" y="359.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="146.0" y="344.0" width="140.0" height="50.0" rx="6.0"/>
+  <text x="216.0" y="373.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Process Payment</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="41.0" y="443.0" width="150.0" height="50.0" rx="6.0"/>
-  <text x="116.0" y="472.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="39.0" y="471.0" width="160.0" height="50.0" rx="6.0"/>
+  <text x="119.0" y="500.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Notify Restaurant</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="48.0" y="556.0" width="130.0" height="50.0" rx="6.0"/>
-  <text x="113.0" y="577.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="54.0" y="598.0" width="130.0" height="60.0" rx="6.0"/>
+  <text x="119.0" y="624.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Restaurant</tspan>
   </text>
-  <text x="113.0" y="593.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="119.0" y="640.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Prepares Order</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="49.0" y="654.0" width="130.0" height="50.0" rx="6.0"/>
-  <text x="114.0" y="675.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="49.0" y="706.0" width="140.0" height="60.0" rx="6.0"/>
+  <text x="119.0" y="732.1" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Assign Delivery</tspan>
   </text>
-  <text x="114.0" y="691.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="119.0" y="748.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Partner</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="24.0" y="752.0" width="180.0" height="50.0" rx="6.0"/>
-  <text x="114.0" y="781.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="24.0" y="814.0" width="190.0" height="50.0" rx="6.0"/>
+  <text x="119.0" y="843.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Partner Picks Up Order</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="29.0" y="850.0" width="170.0" height="50.0" rx="6.0"/>
-  <text x="114.0" y="879.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="29.0" y="912.0" width="180.0" height="50.0" rx="6.0"/>
+  <text x="119.0" y="941.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>En Route to Customer</tspan>
   </text>
-  <circle cx="114.0" cy="964.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
-  <circle cx="114.0" cy="964.0" r="10.0" fill="#111827"/>
-  <text x="114.0" y="994.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <circle cx="119.0" cy="1026.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
+  <circle cx="119.0" cy="1026.0" r="10.0" fill="#111827"/>
+  <text x="119.0" y="1058.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Order Delivered</tspan>
   </text>
-  <circle cx="298.0" cy="458.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
-  <circle cx="298.0" cy="458.0" r="10.0" fill="#111827"/>
-  <text x="298.0" y="488.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <circle cx="312.0" cy="484.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
+  <circle cx="312.0" cy="484.0" r="10.0" fill="#111827"/>
+  <text x="312.0" y="516.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Payment Failed</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="229.0" y="556.0" width="140.0" height="50.0" rx="6.0"/>
-  <text x="299.0" y="585.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="237.0" y="603.0" width="150.0" height="50.0" rx="6.0"/>
+  <text x="312.0" y="632.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Refund Initiated</tspan>
   </text>
-  <rect x="211.0" y="285.9" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="229.0" y="297.1" text-anchor="middle" font-size="10" fill="#8b95a5">valid</text>
-  <rect x="171.0" y="403.8" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="195.0" y="415.0" text-anchor="middle" font-size="10" fill="#8b95a5">success</text>
-  <rect x="303.0" y="399.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="330.0" y="411.0" text-anchor="middle" font-size="10" fill="#dc2626">declined</text>
-  <rect x="184.0" y="137.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="193.0" y="149.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
-  <rect x="184.0" y="289.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="193.0" y="301.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
-  <rect x="142.0" y="387.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="152.0" y="399.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3a</text>
-  <rect x="278.0" y="350.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="288.0" y="362.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3b</text>
-  <rect x="274.0" y="507.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="284.0" y="519.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4b</text>
-  <rect x="89.0" y="500.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="99.0" y="512.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4a</text>
-  <rect x="91.0" y="613.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="100.0" y="625.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
-  <rect x="91.0" y="711.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="100.0" y="723.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
-  <rect x="91.0" y="809.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="100.0" y="821.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
-  <rect x="91.0" y="907.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="100.0" y="919.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
-  <text x="329.4" y="920.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
-  <rect x="309.0" y="934.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
-  <text x="339.0" y="945.1" font-size="10" fill="#5b6474">Other</text>
-  <rect x="297.0" y="958.1" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
-  <text x="327.0" y="968.6" font-size="10" fill="#5b6474">Backend</text>
-  <line x1="243.0" y1="988.6" x2="265.0" y2="988.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
-  <text x="273.0" y="992.1" font-size="10" fill="#5b6474">Error / fallback</text>
+  <rect x="220.0" y="299.9" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="238.0" y="311.1" text-anchor="middle" font-size="10" fill="#8b95a5">valid</text>
+  <rect x="177.0" y="424.8" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="201.0" y="436.0" text-anchor="middle" font-size="10" fill="#8b95a5">success</text>
+  <rect x="316.0" y="419.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="343.0" y="431.0" text-anchor="middle" font-size="10" fill="#dc2626">declined</text>
+  <rect x="193.0" y="141.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="202.0" y="153.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
+  <rect x="193.0" y="303.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="202.0" y="315.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
+  <rect x="148.0" y="401.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="158.0" y="413.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3a</text>
+  <rect x="292.0" y="364.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="302.0" y="376.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3b</text>
+  <rect x="287.0" y="537.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="297.0" y="549.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4b</text>
+  <rect x="94.0" y="528.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="104.0" y="540.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4a</text>
+  <rect x="96.0" y="665.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="105.0" y="677.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
+  <rect x="96.0" y="773.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="105.0" y="785.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
+  <rect x="96.0" y="871.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="105.0" y="883.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
+  <rect x="96.0" y="969.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="105.0" y="981.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
+  <text x="347.4" y="986.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="327.0" y="1000.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
+  <text x="357.0" y="1011.1" font-size="10" fill="#5b6474">Other</text>
+  <rect x="315.0" y="1024.1" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="345.0" y="1034.6" font-size="10" fill="#5b6474">Backend</text>
+  <line x1="261.0" y1="1054.6" x2="283.0" y2="1054.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <text x="291.0" y="1058.1" font-size="10" fill="#5b6474">Error / fallback</text>
 </svg>

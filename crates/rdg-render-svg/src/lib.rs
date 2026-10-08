@@ -430,7 +430,7 @@ pub(crate) fn draw_node(
     };
 
     // A flowchart marker: its shape centred at the top of the box, the caption under it.
-    if let Some(mark) = rdg_layout::caption_mark(nd, tokens).filter(|_| look.shape != "icon") {
+    if let Some(mark) = rdg_layout::caption_mark(nd, tokens).filter(|_| !matches!(look.shape.as_str(), "icon" | "tile")) {
         let (mcx, mcy, r) = (cx, nl.y + mark / 2.0, mark / 2.0);
         match look.shape.as_str() {
             "start" => el(w, "circle", &[("cx", f1(mcx)), ("cy", f1(mcy)), ("r", f1(r - 2.0)), ("fill", look.fill.clone())])?,
@@ -473,6 +473,28 @@ pub(crate) fn draw_node(
             let mut cap = vec![("cx", f1(cx)), ("cy", f1(nl.y + rh)), ("rx", f1(rx)), ("ry", f1(rh))];
             cap.extend([("fill", look.fill.clone()), ("fill-opacity", format!("{:.3}", look.fill_opacity)), ("stroke", look.stroke.clone()), ("stroke-width", f1(look.stroke_width))]);
             el(w, "ellipse", &cap)?;
+        }
+        "tile" => {
+            let size = tokens.tile_size;
+            let x0 = cx - size / 2.0;
+            let radius = theme.icon.tile.radius;
+            el(w, "rect", &[("x", f1(x0)), ("y", f1(nl.y)), ("width", f1(size)), ("height", f1(size)), ("rx", f1(radius)), ("fill", look.stroke.clone())])?;
+            // The category glyph in the canvas colour on the category's colour.
+            let g = size * theme.icon.tile.glyph_scale;
+            if let Some(m) = rdg_icons::render_icon_svg(&look.glyph, rdg_icons::IconStyle::Mono(&theme.canvas.background), x0 + (size - g) / 2.0, nl.y + (size - g) / 2.0, g, &format!("n{n}-")) {
+                w.write_event(Event::Text(BytesText::from_escaped(m)))?;
+            }
+            // Brand badge (the language, the product) straddling the bottom-right corner.
+            let b = tokens.tile_badge_size;
+            if let Some(key) = nd.icon.as_deref().filter(|_| b > 0.0) {
+                let (bx, by) = (x0 + size - b * 0.35, nl.y + size - b * 0.35);
+                el(w, "circle", &[("cx", f1(bx)), ("cy", f1(by)), ("r", f1(b / 2.0 + 1.5)), ("fill", theme.canvas.background.clone()), ("stroke", look.stroke.clone()), ("stroke-width", "1".into())])?;
+                if let Some(m) = rdg_icons::render_icon_svg(key, theme.icon_style(), bx - b * 0.36, by - b * 0.36, b * 0.72, &format!("n{n}b-")) {
+                    w.write_event(Event::Text(BytesText::from_escaped(m)))?;
+                }
+            }
+            let top = nl.y + tokens.tile_mark() + rdg_layout::caption_gap(tokens);
+            return node_text(w, theme, tokens, nd, look, cx, top, None, None);
         }
         "icon" => {
             let halo = tokens.icon_halo_size();
@@ -701,12 +723,16 @@ pub(crate) fn draw_legend(w: &mut W, theme: &Theme, tokens: &DesignTokens, items
         for (it, width) in row {
             let mid = y + row_h / 2.0;
             let label = match it {
-                LegendItem::Category { label, fill, fill_opacity, stroke, .. } => {
-                    el(
-                        w,
-                        "rect",
-                        &[("x", f1(x)), ("y", f1(mid - 7.0)), ("width", "22".into()), ("height", "14".into()), ("rx", "3".into()), ("fill", fill.clone()), ("fill-opacity", format!("{fill_opacity:.3}")), ("stroke", stroke.clone()), ("stroke-width", "1.25".into())],
-                    )?;
+                LegendItem::Category { label, fill, fill_opacity, stroke, solid, .. } => {
+                    if *solid {
+                        el(w, "rect", &[("x", f1(x + 4.0)), ("y", f1(mid - 7.0)), ("width", "14".into()), ("height", "14".into()), ("rx", "4".into()), ("fill", stroke.clone())])?;
+                    } else {
+                        el(
+                            w,
+                            "rect",
+                            &[("x", f1(x)), ("y", f1(mid - 7.0)), ("width", "22".into()), ("height", "14".into()), ("rx", "3".into()), ("fill", fill.clone()), ("fill-opacity", format!("{fill_opacity:.3}")), ("stroke", stroke.clone()), ("stroke-width", "1.25".into())],
+                        )?;
+                    }
                     label
                 }
                 LegendItem::Edge { label, look } => {
@@ -737,6 +763,9 @@ mod tests {
 
     fn payload_with_types(types: &[(&str, &str)]) -> DiagramPayload {
         DiagramPayload {
+            // Boxes (cards, cylinders): what these tests assert on. Architecture
+            // diagrams draw tiles — see `test_architecture_components_are_tiles`.
+            diagram_type: "flowchart".to_owned(),
             nodes: types
                 .iter()
                 .map(|(id, ty)| NodeDef {
@@ -810,6 +839,20 @@ mod tests {
         assert!(xml.contains("url(#card-shadow)"));
         assert!(!render(&payload_with_types(&[("n1", "database")]), "light").contains("url(#card-shadow)"));
         assert!(xml.contains("<ellipse"));
+    }
+
+    #[test]
+    fn test_architecture_components_are_tiles_with_a_badge_and_a_solid_legend() {
+        let payload = DiagramPayload::from_yaml("nodes: [{id: api, title: orders-api, type: service, language: go}, {id: web, title: Web, type: client}]\nedges: [{from: web, to: api}]\n").unwrap();
+        let xml = render(&payload, "light");
+        // Two tiles filled in their category colours, the Go badge on the service, no card.
+        assert!(xml.contains("fill=\"#059669\"") && xml.contains("fill=\"#2563eb\""), "{xml}");
+        assert!(xml.matches("<circle").count() >= 1, "badge ring");
+        assert!(!xml.contains("fill-opacity=\"0.122\""), "no tinted card");
+        assert!(xml.contains("rx=\"4\""), "solid legend swatch");
+        // The classic theme keeps boxes.
+        let classic = render(&payload, "classic");
+        assert!(classic.contains("fill-opacity"), "{classic}");
     }
 
     #[test]
@@ -917,6 +960,7 @@ mod tests {
     #[test]
     fn test_explicit_node_color_overrides_semantic_type_color() {
         let payload = DiagramPayload {
+            diagram_type: "flowchart".to_owned(),
             nodes: vec![NodeDef {
                 id: "n1".to_owned(),
                 label: "A".to_owned(),
@@ -935,6 +979,7 @@ mod tests {
     fn test_class_preset_resolution_reflected_in_svg_stroke() {
         let payload = DiagramPayload::from_yaml(
             r##"
+diagram_type: flowchart
 node_styles:
   critical:
     color: "#ef4444"

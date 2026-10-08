@@ -283,13 +283,20 @@ Text
   starting or ending with -, _, ., / or :: continues the title. rdg sizes every node
   to fit its text; set width/height only when you must.
 
+Tiles (architecture diagrams)
+  A component is drawn as a small square in its category's colour with the
+  category's glyph (a service, a client, a gateway, …) and the title and details
+  underneath — no box around the text. Its language or product logo is a small badge
+  on the tile's corner. Databases, caches and queues with a real logo (db_type:
+  postgres, redis, kafka, …) are drawn *as* the logo with the label below. Arrows meet
+  a tile or logo at the middle of its face. Flowcharts, state machines, tables and
+  classes keep boxes with the text inside; `diagram_type: flowchart` forces boxes,
+  `display: card` keeps one node a box, `display: icon` forces the logo, and the
+  `classic` theme (or `node: {style: card}` in a theme) boxes everything.
+
 Icons
   Chosen from, in order: `icon`, `language`, `db_type`, `provider`, then a language
-  named in technology/label/metadata; cards without one get their category glyph.
-  Drawn inline before the node's title. Databases, caches and queues with a real
-  logo (db_type: postgres, redis, kafka, …) are drawn *as* the logo with the label
-  below; arrows attach to an invisible circle around the logo (theme `icon.halo`).
-  `display: card` keeps a box, `display: icon` forces the logo.
+  named in technology/label/metadata. In a box the icon sits inline before the title.
   `rdg --list-icons` prints every key.
 ";
 

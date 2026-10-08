@@ -403,7 +403,7 @@ pub enum Direction {
 }
 
 fn default_diagram_type() -> String {
-    "flowchart".to_owned()
+    "auto".to_owned()
 }
 
 fn default_node_type() -> String {
@@ -499,7 +499,18 @@ impl DiagramPayload {
             "class" | "uml_class" | "oop" => "class",
             "state" | "state_machine" | "fsm" => "state",
             "arch" | "architecture" | "system" => "architecture",
-            _ => "flowchart",
+            "flow" | "flowchart" | "process" => "flowchart",
+            // Unspecified: a chart with decisions, start/end markers or states is a
+            // flowchart (boxes with the text inside); anything else is an architecture
+            // diagram of components.
+            _ => {
+                let flow_types = ["decision", "condition", "start", "start_state", "initial", "initial_state", "end", "end_state", "final", "final_state", "choice", "branch", "state"];
+                if self.nodes.iter().any(|n| flow_types.contains(&n.node_type.to_ascii_lowercase().as_str())) {
+                    "flowchart"
+                } else {
+                    "architecture"
+                }
+            }
         }
     }
 
@@ -1535,8 +1546,8 @@ const JSON_SCHEMA: &str = r##"{
   "properties": {
     "diagram_type": {
       "type": "string",
-      "enum": ["architecture", "flowchart", "sequence", "erd", "class", "state", "graph"],
-      "default": "flowchart",
+      "enum": ["auto", "architecture", "flowchart", "sequence", "erd", "class", "state", "graph"],
+      "default": "auto",
       "description": "Logical diagram category: architecture, flowchart, sequence, erd, class, state, graph"
     },
     "title": {
@@ -1702,7 +1713,7 @@ const JSON_SCHEMA: &str = r##"{
           "link": { "type": "string", "description": "URL making the rendered shape clickable (draw.io only)" },
           "rank": { "type": "integer", "minimum": 0, "description": "Layout hint: pin the node to this rank (0 = first along the flow)" },
           "category": { "type": "string", "description": "Semantic category (colour): frontend, backend, database, messagebus, cloud, security, external, neutral" },
-          "display": { "type": "string", "enum": ["card", "icon"], "description": "Draw as a box, or as its enlarged logo with the label below" },
+          "display": { "type": "string", "enum": ["tile", "card", "icon"], "description": "Draw as a category-coloured tile with the caption below, as a box with the text inside, or as its enlarged logo" },
           "fields": {
             "type": "array",
             "items": { "type": "string" },
@@ -1806,6 +1817,19 @@ edges:
     to: n2
     label: "queries"
 "#;
+
+    #[test]
+    fn test_unspecified_diagram_type_is_architecture_unless_it_has_flow_markers() {
+        let p = DiagramPayload::from_yaml("nodes: [{id: a, type: service}, {id: b, type: database}]\n").unwrap();
+        assert_eq!(p.diagram_type, "auto");
+        assert_eq!(p.resolved_diagram_type(), "architecture");
+        let p = DiagramPayload::from_yaml("nodes: [{id: a, type: start}, {id: b, type: service}]\n").unwrap();
+        assert_eq!(p.resolved_diagram_type(), "flowchart");
+        let p = DiagramPayload::from_yaml("nodes: [{id: a, type: state}]\n").unwrap();
+        assert_eq!(p.resolved_diagram_type(), "flowchart");
+        let p = DiagramPayload::from_yaml("diagram_type: flowchart\nnodes: [{id: a, type: service}]\n").unwrap();
+        assert_eq!(p.resolved_diagram_type(), "flowchart");
+    }
 
     #[test]
     fn test_par_and_and_alt_else_accept_a_plain_list_of_steps() {

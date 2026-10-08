@@ -353,7 +353,7 @@ pub fn validate_against_theme(payload: &DiagramPayload, theme: &rdg_render_core:
         }
     }
     for (i, n) in payload.nodes.iter().enumerate() {
-        if let Some(d) = n.display.as_deref().filter(|d| !["card", "icon"].contains(&d.to_ascii_lowercase().as_str())) {
+        if let Some(d) = n.display.as_deref().filter(|d| !["tile", "card", "icon"].contains(&d.to_ascii_lowercase().as_str())) {
             out.push(Diagnostic {
                 level: Level::Warning,
                 path: format!("nodes[{i}].display"),

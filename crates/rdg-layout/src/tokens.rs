@@ -83,6 +83,11 @@ pub struct DesignTokens {
     pub icon_node_size: f64,
     /// Gap between a logo node's logo and the invisible halo arrows attach to, px.
     pub icon_halo_padding: f64,
+    /// Side of a component tile (a node drawn as a category-coloured square with its
+    /// caption underneath), px — from the theme's `icon.tile.size`.
+    pub tile_size: f64,
+    /// Diameter of the brand badge on a tile's corner, px (0: none).
+    pub tile_badge_size: f64,
     /// Whether that halo is a circle (else a square).
     pub icon_halo_circle: bool,
     /// Edge labels longer than this wrap onto two lines.
@@ -290,6 +295,8 @@ impl Default for DesignTokens {
             icon_reserve: 26.0,
             icon_node_size: 48.0,
             icon_halo_padding: 8.0,
+            tile_size: 44.0,
+            tile_badge_size: 18.0,
             icon_halo_circle: true,
             edge_label_wrap_chars: 22,
             seq_participant_gap: 32.0,
@@ -307,11 +314,11 @@ impl Default for DesignTokens {
             group_pad_units: 4.0,
             stub_clearance_units: 3.0,
             min_rank_gap_units: 6.0,
-            channel_pitch_units: 1.75,
-            min_port_pitch_units: 1.5,
+            channel_pitch_units: 2.25,
+            min_port_pitch_units: 2.0,
             polish_enabled: true,
             polish_snap: true,
-            polish_min_jog_units: 1.5,
+            polish_min_jog_units: 3.0,
             polish_max_passes: 6,
             polish_max_reroutes: 1500,
             polish_max_detour_ratio: 1.3,
@@ -416,6 +423,14 @@ impl DesignTokens {
     /// Diameter (or side) of a logo node's halo: the logo plus its padding all round.
     pub fn icon_halo_size(&self) -> f64 {
         self.icon_node_size + 2.0 * self.icon_halo_padding
+    }
+    /// How far a tile's corner badge hangs past the tile's bottom edge.
+    pub fn tile_badge_overhang(&self) -> f64 {
+        if self.tile_badge_size > 0.0 { (self.tile_badge_size * 0.3 + 1.0).round() } else { 0.0 }
+    }
+    /// Height of a tile's mark: the tile plus the badge overhang under it.
+    pub fn tile_mark(&self) -> f64 {
+        self.tile_size + self.tile_badge_overhang()
     }
 
     /// Height of a card's title line: the title text, or the inline icon if taller.

@@ -242,6 +242,7 @@ pub(crate) fn layout_node_size(
 pub fn caption_mark(nd: &rdg_graph::NodeData, tokens: &DesignTokens) -> Option<f64> {
     match nd.shape.as_deref().or_else(|| marker_shape(&nd.node_type))? {
         "icon" => Some(tokens.icon_halo_size()),
+        "tile" => Some(tokens.tile_mark()),
         "start" => Some(tokens.start_marker_size()),
         "end" => Some(tokens.end_marker_size()),
         "choice" => Some(tokens.choice_marker_size()),
@@ -251,7 +252,7 @@ pub fn caption_mark(nd: &rdg_graph::NodeData, tokens: &DesignTokens) -> Option<f
 
 /// Gap between a mark and the caption under it.
 pub fn caption_gap(tokens: &DesignTokens) -> f64 {
-    tokens.px(0.25)
+    tokens.px(0.5)
 }
 
 /// Box for a `mark`-sized shape with the node's caption lines (and technology line)
@@ -265,7 +266,7 @@ fn captioned_size(data: &rdg_graph::NodeData, mark: f64, t: &DesignTokens) -> (f
         text_w = text_w.max((tech.chars().count() + 2) as f64 * t.char_width(t.detail_font_size));
         text_h += t.line_height(t.detail_font_size);
     }
-    let w = (text_w + t.px(1.0)).max(mark + t.px(1.0));
+    let w = (text_w + t.px(2.0)).max(mark + t.px(2.0));
     let h = mark + caption_gap(t) + text_h;
     ((w / 4.0).ceil() * 4.0, (h / 4.0).ceil() * 4.0)
 }

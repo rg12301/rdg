@@ -197,6 +197,7 @@ pub fn render_drawio(
         let look = node_look(theme, node_data);
         let tooltip = node_data.metadata.as_deref().unwrap_or("");
         let is_icon_node = look.shape == "icon";
+        let is_tile = look.shape == "tile";
         // A box's icon goes inline before its title, the two centred together (tables
         // and class cards draw their own header, icon nodes put the logo on top,
         // markers have no icon).
@@ -267,8 +268,40 @@ pub fn render_drawio(
         }
 
         // A marker's shape, centred at the top of its box above the caption.
-        if let (Some(m), false) = (mark, is_icon_node) {
+        if let (Some(m), false) = (mark, is_icon_node || is_tile) {
             write_child(&mut w, &format!("{}_mark", node_data.id), &marker_style(&look), &node_data.id, ((nl.width - m) / 2.0, 0.0, m, m))?;
+        }
+        // A tile: the category-coloured square with its glyph, and the brand badge on
+        // its corner, as child cells at the top of the (invisible) box.
+        if is_tile {
+            let size = tokens.tile_size;
+            let x0 = (nl.width - size) / 2.0;
+            let tile_style = format!(
+                "rounded=1;absoluteArcSize=1;arcSize={};fillColor={};strokeColor=none;connectable=0;editable=0;",
+                2.0 * theme.icon.tile.radius,
+                look.stroke
+            );
+            write_child(&mut w, &format!("{}_tile", node_data.id), &tile_style, &node_data.id, (x0, 0.0, size, size))?;
+            let g = size * theme.icon.tile.glyph_scale;
+            if let Some(uri) = rdg_icons::icon_as_data_uri(&look.glyph, rdg_icons::IconStyle::Mono(&theme.canvas.background)) {
+                let glyph_style = format!(
+                    "shape=image;image={};imageAspect=1;aspect=fixed;fillColor=none;strokeColor=none;connectable=0;editable=0;",
+                    uri.replacen(";base64,", ",", 1)
+                );
+                write_child(&mut w, &format!("{}_glyph", node_data.id), &glyph_style, &node_data.id, (x0 + (size - g) / 2.0, (size - g) / 2.0, g, g))?;
+            }
+            let b = tokens.tile_badge_size;
+            if let Some(uri) = node_data.icon.as_deref().filter(|_| b > 0.0).and_then(|k| rdg_icons::icon_as_data_uri(k, theme.icon_style())) {
+                let (bx, by) = (x0 + size - b * 0.35, size - b * 0.35);
+                let r = b / 2.0 + 1.5;
+                let ring = format!("ellipse;fillColor={};strokeColor={};strokeWidth=1;connectable=0;editable=0;", theme.canvas.background, look.stroke);
+                write_child(&mut w, &format!("{}_badge_ring", node_data.id), &ring, &node_data.id, (bx - r, by - r, 2.0 * r, 2.0 * r))?;
+                let badge_style = format!(
+                    "shape=image;image={};imageAspect=1;aspect=fixed;fillColor=none;strokeColor=none;connectable=0;editable=0;",
+                    uri.replacen(";base64,", ",", 1)
+                );
+                write_child(&mut w, &format!("{}_badge", node_data.id), &badge_style, &node_data.id, (bx - b * 0.36, by - b * 0.36, b * 0.72, b * 0.72))?;
+            }
         }
         // An icon node's logo, centred in its halo at the top of the box (a card's icon
         // is inline in its label, above).
@@ -499,12 +532,17 @@ pub(crate) fn write_legend<W: std::io::Write>(
             let id = format!("legend_{r}_{k}");
             let mid = y + row_h / 2.0;
             let label = match it {
-                LegendItem::Category { label, fill, fill_opacity, stroke, .. } => {
-                    let style = format!(
-                        "rounded=1;absoluteArcSize=1;arcSize=6;fillColor={fill};fillOpacity={};strokeColor={stroke};strokeWidth=1.25;connectable=0;",
-                        (fill_opacity * 100.0).round()
-                    );
-                    write_vertex(w, &format!("{id}_swatch"), "", &style, (x, mid - 7.0, 22.0, 14.0))?;
+                LegendItem::Category { label, fill, fill_opacity, stroke, solid, .. } => {
+                    if *solid {
+                        let style = format!("rounded=1;absoluteArcSize=1;arcSize=8;fillColor={stroke};strokeColor=none;connectable=0;");
+                        write_vertex(w, &format!("{id}_swatch"), "", &style, (x + 4.0, mid - 7.0, 14.0, 14.0))?;
+                    } else {
+                        let style = format!(
+                            "rounded=1;absoluteArcSize=1;arcSize=6;fillColor={fill};fillOpacity={};strokeColor={stroke};strokeWidth=1.25;connectable=0;",
+                            (fill_opacity * 100.0).round()
+                        );
+                        write_vertex(w, &format!("{id}_swatch"), "", &style, (x, mid - 7.0, 22.0, 14.0))?;
+                    }
                     label
                 }
                 LegendItem::Edge { label, look } => {
@@ -823,9 +861,18 @@ mod tests {
     }
 
     #[test]
+    fn test_architecture_components_are_tile_cells() {
+        let payload = DiagramPayload::from_yaml("nodes: [{id: api, title: orders-api, type: service, language: go}]\n").unwrap();
+        let xml = render(&payload, "standard");
+        assert!(xml.contains("id=\"api_tile\"") && xml.contains("id=\"api_glyph\"") && xml.contains("id=\"api_badge\""), "{xml}");
+        assert!(xml.contains("fillColor=#059669;strokeColor=none"), "the tile is the category colour");
+    }
+
+    #[test]
     fn test_class_preset_resolution_reflected_in_rendered_style() {
         let payload = DiagramPayload::from_yaml(
             r##"
+diagram_type: flowchart
 node_styles:
   critical:
     color: "#ef4444"

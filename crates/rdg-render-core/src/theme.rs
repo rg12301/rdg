@@ -202,6 +202,12 @@ pub struct Title {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NodeStyle {
+    /// How a component (service, database, client, …) is drawn in an architecture
+    /// diagram: `tile` — a small category-coloured square with the type's glyph and
+    /// the caption underneath (colour says what kind, the glyph says what it is, no box
+    /// around the text) — or `card`, a box with the text inside. Flowcharts, state
+    /// machines, tables and classes always draw boxes.
+    pub style: NodeDrawStyle,
     pub corner_radius: f64,
     /// Depth of a database cylinder's elliptical top/bottom cap, px.
     pub cylinder_cap: f64,
@@ -211,6 +217,13 @@ pub struct NodeStyle {
     pub detail_color: String,
     /// Title weight: true = bold.
     pub title_bold: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NodeDrawStyle {
+    Tile,
+    Card,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -285,6 +298,22 @@ pub struct IconTheme {
     /// Plate drawn behind an icon node's logo, or null — dark themes use a light one
     /// so dark brand marks (Kafka, GitHub, …) stay visible.
     pub backdrop: Option<String>,
+    /// The tile a component is drawn as (see `node.style: tile`).
+    pub tile: Tile,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Tile {
+    /// Side of the square, px.
+    pub size: f64,
+    /// The category glyph's size as a fraction of the tile.
+    pub glyph_scale: f64,
+    /// Corner radius, px.
+    pub radius: f64,
+    /// Diameter of the brand badge at the tile's bottom-right corner (a service's
+    /// language, a client's product), px; 0 hides badges.
+    pub badge_size: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -524,6 +553,8 @@ impl Theme {
         t.icon_node_size = self.icon.node_size;
         t.icon_halo_padding = self.icon.halo.padding;
         t.icon_halo_circle = self.icon.halo.shape == HaloShape::Circle;
+        t.tile_size = self.icon.tile.size;
+        t.tile_badge_size = self.icon.tile.badge_size;
         t.edge_label_wrap_chars = self.edge_label.wrap_chars;
         t.seq_participant_gap = self.sequence.participant_gap;
         t.seq_message_gap = self.sequence.message_gap;

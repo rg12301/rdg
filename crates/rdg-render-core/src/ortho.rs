@@ -67,8 +67,9 @@ const W_BORDER_CROSS: f64 = 12.0;
 const W_FOREIGN_BORDER: f64 = 160.0;
 /// Two edges using the same port, or ports closer than the minimum pitch.
 const W_PORT_TAKEN: f64 = 400.0;
-/// Per px a port sits off its face's centre (tie-break toward centred ports).
-const W_OFF_CENTRE: f64 = 0.08;
+/// Per px a port sits off its face's centre: an arrow meets a face at its middle unless
+/// another arrow is already there (or a bend is saved).
+const W_OFF_CENTRE: f64 = 0.3;
 /// Leaving / entering a node across the diagram's main flow (e.g. a side face in a
 /// top-to-bottom diagram) — small, so geometry still decides. Entering costs a little
 /// more than leaving: between two one-bend routes, the one whose arrowhead arrives
@@ -516,9 +517,41 @@ impl Router<'_> {
 /// Candidate pins on every face of `nl`, keeping `pitch` between neighbouring ports.
 /// `align` holds coordinates worth offering as a port (e.g. the other endpoint's centre,
 /// for a straight line) when they fall on the face.
+/// Where along a face a port may sit, as fractions of the box's side: near the middle
+/// of a curved face (an arrow far off-centre meets an ellipse or diamond at a glancing
+/// angle), on a cylinder's straight body (below its top cap, above its bottom curve),
+/// and across the *mark* of a captioned node — the logo or tile, not the caption under
+/// it — so the midpoint of that range is the mark's centre, never the caption's.
+fn port_range(outline: &crate::style::Outline, side: Side, nl: &NodeLayout) -> (f64, f64) {
+    let horizontal_face = matches!(side, Side::Top | Side::Bottom);
+    match *outline {
+        crate::style::Outline::Ellipse | crate::style::Outline::Diamond => (0.3, 0.7),
+        crate::style::Outline::Cylinder { cap } if !horizontal_face => {
+            (((2.0 * cap + 6.0) / nl.height).max(0.15), (1.0 - (cap + 6.0) / nl.height).min(0.85))
+        }
+        crate::style::Outline::Captioned { mark, shape } => {
+            let r = mark / 2.0;
+            // A square mark's face is straight to its corners; a circle's curve only
+            // meets an arrow squarely near its middle.
+            let spread = if shape == crate::style::MarkShape::Square { 0.8 } else { 0.6 };
+            match side {
+                Side::Left | Side::Right => (((r - spread * r) / nl.height).max(0.02), ((r + spread * r) / nl.height).min(0.95)),
+                Side::Top => {
+                    let half = (spread * r / nl.width).min(0.4);
+                    (0.5 - half, 0.5 + half)
+                }
+                Side::Bottom => (0.35, 0.65),
+            }
+        }
+        _ => (0.15, 0.85),
+    }
+}
+
 fn face_fracs(len: f64, pitch: f64, align: &[f64], start: f64, (lo, hi): (f64, f64)) -> Vec<f64> {
     let n = (((hi - lo) * len / pitch).floor() as usize).clamp(0, 6);
-    let mut out = vec![0.5];
+    // The face's middle first — of the allowed range, which for a captioned node is the
+    // mark's middle, not the box's.
+    let mut out = vec![(lo + hi) / 2.0];
     if n >= 2 {
         for k in 0..=n {
             out.push(lo + (hi - lo) * k as f64 / n as f64);
@@ -620,30 +653,17 @@ pub fn route_orthogonal(
             // Where along this face a port may sit: near the middle of a curved face (an
             // arrow far off-centre meets an ellipse or diamond at a glancing angle), and on
             // a cylinder's straight body — below its top cap, above its bottom curve.
-            let range = match crate::style::outline_of(&compiled.graph[n], tokens) {
-                crate::style::Outline::Ellipse | crate::style::Outline::Diamond => (0.3, 0.7),
-                crate::style::Outline::Cylinder { cap } if !horizontal_face => {
-                    (((2.0 * cap + 6.0) / nl.height).max(0.15), (1.0 - (cap + 6.0) / nl.height).min(0.85))
-                }
-                crate::style::Outline::Captioned { mark, .. } => {
-                    // The middle of the mark's face (where a curve is near-vertical /
-                    // near-horizontal); the bottom under the caption keeps to its middle.
-                    let r = mark / 2.0;
-                    match side {
-                        Side::Left | Side::Right => (((r - 0.6 * r) / nl.height).max(0.02), ((r + 0.6 * r) / nl.height).min(0.95)),
-                        Side::Top => {
-                            let half = (0.6 * r / nl.width).min(0.4);
-                            (0.5 - half, 0.5 + half)
-                        }
-                        Side::Bottom => (0.35, 0.65),
-                    }
-                }
-                _ => (0.15, 0.85),
+            let outline = crate::style::outline_of(&compiled.graph[n], tokens);
+            let range = port_range(&outline, side, nl);
+            // A small mark (a tile, a logo) still takes three ports across a face.
+            let face_pitch = match outline {
+                crate::style::Outline::Captioned { mark, .. } => pitch.min(mark / 3.5),
+                _ => pitch,
             };
             let fracs = if horizontal_face {
-                face_fracs(nl.width, pitch, ax, nl.x, range)
+                face_fracs(nl.width, face_pitch, ax, nl.x, range)
             } else {
-                face_fracs(nl.height, pitch, ay, nl.y, range)
+                face_fracs(nl.height, face_pitch, ay, nl.y, range)
             };
             let mut v = Vec::new();
             for f in fracs {
@@ -817,9 +837,17 @@ pub fn route_orthogonal(
             // A captioned node's bottom face is under its caption: a last resort for a logo
             // node; for a flowchart marker (a short caption, and the way the flow runs) worth
             // one bend at most.
-            let under_label = match (side, crate::style::outline_of(&compiled.graph[n], tokens)) {
-                (Side::Bottom, crate::style::Outline::Captioned { .. }) if compiled.graph[n].shape.as_deref() == Some("icon") => W_UNDER_LABEL,
-                (Side::Bottom, crate::style::Outline::Captioned { .. }) => W_BEND,
+            let outline = crate::style::outline_of(&compiled.graph[n], tokens);
+            let (lo, hi) = port_range(&outline, side, nl);
+            let mid = (lo + hi) / 2.0;
+            // The bottom face of a captioned node is under its caption. Leaving there (the
+            // arrow starts just below the text, the way an icon-and-label unit is drawn)
+            // costs a bend; arriving there means the arrowhead points at the text — a last
+            // resort for a logo, two bends for a tile.
+            let under_label = match (side, outline, compiled.graph[n].shape.as_deref()) {
+                (Side::Bottom, crate::style::Outline::Captioned { .. }, Some("icon")) if !exit => W_UNDER_LABEL,
+                (Side::Bottom, crate::style::Outline::Captioned { .. }, Some("tile")) if !exit => 2.0 * W_BEND,
+                (Side::Bottom, crate::style::Outline::Captioned { .. }, _) => W_BEND,
                 _ => 0.0,
             };
             for &(frac, port, gp) in face_pts.get(&(n, side)).map_or(&[][..], |v| v.as_slice()) {
@@ -831,7 +859,7 @@ pub fn route_orthogonal(
                     side,
                     port,
                     grid: (i, j),
-                    cost: clearance + W_OFF_CENTRE * (frac - 0.5).abs() * face_len + off_flow + under_label,
+                    cost: clearance + W_OFF_CENTRE * (frac - mid).abs() * face_len + off_flow + under_label,
                 });
             }
         }

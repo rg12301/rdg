@@ -1,79 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="927" height="726" viewBox="0 0 927 726" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="943" height="736" viewBox="0 0 943 736" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#9aa3b2" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <text x="24" y="31.4" font-size="18" font-weight="bold" fill="#111827">OAuth 2.0 Authorization Code Flow</text>
-  <line x1="74.0" y1="104.0" x2="74.0" y2="649.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <line x1="210.0" y1="104.0" x2="210.0" y2="649.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <line x1="412.0" y1="104.0" x2="412.0" y2="649.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <line x1="656.0" y1="104.0" x2="656.0" y2="649.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <line x1="838.0" y1="104.0" x2="838.0" y2="649.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <rect x="407.0" y="187.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="651.0" y="266.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="651.0" y="345.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="407.0" y="424.0" width="10.0" height="197.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="651.0" y="463.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="833.0" y="542.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 74.0 147.5 H 210.0"/>
-  <rect x="98.0" y="130.0" width="88.0" height="13.5" fill="#f7f8fa"/>
-  <text x="142.0" y="140.8" text-anchor="middle" font-size="10" fill="#8b95a5">1. click login</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 210.0 187.0 H 407.0"/>
-  <rect x="267.5" y="169.5" width="82.0" height="13.5" fill="#f7f8fa"/>
-  <text x="308.5" y="180.3" text-anchor="middle" font-size="10" fill="#8b95a5">2. GET /login</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 407.0 226.5 H 210.0"/>
-  <rect x="234.5" y="209.0" width="148.0" height="13.5" fill="#f7f8fa"/>
-  <text x="308.5" y="219.8" text-anchor="middle" font-size="10" fill="#9aa3b2">3. 302 redirect to authz</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 210.0 266.0 H 651.0"/>
-  <rect x="377.5" y="248.5" width="106.0" height="13.5" fill="#f7f8fa"/>
-  <text x="430.5" y="259.3" text-anchor="middle" font-size="10" fill="#8b95a5">4. GET /authorize</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 651.0 305.5 H 210.0"/>
-  <rect x="389.5" y="288.0" width="82.0" height="13.5" fill="#f7f8fa"/>
-  <text x="430.5" y="298.8" text-anchor="middle" font-size="10" fill="#9aa3b2">5. login form</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 210.0 345.0 H 651.0"/>
-  <rect x="371.5" y="327.5" width="118.0" height="13.5" fill="#f7f8fa"/>
-  <text x="430.5" y="338.3" text-anchor="middle" font-size="10" fill="#8b95a5">6. POST credentials</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 651.0 384.5 H 210.0"/>
-  <rect x="359.5" y="367.0" width="142.0" height="13.5" fill="#f7f8fa"/>
-  <text x="430.5" y="377.8" text-anchor="middle" font-size="10" fill="#9aa3b2">7. 302 redirect w/ code</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 210.0 424.0 H 407.0"/>
-  <rect x="231.5" y="406.5" width="154.0" height="13.5" fill="#f7f8fa"/>
-  <text x="308.5" y="417.3" text-anchor="middle" font-size="10" fill="#8b95a5">8. GET /callback?code=...</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 417.0 463.5 H 651.0"/>
-  <rect x="469.0" y="446.0" width="130.0" height="13.5" fill="#f7f8fa"/>
-  <text x="534.0" y="456.8" text-anchor="middle" font-size="10" fill="#8b95a5">9. POST /token (code)</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 651.0 503.0 H 417.0"/>
-  <rect x="436.0" y="485.5" width="196.0" height="13.5" fill="#f7f8fa"/>
-  <text x="534.0" y="496.3" text-anchor="middle" font-size="10" fill="#9aa3b2">10. access_token + refresh_token</text>
-  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 417.0 542.5 H 833.0"/>
-  <rect x="527.0" y="525.0" width="196.0" height="13.5" fill="#f7f8fa"/>
-  <text x="625.0" y="535.8" text-anchor="middle" font-size="10" fill="#8b95a5">11. GET /api/data (bearer token)</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 833.0 582.0 H 417.0"/>
-  <rect x="572.0" y="564.5" width="106.0" height="13.5" fill="#f7f8fa"/>
-  <text x="625.0" y="575.3" text-anchor="middle" font-size="10" fill="#9aa3b2">12. 200 OK + data</text>
-  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 407.0 621.5 H 210.0"/>
-  <rect x="261.5" y="604.0" width="94.0" height="13.5" fill="#f7f8fa"/>
-  <text x="308.5" y="614.8" text-anchor="middle" font-size="10" fill="#9aa3b2">13. render page</text>
-  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="24.0" y="64.0" width="100.0" height="40.0" rx="6.0"/><svg class="node-tech-icon" x="46.6" y="74.0" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="87.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <line x1="74.0" y1="114.0" x2="74.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="211.0" y1="114.0" x2="211.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="413.0" y1="104.0" x2="413.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="657.0" y1="104.0" x2="657.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="849.0" y1="104.0" x2="849.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <rect x="408.0" y="197.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="276.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="355.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="408.0" y="434.0" width="10.0" height="197.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="473.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="844.0" y="552.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 74.0 157.5 H 211.0"/>
+  <rect x="98.5" y="140.0" width="88.0" height="13.5" fill="#f7f8fa"/>
+  <text x="142.5" y="150.8" text-anchor="middle" font-size="10" fill="#8b95a5">1. click login</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 211.0 197.0 H 408.0"/>
+  <rect x="268.5" y="179.5" width="82.0" height="13.5" fill="#f7f8fa"/>
+  <text x="309.5" y="190.3" text-anchor="middle" font-size="10" fill="#8b95a5">2. GET /login</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 408.0 236.5 H 211.0"/>
+  <rect x="235.5" y="219.0" width="148.0" height="13.5" fill="#f7f8fa"/>
+  <text x="309.5" y="229.8" text-anchor="middle" font-size="10" fill="#9aa3b2">3. 302 redirect to authz</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 211.0 276.0 H 652.0"/>
+  <rect x="378.5" y="258.5" width="106.0" height="13.5" fill="#f7f8fa"/>
+  <text x="431.5" y="269.3" text-anchor="middle" font-size="10" fill="#8b95a5">4. GET /authorize</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 652.0 315.5 H 211.0"/>
+  <rect x="390.5" y="298.0" width="82.0" height="13.5" fill="#f7f8fa"/>
+  <text x="431.5" y="308.8" text-anchor="middle" font-size="10" fill="#9aa3b2">5. login form</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 211.0 355.0 H 652.0"/>
+  <rect x="372.5" y="337.5" width="118.0" height="13.5" fill="#f7f8fa"/>
+  <text x="431.5" y="348.3" text-anchor="middle" font-size="10" fill="#8b95a5">6. POST credentials</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 652.0 394.5 H 211.0"/>
+  <rect x="360.5" y="377.0" width="142.0" height="13.5" fill="#f7f8fa"/>
+  <text x="431.5" y="387.8" text-anchor="middle" font-size="10" fill="#9aa3b2">7. 302 redirect w/ code</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 211.0 434.0 H 408.0"/>
+  <rect x="232.5" y="416.5" width="154.0" height="13.5" fill="#f7f8fa"/>
+  <text x="309.5" y="427.3" text-anchor="middle" font-size="10" fill="#8b95a5">8. GET /callback?code=...</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 418.0 473.5 H 652.0"/>
+  <rect x="470.0" y="456.0" width="130.0" height="13.5" fill="#f7f8fa"/>
+  <text x="535.0" y="466.8" text-anchor="middle" font-size="10" fill="#8b95a5">9. POST /token (code)</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 652.0 513.0 H 418.0"/>
+  <rect x="437.0" y="495.5" width="196.0" height="13.5" fill="#f7f8fa"/>
+  <text x="535.0" y="506.3" text-anchor="middle" font-size="10" fill="#9aa3b2">10. access_token + refresh_token</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 418.0 552.5 H 844.0"/>
+  <rect x="533.0" y="535.0" width="196.0" height="13.5" fill="#f7f8fa"/>
+  <text x="631.0" y="545.8" text-anchor="middle" font-size="10" fill="#8b95a5">11. GET /api/data (bearer token)</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 844.0 592.0 H 418.0"/>
+  <rect x="578.0" y="574.5" width="106.0" height="13.5" fill="#f7f8fa"/>
+  <text x="631.0" y="585.3" text-anchor="middle" font-size="10" fill="#9aa3b2">12. 200 OK + data</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 408.0 631.5 H 211.0"/>
+  <rect x="262.5" y="614.0" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="309.5" y="624.8" text-anchor="middle" font-size="10" fill="#9aa3b2">13. render page</text>
+  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="24.0" y="64.0" width="100.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="46.6" y="79.0" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="87.0" y="93.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>User</tspan>
   </text>
-  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="160.0" y="64.0" width="100.0" height="40.0" rx="6.0"/><svg class="node-tech-icon" x="171.8" y="74.0" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="223.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="156.0" y="64.0" width="110.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="172.8" y="79.0" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="224.0" y="93.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Browser</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="362.0" y="64.0" width="100.0" height="40.0" rx="6.0"/>
-  <text x="412.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="363.0" y="64.0" width="100.0" height="40.0" rx="6.0"/>
+  <text x="413.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Client App</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="571.0" y="64.0" width="170.0" height="40.0" rx="6.0"/>
-  <text x="656.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="567.0" y="64.0" width="180.0" height="40.0" rx="6.0"/>
+  <text x="657.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Authorization Server</tspan>
   </text>
-  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="773.0" y="64.0" width="130.0" height="40.0" rx="6.0"/>
-  <text x="838.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="779.0" y="64.0" width="140.0" height="40.0" rx="6.0"/>
+  <text x="849.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Resource Server</tspan>
   </text>
-  <text x="24.0" y="677.4" font-size="11" font-weight="bold" fill="#111827">Legend</text>
-  <rect x="24.0" y="691.1" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
-  <text x="54.0" y="701.6" font-size="10" fill="#5b6474">Frontend</text>
-  <rect x="122.0" y="691.1" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
-  <text x="152.0" y="701.6" font-size="10" fill="#5b6474">Backend</text>
+  <text x="24.0" y="687.4" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="24.0" y="701.1" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
+  <text x="54.0" y="711.6" font-size="10" fill="#5b6474">Frontend</text>
+  <rect x="122.0" y="701.1" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="152.0" y="711.6" font-size="10" fill="#5b6474">Backend</text>
 </svg>

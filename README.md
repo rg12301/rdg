@@ -28,8 +28,18 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
-- **v1.3.0 — layout quality pass** (battle-tested on 16 new diagrams, easy to very
-  complex, every diagram type):
+- **v1.3.0 — tiles, clean connections, layout quality pass** (battle-tested on 16 new
+  diagrams, easy to very complex, every diagram type):
+  - *Components as tiles*: in an architecture diagram a service, client or gateway is a
+    small square in its category colour with the category glyph and the caption under
+    it, its language or product logo as a corner badge — colour says what kind, the
+    glyph what it is, and no box is drawn around text. Flowcharts, states, tables and
+    classes keep boxes; `diagram_type` is now inferred (`auto`) from the node types.
+  - *Connections*: arrows meet a face at its midpoint unless another arrow is already
+    there (a port a pixel off-centre no longer wins on length); lanes are 18px apart
+    and ports 16px; steps under 24px are straightened where the line is clear.
+  - *Padding*: cards get 28px of side padding and wrap at 300px, so text never touches
+    or leaks past a border.
   - *Cycles break where the author expects*: a returning edge ("retry" back to "run
     tests") is the one reversed, never the forward step — the chart no longer puts a
     retry decision at the top. Class diagrams rank parents above children: inheritance

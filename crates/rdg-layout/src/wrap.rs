@@ -450,17 +450,19 @@ fn estimate_from_lines(
         text_w = text_w.max(line_w(&format!("[{tech}]"), true));
     }
 
-    let pad = tokens.px(2.5);
-    let mut width = (text_w + pad).max(min_width).min(tokens.px(32.5) + reserve).max(title_w + pad);
+    // Side padding: text never touches the border, and a fallback font a little wider
+    // than the measured one still fits.
+    let pad = tokens.px(3.5);
+    let mut width = (text_w + pad).max(min_width).min(tokens.px(37.5) + reserve).max(title_w + pad);
 
     // First line at full line height, subsequent lines (subtitles) a touch smaller,
     // plus vertical padding.
     let subtitle_line_height = tokens.line_height(tokens.detail_font_size);
     let title_h = tokens.title_line_height(has_icon);
     let total_h = if line_count <= 1 {
-        title_h + tokens.px(2.0)
+        title_h + tokens.px(2.5)
     } else {
-        title_h + (line_count - 1) as f64 * subtitle_line_height + tokens.px(2.25)
+        title_h + (line_count - 1) as f64 * subtitle_line_height + tokens.px(3.0)
     };
     let mut height = total_h.max(min_height);
 

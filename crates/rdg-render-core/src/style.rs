@@ -56,6 +56,7 @@ pub fn outline_of(nd: &rdg_graph::NodeData, tokens: &rdg_layout::DesignTokens) -
         let shape = match nd.shape.as_deref().or_else(|| rdg_layout::marker_shape(&nd.node_type)) {
             Some("choice") => MarkShape::Diamond,
             Some("icon") if !tokens.icon_halo_circle => MarkShape::Square,
+            Some("tile") => MarkShape::Square,
             _ => MarkShape::Circle,
         };
         return Outline::Captioned { mark, shape };

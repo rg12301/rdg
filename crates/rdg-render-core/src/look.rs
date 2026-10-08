@@ -16,6 +16,9 @@ pub use rdg_layout::marker_shape;
 pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
     let mono = theme.icon.style == crate::theme::IconStyleName::Mono;
     let is_sequence = compiled.diagram_type == "sequence";
+    // Components become tiles in architecture diagrams only: a flowchart's steps, a
+    // state machine's states, tables and classes are boxes with their text inside.
+    let tiles = theme.node.style == crate::theme::NodeDrawStyle::Tile && matches!(compiled.diagram_type.as_str(), "architecture" | "graph");
     let idxs: Vec<_> = compiled.graph.node_indices().collect();
     for idx in idxs {
         let nd = &mut compiled.graph[idx];
@@ -34,12 +37,15 @@ pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
             let auto_icon = display.is_none()
                 && theme.icon.node_types.iter().any(|t| t.eq_ignore_ascii_case(&ty))
                 && brand.as_deref().is_some_and(|k| mono || rdg_icons::has_color_logo(k));
+            let themed = theme.shapes.get(&ty).cloned().unwrap_or_else(|| "card".to_string());
             if display.as_deref() == Some("icon") || auto_icon {
                 "icon".to_string()
             } else if !nd.fields.is_empty() {
                 "card".to_string()
+            } else if display.as_deref() == Some("tile") || (tiles && display.is_none() && themed != "diamond") {
+                "tile".to_string()
             } else {
-                theme.shapes.get(&ty).cloned().unwrap_or_else(|| "card".to_string())
+                themed
             }
         };
         // In a sequence diagram every participant is a card (or an actor figure).
@@ -47,6 +53,10 @@ pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
         let is_box = matches!(shape.as_str(), "card" | "cylinder" | "ellipse" | "diamond");
         if nd.icon.is_none() && ((is_box && theme.icon.category_glyphs && nd.fields.is_empty()) || shape == "icon") {
             nd.icon = Some(theme.category(&category).glyph.clone());
+        }
+        // A tile's icon is its brand badge; the tile itself shows the category glyph.
+        if shape == "tile" && nd.icon.as_deref().is_some_and(|k| rdg_icons::is_glyph(k) || !rdg_icons::has_color_logo(k)) {
+            nd.icon = None;
         }
         nd.category = Some(category);
         nd.shape = Some(shape);
@@ -56,8 +66,10 @@ pub fn prepare_graph(theme: &Theme, compiled: &mut CompiledGraph) {
 /// A node's resolved look.
 #[derive(Debug, Clone)]
 pub struct NodeLook {
-    /// `card`, `cylinder`, `ellipse`, `diamond`, `icon`, `start`, `end`, `choice`.
+    /// `card`, `cylinder`, `ellipse`, `diamond`, `icon`, `tile`, `start`, `end`, `choice`.
     pub shape: String,
+    /// The category's glyph key (what a tile shows).
+    pub glyph: String,
     pub fill: String,
     /// 0–1.
     pub fill_opacity: f64,
@@ -89,6 +101,7 @@ pub fn node_look(theme: &Theme, nd: &NodeData) -> NodeLook {
     };
     NodeLook {
         shape,
+        glyph: cat.glyph.clone(),
         fill,
         fill_opacity,
         stroke,
@@ -159,7 +172,16 @@ pub fn edge_look(theme: &Theme, ed: &EdgeData) -> ResolvedEdge {
 /// One legend entry.
 #[derive(Debug, Clone)]
 pub enum LegendItem {
-    Category { label: String, fill: String, fill_opacity: f64, stroke: String, glyph: String },
+    Category {
+        label: String,
+        fill: String,
+        fill_opacity: f64,
+        stroke: String,
+        glyph: String,
+        /// The swatch is a solid tile in the category colour (the diagram draws tiles),
+        /// not a tinted box with a coloured border.
+        solid: bool,
+    },
     Edge { label: String, look: ResolvedEdge },
 }
 
@@ -179,7 +201,7 @@ pub fn legend_items(theme: &Theme, compiled: &CompiledGraph) -> Vec<LegendItem> 
         let nd = &compiled.graph[idx];
         // Only colours actually on the page: boxes (not logos or markers) that aren't
         // wearing a custom `color:`.
-        let coloured = matches!(nd.shape.as_deref(), Some("card" | "cylinder" | "ellipse" | "diamond" | "actor") | None);
+        let coloured = matches!(nd.shape.as_deref(), Some("card" | "cylinder" | "ellipse" | "diamond" | "actor" | "tile") | None);
         if marker_shape(&nd.node_type).is_some() || !coloured || (theme.custom_colors && nd.color.is_some()) {
             continue;
         }
@@ -196,6 +218,7 @@ pub fn legend_items(theme: &Theme, compiled: &CompiledGraph) -> Vec<LegendItem> 
             fill_opacity,
             stroke: cat.stroke.clone(),
             glyph: cat.glyph.clone(),
+            solid: nd.shape.as_deref() == Some("tile"),
         });
     }
     let mut seen_edges: Vec<String> = Vec::new();

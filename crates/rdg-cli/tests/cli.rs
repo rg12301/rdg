@@ -371,7 +371,9 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     // block — crossings at a bend 9, border hugs 1): a regression doubles a number, a
     // routing tweak moves it by a few.
     assert!(checked >= 20, "expected to check the bundled fixtures, checked {checked}");
-    assert!(total_jogs <= 3.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 3)");
+    // A "jog" is now any interior leg under 24px (was 12px), so this counts small steps
+    // between a port stub and its lane too (measured: 6).
+    assert!(total_jogs <= 8.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 8)");
     assert!(total_crossings <= 72.0, "crossings across bundled diagrams: {total_crossings} (budget 72)");
     assert!(total_near_bend <= 11.0, "crossings at a bend/arrow end: {total_near_bend} (budget 11)");
     assert!(total_border_hugs <= 1.0, "arrows tracing a group border: {total_border_hugs} (budget 1)");
