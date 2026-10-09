@@ -1,0 +1,45 @@
+# Loan approval: eligibility checks, automated scoring, manual review tiers,
+# offer and signing — many decisions and branches.
+title: "Loan approval process"
+diagram_type: flowchart
+numbered: true
+nodes:
+  - {id: start, label: Application received, type: start}
+  - {id: kyc, label: Run KYC checks, type: service}
+  - {id: kyc_ok, label: Identity verified?, type: decision}
+  - {id: reject_kyc, label: Reject (identity), type: end}
+  - {id: pull_bureau, label: Pull credit report, type: service}
+  - {id: score, label: Compute risk score, type: function}
+  - {id: score_band, label: Score band?, type: decision}
+  - {id: auto_approve, label: Auto-approve, type: service}
+  - {id: manual, label: Manual underwriting, type: service}
+  - {id: senior, label: Senior credit review, type: service}
+  - {id: decision, label: Approved?, type: decision}
+  - {id: reject_credit, label: Reject (credit), type: end}
+  - {id: offer, label: Generate offer, type: function}
+  - {id: accepted, label: Customer accepts?, type: decision}
+  - {id: expired, label: Offer expired, type: end}
+  - {id: sign, label: E-sign agreement, type: service}
+  - {id: disburse, label: Disburse funds, type: service}
+  - {id: done, label: Loan active, type: end}
+edges:
+  - {from: start, to: kyc}
+  - {from: kyc, to: kyc_ok}
+  - {from: kyc_ok, to: reject_kyc, label: "no", edge_style: error}
+  - {from: kyc_ok, to: pull_bureau, label: "yes"}
+  - {from: pull_bureau, to: score}
+  - {from: score, to: score_band}
+  - {from: score_band, to: auto_approve, label: "high", step: 7a}
+  - {from: score_band, to: manual, label: "medium", step: 7b}
+  - {from: score_band, to: senior, label: "low", step: 7c}
+  - {from: manual, to: decision}
+  - {from: senior, to: decision}
+  - {from: auto_approve, to: offer}
+  - {from: decision, to: offer, label: "yes"}
+  - {from: decision, to: reject_credit, label: "no", edge_style: error}
+  - {from: offer, to: accepted}
+  - {from: accepted, to: sign, label: "yes"}
+  - {from: accepted, to: expired, label: "no reply in 14 days"}
+  - {from: sign, to: disburse}
+  - {from: disburse, to: done}
+  - {from: accepted, to: offer, label: "counter-offer", constraint: false}

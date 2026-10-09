@@ -1,0 +1,44 @@
+# Incident triage: severity classification, routing to teams, escalation
+# timers and the communication loop.
+title: "Incident triage"
+diagram_type: flowchart
+nodes:
+  - {id: start, label: Alert fires, type: start}
+  - {id: dedupe, label: Deduplicate & correlate, type: function}
+  - {id: known, label: Known issue?, type: decision}
+  - {id: attach, label: Attach to open incident, type: function}
+  - {id: classify, label: Classify severity, type: service}
+  - {id: sev, label: Severity?, type: decision}
+  - {id: page_primary, label: Page primary on-call, type: service}
+  - {id: page_lead, label: Page incident lead, type: service}
+  - {id: ticket, label: Create ticket, type: function}
+  - {id: ack, label: Acknowledged in 5 min?, type: decision}
+  - {id: escalate, label: Escalate to secondary, type: service}
+  - {id: bridge, label: Open incident bridge, type: service}
+  - {id: status, label: Post status update, type: function}
+  - {id: mitigate, label: Mitigate, type: service}
+  - {id: resolved, label: Resolved?, type: decision}
+  - {id: close, label: Close incident, type: end}
+  - {id: postmortem, label: Schedule postmortem, type: end}
+edges:
+  - {from: start, to: dedupe}
+  - {from: dedupe, to: known}
+  - {from: known, to: attach, label: "yes"}
+  - {from: known, to: classify, label: "no"}
+  - {from: attach, to: close}
+  - {from: classify, to: sev}
+  - {from: sev, to: page_lead, label: "SEV-1"}
+  - {from: sev, to: page_primary, label: "SEV-2"}
+  - {from: sev, to: ticket, label: "SEV-3"}
+  - {from: page_lead, to: bridge}
+  - {from: page_primary, to: ack}
+  - {from: ack, to: escalate, label: "no", edge_style: error}
+  - {from: escalate, to: ack, label: "repage"}
+  - {from: ack, to: mitigate, label: "yes"}
+  - {from: bridge, to: status}
+  - {from: status, to: mitigate}
+  - {from: mitigate, to: resolved}
+  - {from: resolved, to: status, label: "no, every 30 min"}
+  - {from: resolved, to: postmortem, label: "yes, SEV-1/2"}
+  - {from: resolved, to: close, label: "yes, SEV-3"}
+  - {from: ticket, to: close}

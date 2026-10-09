@@ -54,15 +54,25 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
     padding scales with the content's shorter side, a long title wraps onto two
     balanced lines (`group_title_wrap_chars`, 32), an item nothing enters from above
     takes the slot under the title, and the marks of a row of tiles sit on one line.
+  - *Header band*: the title (now 20px bold), description and legend sit in a band
+    above the drawing, legend right-aligned on the title row when it fits, with a
+    rule (`title.rule_color`) between the band and the diagram — sequence diagrams
+    too.
+  - *Sequence theming*: notes take `kind: info | warning | error | success` (own
+    colours under `sequence.note.kinds`, a leading mark), activation bars are filled
+    in the participant's colour (`activation.fill: "@category"`), fragment tabs
+    clear the bars. Tiers order their units so same-tier arrows run with the reading
+    direction; a self-referencing table no longer breaks the layout.
   - *Labels and badges*: a label prefers the longest straight stretch of its own
     arrow, nearer the source; fragments in sequence diagrams start left of the
     outermost activation bar; an unlabelled start/end/choice marker has no caption.
   - *Help for agents*: `rdg --help` opens with the agent workflow and ten content
     rules; `rdg --guide rules` is the full set — what to include, name, label and
     leave out of an HLD, LLD/class, sequence, flowchart, state, ERD, pipeline or
-    deployment diagram, with a self-check list. Five new fixtures (ride-hailing
-    platform, warehouse domain model, order state machine, incident response
-    sequence, lakehouse pipeline) join the bundled examples.
+    deployment diagram, with a self-check list. Twenty-six new fixtures of every type, up to 40 nodes (core banking, ride-hailing,
+    healthcare records, ad-tech bidding, game backend, class models, sagas, OAuth
+    device flow, state machines, schemas, pipelines, hybrid deployment) join the
+    bundled examples.
   - *A second, structural router*: a channel router draws arrows the way a layered
     engine does — across the flow out of the source, along a track in the channel
     between two rows, down a lane in the gutter between two nodes, into the target's

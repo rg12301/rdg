@@ -1,0 +1,49 @@
+# Webhook delivery with signing, retries with backoff, dead-lettering and
+# customer-side replay.
+title: "Webhook delivery and retries"
+participants:
+  - {id: app, label: Platform service, type: service}
+  - {id: outbox, label: Outbox relay, type: service, language: rust}
+  - {id: queue, label: Delivery queue, type: queue, db_type: kafka}
+  - {id: worker, label: Delivery worker, type: service, language: go}
+  - {id: customer, label: Customer endpoint, type: external}
+  - {id: dlq, label: Dead-letter store, type: database, db_type: postgres}
+  - {id: portal, label: Developer portal, type: client}
+groups:
+  - {id: delivery, label: "Delivery pipeline", nodes: [outbox, queue, worker]}
+sequence:
+  - {from: app, to: outbox, label: "event row committed", style: async}
+  - {note: "transactional outbox: the event and the business write share a transaction", over: [app, outbox], kind: info}
+  - {from: outbox, to: queue, label: "publish", style: async}
+  - {from: queue, to: worker, label: "deliver", style: async}
+  - {from: worker, to: worker, label: "sign payload (HMAC)"}
+  - loop: "attempt 1..5, backoff 1m 5m 30m 2h 8h"
+    steps:
+      - {from: worker, to: customer, label: "POST /webhooks"}
+      - alt: "2xx"
+        steps:
+          - {from: customer, to: worker, label: "200", style: reply}
+          - break: "delivered"
+            steps:
+              - {from: worker, to: queue, label: "ack", style: reply}
+        else:
+          - label: "5xx or timeout"
+            steps:
+              - {from: customer, to: worker, label: "503", style: reply}
+              - {note: "retry with jittered backoff", over: worker, kind: warning}
+          - label: "4xx"
+            steps:
+              - {from: customer, to: worker, label: "410 Gone", style: reply}
+              - {note: "no retry on 4xx except 408/429", over: worker, kind: error}
+              - break: "give up"
+                steps:
+                  - {from: worker, to: dlq, label: "store with reason"}
+  - opt: "retries exhausted"
+    steps:
+      - {from: worker, to: dlq, label: "dead-letter"}
+      - {from: worker, to: app, label: "EndpointUnhealthy", style: async}
+  - divider: "customer replay"
+  - {from: portal, to: dlq, label: "list failed deliveries"}
+  - {from: dlq, to: portal, label: "page", style: reply}
+  - {from: portal, to: queue, label: "replay selected", style: async}
+  - {note: "replayed events carry the original id for idempotency", over: [queue, customer], kind: success}

@@ -1,0 +1,36 @@
+# Document approval workflow with parallel reviews, revisions and publication.
+title: "Document approval workflow"
+diagram_type: state
+nodes:
+  - {id: start, label: "", type: start}
+  - {id: draft, label: Draft, type: state}
+  - {id: submitted, label: Submitted, type: state}
+  - {id: split, label: "", type: choice}
+  - {id: legal, label: Legal review, type: state}
+  - {id: technical, label: Technical review, type: state}
+  - {id: changes, label: Changes requested, type: state}
+  - {id: approved, label: Approved, type: state}
+  - {id: scheduled, label: Scheduled, type: state}
+  - {id: published, label: Published, type: state}
+  - {id: archived, label: Archived, type: state}
+  - {id: withdrawn, label: Withdrawn, type: state}
+  - {id: end, label: "", type: end}
+edges:
+  - {from: start, to: draft}
+  - {from: draft, to: submitted, label: "submit"}
+  - {from: submitted, to: split, label: "assign reviewers"}
+  - {from: split, to: legal, label: "[needs legal]"}
+  - {from: split, to: technical, label: "[else]"}
+  - {from: legal, to: technical, label: "legal ok"}
+  - {from: technical, to: approved, label: "all approve"}
+  - {from: legal, to: changes, label: "reject"}
+  - {from: technical, to: changes, label: "reject"}
+  - {from: changes, to: draft, label: "author revises"}
+  - {from: approved, to: scheduled, label: "set publish date"}
+  - {from: approved, to: published, label: "publish now"}
+  - {from: scheduled, to: published, label: "date reached"}
+  - {from: published, to: archived, label: "superseded"}
+  - {from: archived, to: end}
+  - {from: draft, to: withdrawn, label: "withdraw"}
+  - {from: submitted, to: withdrawn, label: "withdraw"}
+  - {from: withdrawn, to: end}

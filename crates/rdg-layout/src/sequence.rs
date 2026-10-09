@@ -64,8 +64,10 @@ pub struct SeqActivation {
 
 #[derive(Debug, Clone)]
 pub struct SeqNote {
-    /// Wrapped lines.
+    /// Wrapped lines (the first carries the kind's mark).
     pub lines: Vec<String>,
+    /// `note`, `info`, `warning`, `error` or `success`.
+    pub kind: String,
     pub x: f64,
     pub y: f64,
     pub w: f64,
@@ -168,8 +170,18 @@ fn text_w(lines: &[String], cw: f64) -> f64 {
 }
 
 /// A note's wrapped lines and box size.
-fn note_box(text: &str, t: &DesignTokens, m: &Metrics) -> (Vec<String>, f64, f64) {
-    let lines = wrap_label(text, t.seq_note_wrap_chars);
+fn note_box(text: &str, kind: &str, t: &DesignTokens, m: &Metrics) -> (Vec<String>, f64, f64) {
+    let mark = match kind {
+        "info" => "ℹ ",
+        "warning" => "⚠ ",
+        "error" => "✖ ",
+        "success" => "✔ ",
+        _ => "",
+    };
+    let mut lines = wrap_label(text, t.seq_note_wrap_chars);
+    if let Some(first) = lines.first_mut() {
+        first.insert_str(0, mark);
+    }
     let w = text_w(&lines, m.note_cw) + t.px(2.0);
     let h = lines.len() as f64 * m.note_lh + t.px(1.5);
     (lines, w.max(t.px(6.0)), h)
@@ -384,8 +396,8 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
                     let (s, d) = compiled.graph.edge_endpoints(*edge).expect("message edge");
                     involved.extend([pos_of[&s], pos_of[&d]]);
                 }
-                SeqItem::Note { text, placement, over } => {
-                    let (_, nw, _) = note_box(text, t, m);
+                SeqItem::Note { text, placement, over, kind } => {
+                    let (_, nw, _) = note_box(text, kind, t, m);
                     let idx: Vec<usize> = over.iter().map(|n| pos_of[n]).collect();
                     let (a, b) = (*idx.iter().min().unwrap_or(&0), *idx.iter().max().unwrap_or(&0));
                     involved.extend([a, b]);
@@ -584,8 +596,8 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
                         loop_h: 0.0,
                     });
                 }
-                SeqItem::Note { text, placement, over } => {
-                    let (lines, nw, nh) = note_box(text, t, m);
+                SeqItem::Note { text, placement, over, kind } => {
+                    let (lines, nw, nh) = note_box(text, kind, t, m);
                     let xs: Vec<f64> = over.iter().map(|n| px_of[pos_of[n]]).collect();
                     let (a, b) = (xs.iter().copied().fold(f64::MAX, f64::min), xs.iter().copied().fold(f64::MIN, f64::max));
                     let (x0, x1) = match placement {
@@ -603,7 +615,7 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
                     let y = st.cursor + t.px(0.5);
                     st.cursor = y + nh + t.seq_message_gap;
                     grow(&mut ext, x0, x1);
-                    st.notes.push(SeqNote { lines, x: x0, y, w: x1 - x0, h: nh });
+                    st.notes.push(SeqNote { lines, kind: kind.clone(), x: x0, y, w: x1 - x0, h: nh });
                 }
                 SeqItem::Fragment { kind, sections } => {
                     let slot = st.fragments.len();

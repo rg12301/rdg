@@ -43,7 +43,7 @@ impl fmt::Display for Diagnostic {
 }
 
 fn did_you_mean<'a>(word: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<String> {
-    closest_match(word, candidates).map(|c| format!("did you mean `{c}`?"))
+    closest_match(word, candidates).filter(|c| !c.eq_ignore_ascii_case(word)).map(|c| format!("did you mean `{c}`?"))
 }
 
 pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {

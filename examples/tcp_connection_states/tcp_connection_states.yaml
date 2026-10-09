@@ -1,0 +1,36 @@
+# TCP connection state machine (RFC 793), both open paths and both close paths.
+title: "TCP connection states"
+diagram_type: state
+nodes:
+  - {id: start, label: "", type: start}
+  - {id: closed, label: CLOSED, type: state}
+  - {id: listen, label: LISTEN, type: state}
+  - {id: syn_sent, label: SYN_SENT, type: state}
+  - {id: syn_rcvd, label: SYN_RCVD, type: state}
+  - {id: established, label: ESTABLISHED, type: state}
+  - {id: fin_wait_1, label: FIN_WAIT_1, type: state}
+  - {id: fin_wait_2, label: FIN_WAIT_2, type: state}
+  - {id: closing, label: CLOSING, type: state}
+  - {id: time_wait, label: TIME_WAIT, type: state}
+  - {id: close_wait, label: CLOSE_WAIT, type: state}
+  - {id: last_ack, label: LAST_ACK, type: state}
+  - {id: end, label: "", type: end}
+edges:
+  - {from: start, to: closed}
+  - {from: closed, to: listen, label: "passive open"}
+  - {from: closed, to: syn_sent, label: "active open / SYN"}
+  - {from: listen, to: syn_rcvd, label: "SYN / SYN+ACK"}
+  - {from: syn_sent, to: syn_rcvd, label: "SYN / SYN+ACK"}
+  - {from: syn_sent, to: established, label: "SYN+ACK / ACK"}
+  - {from: syn_rcvd, to: established, label: "ACK"}
+  - {from: established, to: fin_wait_1, label: "close / FIN"}
+  - {from: established, to: close_wait, label: "FIN / ACK"}
+  - {from: fin_wait_1, to: fin_wait_2, label: "ACK"}
+  - {from: fin_wait_1, to: closing, label: "FIN / ACK"}
+  - {from: fin_wait_2, to: time_wait, label: "FIN / ACK"}
+  - {from: closing, to: time_wait, label: "ACK"}
+  - {from: close_wait, to: last_ack, label: "close / FIN"}
+  - {from: last_ack, to: closed, label: "ACK"}
+  - {from: time_wait, to: closed, label: "2 MSL timeout"}
+  - {from: syn_sent, to: closed, label: "close / timeout"}
+  - {from: closed, to: end}

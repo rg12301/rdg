@@ -1,126 +1,127 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="909" height="940" viewBox="0 0 909 940" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="909" height="1003" viewBox="0 0 909 1003" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
-  <text x="885.0" y="47.0" text-anchor="end" font-size="18" font-weight="bold" fill="#111827">Order lifecycle</text>
-  <path d="M 250.0 86.0 L 250.0 128.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 266.0 178.0 L 266.0 252.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 195.0 324.0 L 195.0 444.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 203.0 452.0 L 241.0 452.0 Q 255.0 452.0 255.0 466.0 L 255.0 622.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 167.0 452.0 L 134.6 452.0 Q 122.0 452.0 122.0 464.6 L 122.0 622.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 89.0 622.0 L 89.0 302.0 Q 89.0 288.0 103.0 288.0 L 169.0 288.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 51.0 672.0 L 51.0 808.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 215.0 672.0 L 215.0 811.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 175.0 861.0 L 175.0 898.0 Q 175.0 912.0 189.0 912.0 L 438.0 912.0 Q 452.0 912.0 452.0 898.0 L 452.0 86.0 Q 452.0 72.0 466.0 72.0 L 547.0 72.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 607.0 78.0 L 607.0 170.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 626.0 220.0 L 626.0 312.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 721.0 337.0 L 783.0 337.0 Q 797.0 337.0 797.0 351.0 L 797.0 776.0 Q 797.0 790.0 783.0 790.0 L 728.0 790.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 662.0 362.0 L 662.0 472.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 679.0 522.0 L 679.0 632.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 712.0 682.0 L 712.0 774.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 326.0 153.0 L 351.9 153.0 Q 362.0 153.0 362.0 163.1 L 362.0 800.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 319.0 288.0 L 337.0 288.0 Q 344.0 288.0 344.0 295.0 L 344.0 800.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 294.0 672.0 L 294.0 800.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 395.0 815.0 L 457.0 815.0 Q 471.0 815.0 471.0 801.0 L 471.0 671.0 Q 471.0 657.0 485.0 657.0 L 653.0 657.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 395.0 835.0 L 484.4 835.0 Q 497.0 835.0 497.0 822.4 L 497.0 799.1 Q 497.0 790.0 506.1 790.0 L 696.0 790.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <circle cx="250.0" cy="42.0" r="12.0" fill="#111827"/>
-  <text x="250.0" y="72.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Order lifecycle</text>
+  <path d="M 250.0 149.0 L 250.0 191.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 266.0 241.0 L 266.0 315.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 195.0 387.0 L 195.0 507.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 203.0 515.0 L 241.0 515.0 Q 255.0 515.0 255.0 529.0 L 255.0 685.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 167.0 515.0 L 134.6 515.0 Q 122.0 515.0 122.0 527.6 L 122.0 685.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 89.0 685.0 L 89.0 365.0 Q 89.0 351.0 103.0 351.0 L 169.0 351.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 51.0 735.0 L 51.0 871.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 215.0 735.0 L 215.0 874.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 175.0 924.0 L 175.0 961.0 Q 175.0 975.0 189.0 975.0 L 438.0 975.0 Q 452.0 975.0 452.0 961.0 L 452.0 149.0 Q 452.0 135.0 466.0 135.0 L 547.0 135.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 607.0 141.0 L 607.0 233.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 626.0 283.0 L 626.0 375.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 721.0 400.0 L 783.0 400.0 Q 797.0 400.0 797.0 414.0 L 797.0 839.0 Q 797.0 853.0 783.0 853.0 L 728.0 853.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 662.0 425.0 L 662.0 535.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 679.0 585.0 L 679.0 695.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 712.0 745.0 L 712.0 837.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 326.0 216.0 L 351.9 216.0 Q 362.0 216.0 362.0 226.1 L 362.0 863.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 319.0 351.0 L 337.0 351.0 Q 344.0 351.0 344.0 358.0 L 344.0 863.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 294.0 735.0 L 294.0 863.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 395.0 878.0 L 457.0 878.0 Q 471.0 878.0 471.0 864.0 L 471.0 734.0 Q 471.0 720.0 485.0 720.0 L 653.0 720.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 395.0 898.0 L 484.4 898.0 Q 497.0 898.0 497.0 885.4 L 497.0 862.1 Q 497.0 853.0 506.1 853.0 L 696.0 853.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <circle cx="250.0" cy="105.0" r="12.0" fill="#111827"/>
+  <text x="250.0" y="135.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan></tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="206.0" y="128.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="266.0" y="157.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="206.0" y="191.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="266.0" y="220.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Created</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="169.0" y="252.0" width="150.0" height="72.0" rx="28.8"/>
-  <text x="244.0" y="292.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="169.0" y="315.0" width="150.0" height="72.0" rx="28.8"/>
+  <text x="244.0" y="355.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Awaiting payment</tspan>
   </text>
-  <path fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" d="M 185.0 434.0 L 203.0 452.0 L 185.0 470.0 L 167.0 452.0 Z"/>
-  <text x="185.0" y="486.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <path fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" d="M 185.0 497.0 L 203.0 515.0 L 185.0 533.0 L 167.0 515.0 Z"/>
+  <text x="185.0" y="549.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan></tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="194.0" y="622.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="254.0" y="651.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="194.0" y="685.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="254.0" y="714.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Paid</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="622.0" width="130.0" height="50.0" rx="20.0"/>
-  <text x="89.0" y="651.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="685.0" width="130.0" height="50.0" rx="20.0"/>
+  <text x="89.0" y="714.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Payment failed</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="115.0" y="811.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="175.0" y="840.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="115.0" y="874.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="175.0" y="903.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Picking</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="547.0" y="28.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="607.0" y="57.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="547.0" y="91.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="607.0" y="120.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Packed</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="566.0" y="170.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="626.0" y="199.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="566.0" y="233.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="626.0" y="262.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Shipped</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="601.0" y="312.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="661.0" y="341.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="601.0" y="375.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="661.0" y="404.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Delivered</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="275.0" y="800.0" width="120.0" height="72.0" rx="28.8"/>
-  <text x="335.0" y="840.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="275.0" y="863.0" width="120.0" height="72.0" rx="28.8"/>
+  <text x="335.0" y="903.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Cancelled</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="604.0" y="472.0" width="150.0" height="50.0" rx="20.0"/>
-  <text x="679.0" y="501.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="604.0" y="535.0" width="150.0" height="50.0" rx="20.0"/>
+  <text x="679.0" y="564.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Return requested</tspan>
   </text>
-  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="653.0" y="632.0" width="120.0" height="50.0" rx="20.0"/>
-  <text x="713.0" y="661.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="653.0" y="695.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="713.0" y="724.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Refunded</tspan>
   </text>
-  <circle cx="712.0" cy="790.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
-  <circle cx="712.0" cy="790.0" r="10.0" fill="#111827"/>
-  <text x="712.0" y="822.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <circle cx="712.0" cy="853.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
+  <circle cx="712.0" cy="853.0" r="10.0" fill="#111827"/>
+  <text x="712.0" y="885.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan></tspan>
   </text>
-  <circle cx="51.0" cy="824.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
-  <circle cx="51.0" cy="824.0" r="10.0" fill="#111827"/>
-  <text x="51.0" y="856.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <circle cx="51.0" cy="887.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
+  <circle cx="51.0" cy="887.0" r="10.0" fill="#111827"/>
+  <text x="51.0" y="919.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan></tspan>
   </text>
-  <rect x="270.0" y="207.2" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="297.0" y="218.5" text-anchor="middle" font-size="10" fill="#8b95a5">checkout</text>
-  <rect x="199.0" y="376.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="244.0" y="387.5" text-anchor="middle" font-size="10" fill="#8b95a5">payment result</text>
-  <rect x="173.0" y="503.2" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="212.0" y="514.5" text-anchor="middle" font-size="10" fill="#8b95a5">[authorized]</text>
-  <rect x="126.0" y="529.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="159.0" y="540.5" text-anchor="middle" font-size="10" fill="#8b95a5">[declined]</text>
-  <rect x="49.0" y="447.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="67.0" y="458.5" text-anchor="middle" font-size="10" fill="#8b95a5">retry</text>
-  <rect x="55.0" y="732.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="106.0" y="743.5" text-anchor="middle" font-size="10" fill="#8b95a5">after 3 attempts</text>
-  <rect x="121.0" y="709.4" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="166.0" y="720.7" text-anchor="middle" font-size="10" fill="#8b95a5">allocate stock</text>
-  <rect x="456.0" y="484.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="507.0" y="495.5" text-anchor="middle" font-size="10" fill="#8b95a5">all items picked</text>
-  <rect x="611.0" y="116.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="656.0" y="127.5" text-anchor="middle" font-size="10" fill="#8b95a5">carrier pickup</text>
-  <rect x="630.0" y="258.2" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="684.0" y="269.5" text-anchor="middle" font-size="10" fill="#8b95a5">proof of delivery</text>
-  <rect x="801.0" y="555.8" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="843.0" y="567.0" text-anchor="middle" font-size="10" fill="#8b95a5">after 30 days</text>
-  <rect x="666.0" y="409.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="717.0" y="420.5" text-anchor="middle" font-size="10" fill="#8b95a5">customer returns</text>
-  <rect x="683.0" y="569.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="725.0" y="580.5" text-anchor="middle" font-size="10" fill="#8b95a5">item received</text>
-  <rect x="366.0" y="468.8" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="387.0" y="480.0" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
-  <rect x="298.0" y="536.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="319.0" y="547.5" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
-  <rect x="258.0" y="721.5" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
-  <text x="294.0" y="732.2" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
-  <text x="294.0" y="746.8" text-anchor="middle" font-size="10" fill="#8b95a5">before pick</text>
-  <rect x="538.0" y="637.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="562.0" y="648.8" text-anchor="middle" font-size="10" fill="#8b95a5">if paid</text>
-  <rect x="566.5" y="770.5" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="596.5" y="781.8" text-anchor="middle" font-size="10" fill="#8b95a5">if unpaid</text>
+  <rect x="270.0" y="270.2" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="297.0" y="281.5" text-anchor="middle" font-size="10" fill="#8b95a5">checkout</text>
+  <rect x="199.0" y="439.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="244.0" y="450.5" text-anchor="middle" font-size="10" fill="#8b95a5">payment result</text>
+  <rect x="173.0" y="566.2" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="212.0" y="577.5" text-anchor="middle" font-size="10" fill="#8b95a5">[authorized]</text>
+  <rect x="126.0" y="592.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="159.0" y="603.5" text-anchor="middle" font-size="10" fill="#8b95a5">[declined]</text>
+  <rect x="49.0" y="510.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="67.0" y="521.5" text-anchor="middle" font-size="10" fill="#8b95a5">retry</text>
+  <rect x="55.0" y="795.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="106.0" y="806.5" text-anchor="middle" font-size="10" fill="#8b95a5">after 3 attempts</text>
+  <rect x="121.0" y="772.4" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="166.0" y="783.7" text-anchor="middle" font-size="10" fill="#8b95a5">allocate stock</text>
+  <rect x="456.0" y="547.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="507.0" y="558.5" text-anchor="middle" font-size="10" fill="#8b95a5">all items picked</text>
+  <rect x="611.0" y="179.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="656.0" y="190.5" text-anchor="middle" font-size="10" fill="#8b95a5">carrier pickup</text>
+  <rect x="630.0" y="321.2" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="684.0" y="332.5" text-anchor="middle" font-size="10" fill="#8b95a5">proof of delivery</text>
+  <rect x="801.0" y="618.8" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="843.0" y="630.0" text-anchor="middle" font-size="10" fill="#8b95a5">after 30 days</text>
+  <rect x="666.0" y="472.2" width="102.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="717.0" y="483.5" text-anchor="middle" font-size="10" fill="#8b95a5">customer returns</text>
+  <rect x="683.0" y="632.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="725.0" y="643.5" text-anchor="middle" font-size="10" fill="#8b95a5">item received</text>
+  <rect x="366.0" y="531.8" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="387.0" y="543.0" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
+  <rect x="298.0" y="599.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="319.0" y="610.5" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
+  <rect x="258.0" y="784.5" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
+  <text x="294.0" y="795.2" text-anchor="middle" font-size="10" fill="#8b95a5">cancel</text>
+  <text x="294.0" y="809.8" text-anchor="middle" font-size="10" fill="#8b95a5">before pick</text>
+  <rect x="538.0" y="700.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="562.0" y="711.8" text-anchor="middle" font-size="10" fill="#8b95a5">if paid</text>
+  <rect x="566.5" y="833.5" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="596.5" y="844.8" text-anchor="middle" font-size="10" fill="#8b95a5">if unpaid</text>
+  <line x1="24.0" y1="67.0" x2="885.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

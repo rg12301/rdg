@@ -1,0 +1,54 @@
+# Order saga: orchestrated steps across services with compensations on failure.
+title: "Order saga with compensations"
+numbered: true
+participants:
+  - {id: client, label: Checkout client, type: client}
+  - {id: saga, label: Saga orchestrator, type: service, language: go}
+  - {id: orders, label: Order service, type: service}
+  - {id: inventory, label: Inventory service, type: service}
+  - {id: payment, label: Payment service, type: service}
+  - {id: shipping, label: Shipping service, type: service}
+  - {id: bus, label: Event bus, type: queue, db_type: kafka}
+groups:
+  - {id: services, label: "Participants", nodes: [orders, inventory, payment, shipping]}
+sequence:
+  - {from: client, to: saga, label: "place order"}
+  - {from: saga, to: orders, label: "create order (pending)"}
+  - {from: orders, to: saga, label: "order_id", style: reply}
+  - {from: saga, to: inventory, label: "reserve items"}
+  - {from: inventory, to: saga, label: "reserved", style: reply}
+  - {from: saga, to: payment, label: "charge card"}
+  - alt: "payment succeeded"
+    steps:
+      - {from: payment, to: saga, label: "charged", style: reply}
+      - {from: saga, to: shipping, label: "schedule shipment"}
+      - alt: "shipment scheduled"
+        steps:
+          - {from: shipping, to: saga, label: "scheduled", style: reply}
+          - {from: saga, to: orders, label: "mark confirmed"}
+          - {from: saga, to: bus, label: "OrderConfirmed", style: async}
+          - {from: saga, to: client, label: "confirmed", style: reply}
+          - {note: "saga completed", over: saga, kind: success}
+        else:
+          label: "no carrier capacity"
+          steps:
+            - {from: shipping, to: saga, label: "failed", style: reply}
+            - {note: "compensate in reverse order", over: [saga, shipping], kind: warning}
+            - {from: saga, to: payment, label: "refund charge"}
+            - {from: payment, to: saga, label: "refunded", style: reply}
+            - {from: saga, to: inventory, label: "release items"}
+            - {from: saga, to: orders, label: "mark cancelled"}
+            - {from: saga, to: client, label: "could not ship", style: reply}
+    else:
+      label: "card declined"
+      steps:
+        - {from: payment, to: saga, label: "declined", style: reply}
+        - {note: "no charge to compensate", over: saga, kind: info}
+        - {from: saga, to: inventory, label: "release items"}
+        - {from: inventory, to: saga, label: "released", style: reply}
+        - {from: saga, to: orders, label: "mark cancelled"}
+        - {from: saga, to: bus, label: "OrderCancelled", style: async}
+        - {from: saga, to: client, label: "payment declined", style: reply}
+  - critical: "orchestrator crash"
+    steps:
+      - {note: "saga state persisted after every step; a restarted orchestrator resumes from the log", over: saga, kind: error}

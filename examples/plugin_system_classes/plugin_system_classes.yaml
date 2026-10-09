@@ -1,0 +1,43 @@
+# A plugin host: registry, lifecycle, sandboxed plugins behind interfaces,
+# configuration and an event bus.
+title: "Plugin system"
+diagram_type: class
+nodes:
+  - {id: host, label: PluginHost, type: class, fields: ["- registry: Registry", "- bus: EventBus", "+ start(): void", "+ stop(): void"]}
+  - {id: registry, label: Registry, type: class, fields: ["- plugins: Map<Id, Handle>", "+ load(path: Path): Handle", "+ unload(id: Id): void"]}
+  - {id: handle, label: PluginHandle, type: class, fields: ["- state: Lifecycle", "- instance: Plugin", "+ transition(to: Lifecycle)"]}
+  - {id: lifecycle, label: Lifecycle, type: class, fields: ["LOADED", "STARTED", "STOPPED", "FAILED"]}
+  - {id: plugin, label: Plugin, type: interface, fields: ["+ id(): Id", "+ on_start(ctx: Context)", "+ on_stop()"]}
+  - {id: context, label: Context, type: class, fields: ["- config: Config", "- bus: EventBus", "+ subscribe(topic: Topic, h: Handler)"]}
+  - {id: config, label: Config, type: class, fields: ["- values: Map<Key, Value>", "+ get<T>(key: Key): T"]}
+  - {id: bus, label: EventBus, type: class, fields: ["- subs: Map<Topic, Vec<Handler>>", "+ publish(e: Event)"]}
+  - {id: event, label: Event, type: struct, fields: ["+ topic: Topic", "+ payload: Bytes"]}
+  - {id: handler, label: Handler, type: interface, fields: ["+ handle(e: Event)"]}
+  - {id: sandbox, label: Sandbox, type: class, fields: ["- limits: Limits", "+ run(f: Fn)"]}
+  - {id: wasm_plugin, label: WasmPlugin, type: class, fields: ["- module: Module", "+ on_start(ctx: Context)"]}
+  - {id: native_plugin, label: NativePlugin, type: class, fields: ["- lib: DynLib", "+ on_start(ctx: Context)"]}
+  - {id: metrics_plugin, label: MetricsPlugin, type: class, fields: ["+ handle(e: Event)"]}
+  - {id: loader, label: Loader, type: interface, fields: ["+ load(path: Path): Plugin"]}
+  - {id: wasm_loader, label: WasmLoader, type: class, fields: ["+ load(path: Path): Plugin"]}
+  - {id: native_loader, label: NativeLoader, type: class, fields: ["+ load(path: Path): Plugin"]}
+edges:
+  - {from: host, to: registry, edge_style: composition}
+  - {from: host, to: bus, edge_style: composition}
+  - {from: registry, to: handle, edge_style: composition, label: "0..*"}
+  - {from: registry, to: loader, edge_style: aggregation, label: "by extension"}
+  - {from: handle, to: lifecycle, edge_style: aggregation}
+  - {from: handle, to: plugin, edge_style: aggregation}
+  - {from: handle, to: sandbox, edge_style: composition}
+  - {from: plugin, to: context, edge_style: dependency}
+  - {from: context, to: config, edge_style: aggregation}
+  - {from: context, to: bus, edge_style: aggregation}
+  - {from: bus, to: handler, edge_style: aggregation, label: "0..*"}
+  - {from: bus, to: event, edge_style: dependency}
+  - {from: wasm_plugin, to: plugin, edge_style: realization}
+  - {from: native_plugin, to: plugin, edge_style: realization}
+  - {from: metrics_plugin, to: plugin, edge_style: realization}
+  - {from: metrics_plugin, to: handler, edge_style: realization}
+  - {from: wasm_loader, to: loader, edge_style: realization}
+  - {from: native_loader, to: loader, edge_style: realization}
+  - {from: wasm_loader, to: wasm_plugin, edge_style: dependency, label: "creates"}
+  - {from: native_loader, to: native_plugin, edge_style: dependency, label: "creates"}

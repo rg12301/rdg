@@ -401,6 +401,9 @@ pub fn render_svg(
     if let Some(l) = frame.as_ref().and_then(|f| f.legend.as_ref()) {
         draw_legend(&mut w, theme, tokens, &l.items, l.x, l.y, l.max_w, l.w, l.align)?;
     }
+    if let Some((x0, x1, y)) = frame.as_ref().and_then(|f| f.rule) {
+        el(&mut w, "line", &[("x1", f1(x0)), ("y1", f1(y)), ("x2", f1(x1)), ("y2", f1(y)), ("stroke", theme.title.rule_color.clone()), ("stroke-width", "1".into())])?;
+    }
 
     close(&mut w, "svg")?;
     Ok(String::from_utf8(buf)?)

@@ -1,0 +1,40 @@
+# Hospital information system schema: patients, staff, admissions, wards,
+# procedures, billing and inventory.
+title: "Hospital schema"
+diagram_type: erd
+nodes:
+  - {id: patients, label: patients, type: table, fields: ["id UUID PK", "mrn TEXT", "name TEXT", "dob DATE", "insurer_id UUID FK"]}
+  - {id: insurers, label: insurers, type: table, fields: ["id UUID PK", "name TEXT", "plan_code TEXT"]}
+  - {id: staff, label: staff, type: table, fields: ["id UUID PK", "name TEXT", "role TEXT", "department_id UUID FK"]}
+  - {id: departments, label: departments, type: table, fields: ["id UUID PK", "name TEXT", "floor INT"]}
+  - {id: wards, label: wards, type: table, fields: ["id UUID PK", "department_id UUID FK", "name TEXT", "beds INT"]}
+  - {id: admissions, label: admissions, type: table, fields: ["id UUID PK", "patient_id UUID FK", "ward_id UUID FK", "attending_id UUID FK", "admitted_at TIMESTAMP", "discharged_at TIMESTAMP"]}
+  - {id: diagnoses, label: diagnoses, type: table, fields: ["id UUID PK", "admission_id UUID FK", "icd10 TEXT", "recorded_by UUID FK"]}
+  - {id: procedures, label: procedures, type: table, fields: ["id UUID PK", "admission_id UUID FK", "cpt TEXT", "performed_by UUID FK", "performed_at TIMESTAMP"]}
+  - {id: medications, label: medications, type: table, fields: ["id UUID PK", "name TEXT", "unit TEXT"]}
+  - {id: prescriptions, label: prescriptions, type: table, fields: ["id UUID PK", "admission_id UUID FK", "medication_id UUID FK", "dose DECIMAL", "frequency TEXT"]}
+  - {id: lab_orders, label: lab_orders, type: table, fields: ["id UUID PK", "admission_id UUID FK", "test_code TEXT", "status TEXT"]}
+  - {id: lab_results, label: lab_results, type: table, fields: ["id UUID PK", "order_id UUID FK", "value DECIMAL", "unit TEXT", "flag TEXT"]}
+  - {id: invoices, label: invoices, type: table, fields: ["id UUID PK", "admission_id UUID FK", "total DECIMAL", "status TEXT"]}
+  - {id: invoice_lines, label: invoice_lines, type: table, fields: ["id UUID PK", "invoice_id UUID FK", "procedure_id UUID FK", "amount DECIMAL"]}
+  - {id: stock, label: stock, type: table, fields: ["id UUID PK", "medication_id UUID FK", "ward_id UUID FK", "quantity INT"]}
+edges:
+  - {from: insurers, to: patients, edge_style: one_to_many, label: "covers"}
+  - {from: departments, to: staff, edge_style: one_to_many}
+  - {from: departments, to: wards, edge_style: one_to_many}
+  - {from: patients, to: admissions, edge_style: one_to_many}
+  - {from: wards, to: admissions, edge_style: one_to_many}
+  - {from: staff, to: admissions, edge_style: one_to_many, label: "attends"}
+  - {from: admissions, to: diagnoses, edge_style: one_to_many}
+  - {from: admissions, to: procedures, edge_style: one_to_many}
+  - {from: admissions, to: prescriptions, edge_style: one_to_many}
+  - {from: admissions, to: lab_orders, edge_style: one_to_many}
+  - {from: admissions, to: invoices, edge_style: one_to_one}
+  - {from: staff, to: procedures, edge_style: one_to_many, label: "performs"}
+  - {from: staff, to: diagnoses, edge_style: one_to_many, label: "records"}
+  - {from: medications, to: prescriptions, edge_style: one_to_many}
+  - {from: medications, to: stock, edge_style: one_to_many}
+  - {from: wards, to: stock, edge_style: one_to_many}
+  - {from: lab_orders, to: lab_results, edge_style: one_to_many}
+  - {from: invoices, to: invoice_lines, edge_style: one_to_many}
+  - {from: procedures, to: invoice_lines, edge_style: one_to_many, label: "billed as"}

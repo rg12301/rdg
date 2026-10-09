@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="943" height="736" viewBox="0 0 943 736" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="943" height="684" viewBox="0 0 943 684" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#9aa3b2" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
-  <text x="24" y="31.4" font-size="18" font-weight="bold" fill="#111827">OAuth 2.0 Authorization Code Flow</text>
+  <text x="24" y="33.6" font-size="20" font-weight="bold" fill="#111827">OAuth 2.0 Authorization Code Flow</text>
   <line x1="74.0" y1="114.0" x2="74.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="211.0" y1="114.0" x2="211.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="413.0" y1="104.0" x2="413.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="657.0" y1="104.0" x2="657.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="849.0" y1="104.0" x2="849.0" y2="659.5" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <rect x="408.0" y="197.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="652.0" y="276.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="652.0" y="355.0" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="408.0" y="434.0" width="10.0" height="197.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="652.0" y="473.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
-  <rect x="844.0" y="552.5" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="408.0" y="197.0" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="276.0" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="355.0" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="408.0" y="434.0" width="10.0" height="197.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="652.0" y="473.5" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="844.0" y="552.5" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
   <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 74.0 157.5 H 211.0"/>
   <rect x="98.5" y="140.0" width="88.0" height="13.5" fill="#f7f8fa"/>
   <text x="142.5" y="150.8" text-anchor="middle" font-size="10" fill="#8b95a5">1. click login</text>
@@ -71,9 +71,10 @@
   <text x="849.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Resource Server</tspan>
   </text>
-  <text x="24.0" y="687.4" font-size="11" font-weight="bold" fill="#111827">Legend</text>
-  <rect x="24.0" y="701.1" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
-  <text x="54.0" y="711.6" font-size="10" fill="#5b6474">Frontend</text>
-  <rect x="122.0" y="701.1" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
-  <text x="152.0" y="711.6" font-size="10" fill="#5b6474">Backend</text>
+  <text x="879.4" y="23.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="749.0" y="37.6" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
+  <text x="779.0" y="48.1" font-size="10" fill="#5b6474">Frontend</text>
+  <rect x="847.0" y="37.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="877.0" y="48.1" font-size="10" fill="#5b6474">Backend</text>
+  <line x1="24" y1="52.0" x2="919.0" y2="52.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1236" height="1702" viewBox="0 0 1236 1702" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#9aa3b2" stroke-width="1.3" stroke-linejoin="round"/></marker><marker id="marker-open-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#ea580c" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <text x="24" y="33.6" font-size="20" font-weight="bold" fill="#111827">OAuth device authorization flow</text>
+  <rect x="167.0" y="64.0" width="356.0" height="1622.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="175.0" y="80.8" font-size="11" font-weight="bold" fill="#94a3b8">User devices</text>
+  <rect x="24.0" y="347.1" width="998.0" height="667.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 24.0 347.1 H 58.0 V 362.6 L 52.0 368.6 H 24.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="30.0" y="361.3" font-size="10" font-weight="bold" fill="#111827">par</text>
+  <text x="66.0" y="361.3" font-size="10" fill="#5b6474">[approval and polling]</text>
+  <line x1="24.0" y1="655.0" x2="1022.0" y2="655.0" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <rect x="71.0" y="680.5" width="807.0" height="321.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 71.0 680.5 H 111.0 V 696.0 L 105.0 702.0 H 71.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="77.0" y="694.8" font-size="10" font-weight="bold" fill="#111827">loop</text>
+  <text x="119.0" y="694.8" font-size="10" fill="#5b6474">[every interval seconds]</text>
+  <rect x="124.0" y="753.5" width="701.0" height="236.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 124.0 753.5 H 158.0 V 769.0 L 152.0 775.0 H 124.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="130.0" y="767.8" font-size="10" font-weight="bold" fill="#111827">alt</text>
+  <text x="166.0" y="767.8" font-size="10" fill="#5b6474">[pending]</text>
+  <line x1="124.0" y1="824.5" x2="825.0" y2="824.5" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="132.0" y="836.0" font-size="10" fill="#5b6474">[slow_down]</text>
+  <line x1="124.0" y1="937.0" x2="825.0" y2="937.0" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="132.0" y="948.5" font-size="10" fill="#5b6474">[approved]</text>
+  <rect x="207.0" y="1283.0" width="613.0" height="100.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 207.0 1283.0 H 241.0 V 1298.5 L 235.0 1304.5 H 207.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="213.0" y="1297.3" font-size="10" font-weight="bold" fill="#111827">opt</text>
+  <text x="249.0" y="1297.3" font-size="10" fill="#5b6474">[access token expired]</text>
+  <rect x="139.0" y="1407.5" width="1055.0" height="242.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 139.0 1407.5 H 173.0 V 1423.0 L 167.0 1429.0 H 139.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="145.0" y="1421.8" font-size="10" font-weight="bold" fill="#111827">opt</text>
+  <text x="181.0" y="1421.8" font-size="10" fill="#5b6474">[user revokes]</text>
+  <line x1="24.0" y1="1252.3" x2="1212.0" y2="1252.3" stroke="#c3c9d3" stroke-width="1.0"/>
+  <rect x="595.0" y="1245.5" width="46.0" height="13.5" rx="6.8" fill="#f7f8fa" stroke="#c3c9d3" stroke-width="1.0"/>
+  <text x="618.0" y="1255.8" text-anchor="middle" font-size="10" fill="#5b6474">later</text>
+  <line x1="254.0" y1="148.8" x2="254.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="436.0" y1="148.8" x2="436.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="632.0" y1="151.1" x2="632.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="778.0" y1="138.8" x2="778.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="980.0" y1="138.8" x2="980.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="1152.0" y1="138.8" x2="1152.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <rect x="773.0" y="194.6" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="773.0" y="435.6" width="10.0" height="118.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="975.0" y="475.1" width="10.0" height="39.5" fill="#64748b" fill-opacity="0.28" stroke="#64748b" stroke-width="1.25"/>
+  <rect x="773.0" y="729.5" width="10.0" height="73.0" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="1147.0" y="1103.0" width="10.0" height="118.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="773.0" y="1142.5" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="773.0" y="1332.0" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="1147.0" y="1535.5" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 194.6 H 773.0"/>
+  <rect x="424.5" y="177.1" width="178.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="187.9" text-anchor="middle" font-size="10" fill="#8b95a5">1. POST /device_authorization</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 773.0 234.1 H 254.0"/>
+  <rect x="382.5" y="216.6" width="262.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="227.4" text-anchor="middle" font-size="10" fill="#9aa3b2">2. device_code, user_code, verification_uri</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)" d="M 254.0 323.1 H 632.0"/>
+  <rect x="396.0" y="305.6" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="443.0" y="316.4" text-anchor="middle" font-size="10" fill="#ea580c">3. display code</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 632.0 396.1 H 436.0"/>
+  <rect x="460.0" y="378.6" width="148.0" height="13.5" fill="#f7f8fa"/>
+  <text x="534.0" y="389.4" text-anchor="middle" font-size="10" fill="#8b95a5">4. open verification_uri</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 436.0 435.6 H 773.0"/>
+  <rect x="530.5" y="418.1" width="148.0" height="13.5" fill="#f7f8fa"/>
+  <text x="604.5" y="428.9" text-anchor="middle" font-size="10" fill="#8b95a5">5. GET /device?user_code</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 783.0 475.1 H 975.0"/>
+  <rect x="832.0" y="457.6" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="879.0" y="468.4" text-anchor="middle" font-size="10" fill="#8b95a5">6. authenticate</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 975.0 514.5 H 783.0"/>
+  <rect x="844.0" y="497.0" width="70.0" height="13.5" fill="#f7f8fa"/>
+  <text x="879.0" y="507.8" text-anchor="middle" font-size="10" fill="#9aa3b2">7. id_token</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 773.0 554.0 H 436.0"/>
+  <rect x="557.5" y="536.5" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="604.5" y="547.3" text-anchor="middle" font-size="10" fill="#9aa3b2">8. consent page</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 632.0 593.5 H 436.0"/>
+  <rect x="502.0" y="576.0" width="64.0" height="13.5" fill="#f7f8fa"/>
+  <text x="534.0" y="586.8" text-anchor="middle" font-size="10" fill="#8b95a5">9. approve</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 436.0 633.0 H 778.0"/>
+  <rect x="533.0" y="615.5" width="148.0" height="13.5" fill="#f7f8fa"/>
+  <text x="607.0" y="626.3" text-anchor="middle" font-size="10" fill="#8b95a5">10. POST /device/approve</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 729.5 H 773.0"/>
+  <rect x="424.5" y="712.0" width="178.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="722.8" text-anchor="middle" font-size="10" fill="#8b95a5">11. POST /token (device_code)</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 773.0 802.5 H 254.0"/>
+  <rect x="436.5" y="785.0" width="154.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="795.8" text-anchor="middle" font-size="10" fill="#9aa3b2">12. authorization_pending</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 778.0 865.5 H 254.0"/>
+  <rect x="475.0" y="848.0" width="82.0" height="13.5" fill="#f7f8fa"/>
+  <text x="516.0" y="858.8" text-anchor="middle" font-size="10" fill="#9aa3b2">13. slow_down</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 778.0 978.0 H 254.0"/>
+  <rect x="421.0" y="960.5" width="190.0" height="13.5" fill="#f7f8fa"/>
+  <text x="516.0" y="971.3" text-anchor="middle" font-size="10" fill="#9aa3b2">14. access_token, refresh_token</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 1103.0 H 1147.0"/>
+  <rect x="623.5" y="1085.5" width="154.0" height="13.5" fill="#f7f8fa"/>
+  <text x="700.5" y="1096.3" text-anchor="middle" font-size="10" fill="#8b95a5">15. GET /profile (Bearer)</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 1147.0 1142.5 H 783.0"/>
+  <rect x="921.0" y="1125.0" width="88.0" height="13.5" fill="#f7f8fa"/>
+  <text x="965.0" y="1135.8" text-anchor="middle" font-size="10" fill="#8b95a5">16. introspect</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 783.0 1182.0 H 1147.0"/>
+  <rect x="933.0" y="1164.5" width="64.0" height="13.5" fill="#f7f8fa"/>
+  <text x="965.0" y="1175.3" text-anchor="middle" font-size="10" fill="#9aa3b2">17. active</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 1147.0 1221.5 H 254.0"/>
+  <rect x="653.5" y="1204.0" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="700.5" y="1214.8" text-anchor="middle" font-size="10" fill="#9aa3b2">18. 200 profile</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 1332.0 H 773.0"/>
+  <rect x="418.5" y="1314.5" width="190.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="1325.3" text-anchor="middle" font-size="10" fill="#8b95a5">19. POST /token (refresh_token)</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 773.0 1371.5 H 254.0"/>
+  <rect x="451.5" y="1354.0" width="124.0" height="13.5" fill="#f7f8fa"/>
+  <text x="513.5" y="1364.8" text-anchor="middle" font-size="10" fill="#9aa3b2">20. new access_token</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 632.0 1456.5 H 436.0"/>
+  <rect x="481.0" y="1439.0" width="106.0" height="13.5" fill="#f7f8fa"/>
+  <text x="534.0" y="1449.8" text-anchor="middle" font-size="10" fill="#8b95a5">21. revoke device</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 436.0 1496.0 H 778.0"/>
+  <rect x="557.0" y="1478.5" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="607.0" y="1489.3" text-anchor="middle" font-size="10" fill="#8b95a5">22. POST /revoke</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 1535.5 H 1147.0"/>
+  <rect x="650.5" y="1518.0" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="700.5" y="1528.8" text-anchor="middle" font-size="10" fill="#8b95a5">23. GET /profile</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-1)" d="M 1147.0 1575.0 H 254.0"/>
+  <rect x="635.5" y="1557.5" width="130.0" height="13.5" fill="#f7f8fa"/>
+  <text x="700.5" y="1568.3" text-anchor="middle" font-size="10" fill="#9aa3b2">24. 401 invalid_token</text>
+  <path d="M 174.0 258.1 H 326.0 L 334.0 266.1 V 283.6 H 174.0 Z" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+  <path d="M 326.0 258.1 V 266.1 H 334.0" fill="none" stroke="#3b82f6" stroke-width="1"/>
+  <text x="182.0" y="274.2" font-size="10" fill="#1e3a8a">ℹ shows user_code and QR</text>
+  <path d="M 171.0 889.5 H 329.0 L 337.0 897.5 V 915.0 H 171.0 Z" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+  <path d="M 329.0 889.5 V 897.5 H 337.0" fill="none" stroke="#f59e0b" stroke-width="1"/>
+  <text x="179.0" y="905.7" font-size="10" fill="#78350f">⚠ increase interval by 5s</text>
+  <path d="M 147.0 1038.0 H 353.0 L 361.0 1046.0 V 1063.5 H 147.0 Z" fill="#dcfce7" stroke="#22c55e" stroke-width="1"/>
+  <path d="M 353.0 1038.0 V 1046.0 H 361.0" fill="none" stroke="#22c55e" stroke-width="1"/>
+  <text x="155.0" y="1054.2" font-size="10" fill="#14532d">✔ tokens stored in secure storage</text>
+  <path d="M 186.0 1599.0 H 314.0 L 322.0 1607.0 V 1638.0 H 186.0 Z" fill="#fee2e2" stroke="#ef4444" stroke-width="1"/>
+  <path d="M 314.0 1599.0 V 1607.0 H 322.0" fill="none" stroke="#ef4444" stroke-width="1"/>
+  <text x="194.0" y="1615.2" font-size="10" fill="#7f1d1d">✖ app returns to the</text>
+  <text x="194.0" y="1628.7" font-size="10" fill="#7f1d1d">sign-in screen</text>
+  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="179.0" y="98.8" width="150.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="197.8" y="113.8" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="267.0" y="128.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Smart TV app</tspan>
+  </text>
+  <rect fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.5" x="361.0" y="98.8" width="150.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="376.2" y="113.8" width="20.0" height="20.0" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g><circle cx="12" cy="7" r="4" fill="#64748b"/><path fill="#64748b" d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2H4z"/></g></svg><text x="449.0" y="128.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Phone browser</tspan>
+  </text>
+  <circle cx="632.0" cy="104.0" r="5.1" fill="none" stroke="#94a3b8" stroke-width="1.75"/>
+  <path d="M 632.0 109.1 V 120.6 M 622.4 113.2 H 641.6 M 632.0 120.6 L 623.7 130.8 M 632.0 120.6 L 640.3 130.8" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round"/>
+  <text x="632.0" y="147.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">User</text>
+  <rect fill="#dc2626" fill-opacity="0.102" stroke="#dc2626" stroke-width="1.5" x="688.0" y="98.8" width="180.0" height="40.0" rx="6.0"/>
+  <text x="778.0" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Authorization server</tspan>
+  </text>
+  <rect fill="#64748b" fill-opacity="0.078" stroke="#64748b" stroke-width="1.5" x="900.0" y="98.8" width="160.0" height="40.0" rx="6.0"/>
+  <text x="980.0" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Identity provider</tspan>
+  </text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="1092.0" y="98.8" width="120.0" height="40.0" rx="6.0"/>
+  <text x="1152.0" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Resource API</tspan>
+  </text>
+  <text x="1172.4" y="23.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="638.0" y="37.6" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
+  <text x="668.0" y="48.1" font-size="10" fill="#5b6474">Frontend</text>
+  <rect x="736.0" y="37.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
+  <text x="766.0" y="48.1" font-size="10" fill="#5b6474">Other</text>
+  <rect x="816.0" y="37.6" width="22" height="14" rx="3" fill="#dc2626" fill-opacity="0.102" stroke="#dc2626" stroke-width="1.25"/>
+  <text x="846.0" y="48.1" font-size="10" fill="#5b6474">Security</text>
+  <rect x="914.0" y="37.6" width="22" height="14" rx="3" fill="#64748b" fill-opacity="0.078" stroke="#64748b" stroke-width="1.25"/>
+  <text x="944.0" y="48.1" font-size="10" fill="#5b6474">External</text>
+  <rect x="1012.0" y="37.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="1042.0" y="48.1" font-size="10" fill="#5b6474">Backend</text>
+  <line x1="1104.0" y1="44.6" x2="1126.0" y2="44.6" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="1134.0" y="48.1" font-size="10" fill="#5b6474">Async / event</text>
+  <line x1="24" y1="52.0" x2="1212.0" y2="52.0" stroke="#d0d5de" stroke-width="1"/>
+</svg>

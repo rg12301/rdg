@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="936" height="1586" viewBox="0 0 936 1586" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-er-many-1" viewBox="-1 -1 13.200000000000001 13.200000000000001" refX="11.200000000000001" refY="5.6000000000000005" markerWidth="13.200000000000001" markerHeight="13.200000000000001" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M2.1 5.6000000000000005 L11.200000000000001 0 M2.1 5.6000000000000005 L11.200000000000001 11.200000000000001 M0 5.6000000000000005 L11.200000000000001 5.6000000000000005" fill="none" stroke="#8b95a5" stroke-width="1.2"/></marker><marker id="marker-er-one-0" viewBox="-1 -1 13.200000000000001 13.200000000000001" refX="11.200000000000001" refY="5.6000000000000005" markerWidth="13.200000000000001" markerHeight="13.200000000000001" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M4.8999999999999995 0 V11.200000000000001 M7.700000000000001 0 V11.200000000000001" fill="none" stroke="#8b95a5" stroke-width="1.2"/></marker><marker id="marker-er-zero-one-2" viewBox="-1 -1 16 13.200000000000001" refX="14" refY="5.6000000000000005" markerWidth="16" markerHeight="13.200000000000001" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><circle cx="4.2" cy="5.6000000000000005" r="3.15" fill="none" stroke="#8b95a5" stroke-width="1.2"/><path d="M10.5 0 V11.200000000000001" stroke="#8b95a5" stroke-width="1.2"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
+  <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Learning platform schema</text>
+  <path d="M 600.0 214.0 L 600.0 306.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-one-0)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 603.0 396.0 L 603.0 488.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 654.0 551.0 L 742.0 551.0 Q 756.0 551.0 756.0 565.0 L 756.0 769.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 795.0 205.0 L 795.0 769.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 853.3 205.0 L 853.5 222.3 Q 853.5 229.0 846.8 229.0 L 818.9 229.0 Q 808.0 229.0 808.0 218.1 L 808.0 97.8 Q 808.0 91.0 814.8 91.0 L 827.3 91.0 Q 832.2 91.0 832.1 95.9 L 832.0 115.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 553.0 614.0 L 553.0 664.0 Q 553.0 678.0 539.0 678.0 L 343.0 678.0 Q 329.0 678.0 329.0 692.0 L 329.0 751.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 230.0 805.0 L 158.0 805.0 Q 144.0 805.0 144.0 819.0 L 144.0 1014.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 144.0 1140.0 L 144.0 1250.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-zero-one-2)"/>
+  <path d="M 222.0 1340.0 L 222.0 1373.1 Q 222.0 1386.0 234.9 1386.0 L 367.0 1386.0 Q 381.0 1386.0 381.0 1400.0 L 381.0 1441.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 519.0 160.0 L 483.7 160.0 Q 470.0 160.0 470.0 173.7 L 470.0 742.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 573.0 614.0 L 573.0 742.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 513.0 868.0 L 513.0 935.4 Q 513.0 941.0 507.4 941.0 L 497.0 941.0 Q 493.0 941.0 493.0 945.0 L 493.0 1177.0 Q 493.0 1191.0 479.0 1191.0 L 440.0 1191.0 Q 426.0 1191.0 426.0 1205.0 L 426.0 1250.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 163.0 1140.0 L 163.0 1181.0 Q 163.0 1195.0 177.0 1195.0 L 391.0 1195.0 Q 405.0 1195.0 405.0 1209.0 L 405.0 1250.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 454.0 805.0 L 431.0 805.0 Q 422.0 805.0 422.0 814.0 L 422.0 923.0 Q 422.0 937.0 408.0 937.0 L 38.0 937.0 Q 24.0 937.0 24.0 951.0 L 24.0 1481.0 Q 24.0 1495.0 38.0 1495.0 L 77.0 1495.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 181.0 1340.0 L 181.0 1432.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 573.0 868.0 L 573.0 927.0 Q 573.0 941.0 587.0 941.0 L 781.0 941.0 Q 795.0 941.0 795.0 955.0 L 795.0 1023.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-zero-one-2)"/>
+  <path d="M 553.0 868.0 L 553.0 1014.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-one-0)"/>
+  <path d="M 473.0 868.0 L 473.0 1029.0 Q 473.0 1036.0 466.0 1036.0 L 448.0 1036.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-1)" marker-start="url(#marker-er-zero-one-2)"/>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="519.0" y="106.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="599.0" y="124.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">users</text>
+  <line x1="519.0" y1="134.0" x2="679.0" y2="134.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="531.0" y="146.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="531.0" y="164.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">email TEXT</text>
+  <text x="531.0" y="182.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">role TEXT</text>
+  <text x="531.0" y="200.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">created_at TIMESTAMP</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="523.0" y="306.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="603.0" y="324.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">instructors</text>
+  <line x1="523.0" y1="334.0" x2="683.0" y2="334.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="535.0" y="346.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">user_id UUID PK FK</text>
+  <text x="535.0" y="364.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">bio TEXT</text>
+  <text x="535.0" y="382.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">payout_account TEXT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="494.0" y="488.0" width="160.0" height="126.0" rx="6.0"/>
+  <text x="574.0" y="506.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">courses</text>
+  <line x1="494.0" y1="516.0" x2="654.0" y2="516.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="506.0" y="528.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="506.0" y="546.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">instructor_id UUID FK</text>
+  <text x="506.0" y="564.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">title TEXT</text>
+  <text x="506.0" y="582.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">price DECIMAL</text>
+  <text x="506.0" y="600.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">published BOOL</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="752.0" y="115.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="832.0" y="133.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">categories</text>
+  <line x1="752.0" y1="143.0" x2="912.0" y2="143.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="764.0" y="155.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="764.0" y="173.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">name TEXT</text>
+  <text x="764.0" y="191.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">parent_id UUID FK</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="678.0" y="769.0" width="160.0" height="72.0" rx="6.0"/>
+  <text x="758.0" y="787.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">course_categories</text>
+  <line x1="678.0" y1="797.0" x2="838.0" y2="797.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="690.0" y="809.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">course_id UUID FK</text>
+  <text x="690.0" y="827.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">category_id UUID FK</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="230.0" y="751.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="310.0" y="769.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">modules</text>
+  <line x1="230.0" y1="779.0" x2="390.0" y2="779.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="242.0" y="791.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="242.0" y="809.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">course_id UUID FK</text>
+  <text x="242.0" y="827.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">title TEXT</text>
+  <text x="242.0" y="845.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">position INT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="64.0" y="1014.0" width="160.0" height="126.0" rx="6.0"/>
+  <text x="144.0" y="1032.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">lessons</text>
+  <line x1="64.0" y1="1042.0" x2="224.0" y2="1042.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="76.0" y="1054.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="76.0" y="1072.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">module_id UUID FK</text>
+  <text x="76.0" y="1090.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">title TEXT</text>
+  <text x="76.0" y="1108.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">video_url TEXT</text>
+  <text x="76.0" y="1126.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">duration_s INT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="101.0" y="1250.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="181.0" y="1268.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">quizzes</text>
+  <line x1="101.0" y1="1278.0" x2="261.0" y2="1278.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="113.0" y="1290.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="113.0" y="1308.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">lesson_id UUID FK</text>
+  <text x="113.0" y="1326.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">pass_mark INT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="301.0" y="1441.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="381.0" y="1459.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">questions</text>
+  <line x1="301.0" y1="1469.0" x2="461.0" y2="1469.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="313.0" y="1481.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="313.0" y="1499.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">quiz_id UUID FK</text>
+  <text x="313.0" y="1517.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">prompt TEXT</text>
+  <text x="313.0" y="1535.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">answer TEXT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="454.0" y="742.0" width="160.0" height="126.0" rx="6.0"/>
+  <text x="534.0" y="760.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">enrolments</text>
+  <line x1="454.0" y1="770.0" x2="614.0" y2="770.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="466.0" y="782.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="466.0" y="800.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">user_id UUID FK</text>
+  <text x="466.0" y="818.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">course_id UUID FK</text>
+  <text x="466.0" y="836.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolled_at TIMESTAMP</text>
+  <text x="466.0" y="854.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">progress INT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="325.0" y="1250.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="405.0" y="1268.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">lesson_progress</text>
+  <line x1="325.0" y1="1278.0" x2="485.0" y2="1278.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="337.0" y="1290.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolment_id UUID FK</text>
+  <text x="337.0" y="1308.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">lesson_id UUID FK</text>
+  <text x="337.0" y="1326.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">completed_at TIMESTAMP</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="77.0" y="1432.0" width="160.0" height="126.0" rx="6.0"/>
+  <text x="157.0" y="1450.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">quiz_submissions</text>
+  <line x1="77.0" y1="1460.0" x2="237.0" y2="1460.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="89.0" y="1472.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="89.0" y="1490.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolment_id UUID FK</text>
+  <text x="89.0" y="1508.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">quiz_id UUID FK</text>
+  <text x="89.0" y="1526.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">score INT</text>
+  <text x="89.0" y="1544.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">submitted_at TIMESTAMP</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="736.0" y="1023.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="816.0" y="1041.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">certificates</text>
+  <line x1="736.0" y1="1051.0" x2="896.0" y2="1051.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="748.0" y="1063.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="748.0" y="1081.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolment_id UUID FK</text>
+  <text x="748.0" y="1099.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">issued_at TIMESTAMP</text>
+  <text x="748.0" y="1117.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">serial TEXT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="512.0" y="1014.0" width="160.0" height="126.0" rx="6.0"/>
+  <text x="592.0" y="1032.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">payments</text>
+  <line x1="512.0" y1="1042.0" x2="672.0" y2="1042.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="524.0" y="1054.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="524.0" y="1072.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolment_id UUID FK</text>
+  <text x="524.0" y="1090.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">amount DECIMAL</text>
+  <text x="524.0" y="1108.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">provider_ref TEXT</text>
+  <text x="524.0" y="1126.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">status TEXT</text>
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="288.0" y="1023.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="368.0" y="1041.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">reviews</text>
+  <line x1="288.0" y1="1051.0" x2="448.0" y2="1051.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="300.0" y="1063.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">id UUID PK</text>
+  <text x="300.0" y="1081.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">enrolment_id UUID FK</text>
+  <text x="300.0" y="1099.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">rating INT</text>
+  <text x="300.0" y="1117.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">body TEXT</text>
+  <rect x="607.0" y="434.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="631.0" y="445.5" text-anchor="middle" font-size="10" fill="#8b95a5">teaches</text>
+  <rect x="809.8" y="209.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="830.8" y="220.8" text-anchor="middle" font-size="10" fill="#8b95a5">parent</text>
+  <line x1="24.0" y1="67.0" x2="912.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
+</svg>

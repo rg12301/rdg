@@ -1,0 +1,45 @@
+# Hotel booking domain model with aggregates, value objects and policies.
+title: "Hotel booking domain"
+diagram_type: class
+nodes:
+  - {id: aggregate, label: AggregateRoot, type: abstract_class, fields: ["# id: UUID", "# version: int", "+ events(): List<DomainEvent>"]}
+  - {id: booking, label: Booking, type: class, fields: ["- guest: GuestId", "- stay: StayPeriod", "- rooms: List<RoomAllocation>", "- status: BookingStatus", "+ confirm(policy: CancellationPolicy)", "+ cancel(at: Instant)"]}
+  - {id: stay, label: StayPeriod, type: struct, fields: ["+ check_in: Date", "+ check_out: Date", "+ nights(): int"]}
+  - {id: allocation, label: RoomAllocation, type: class, fields: ["- room: RoomId", "- rate: Money", "- guests: int"]}
+  - {id: status, label: BookingStatus, type: class, fields: ["PENDING", "CONFIRMED", "CHECKED_IN", "CANCELLED"]}
+  - {id: money, label: Money, type: struct, fields: ["+ amount: Decimal", "+ currency: Currency"]}
+  - {id: hotel, label: Hotel, type: class, fields: ["- name: String", "- rooms: List<Room>", "- policies: List<CancellationPolicy>", "+ availability(p: StayPeriod): List<Room>"]}
+  - {id: room, label: Room, type: class, fields: ["- number: String", "- type: RoomType", "- base_rate: Money"]}
+  - {id: room_type, label: RoomType, type: class, fields: ["- name: String", "- capacity: int"]}
+  - {id: policy, label: CancellationPolicy, type: interface, fields: ["+ fee(b: Booking, at: Instant): Money"]}
+  - {id: flexible, label: FlexiblePolicy, type: class, fields: ["+ fee(b: Booking, at: Instant): Money"]}
+  - {id: nonref, label: NonRefundablePolicy, type: class, fields: ["+ fee(b: Booking, at: Instant): Money"]}
+  - {id: guest, label: Guest, type: class, fields: ["- name: String", "- email: Email", "- loyalty: LoyaltyTier"]}
+  - {id: payment, label: Payment, type: class, fields: ["- booking: BookingId", "- amount: Money", "- captured: bool"]}
+  - {id: pricing, label: PricingService, type: class, fields: ["+ quote(h: Hotel, p: StayPeriod, rt: RoomType): Money"]}
+  - {id: booking_repo, label: BookingRepository, type: interface, fields: ["+ find(id: BookingId): Booking", "+ save(b: Booking)"]}
+  - {id: event, label: DomainEvent, type: abstract_class, fields: ["# occurred_at: Instant"]}
+  - {id: confirmed_evt, label: BookingConfirmed, type: class, fields: ["- booking: BookingId"]}
+  - {id: cancelled_evt, label: BookingCancelled, type: class, fields: ["- booking: BookingId", "- fee: Money"]}
+edges:
+  - {from: booking, to: aggregate, edge_style: inheritance}
+  - {from: hotel, to: aggregate, edge_style: inheritance}
+  - {from: booking, to: stay, edge_style: composition}
+  - {from: booking, to: allocation, edge_style: composition, label: "1..*"}
+  - {from: booking, to: status, edge_style: aggregation}
+  - {from: booking, to: guest, edge_style: aggregation}
+  - {from: allocation, to: money, edge_style: composition}
+  - {from: allocation, to: room, edge_style: dependency, label: "refers to"}
+  - {from: hotel, to: room, edge_style: composition, label: "1..*"}
+  - {from: hotel, to: policy, edge_style: aggregation, label: "0..*"}
+  - {from: room, to: room_type, edge_style: aggregation}
+  - {from: room, to: money, edge_style: composition}
+  - {from: flexible, to: policy, edge_style: realization}
+  - {from: nonref, to: policy, edge_style: realization}
+  - {from: payment, to: booking, edge_style: dependency}
+  - {from: payment, to: money, edge_style: composition}
+  - {from: pricing, to: hotel, edge_style: dependency}
+  - {from: booking_repo, to: booking, edge_style: dependency}
+  - {from: confirmed_evt, to: event, edge_style: inheritance}
+  - {from: cancelled_evt, to: event, edge_style: inheritance}
+  - {from: aggregate, to: event, edge_style: aggregation, label: "0..*"}

@@ -8,7 +8,7 @@ custom_colors: true
 font:
   family: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
   code_family: "JetBrains Mono, ui-monospace, Menlo, monospace"
-  title_size: 18
+  title_size: 20
   description_size: 11
   node_title_size: 12
   node_detail_size: 10
@@ -30,6 +30,7 @@ text:
 title:
   color: "#111827"
   description_color: "#5b6474"
+  rule_color: "#d0d5de"
 
 node:
   style: tile              # components as category-coloured tiles with a caption (card: boxes)
@@ -183,7 +184,7 @@ sequence:
   message_gap: 20          # vertical room between messages, beyond their labels
   actor_types: [actor, user, person, human, customer]   # drawn as a stick figure
   lifeline: {color: "#9aa3b2", width: 1.25, dash: "6 6"}
-  activation: {width: 10, fill: "#ffffff", category_stroke: true, stroke: "#9aa3b2"}
+  activation: {width: 10, fill: "@category", category_stroke: true, stroke: "#9aa3b2"}
   note: {fill: "#fef9c3", stroke: "#e2c55a", text: "#4a3f12", wrap_chars: 32}
   fragment: {stroke: "#8b95a5", width: 1.25, tab_fill: "#eef1f5", tab_text: "#111827", guard_color: "#5b6474", separator_dash: "6 4"}
   divider: {color: "#c3c9d3", width: 1, dash: null}

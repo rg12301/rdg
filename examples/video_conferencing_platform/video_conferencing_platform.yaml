@@ -1,0 +1,68 @@
+# Video conferencing: clients, signalling, media (SFU, TURN, recording),
+# meeting services, AI features, storage, third parties.
+title: "Video conferencing platform"
+groups:
+  - {id: clients, label: "Clients", nodes: [desktop, browser, room_device, phone]}
+  - {id: signalling, label: "Signalling & edge", nodes: [sig_gw, auth, api]}
+  - {id: media, label: "Media plane", nodes: [sfu, turn, recorder, transcoder]}
+  - {id: meetings, label: "Meeting services", nodes: [meeting_svc, scheduling, chat_svc, breakout]}
+  - {id: ai, label: "AI features", nodes: [transcription, summarizer, noise]}
+  - {id: stores, label: "Stores", nodes: [meeting_db, recordings, sessions, events]}
+  - {id: external, label: "Third parties", nodes: [calendar, pstn, sso]}
+nodes:
+  - {id: desktop, label: Desktop app, type: client, language: cpp}
+  - {id: browser, label: Browser (WebRTC), type: client, language: typescript}
+  - {id: room_device, label: Room device, type: client}
+  - {id: phone, label: Dial-in phone, type: external}
+  - {id: sig_gw, label: signalling-gateway, type: gateway, language: go}
+  - {id: auth, label: auth-service, category: security, language: go}
+  - {id: api, label: rest-api, type: service, language: typescript}
+  - {id: sfu, label: SFU, type: server, language: cpp}
+  - {id: turn, label: TURN relay, type: proxy, language: cpp}
+  - {id: recorder, label: recorder, type: service, language: go}
+  - {id: transcoder, label: transcoder, type: function, language: cpp}
+  - {id: meeting_svc, label: meeting-service, type: service, language: java}
+  - {id: scheduling, label: scheduling-service, type: service, language: java}
+  - {id: chat_svc, label: in-meeting chat, type: service, language: elixir}
+  - {id: breakout, label: breakout-rooms, type: service, language: go}
+  - {id: transcription, label: live transcription, type: service, language: python}
+  - {id: summarizer, label: meeting summarizer, type: service, language: python}
+  - {id: noise, label: noise suppression, type: service, language: python}
+  - {id: meeting_db, label: meetings, type: database, db_type: postgres}
+  - {id: recordings, label: recordings, type: storage, db_type: s3}
+  - {id: sessions, label: sessions, type: cache, db_type: redis}
+  - {id: events, label: meeting events, type: queue, db_type: kafka}
+  - {id: calendar, label: Calendar providers, type: external}
+  - {id: pstn, label: PSTN carrier, type: external}
+  - {id: sso, label: Enterprise SSO, type: external}
+edges:
+  - {from: desktop, to: sig_gw, label: WebSocket}
+  - {from: browser, to: sig_gw, label: WebSocket}
+  - {from: room_device, to: sig_gw, label: WebSocket}
+  - {from: desktop, to: sfu, label: SRTP}
+  - {from: browser, to: sfu, label: SRTP}
+  - {from: browser, to: turn, label: relay}
+  - {from: turn, to: sfu}
+  - {from: phone, to: pstn}
+  - {from: pstn, to: sfu, label: SIP trunk}
+  - {from: sig_gw, to: auth, label: token}
+  - {from: auth, to: sso, label: SAML}
+  - {from: sig_gw, to: meeting_svc, label: join}
+  - {from: sig_gw, to: sessions, edge_style: data}
+  - {from: api, to: scheduling, label: REST}
+  - {from: scheduling, to: calendar, label: OAuth}
+  - {from: scheduling, to: meeting_db, edge_style: data}
+  - {from: meeting_svc, to: sfu, label: allocate}
+  - {from: meeting_svc, to: meeting_db, edge_style: data}
+  - {from: meeting_svc, to: events, label: MeetingStarted, edge_style: async}
+  - {from: meeting_svc, to: breakout}
+  - {from: meeting_svc, to: chat_svc}
+  - {from: sfu, to: recorder, label: media}
+  - {from: recorder, to: transcoder, edge_style: async}
+  - {from: transcoder, to: recordings, edge_style: data}
+  - {from: sfu, to: transcription, label: audio}
+  - {from: sfu, to: noise, label: audio}
+  - {from: transcription, to: summarizer, label: transcript}
+  - {from: summarizer, to: recordings, label: summary, edge_style: data}
+  - {from: events, to: summarizer, edge_style: async}
+  - {from: browser, to: api, label: REST}

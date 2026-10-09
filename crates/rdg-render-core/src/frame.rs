@@ -82,6 +82,8 @@ pub struct LegendBlock {
 pub struct Frame {
     pub title: Option<TitleBlock>,
     pub legend: Option<LegendBlock>,
+    /// The rule under the header band: `(x0, x1, y)`.
+    pub rule: Option<(f64, f64, f64)>,
     /// Extent of everything drawn, blocks included.
     pub min_x: f64,
     pub min_y: f64,
@@ -101,64 +103,12 @@ pub fn separation(tokens: &DesignTokens) -> f64 {
     tokens.px(3.0)
 }
 
-/// Obstacles: everything the diagram draws, as rectangles (arrow segments as thin ones).
-fn obstacles(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens) -> Vec<Rect> {
-    let mut out: Vec<Rect> = layout.positions.values().map(|n| (n.x, n.y, n.x + n.width, n.y + n.height)).collect();
-    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
-        out.push((x, y, x + w, y + h));
-    }
-    for &e in &compiled.edge_order {
-        if let Some(pts) = crate::annotate::edge_polyline(compiled, layout, e, plans.get(&e), tokens) {
-            for w in pts.windows(2) {
-                out.push((w[0].0.min(w[1].0), w[0].1.min(w[1].1), w[0].0.max(w[1].0), w[0].1.max(w[1].1)));
-            }
-        }
-    }
-    let ann = crate::annotate::place_edge_annotations(compiled, layout, plans, tokens);
-    for spot in ann.labels.values() {
-        let (x, y, w, h) = spot.rect();
-        out.push((x, y, x + w, y + h));
-    }
-    for (&e, &(x, y)) in &ann.badges {
-        let (w, h) = crate::annotate::badge_size(compiled.graph[e].step.as_deref().unwrap_or_default(), tokens);
-        out.push((x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0));
-    }
-    out
-}
 
-/// Distance between two rectangles (0 when they touch or overlap).
-fn rect_dist(a: Rect, b: Rect) -> f64 {
-    let dx = (b.0 - a.2).max(a.0 - b.2).max(0.0);
-    let dy = (b.1 - a.3).max(a.1 - b.3).max(0.0);
-    dx.hypot(dy)
-}
 
-/// Corners a block may sit in, in the order a reader looks for a title: top-left, then
-/// bottom-left (where a caption goes), top-right, bottom-right.
-const CORNERS: [(bool, bool); 4] = [(false, false), (false, true), (true, false), (true, true)];
 
-/// Top-left of a `w`×`h` block in a corner of `area` (`right`, `bottom` pick which),
-/// and the side its lines align to.
-fn corner_spot((right, bottom): (bool, bool), w: f64, h: f64, area: Rect) -> (f64, f64, Align) {
-    let x = if right { area.2 - w } else { area.0 };
-    let y = if bottom { area.3 - h } else { area.1 };
-    (x, y, if right { Align::Right } else { Align::Left })
-}
 
-/// Distance from `r` to the nearest obstacle.
-fn clearance(r: Rect, obs: &[Rect]) -> f64 {
-    obs.iter().map(|&o| rect_dist(r, o)).fold(f64::MAX, f64::min)
-}
 
-/// Rows a legend shape takes when wrapped at its width.
-fn legend_line_count(&(max_w, _, _): &(f64, f64, f64), items: &[LegendItem], theme: &Theme) -> usize {
-    crate::look::legend_rows(items, theme, max_w).len().max(1)
-}
 
-/// Whether `r` clears every obstacle by `sep`.
-fn clear(r: Rect, obs: &[Rect], sep: f64) -> bool {
-    obs.iter().all(|&o| rect_dist(r, o) >= sep)
-}
 
 /// Title block shapes to try: the description on one line, then wrapped narrower.
 fn title_shapes(title: &str, description: Option<&str>, theme: &Theme, tokens: &DesignTokens) -> Vec<TitleBlock> {
@@ -209,114 +159,64 @@ fn title_shapes(title: &str, description: Option<&str>, theme: &Theme, tokens: &
 pub fn compute_frame(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, theme: &Theme, tokens: &DesignTokens) -> Option<Frame> {
     let b = crate::canvas::content_bounds(compiled, layout, plans, tokens)?;
     let sep = separation(tokens);
-    let obs = obstacles(compiled, layout, plans, tokens);
     let area: Rect = (b.min_x, b.min_y, b.max_x, b.max_y);
 
     // Candidate shapes: the title's description on one line, then wrapped narrower; the
     // legend in one row, then in narrower columns.
     let titles = compiled.title.as_deref().map(|t| title_shapes(t, compiled.description.as_deref(), theme, tokens)).unwrap_or_default();
     let items = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty());
-    let legends: Vec<(f64, f64, f64)> = items.as_ref().map_or_else(Vec::new, |items| {
-        let full = (area.2 - area.0).max(tokens.px(40.0));
-        let mut shapes: Vec<(f64, f64, f64)> = Vec::new(); // (max_w, w, h)
-        for frac in [1.0, 0.6, 0.4, 0.3, 0.2, 0.12] {
-            let (w, h) = legend_size(items, theme, full * frac);
-            if !shapes.iter().any(|s| (s.1 - w).abs() < 1.0 && (s.2 - h).abs() < 1.0) {
-                shapes.push((full * frac, w, h));
-            }
-        }
-        shapes
+    // --- A header band above the diagram: title left, legend right, a rule below ----
+    // The band spans the diagram's width. Title and legend share a row when both fit;
+    // otherwise the legend wraps onto its own row under the title. The rule separates
+    // the band from the drawing, and the drawing starts `separation` below it.
+    let width = (area.2 - area.0).max(tokens.px(40.0));
+    let gap = tokens.px(2.0);
+    let title_shape = titles.iter().find(|t| t.w <= width).or(titles.last()).cloned();
+    let legend_shape = items.as_ref().map(|items| {
+        let (w, h) = legend_size(items, theme, width);
+        (width, w, h)
     });
-    let stack_gap = tokens.px(2.0);
-    // Clearance beyond this reads as "apart from the diagram"; each extra line of text,
-    // and each step down the corner order, costs a little.
-    let (comfort, line_cost, corner_cost) = (tokens.px(10.0), tokens.px(0.75), tokens.px(0.5));
-    let place_title = |s: &TitleBlock, x: f64, y: f64, align: Align| TitleBlock { x: x.round(), y: y.round(), align, ..s.clone() };
-    let place_legend = |&(max_w, w, h): &(f64, f64, f64), x: f64, y: f64, align: Align| LegendBlock {
-        x: x.round(),
-        y: y.round(),
-        w,
-        h,
-        align,
-        max_w,
-        items: items.clone().unwrap_or_default(),
+    let title_w = title_shape.as_ref().map_or(0.0, |t| t.w);
+    let title_h = title_shape.as_ref().map_or(0.0, |t| t.h);
+    let same_row = match (&title_shape, &legend_shape) {
+        (Some(_), Some(l)) => title_w + 2.0 * gap + l.1 <= width,
+        _ => false,
     };
-
-    // --- Together: the title with the legend under it, in one corner -----------------
-    // Every corner × every wrapping is scored: clearance from the diagram first (up to a
-    // comfortable distance — a long one-line description or one-row legend reaching back
-    // over the diagram loses to a narrower, taller block tucked into the corner), then
-    // fewer lines, then reading order among corners.
-    let mut title: Option<TitleBlock> = None;
-    let mut legend: Option<LegendBlock> = None;
-    let score = |r: Rect, obs: &[Rect], lines: usize, corner: usize| clearance(r, obs).min(comfort) - lines as f64 * line_cost - corner as f64 * corner_cost;
-    if !titles.is_empty() && !legends.is_empty() {
-        let mut best: Option<(f64, TitleBlock, LegendBlock)> = None;
-        for (ci, &corner) in CORNERS.iter().enumerate() {
-            for t in &titles {
-                for l in &legends {
-                    let (w, h) = (t.w.max(l.1), t.h + stack_gap + l.2);
-                    let (x, y, align) = corner_spot(corner, w, h, area);
-                    let r = (x, y, x + w, y + h);
-                    if !clear(r, &obs, sep) {
-                        continue;
-                    }
-                    let sc = score(r, &obs, t.description_lines.len() + legend_line_count(l, items.as_deref().unwrap_or_default(), theme), ci);
-                    if best.as_ref().is_none_or(|b| sc > b.0 + 1e-6) {
-                        best = Some((sc, place_title(t, align.line_x(x, w, t.w), y, align), place_legend(l, align.line_x(x, w, l.1), y + t.h + stack_gap, align)));
-                    }
-                }
-            }
+    let legend_h = legend_shape.as_ref().map_or(0.0, |l| l.2);
+    let band_h = if title_shape.is_some() && legend_shape.is_some() {
+        if same_row { title_h.max(legend_h) } else { title_h + gap + legend_h }
+    } else {
+        title_h + legend_h
+    };
+    let (mut title, mut legend, mut rule) = (None, None, None);
+    if band_h > 0.0 {
+        let rule_y = (area.1 - sep).round();
+        let band_top = (rule_y - tokens.px(1.5) - band_h).round();
+        let band_right = area.0 + width.max(title_w);
+        if let Some(t) = &title_shape {
+            title = Some(TitleBlock { x: area.0.round(), y: band_top, align: Align::Left, ..t.clone() });
         }
-        if let Some((_, t, l)) = best {
-            (title, legend) = (Some(t), Some(l));
+        if let Some(&(max_w, w, h)) = legend_shape.as_ref() {
+            let (x, y, align) = if title_shape.is_none() {
+                (area.0, band_top, Align::Left)
+            } else if same_row {
+                (band_right - w, band_top, Align::Right)
+            } else {
+                (area.0, band_top + title_h + gap, Align::Left)
+            };
+            legend = Some(LegendBlock { x: x.round(), y: y.round(), w, h, align, max_w, items: items.clone().unwrap_or_default() });
         }
-    }
-
-    // --- Otherwise each on its own: a free corner, else outside the diagram ----------
-    let mut obs = obs;
-    if title.is_none() && !titles.is_empty() {
-        let spot = CORNERS
-            .iter()
-            .enumerate()
-            .flat_map(|(ci, &c)| titles.iter().map(move |t| (ci, c, t)))
-            .filter_map(|(ci, c, t)| {
-                let (x, y, align) = corner_spot(c, t.w, t.h, area);
-                let r = (x, y, x + t.w, y + t.h);
-                clear(r, &obs, sep).then(|| (score(r, &obs, t.description_lines.len(), ci), place_title(t, x, y, align)))
-            })
-            .fold(None::<(f64, TitleBlock)>, |b, c| if b.as_ref().is_none_or(|b| c.0 > b.0 + 1e-6) { Some(c) } else { b })
-            .map(|(_, t)| t);
-        // Above the diagram, the description on one line up to the diagram's width.
-        title = spot.or_else(|| {
-            let t = titles.iter().find(|s| s.w <= (area.2 - area.0).max(tokens.px(40.0))).unwrap_or(&titles[titles.len() - 1]);
-            Some(place_title(t, area.0, area.1 - sep - t.h, Align::Left))
-        });
-        if let Some(t) = &title {
-            obs.push((t.x, t.y, t.x + t.w, t.y + t.h));
-        }
-    }
-    if legend.is_none() && !legends.is_empty() {
-        let spot = CORNERS
-            .iter()
-            .enumerate()
-            .flat_map(|(ci, &c)| legends.iter().map(move |l| (ci, c, l)))
-            .filter_map(|(ci, c, l)| {
-                let (x, y, align) = corner_spot(c, l.1, l.2, area);
-                let r = (x, y, x + l.1, y + l.2);
-                clear(r, &obs, sep).then(|| (score(r, &obs, legend_line_count(l, items.as_deref().unwrap_or_default(), theme), ci), place_legend(l, x, y, align)))
-            })
-            .fold(None::<(f64, LegendBlock)>, |b, c| if b.as_ref().is_none_or(|b| c.0 > b.0 + 1e-6) { Some(c) } else { b })
-            .map(|(_, l)| l);
-        // Below the diagram.
-        legend = spot.or_else(|| Some(place_legend(&legends[0], area.0, area.3 + sep, Align::Left)));
+        rule = Some((area.0.round(), band_right.round(), rule_y));
     }
 
     let (mut min_x, mut min_y, mut max_x, mut max_y) = area;
     for (x, y, w, h) in title.iter().map(|t| (t.x, t.y, t.w, t.h)).chain(legend.iter().map(|l| (l.x, l.y, l.w, l.h))) {
         (min_x, min_y, max_x, max_y) = (min_x.min(x), min_y.min(y), max_x.max(x + w), max_y.max(y + h));
     }
-    Some(Frame { title, legend, min_x, min_y, max_x, max_y })
+    if let Some((x0, x1, _)) = rule {
+        (min_x, max_x) = (min_x.min(x0), max_x.max(x1));
+    }
+    Some(Frame { title, legend, rule, min_x, min_y, max_x, max_y })
 }
 
 /// Place the blocks, then translate the scene so everything — blocks included — starts
@@ -355,15 +255,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn corners_are_tried_in_reading_order() {
-        let area = (0.0, 0.0, 1000.0, 400.0);
-        // The top-left is taken: the block goes to the bottom-left, flush to both edges.
-        let obs = [(0.0, 0.0, 300.0, 200.0)];
-        let spot = CORNERS.iter().map(|&c| corner_spot(c, 150.0, 40.0, area)).find(|&(x, y, _)| clear((x, y, x + 150.0, y + 40.0), &obs, 24.0));
-        assert_eq!(spot, Some((0.0, 360.0, Align::Left)));
-        // Both left corners taken: top-right, aligned right.
-        let obs = [(0.0, 0.0, 300.0, 400.0)];
-        let spot = CORNERS.iter().map(|&c| corner_spot(c, 150.0, 40.0, area)).find(|&(x, y, _)| clear((x, y, x + 150.0, y + 40.0), &obs, 24.0));
-        assert_eq!(spot, Some((850.0, 0.0, Align::Right)));
+    fn the_band_sits_above_the_diagram_with_a_rule_between() {
+        use rdg_schema::{DiagramPayload, EdgeDef, NodeDef};
+        let node = |id: &str| NodeDef { id: id.into(), label: id.to_uppercase(), node_type: "service".into(), ..Default::default() };
+        let compiled = rdg_graph::build_graph(&DiagramPayload {
+            title: Some("Checkout".into()),
+            description: Some("Orders and payments".into()),
+            nodes: vec![node("a"), node("b")],
+            edges: vec![EdgeDef { from: "a".into(), to: "b".into(), ..Default::default() }],
+            ..Default::default()
+        })
+        .unwrap();
+        let config = rdg_layout::LayoutConfig::default();
+        let layout = rdg_layout::compute_layout(&compiled, &config).unwrap();
+        let plans = crate::routing::plan_all_edge_routes(&compiled, &layout, rdg_dispatch::RoutingAlgorithm::VisibilityGraphAStar, &config.tokens);
+        let theme = Theme::builtin("light").unwrap();
+        let f = compute_frame(&compiled, &layout, &plans, &theme, &config.tokens).unwrap();
+        let t = f.title.as_ref().unwrap();
+        let (_, _, rule_y) = f.rule.unwrap();
+        let top = layout.positions.values().map(|n| n.y).fold(f64::INFINITY, f64::min);
+        assert!(t.y + t.h <= rule_y && rule_y < top, "title {}, rule {rule_y}, diagram {top}", t.y + t.h);
+        if let Some(l) = &f.legend {
+            assert!(l.y + l.h <= rule_y + 0.5);
+        }
     }
 }

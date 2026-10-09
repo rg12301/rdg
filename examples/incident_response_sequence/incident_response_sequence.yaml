@@ -14,7 +14,7 @@ groups:
   - {id: automation, label: Automation, nodes: [pager, runbook]}
 sequence:
   - {from: monitor, to: pager, label: "alert: error rate > 5%", style: async}
-  - {note: "deduplicated for 5 min", right_of: pager}
+  - {note: "deduplicated for 5 min", right_of: pager, kind: info}
   - par: "notify"
     steps:
       - {from: pager, to: oncall, label: "page", style: async}
@@ -28,6 +28,7 @@ sequence:
       - {from: k8s, to: runbook, label: "ok", style: reply}
       - {from: runbook, to: monitor, label: "query error rate"}
       - {from: monitor, to: runbook, label: "rate", style: reply}
+      - {note: "a third failed attempt pages the incident lead", kind: warning, over: [runbook, oncall]}
       - break: "rate < 1%"
         steps:
           - {from: runbook, to: oncall, label: "mitigated", style: reply}
@@ -35,6 +36,7 @@ sequence:
     steps:
       - {from: oncall, to: lead, label: "escalate", style: async}
       - {from: lead, to: lead, label: "declare SEV-1"}
+      - {note: "customer-facing outage", kind: error, right_of: lead}
       - {from: lead, to: status, label: "post 'identified'", style: async}
       - critical: "rollback"
         steps:
@@ -44,6 +46,7 @@ sequence:
       label: "mitigated"
       steps:
         - {from: oncall, to: status, label: "post 'resolved'", style: async}
+        - {note: "error rate back under 1%", kind: success, over: [oncall, k8s]}
   - divider: "postmortem"
   - {from: lead, to: oncall, label: "timeline request"}
   - {from: oncall, to: lead, label: "timeline + action items", style: reply}

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1273" height="1396" viewBox="0 0 1273 1396" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#9aa3b2" stroke-width="1.3" stroke-linejoin="round"/></marker><marker id="marker-open-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#ea580c" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <text x="24" y="33.6" font-size="20" font-weight="bold" fill="#111827">Blue/green rollout</text>
+  <rect x="402.0" y="394.5" width="364.0" height="100.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 402.0 394.5 H 442.0 V 410.0 L 436.0 416.0 H 402.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="408.0" y="408.8" font-size="10" font-weight="bold" fill="#111827">loop</text>
+  <text x="450.0" y="408.8" font-size="10" fill="#5b6474">[until ready or timeout 10m]</text>
+  <rect x="24.0" y="647.5" width="1098.0" height="515.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 24.0 647.5 H 64.0 V 663.0 L 58.0 669.0 H 24.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="30.0" y="661.8" font-size="10" font-weight="bold" fill="#111827">loop</text>
+  <text x="72.0" y="661.8" font-size="10" fill="#5b6474">[10% → 50% → 100%]</text>
+  <rect x="77.0" y="760.0" width="992.0" height="390.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 77.0 760.0 H 111.0 V 775.5 L 105.0 781.5 H 77.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="83.0" y="774.2" font-size="10" font-weight="bold" fill="#111827">alt</text>
+  <text x="119.0" y="774.2" font-size="10" fill="#5b6474">[SLO met]</text>
+  <line x1="77.0" y1="831.0" x2="1069.0" y2="831.0" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="85.0" y="842.5" font-size="10" fill="#5b6474">[SLO breached]</text>
+  <rect x="219.0" y="1077.5" width="295.0" height="61.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 219.0 1077.5 H 265.0 V 1093.0 L 259.0 1099.0 H 219.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="225.0" y="1091.8" font-size="10" font-weight="bold" fill="#111827">break</text>
+  <text x="273.0" y="1091.8" font-size="10" fill="#5b6474">[rolled back]</text>
+  <line x1="124.0" y1="116.2" x2="124.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="278.0" y1="104.0" x2="278.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="455.0" y1="134.0" x2="455.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="713.0" y1="331.0" x2="713.0" y2="1014.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <path d="M 705.0 1006.0 L 721.0 1022.0 M 721.0 1006.0 L 705.0 1022.0" stroke="#111827" stroke-width="2"/>
+  <line x1="860.0" y1="104.0" x2="860.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="1022.0" y1="114.0" x2="1022.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="1184.0" y1="104.0" x2="1184.0" y2="1372.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <rect x="708.0" y="331.0" width="10.0" height="871.0" fill="#0891b2" fill-opacity="0.28" stroke="#0891b2" stroke-width="1.25"/>
+  <rect x="713.0" y="443.5" width="10.0" height="39.5" fill="#0891b2" fill-opacity="0.28" stroke="#0891b2" stroke-width="1.25"/>
+  <rect x="1179.0" y="584.0" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <rect x="1017.0" y="736.0" width="10.0" height="73.0" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 124.0 177.5 H 278.0"/>
+  <rect x="160.0" y="160.0" width="82.0" height="13.5" fill="#f7f8fa"/>
+  <text x="201.0" y="170.8" text-anchor="middle" font-size="10" fill="#8b95a5">1. tag v2.4.0</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 278.0 203.5 H 306.0 V 227.5 H 278.0"/>
+  <text x="312.0" y="218.9" font-size="10" fill="#8b95a5">2. build &amp; test</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)" d="M 278.0 267.0 H 455.0"/>
+  <rect x="316.5" y="249.5" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="366.5" y="260.3" text-anchor="middle" font-size="10" fill="#ea580c">3. deploy v2.4.0</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 311.0 H 663.0"/>
+  <rect x="479.0" y="293.5" width="160.0" height="13.5" fill="#f7f8fa"/>
+  <text x="559.0" y="304.3" text-anchor="middle" font-size="10" fill="#8b95a5">4. create green deployment</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 718.0 370.5 H 1184.0"/>
+  <rect x="901.0" y="353.0" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="951.0" y="363.8" text-anchor="middle" font-size="10" fill="#8b95a5">5. schedule pods</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 443.5 H 713.0"/>
+  <rect x="534.0" y="426.0" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="584.0" y="436.8" text-anchor="middle" font-size="10" fill="#8b95a5">6. get readiness</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 713.0 483.0 H 455.0"/>
+  <rect x="546.0" y="465.5" width="76.0" height="13.5" fill="#f7f8fa"/>
+  <text x="584.0" y="476.3" text-anchor="middle" font-size="10" fill="#9aa3b2">7. ready 3/3</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 584.0 H 1179.0"/>
+  <rect x="770.0" y="566.5" width="94.0" height="13.5" fill="#f7f8fa"/>
+  <text x="817.0" y="577.3" text-anchor="middle" font-size="10" fill="#8b95a5">8. GET /healthz</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 1179.0 623.5 H 455.0"/>
+  <rect x="797.0" y="606.0" width="40.0" height="13.5" fill="#f7f8fa"/>
+  <text x="817.0" y="616.8" text-anchor="middle" font-size="10" fill="#9aa3b2">9. 200</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 696.5 H 860.0"/>
+  <rect x="604.5" y="679.0" width="106.0" height="13.5" fill="#f7f8fa"/>
+  <text x="657.5" y="689.8" text-anchor="middle" font-size="10" fill="#8b95a5">10. shift traffic</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 736.0 H 1017.0"/>
+  <rect x="656.0" y="718.5" width="160.0" height="13.5" fill="#f7f8fa"/>
+  <text x="736.0" y="729.3" text-anchor="middle" font-size="10" fill="#8b95a5">11. error rate, p99 for 5m</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 1017.0 809.0 H 455.0"/>
+  <rect x="716.0" y="791.5" width="40.0" height="13.5" fill="#f7f8fa"/>
+  <text x="736.0" y="802.3" text-anchor="middle" font-size="10" fill="#9aa3b2">12. ok</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 1022.0 872.0 H 455.0"/>
+  <rect x="706.5" y="854.5" width="64.0" height="13.5" fill="#f7f8fa"/>
+  <text x="738.5" y="865.3" text-anchor="middle" font-size="10" fill="#9aa3b2">13. breach</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 974.5 H 860.0"/>
+  <rect x="589.5" y="957.0" width="136.0" height="13.5" fill="#f7f8fa"/>
+  <text x="657.5" y="967.8" text-anchor="middle" font-size="10" fill="#8b95a5">14. route 100% to blue</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 1014.0 H 708.0"/>
+  <rect x="531.5" y="996.5" width="100.0" height="13.5" fill="#f7f8fa"/>
+  <text x="581.5" y="1007.3" text-anchor="middle" font-size="10" fill="#8b95a5">15. delete green</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)" d="M 455.0 1053.5 H 124.0"/>
+  <rect x="230.5" y="1036.0" width="118.0" height="13.5" fill="#f7f8fa"/>
+  <text x="289.5" y="1046.8" text-anchor="middle" font-size="10" fill="#ea580c">16. rollback notice</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 455.0 1126.5 H 278.0"/>
+  <rect x="334.5" y="1109.0" width="64.0" height="13.5" fill="#f7f8fa"/>
+  <text x="366.5" y="1119.8" text-anchor="middle" font-size="10" fill="#9aa3b2">17. failed</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 455.0 1202.0 H 708.0"/>
+  <rect x="522.5" y="1184.5" width="118.0" height="13.5" fill="#f7f8fa"/>
+  <text x="581.5" y="1195.3" text-anchor="middle" font-size="10" fill="#8b95a5">18. scale blue to 0</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 455.0 1241.5 H 278.0"/>
+  <rect x="328.5" y="1224.0" width="76.0" height="13.5" fill="#f7f8fa"/>
+  <text x="366.5" y="1234.8" text-anchor="middle" font-size="10" fill="#9aa3b2">19. released</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)" d="M 278.0 1281.0 H 124.0"/>
+  <rect x="148.0" y="1263.5" width="106.0" height="13.5" fill="#f7f8fa"/>
+  <text x="201.0" y="1274.3" text-anchor="middle" font-size="10" fill="#ea580c">20. release notes</text>
+  <path d="M 439.0 519.0 H 1192.0 L 1200.0 527.0 V 544.5 H 439.0 Z" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+  <path d="M 1192.0 519.0 V 527.0 H 1200.0" fill="none" stroke="#3b82f6" stroke-width="1"/>
+  <text x="447.0" y="535.1" font-size="10" fill="#1e3a8a">ℹ smoke tests hit green directly</text>
+  <path d="M 384.0 896.0 H 518.0 L 526.0 904.0 V 935.0 H 384.0 Z" fill="#fee2e2" stroke="#ef4444" stroke-width="1"/>
+  <path d="M 518.0 896.0 V 904.0 H 526.0" fill="none" stroke="#ef4444" stroke-width="1"/>
+  <text x="392.0" y="912.1" font-size="10" fill="#7f1d1d">✖ automatic rollback,</text>
+  <text x="392.0" y="925.6" font-size="10" fill="#7f1d1d">no human in the loop</text>
+  <path d="M 439.0 1305.0 H 721.0 L 729.0 1313.0 V 1344.0 H 439.0 Z" fill="#dcfce7" stroke="#22c55e" stroke-width="1"/>
+  <path d="M 721.0 1305.0 V 1313.0 H 729.0" fill="none" stroke="#22c55e" stroke-width="1"/>
+  <text x="447.0" y="1321.1" font-size="10" fill="#14532d">✔ blue kept for 24h</text>
+  <text x="447.0" y="1334.6" font-size="10" fill="#14532d">for instant rollback</text>
+  <circle cx="124.0" cy="69.1" r="5.1" fill="none" stroke="#94a3b8" stroke-width="1.75"/>
+  <path d="M 124.0 74.2 V 85.8 M 114.4 78.4 H 133.6 M 124.0 85.8 L 115.7 96.0 M 124.0 85.8 L 132.3 96.0" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round"/>
+  <text x="124.0" y="112.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Release engineer</text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="223.0" y="64.0" width="110.0" height="40.0" rx="6.0"/>
+  <text x="278.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>CI pipeline</tspan>
+  </text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="365.0" y="64.0" width="180.0" height="70.0" rx="6.0"/><svg class="node-tech-icon" x="380.8" y="82.2" width="20.0" height="20.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><defs><path id="n2-go-original-a" d="M18.8 1h90.5v126H18.8z"/></defs><clipPath id="n2-go-original-b"><use xlink:href="#n2-go-original-a" overflow="visible"/></clipPath><path fill-rule="evenodd" clip-rule="evenodd" fill="#F6D2A2" d="M21.1 68.7c.2 3.5 3.7 1.9 5.3.8 1.5-1.1 2-.2 2.1-2.3.1-1.4.2-2.7.2-4.1-2.3-.2-4.8.3-6.7 1.7-.9.7-2.8 3-.9 3.9" clip-path="url(#n2-go-original-b)"/><path d="M23 71.2c-.7 0-2-.3-2.2-2.3-.6-.4-.8-.9-.8-1.2-.1-1.2 1.2-2.6 1.9-3.1 1.6-1.2 3.7-1.8 5.9-1.8h1.3v.3c.1 1.1 0 2.2-.1 3.2 0 .3 0 .6-.1.9-.1 1.5-.4 1.7-1.1 2-.3.1-.6.2-1.1.6-.5.3-2.2 1.4-3.7 1.4zm4.8-7.8c-2.1 0-4 .6-5.5 1.7-.7.5-1.7 1.7-1.6 2.5 0 .3.2.6.6.8l.2.1v.2c.1 1.6.9 1.8 1.5 1.8 1 0 2.4-.7 3.3-1.3.6-.4 1-.5 1.3-.6.5-.2.6-.2.7-1.4 0-.3 0-.6.1-.9.1-.9.1-1.9.1-2.8-.3-.1-.5-.1-.7-.1z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#C6B198" d="M21.1 68.7c.5-.2 1.1-.3 1.4-.8" clip-path="url(#n2-go-original-b)"/><path d="M21.1 69c-.1 0-.3-.1-.3-.2-.1-.2 0-.4.2-.4.1 0 .2-.1.2-.1.4-.2.8-.3 1-.6.1-.1.3-.2.5-.1.1.1.2.3.1.5-.4.5-.9.7-1.3.8l-.2.1h-.2z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#6AD7E5" d="M29.3 26.4c-13.6-3.8-3.5-21.1 7.4-14l-7.4 14z" clip-path="url(#n2-go-original-b)"/><path d="M29.5 26.8l-.3-.1c-7-2-6.9-7-6.7-8.5.5-3.8 4.1-7.8 8.9-7.8 1.9 0 3.7.6 5.5 1.8l.3.2-7.7 14.4zm1.9-15.7c-4.5 0-7.8 3.7-8.3 7.2-.5 3.6 1.7 6.4 6 7.7l7.1-13.5c-1.5-.9-3.1-1.4-4.8-1.4z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#6AD7E5" d="M89.6 11.1c10.7-7.5 20.5 9.5 8 13.8l-8-13.8z" clip-path="url(#n2-go-original-b)"/><path d="M97.5 25.3L89.2 11l.3-.2c1.9-1.3 3.8-2 5.7-2 4.6 0 7.9 3.8 8.6 7.5.3 1.5.6 6.6-6 8.8l-.3.2zm-7.4-14l7.7 13.3c3.9-1.4 5.9-4.4 5.3-8-.6-3.4-3.7-6.9-7.9-6.9-1.7-.1-3.4.4-5.1 1.6z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#F6D2A2" d="M92 112.3c2.7 1.7 7.7 6.8 3.6 9.3-3.9 3.6-6.1-4-9.6-5 1.5-2 3.4-3.9 6-4.3" clip-path="url(#n2-go-original-b)"/><path d="M93.5 122.9c-1.6 0-3-1.6-4.2-3.1-1.1-1.2-2.2-2.5-3.4-2.9l-.5-.1.3-.4c1.2-1.7 3.2-3.9 6.2-4.4h.1l.1.1c1.7 1.1 5.4 4.2 5.3 7.1 0 1.1-.6 2-1.7 2.7-.7.7-1.4 1-2.2 1zm-7-6.5c1.2.5 2.2 1.8 3.2 2.9 1.2 1.5 2.4 2.8 3.7 2.8.6 0 1.2-.3 1.8-.9h.1c.9-.6 1.4-1.3 1.4-2.2 0-2.3-2.9-5.2-4.9-6.5-1.8.5-3.6 1.7-5.3 3.9zm9.1 5.5c-.1 0-.2-.1-.3-.2-.2-.4-.4-.9-.5-1.3-.3-.8-.6-1.6-1.2-2.2-.1-.1-.1-.3 0-.5.1-.1.3-.1.5 0 .7.7 1.1 1.6 1.4 2.5l.5 1.2c.1.2 0 .4-.1.5h-.3z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#F6D2A2" d="M43.2 118.1c-3.2.5-5 3.4-7.7 4.9-2.5 1.5-3.5-.5-3.7-.9-.4-.2-.4.2-1-.4-2.3-3.7 2.4-6.4 4.9-8.2 3.5-.8 5.7 2.2 7.5 4.6" clip-path="url(#n2-go-original-b)"/><path d="M33.8 123.8c-1.3 0-2-1.1-2.2-1.5h-.1c-.3 0-.5-.1-.9-.5v-.1c-2.2-3.5 1.6-6.2 4.1-8l.9-.6h.2c.4-.1.7-.1 1.1-.1 3 0 4.9 2.6 6.5 4.7l.5.7-.6.1c-1.9.3-3.3 1.5-4.7 2.7-.9.8-1.8 1.5-2.8 2.1-.8.3-1.4.5-2 .5zm-2.2-2.1c.1 0 .2 0 .4.1h.1l.1.1c.2.3.7 1.2 1.7 1.2.5 0 1-.2 1.5-.5 1-.5 1.9-1.3 2.7-2 1.3-1.1 2.7-2.3 4.5-2.8-1.5-2-3.3-4.2-5.8-4.2-.3 0-.6 0-.9.1l-.8.6c-2.6 1.8-5.8 4.1-3.9 7.1.1.2.2.3.4.3zm.2.7c-.2 0-.4-.2-.3-.4.1-1 .6-1.7 1.1-2.5.3-.4.5-.8.7-1.2.1-.2.3-.2.4-.2.2.1.2.3.2.4-.2.5-.5.9-.8 1.3-.5.7-.9 1.3-1 2.1 0 .4-.1.5-.3.5z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M29.9 21.7c-1.8-.9-3.1-2.2-2-4.3 1-1.9 2.9-1.7 4.7-.8l-2.7 5.1zm64.9-1.8c1.8-.9 3.1-2.2 2-4.3-1-1.9-2.9-1.7-4.7-.8l2.7 5.1z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#F6D2A2" d="M107.1 68.2c-.2 3.5-3.7 1.9-5.3.8-1.5-1.1-2-.2-2.1-2.3-.1-1.4-.2-2.7-.2-4.1 2.3-.2 4.8.3 6.7 1.7 1 .8 2.8 3 .9 3.9" clip-path="url(#n2-go-original-b)"/><path d="M105.3 70.7c-1.5 0-3.2-1.1-3.7-1.4-.5-.3-.8-.5-1.1-.6-.8-.3-1-.5-1.1-2 0-.3 0-.6-.1-.9-.1-1-.2-2.1-.1-3.2v-.3h1.3c2.2 0 4.3.6 5.9 1.8.7.5 2 1.9 1.9 3.1 0 .4-.2.9-.8 1.2-.2 2-1.5 2.3-2.2 2.3zM99.8 63c0 .9 0 1.9.1 2.8 0 .3 0 .6.1.9.1 1.2.2 1.2.7 1.4.3.1.7.3 1.3.6.9.6 2.3 1.3 3.3 1.3.6 0 1.4-.2 1.5-1.8V68l.2-.1c.4-.2.6-.4.6-.8.1-.8-.9-2-1.6-2.5-1.5-1.1-3.5-1.7-5.5-1.7-.2.1-.4.1-.7.1z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#C6B198" d="M107.1 68.2c-.5-.2-1.1-.3-1.4-.8" clip-path="url(#n2-go-original-b)"/><path d="M107.1 68.6h-.1l-.2-.1c-.5-.2-1-.3-1.3-.8-.1-.1-.1-.4.1-.5.1-.1.4-.1.5.1.2.3.6.4 1 .6.1 0 .2.1.2.1.2.1.3.3.2.4-.1.1-.3.2-.4.2z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#6AD7E5" d="M62.8 4c13.6 0 26.3 1.9 33 15 6 14.6 3.8 30.4 4.8 45.9.8 13.3 2.5 28.6-3.6 40.9-6.5 12.9-22.7 16.2-36 15.7-10.5-.4-23.1-3.8-29.1-13.4-6.9-11.2-3.7-27.9-3.2-40.4.6-14.8-4-29.7.9-44.1C34.5 8.5 48.1 5.1 62.8 4" clip-path="url(#n2-go-original-b)"/><path d="M63.3 121.9h-2.5c-4.1-.1-10.3-.8-16.4-3.3-5.9-2.4-10.2-5.8-13-10.3-5.6-9.1-4.6-21.6-3.7-32.7.2-2.8.4-5.4.5-7.9.2-5.2-.2-10.6-.7-15.7-.8-9.4-1.6-19.1 1.5-28.5 2.4-7 6.7-12 13.2-15.2 5.1-2.5 11.4-3.9 20.4-4.6C76 3.6 89.3 5.5 96 18.8c4.4 10.7 4.4 22.2 4.5 33.3 0 4.2 0 8.5.3 12.7.1 1.3.2 2.6.2 3.9.8 12.2 1.7 26-3.9 37.2-2.8 5.7-7.7 9.9-14.4 12.6-5.4 2.2-12.2 3.4-19.4 3.4zM62.8 4.3c-14.1 1.1-27.9 4.2-33 19.4-3.1 9.3-2.3 18.9-1.5 28.2.4 5.2.9 10.5.7 15.8-.1 2.5-.3 5.1-.5 7.9-.9 11-1.9 23.4 3.6 32.3 2.3 3.7 9.7 12.5 28.8 13.2h2.5c22.1 0 30.3-9.8 33.3-15.6 5.5-11 4.6-24.8 3.9-36.9-.1-1.3-.2-2.6-.2-3.9-.2-4.2-.3-8.5-.3-12.7-.1-11-.1-22.5-4.4-33.1C92.7 13 88.2 9 82 6.7c-6.4-2.1-13.6-2.4-19.2-2.4z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#fff" d="M65.2 22.2c2.4 14.2 25.6 10.4 22.3-3.9-3-12.8-23.1-9.2-22.3 3.9" clip-path="url(#n2-go-original-b)"/><path d="M76.2 31.5c-4.5 0-10.2-2.4-11.4-9.2-.2-3.2.8-6.1 2.9-8.3 2.3-2.5 5.8-3.9 9.4-3.9 4.2 0 9.2 2.2 10.6 8.3.8 3.4.2 6.4-1.7 8.8-2.1 2.6-5.8 4.3-9.8 4.3zm-10.7-9.3c.5 2.8 1.8 5 3.9 6.6 1.8 1.4 4.3 2.1 6.8 2.1 3.7 0 7.3-1.6 9.3-4.1 1.8-2.2 2.3-5.1 1.6-8.3-1.3-5.7-6-7.7-10-7.7-3.4 0-6.7 1.4-8.9 3.7-1.9 2-2.9 4.7-2.7 7.7z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#fff" d="M37.5 24.5c3.2 12.3 22.9 9.2 22.2-3.2-.9-14.8-25.3-12-22.2 3.2" clip-path="url(#n2-go-original-b)"/><path d="M48 32.7c-4.3 0-9.3-2.1-10.9-8.1-.7-3.5 0-6.7 2-9.1 2.2-2.7 5.8-4.3 9.7-4.3 5.2 0 10.7 3.1 11.1 10.1.2 2.9-.7 5.5-2.7 7.6-2.1 2.3-5.6 3.8-9.2 3.8zm.8-20.8c-3.7 0-7.1 1.5-9.2 4-1.9 2.3-2.5 5.2-1.8 8.5C39.2 30 44 32 48 32c3.4 0 6.7-1.3 8.8-3.6 1.8-1.9 2.7-4.4 2.5-7.1-.2-4.3-3.1-9.4-10.5-9.4z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#fff" d="M68 39.2c0 1.8.4 3.9.1 5.9-.5.9-1.4 1-2.2 1.3-1.1-.2-2-.9-2.5-1.9-.3-2.2.1-4.4.2-6.6l4.4 1.3z" clip-path="url(#n2-go-original-b)"/><path d="M65.9 46.8c-1.3-.2-2.3-1-2.8-2.1-.2-1.6-.1-3.1 0-4.6.1-.7.1-1.4.1-2.1v-.4l5.1 1.6v.2c0 .6.1 1.2.1 1.9.1 1.3.2 2.7 0 4v.1c-.4.8-1.1 1-1.8 1.3-.2-.1-.4 0-.7.1zm-2.2-2.4c.4.9 1.2 1.5 2.1 1.7.2-.1.4-.1.5-.2.6-.2 1.1-.4 1.4-.9.2-1.2.1-2.5 0-3.8 0-.6-.1-1.2-.1-1.7l-3.8-1.2c0 .6-.1 1.2-.1 1.7-.1 1.6-.2 3 0 4.4z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M46.3 22.5c0 2-1.5 3.6-3.3 3.6-1.8 0-3.3-1.6-3.3-3.6s1.5-3.6 3.3-3.6c1.8 0 3.3 1.6 3.3 3.6" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#fff" d="M45.2 23.3c0 .5-.4.9-.8.9s-.8-.4-.8-.9.4-.9.8-.9c.5 0 .8.4.8.9" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M74.2 21.6c0 2-1.5 3.6-3.3 3.6-1.8 0-3.3-1.6-3.3-3.6s1.5-3.6 3.3-3.6c1.8 0 3.3 1.6 3.3 3.6" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#fff" d="M73.2 22.4c0 .5-.3.9-.8.9-.4 0-.8-.4-.8-.9s.3-.9.8-.9c.4 0 .8.4.8.9M58.4 39c-1.5 3.5.8 10.6 4.8 5.4-.3-2.2.1-4.4.2-6.6l-5 1.2z" clip-path="url(#n2-go-original-b)"/><path d="M60.5 46.6c-.7 0-1.4-.4-1.9-1.2-1.1-1.6-1.3-4.6-.5-6.5l.1-.2 5.5-1.4v.4l-.1 2.2c-.1 1.5-.2 2.9 0 4.4v.1l-.1.1c-1 1.4-2 2.1-3 2.1zm-1.8-7.3c-.6 1.7-.4 4.4.5 5.7.4.6.8.9 1.3.9.7 0 1.5-.6 2.3-1.6-.2-1.5-.1-3 .1-4.4l.1-1.7-4.3 1.1z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" fill="#F6D2A2" d="M58.9 32.2c-2.7.2-4.9 3.5-3.5 6 1.9 3.4 6-.3 8.6 0 3 .1 5.4 3.2 7.8.6 2.7-2.9-1.2-5.7-4.1-7l-8.8.4z" clip-path="url(#n2-go-original-b)"/><path fill="#231F20" d="M69.7 40.2c-.9 0-1.8-.4-2.7-.8-.9-.4-1.9-.8-3-.8h-.3c-.8 0-1.7.3-2.7.7-1.1.4-2.2.7-3.2.7-1.2 0-2.1-.5-2.7-1.6-.7-1.2-.6-2.6.1-3.9.8-1.5 2.2-2.4 3.7-2.6l8.9-.4h.1c2.2.9 4.7 2.6 5.2 4.6.2 1-.1 2-.9 2.9-.8.9-1.6 1.2-2.5 1.2zM64.1 38c1.1 0 2.2.5 3.2.9.9.4 1.7.7 2.5.7.7 0 1.3-.3 1.9-.9.7-.7.9-1.5.8-2.3-.4-1.7-2.8-3.3-4.7-4.1l-8.7.4c-1.3.1-2.5 1-3.2 2.2-.6 1.1-.6 2.3-.1 3.3.5.9 1.1 1.3 2.1 1.3.9 0 1.9-.4 2.9-.7 1.1-.4 2-.7 3-.7 0-.2.1-.2.3-.1z" clip-path="url(#n2-go-original-b)"/><path fill-rule="evenodd" clip-rule="evenodd" d="M58.6 32.1c-.2-4.7 8.8-5.3 9.8-1.4 1.1 4-9.4 4.9-9.8 1.4" clip-path="url(#n2-go-original-b)"/></svg><text x="468.0" y="96.5" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Deploy controller</tspan>
+  </text>
+  <text x="455.0" y="114.4" text-anchor="middle" font-size="10" fill="#5b6474">[Go]</text>
+  <rect fill="#0891b2" fill-opacity="0.122" stroke="#0891b2" stroke-width="1.5" x="663.0" y="291.0" width="100.0" height="40.0" rx="6.0"/>
+  <text x="713.0" y="315.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Kubernetes</tspan>
+  </text>
+  <rect fill="#0891b2" fill-opacity="0.122" stroke="#0891b2" stroke-width="1.5" x="795.0" y="64.0" width="130.0" height="40.0" rx="6.0"/>
+  <text x="860.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Load balancer</tspan>
+  </text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="957.0" y="64.0" width="130.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="973.0" y="79.0" width="20.0" height="20.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#e75225" d="M64.125.51C99.229.517 128.045 29.133 128 63.951c-.045 35.342-28.742 63.564-64.608 63.539C28.325 127.466-.025 98.818 0 63.434.023 28.834 28.898.503 64.125.51ZM44.72 22.793c.803 3.96.025 7.655-1.167 11.289-.823 2.515-1.962 4.94-2.642 7.492-1.122 4.203-2.391 8.43-2.859 12.726-.671 6.181 1.758 11.625 5.914 17.04L24.86 67.318c.033.602 0 .83.065 1.024 1.811 5.32 4.998 9.802 8.57 14.03.377.446 1.237.674 1.877.674 19.05.038 38.101.034 57.152.009.59 0 1.381-.11 1.741-.49 4.084-4.294 7.205-9.185 9.16-15.342l-20.228 3.962c1.336-2.618 2.855-4.916 3.733-7.443 2.994-8.643 1.752-16.998-2.545-24.88-3.449-6.324-6.631-12.62-4.91-20.243-3.642 3.6-5.043 8.179-5.932 12.898-.872 4.65-1.389 9.364-2.065 14.083-.098-.143-.22-.25-.242-.373a13.964 13.964 0 0 1-.176-1.49c-.413-7.726-1.92-15.17-5.106-22.28-1.873-4.182-3.941-8.462-2.008-13.456-1.307.693-2.49 1.377-3.338 2.356-2.527 2.92-3.573 6.428-3.842 10.269-.231 3.282-.546 6.579-1.156 9.806-.64 3.392-1.65 6.714-3.932 9.831-.918-6.656-1.02-13.244-6.956-17.47ZM93.842 88.88H34.088v10.38h59.754Zm-47.904 15.746c-.049 8.642 8.753 15.081 19.633 14.614 9.02-.389 16.999-7.484 16.315-14.614zm0 0"/></svg><text x="1035.0" y="93.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Monitoring</tspan>
+  </text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="1119.0" y="64.0" width="130.0" height="40.0" rx="6.0"/>
+  <text x="1184.0" y="88.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Green release</tspan>
+  </text>
+  <text x="1209.4" y="23.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="847.0" y="37.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
+  <text x="877.0" y="48.1" font-size="10" fill="#5b6474">Other</text>
+  <rect x="927.0" y="37.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="957.0" y="48.1" font-size="10" fill="#5b6474">Backend</text>
+  <rect x="1019.0" y="37.6" width="22" height="14" rx="3" fill="#0891b2" fill-opacity="0.122" stroke="#0891b2" stroke-width="1.25"/>
+  <text x="1049.0" y="48.1" font-size="10" fill="#5b6474">Edge &amp; cloud</text>
+  <line x1="1141.0" y1="44.6" x2="1163.0" y2="44.6" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="1171.0" y="48.1" font-size="10" fill="#5b6474">Async / event</text>
+  <line x1="24" y1="52.0" x2="1249.0" y2="52.0" stroke="#d0d5de" stroke-width="1"/>
+</svg>

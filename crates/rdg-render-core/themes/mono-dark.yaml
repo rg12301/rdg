@@ -24,7 +24,7 @@ edge_styles:
   return: {color: "#737373"}
 sequence:
   lifeline: {color: "#525252"}
-  activation: {fill: "#0a0a0a", stroke: "#fafafa"}
+  activation: {fill: "@category", stroke: "#fafafa"}
   note: {fill: "#171717", stroke: "#a3a3a3", text: "#fafafa"}
   fragment: {stroke: "#d4d4d4", tab_fill: "#171717", tab_text: "#fafafa", guard_color: "#a3a3a3"}
   divider: {color: "#525252"}

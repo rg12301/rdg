@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1020" height="750" viewBox="0 0 1020 750" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
+  <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">TCP connection states</text>
+  <path d="M 283.0 192.0 L 283.0 234.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 256.0 326.0 L 256.0 483.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 197.0 280.0 L 98.0 280.0 Q 84.0 280.0 84.0 294.0 L 84.0 472.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 219.0 533.0 L 219.0 672.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 128.0 544.0 L 128.0 672.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 57.0 472.0 L 57.0 124.0 Q 57.0 110.0 71.0 110.0 L 771.3 110.0 Q 778.0 110.0 778.0 116.7 L 778.0 134.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 234.0 697.0 L 451.0 697.0 Q 465.0 697.0 465.0 683.0 L 465.0 184.0 Q 465.0 170.0 479.0 170.0 L 718.0 170.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 747.0 206.0 L 747.0 316.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 838.0 170.0 L 869.0 170.0 Q 881.0 170.0 881.0 182.0 L 881.0 316.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 728.0 366.0 L 728.0 494.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 659.0 341.0 L 625.2 341.0 Q 612.0 341.0 612.0 354.2 L 612.0 494.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 739.0 544.0 L 739.0 636.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 658.0 544.0 L 658.0 636.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 890.0 366.0 L 890.0 494.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 982.0 494.0 L 982.0 277.0 Q 982.0 263.0 968.0 263.0 L 317.0 263.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 645.0 661.0 L 497.0 661.0 Q 483.0 661.0 483.0 647.0 L 483.0 310.0 Q 483.0 296.0 469.0 296.0 L 317.0 296.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 111.0 472.0 L 111.0 329.0 Q 111.0 315.0 125.0 315.0 L 197.0 315.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 317.0 315.0 L 358.0 315.0 Q 372.0 315.0 372.0 329.0 L 372.0 480.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <circle cx="282.0" cy="148.0" r="12.0" fill="#111827"/>
+  <text x="282.0" y="178.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan></tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="197.0" y="234.0" width="120.0" height="92.0" rx="36.8"/>
+  <text x="257.0" y="284.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>CLOSED</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="186.0" y="483.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="246.0" y="512.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>LISTEN</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="472.0" width="120.0" height="72.0" rx="28.8"/>
+  <text x="84.0" y="512.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>SYN_SENT</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="114.0" y="672.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="174.0" y="701.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>SYN_RCVD</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="718.0" y="134.0" width="120.0" height="72.0" rx="28.8"/>
+  <text x="778.0" y="174.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>ESTABLISHED</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="659.0" y="316.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="719.0" y="345.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>FIN_WAIT_1</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="714.0" y="494.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="774.0" y="523.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>FIN_WAIT_2</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="552.0" y="494.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="612.0" y="523.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>CLOSING</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="645.0" y="636.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="705.0" y="665.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>TIME_WAIT</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="821.0" y="316.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="881.0" y="345.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>CLOSE_WAIT</tspan>
+  </text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="876.0" y="494.0" width="120.0" height="50.0" rx="20.0"/>
+  <text x="936.0" y="523.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>LAST_ACK</tspan>
+  </text>
+  <circle cx="372.0" cy="496.0" r="15.0" fill="none" stroke="#111827" stroke-width="2"/>
+  <circle cx="372.0" cy="496.0" r="10.0" fill="#111827"/>
+  <text x="372.0" y="528.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan></tspan>
+  </text>
+  <rect x="260.0" y="396.8" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="299.0" y="408.0" text-anchor="middle" font-size="10" fill="#8b95a5">passive open</text>
+  <rect x="86.5" y="260.5" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="140.5" y="271.8" text-anchor="middle" font-size="10" fill="#8b95a5">active open / SYN</text>
+  <rect x="223.0" y="594.8" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="265.0" y="606.0" text-anchor="middle" font-size="10" fill="#8b95a5">SYN / SYN+ACK</text>
+  <rect x="40.0" y="600.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="82.0" y="611.5" text-anchor="middle" font-size="10" fill="#8b95a5">SYN / SYN+ACK</text>
+  <rect x="375.5" y="90.5" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="417.5" y="101.8" text-anchor="middle" font-size="10" fill="#8b95a5">SYN+ACK / ACK</text>
+  <rect x="437.0" y="425.8" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="449.0" y="437.0" text-anchor="middle" font-size="10" fill="#8b95a5">ACK</text>
+  <rect x="751.0" y="233.8" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="787.0" y="245.0" text-anchor="middle" font-size="10" fill="#8b95a5">close / FIN</text>
+  <rect x="840.7" y="150.5" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="870.7" y="161.8" text-anchor="middle" font-size="10" fill="#8b95a5">FIN / ACK</text>
+  <rect x="732.0" y="422.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="744.0" y="433.5" text-anchor="middle" font-size="10" fill="#8b95a5">ACK</text>
+  <rect x="593.7" y="321.5" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="623.7" y="332.8" text-anchor="middle" font-size="10" fill="#8b95a5">FIN / ACK</text>
+  <rect x="743.0" y="582.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="773.0" y="593.5" text-anchor="middle" font-size="10" fill="#8b95a5">FIN / ACK</text>
+  <rect x="662.0" y="582.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="674.0" y="593.5" text-anchor="middle" font-size="10" fill="#8b95a5">ACK</text>
+  <rect x="894.0" y="422.2" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="930.0" y="433.5" text-anchor="middle" font-size="10" fill="#8b95a5">close / FIN</text>
+  <rect x="637.5" y="243.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="649.5" y="254.8" text-anchor="middle" font-size="10" fill="#8b95a5">ACK</text>
+  <rect x="487.0" y="470.8" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="529.0" y="482.0" text-anchor="middle" font-size="10" fill="#8b95a5">2 MSL timeout</text>
+  <rect x="115.0" y="385.8" width="96.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="163.0" y="397.0" text-anchor="middle" font-size="10" fill="#8b95a5">close / timeout</text>
+  <line x1="24.0" y1="67.0" x2="996.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
+</svg>

@@ -167,6 +167,10 @@ pub struct SeqStep {
     /// Participant(s) the note spans: one id, or a list (spans first..last).
     #[serde(default, deserialize_with = "one_or_many")]
     pub over: Vec<String>,
+    /// What kind of note: `note` (default), `info`, `warning`, `error`, `success` —
+    /// each in its own colour with a leading mark.
+    #[serde(default, alias = "type", alias = "level", alias = "severity")]
+    pub kind: Option<String>,
     #[serde(default)]
     pub left_of: Option<String>,
     #[serde(default)]

@@ -1,0 +1,47 @@
+# Blue/green rollout driven by a deployment controller with health checks,
+# traffic shifting and automatic rollback.
+title: "Blue/green rollout"
+numbered: true
+participants:
+  - {id: dev, label: Release engineer, type: actor}
+  - {id: ci, label: CI pipeline, type: service}
+  - {id: controller, label: Deploy controller, type: service, language: go}
+  - {id: k8s, label: Kubernetes, type: gateway}
+  - {id: lb, label: Load balancer, type: proxy}
+  - {id: monitor, label: Monitoring, type: service, icon: prometheus}
+  - {id: green, label: Green release, type: server}
+sequence:
+  - {from: dev, to: ci, label: "tag v2.4.0"}
+  - {from: ci, to: ci, label: "build & test"}
+  - {from: ci, to: controller, label: "deploy v2.4.0", style: async}
+  - {from: controller, to: k8s, label: "create green deployment", create: true}
+  - {from: k8s, to: green, label: "schedule pods"}
+  - loop: "until ready or timeout 10m"
+    steps:
+      - {from: controller, to: k8s, label: "get readiness"}
+      - {from: k8s, to: controller, label: "ready 3/3", style: reply}
+  - {note: "smoke tests hit green directly", over: [controller, green], kind: info}
+  - {from: controller, to: green, label: "GET /healthz"}
+  - {from: green, to: controller, label: "200", style: reply}
+  - loop: "10% → 50% → 100%"
+    steps:
+      - {from: controller, to: lb, label: "shift traffic"}
+      - {from: controller, to: monitor, label: "error rate, p99 for 5m"}
+      - alt: "SLO met"
+        steps:
+          - {from: monitor, to: controller, label: "ok", style: reply}
+        else:
+          label: "SLO breached"
+          steps:
+            - {from: monitor, to: controller, label: "breach", style: reply}
+            - {note: "automatic rollback, no human in the loop", over: controller, kind: error}
+            - {from: controller, to: lb, label: "route 100% to blue"}
+            - {from: controller, to: k8s, label: "delete green", destroy: true}
+            - {from: controller, to: dev, label: "rollback notice", style: async}
+            - break: "rolled back"
+              steps:
+                - {from: controller, to: ci, label: "failed", style: reply}
+  - {from: controller, to: k8s, label: "scale blue to 0"}
+  - {from: controller, to: ci, label: "released", style: reply}
+  - {from: ci, to: dev, label: "release notes", style: async}
+  - {note: "blue kept for 24h for instant rollback", over: [controller, k8s], kind: success}

@@ -1,0 +1,58 @@
+# Hybrid deployment: an on-premises data centre and two cloud regions, nested
+# three deep (cloud → region → VPC → subnet), with replication and VPN links.
+title: "Hybrid cloud deployment"
+groups:
+  - {id: onprem, label: "On-premises data centre", nodes: [dc_lb, erp, mainframe, ad, dc_vpn]}
+  - {id: cloud, label: "Cloud account", nodes: [region_a, region_b, global_edge]}
+  - {id: global_edge, label: "Global edge", nodes: [dns, cdn, waf]}
+  - {id: region_a, label: "Region A (primary)", nodes: [vpc_a]}
+  - {id: vpc_a, label: "VPC 10.0.0.0/16", nodes: [public_a, private_a, data_a]}
+  - {id: public_a, label: "public subnet", nodes: [alb_a, nat_a, vpn_gw]}
+  - {id: private_a, label: "private subnet", nodes: [app_a1, app_a2, worker_a]}
+  - {id: data_a, label: "data subnet", nodes: [db_primary, cache_a]}
+  - {id: region_b, label: "Region B (standby)", nodes: [vpc_b]}
+  - {id: vpc_b, label: "VPC 10.1.0.0/16", nodes: [public_b, private_b, data_b]}
+  - {id: public_b, label: "public subnet", nodes: [alb_b]}
+  - {id: private_b, label: "private subnet", nodes: [app_b1]}
+  - {id: data_b, label: "data subnet", nodes: [db_replica]}
+nodes:
+  - {id: dc_lb, label: Hardware LB, type: proxy}
+  - {id: erp, label: ERP system, type: server}
+  - {id: mainframe, label: Mainframe, type: server}
+  - {id: ad, label: Active Directory, category: security}
+  - {id: dc_vpn, label: VPN appliance, category: security}
+  - {id: dns, label: Global DNS, type: proxy, provider: aws}
+  - {id: cdn, label: CDN, type: proxy}
+  - {id: waf, label: WAF, category: security}
+  - {id: alb_a, label: ALB, type: proxy}
+  - {id: nat_a, label: NAT gateway, type: proxy}
+  - {id: vpn_gw, label: VPN gateway, category: security}
+  - {id: app_a1, label: app (az-a), type: service, language: java}
+  - {id: app_a2, label: app (az-b), type: service, language: java}
+  - {id: worker_a, label: batch worker, type: service, language: python}
+  - {id: db_primary, label: RDS primary, type: database, db_type: postgres}
+  - {id: cache_a, label: cache, type: cache, db_type: redis}
+  - {id: alb_b, label: ALB, type: proxy}
+  - {id: app_b1, label: app (standby), type: service, language: java}
+  - {id: db_replica, label: RDS replica, type: database, db_type: postgres}
+edges:
+  - {from: dns, to: cdn}
+  - {from: cdn, to: waf}
+  - {from: waf, to: alb_a, label: active}
+  - {from: waf, to: alb_b, label: failover, edge_style: error}
+  - {from: alb_a, to: app_a1}
+  - {from: alb_a, to: app_a2}
+  - {from: app_a1, to: db_primary, edge_style: data}
+  - {from: app_a2, to: db_primary, edge_style: data}
+  - {from: app_a1, to: cache_a, edge_style: data}
+  - {from: worker_a, to: db_primary, edge_style: data}
+  - {from: worker_a, to: nat_a, label: egress}
+  - {from: db_primary, to: db_replica, label: async replication, edge_style: data}
+  - {from: alb_b, to: app_b1}
+  - {from: app_b1, to: db_replica, edge_style: data}
+  - {from: app_a1, to: vpn_gw, label: ERP calls}
+  - {from: vpn_gw, to: dc_vpn, label: IPsec}
+  - {from: dc_vpn, to: dc_lb}
+  - {from: dc_lb, to: erp}
+  - {from: erp, to: mainframe, label: batch}
+  - {from: app_a1, to: ad, label: LDAP, constraint: false}

@@ -1036,15 +1036,28 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
                 }
                 n
             };
+            // Edges between two units of this tier that would point against the
+            // reading direction (right to left): the flow should run one way.
+            let backwards = |row: &[usize]| -> usize {
+                let idx: HashMap<usize, usize> = row.iter().enumerate().map(|(i, &u)| (u, i)).collect();
+                cross
+                    .iter()
+                    .filter(|(a, b)| {
+                        let (ua, ub) = (unit_of[a], unit_of[b]);
+                        ua != ub && row_of[ua] == ri && row_of[ub] == ri && idx[&ua] > idx[&ub]
+                    })
+                    .count()
+            };
+            let cost = |row: &[usize]| 4 * crossings(row) + backwards(row);
             for _ in 0..4 {
                 let mut improved = false;
                 for k in 0..row.len().saturating_sub(1) {
-                    let before = crossings(&row);
+                    let before = cost(&row);
                     if before == 0 {
                         break;
                     }
                     row.swap(k, k + 1);
-                    if crossings(&row) < before {
+                    if cost(&row) < before {
                         improved = true;
                     } else {
                         row.swap(k, k + 1);

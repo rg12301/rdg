@@ -184,7 +184,7 @@ pub enum SeqItem {
         create: bool,
         destroy: bool,
     },
-    Note { text: String, placement: NotePlacement, over: Vec<NodeIndex> },
+    Note { text: String, placement: NotePlacement, over: Vec<NodeIndex>, kind: String },
     /// `sections[0]` is the body; later sections are `else` / `and` branches.
     Fragment { kind: String, sections: Vec<(Option<String>, Vec<SeqItem>)> },
     Divider(String),
@@ -473,7 +473,11 @@ fn compile_steps(
                     anyhow::bail!("a note needs `over`, `left_of` or `right_of`");
                 };
                 let over = ids.into_iter().map(node).collect::<Result<Vec<_>>>()?;
-                out.push(SeqItem::Note { text: step.note.clone().unwrap_or_default(), placement, over });
+                let kind = step.kind.as_deref().unwrap_or("note").trim().to_ascii_lowercase();
+                if !matches!(kind.as_str(), "note" | "info" | "warning" | "error" | "success") {
+                    anyhow::bail!("unknown note kind `{kind}` — use note, info, warning, error or success");
+                }
+                out.push(SeqItem::Note { text: step.note.clone().unwrap_or_default(), placement, over, kind });
             }
             SeqStepKind::Fragment { kind, label } => {
                 let mut sections = vec![(Some(label.to_string()).filter(|l| !l.is_empty()), compile_steps(&step.steps, node_map, graph, edge_order, numbered, counter)?)];

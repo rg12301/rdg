@@ -1,0 +1,63 @@
+# Real-time bidding: SSP edge, bidder fleet, campaign and budget services,
+# ML scoring, event pipeline, reporting. Latency path numbered.
+title: "Real-time bidding platform"
+numbered: true
+groups:
+  - {id: exchange, label: "Ad exchange", nodes: [ssp, openrtb_gw]}
+  - {id: bidder, label: "Bidder fleet", nodes: [bid_router, bidder_a, bidder_b, pacing]}
+  - {id: campaign, label: "Campaign services", nodes: [campaign_svc, budget_svc, creative_svc, targeting_svc]}
+  - {id: ml, label: "ML scoring", nodes: [ctr_model, feature_svc]}
+  - {id: pipeline, label: "Event pipeline", nodes: [win_notify, impressions, enrich, attribution]}
+  - {id: stores, label: "Stores", nodes: [user_profiles, campaign_db, budget_cache, events_lake]}
+  - {id: reporting, label: "Reporting", nodes: [reports_api, dashboard]}
+nodes:
+  - {id: ssp, label: SSP, type: external}
+  - {id: openrtb_gw, label: OpenRTB gateway, type: gateway, language: go}
+  - {id: bid_router, label: bid-router, type: service, language: go}
+  - {id: bidder_a, label: bidder (display), type: service, language: cpp}
+  - {id: bidder_b, label: bidder (video), type: service, language: cpp}
+  - {id: pacing, label: pacing-controller, type: service, language: go}
+  - {id: campaign_svc, label: campaign-service, type: service, language: java}
+  - {id: budget_svc, label: budget-service, type: service, language: java}
+  - {id: creative_svc, label: creative-service, type: service, language: kotlin}
+  - {id: targeting_svc, label: targeting-service, type: service, language: java}
+  - {id: ctr_model, label: CTR model serving, type: service, language: python}
+  - {id: feature_svc, label: feature-service, type: service, language: go}
+  - {id: win_notify, label: win-notifications, type: service, language: go}
+  - {id: impressions, label: impression-collector, type: service, language: go}
+  - {id: enrich, label: enrichment, type: service, language: scala}
+  - {id: attribution, label: attribution, type: service, language: python}
+  - {id: user_profiles, label: user profiles, type: cache, db_type: redis}
+  - {id: campaign_db, label: campaigns, type: database, db_type: postgres}
+  - {id: budget_cache, label: budgets, type: cache, db_type: redis}
+  - {id: events_lake, label: events, type: queue, db_type: kafka}
+  - {id: reports_api, label: reports-api, type: service, language: python}
+  - {id: dashboard, label: Advertiser dashboard, type: client, language: typescript}
+edges:
+  - {from: ssp, to: openrtb_gw, label: bid request}
+  - {from: openrtb_gw, to: bid_router}
+  - {from: bid_router, to: bidder_a, label: display}
+  - {from: bid_router, to: bidder_b, label: video}
+  - {from: bidder_a, to: user_profiles, label: profile, edge_style: data}
+  - {from: bidder_a, to: feature_svc, label: features}
+  - {from: feature_svc, to: ctr_model, label: score}
+  - {from: bidder_a, to: budget_cache, label: check, edge_style: data}
+  - {from: bidder_a, to: openrtb_gw, label: bid response, constraint: false}
+  - {from: openrtb_gw, to: ssp, label: bid, constraint: false}
+  - {from: ssp, to: win_notify, label: win notice, edge_style: async}
+  - {from: win_notify, to: budget_svc, label: spend}
+  - {from: win_notify, to: events_lake, edge_style: async}
+  - {from: impressions, to: events_lake, edge_style: async}
+  - {from: events_lake, to: enrich, edge_style: async}
+  - {from: enrich, to: attribution}
+  - {from: budget_svc, to: budget_cache, edge_style: data}
+  - {from: budget_svc, to: pacing, label: targets}
+  - {from: pacing, to: budget_cache, label: rates, edge_style: data}
+  - {from: campaign_svc, to: campaign_db, edge_style: data}
+  - {from: targeting_svc, to: campaign_db, edge_style: data}
+  - {from: creative_svc, to: campaign_db, edge_style: data}
+  - {from: bidder_b, to: creative_svc, label: creatives}
+  - {from: bidder_b, to: targeting_svc, label: segments}
+  - {from: reports_api, to: events_lake, label: aggregate, edge_style: data}
+  - {from: dashboard, to: reports_api, label: REST}
+  - {from: dashboard, to: campaign_svc, label: REST}

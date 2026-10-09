@@ -1,0 +1,83 @@
+# Core banking platform: channels, API edge, ledger and payments domains, risk,
+# batch, data stores, external rails. A dense HLD with 34 nodes.
+title: "Core banking platform"
+description: "Channels, edge, accounts and payments domains, risk, batch and rails"
+groups:
+  - {id: channels, label: "Channels", nodes: [mobile, web, branch, partner]}
+  - {id: edge, label: "Edge", nodes: [waf, apigw, idp, bff]}
+  - {id: core, label: "Core domains", nodes: [accounts_domain, payments_domain, lending]}
+  - {id: accounts_domain, label: "Accounts & ledger", nodes: [accounts, ledger, statements, interest]}
+  - {id: payments_domain, label: "Payments", nodes: [payment_orch, fraud, sanctions, fx]}
+  - {id: lending, label: "Lending", nodes: [loan_origination, credit_scoring, collections]}
+  - {id: batch, label: "Batch & reporting", nodes: [eod, regulatory, warehouse]}
+  - {id: stores, label: "Data stores", nodes: [ledger_db, customer_db, payments_db, cache, events]}
+  - {id: rails, label: "External rails", nodes: [swift, card_network, bureau, kyc_vendor]}
+nodes:
+  - {id: mobile, label: Mobile banking, type: client, language: kotlin}
+  - {id: web, label: Internet banking, type: client, language: typescript}
+  - {id: branch, label: Branch teller UI, type: client}
+  - {id: partner, label: Open banking partners, type: external}
+  - {id: waf, label: WAF, category: security}
+  - {id: apigw, label: API gateway, type: gateway}
+  - {id: idp, label: Identity & consent, category: security}
+  - {id: bff, label: channel BFF, type: service, language: typescript}
+  - {id: accounts, label: accounts-service, type: service, language: java}
+  - {id: ledger, label: ledger-service, type: service, language: java}
+  - {id: statements, label: statements-service, type: service, language: kotlin}
+  - {id: interest, label: interest-engine, type: service, language: scala}
+  - {id: payment_orch, label: payment-orchestrator, type: service, language: go}
+  - {id: fraud, label: fraud-detection, type: service, language: python}
+  - {id: sanctions, label: sanctions-screening, type: service, language: python}
+  - {id: fx, label: fx-rates, type: service, language: go}
+  - {id: loan_origination, label: loan-origination, type: service, language: java}
+  - {id: credit_scoring, label: credit-scoring, type: service, language: python}
+  - {id: collections, label: collections-worker, type: service, language: kotlin}
+  - {id: eod, label: end-of-day batch, type: function, language: scala}
+  - {id: regulatory, label: regulatory-reporting, type: service, language: java}
+  - {id: warehouse, label: finance warehouse, type: database, db_type: snowflake}
+  - {id: ledger_db, label: ledger, type: database, db_type: postgres}
+  - {id: customer_db, label: customers, type: database, db_type: postgres}
+  - {id: payments_db, label: payments, type: database, db_type: postgres}
+  - {id: cache, label: balances cache, type: cache, db_type: redis}
+  - {id: events, label: domain events, type: queue, db_type: kafka}
+  - {id: swift, label: SWIFT, type: external}
+  - {id: card_network, label: Card network, type: external}
+  - {id: bureau, label: Credit bureau, type: external}
+  - {id: kyc_vendor, label: KYC vendor, type: external}
+edges:
+  - {from: mobile, to: waf, label: HTTPS}
+  - {from: web, to: waf, label: HTTPS}
+  - {from: branch, to: apigw, label: HTTPS}
+  - {from: partner, to: apigw, label: "PSD2 API"}
+  - {from: waf, to: apigw}
+  - {from: apigw, to: idp, label: token check}
+  - {from: apigw, to: bff}
+  - {from: bff, to: accounts, label: gRPC}
+  - {from: bff, to: payment_orch, label: gRPC}
+  - {from: bff, to: loan_origination, label: gRPC}
+  - {from: bff, to: statements, label: gRPC}
+  - {from: accounts, to: ledger, label: post entry}
+  - {from: accounts, to: customer_db, edge_style: data}
+  - {from: accounts, to: cache, label: balances, edge_style: data}
+  - {from: ledger, to: ledger_db, edge_style: data}
+  - {from: ledger, to: events, label: EntryPosted, edge_style: async}
+  - {from: interest, to: ledger, label: accruals}
+  - {from: statements, to: ledger_db, label: read, edge_style: data}
+  - {from: payment_orch, to: fraud, label: score}
+  - {from: payment_orch, to: sanctions, label: screen}
+  - {from: payment_orch, to: fx, label: rate}
+  - {from: payment_orch, to: ledger, label: post}
+  - {from: payment_orch, to: payments_db, edge_style: data}
+  - {from: payment_orch, to: swift, label: MT103}
+  - {from: payment_orch, to: card_network, label: ISO 8583}
+  - {from: payment_orch, to: events, label: PaymentSent, edge_style: async}
+  - {from: loan_origination, to: credit_scoring, label: score}
+  - {from: credit_scoring, to: bureau, label: report}
+  - {from: loan_origination, to: kyc_vendor, label: verify}
+  - {from: loan_origination, to: ledger, label: disburse}
+  - {from: events, to: collections, label: PaymentMissed, edge_style: async}
+  - {from: events, to: eod, edge_style: async}
+  - {from: eod, to: ledger_db, label: close books, edge_style: data}
+  - {from: eod, to: warehouse, label: load, edge_style: data}
+  - {from: regulatory, to: warehouse, label: query, edge_style: data}
+  - {from: idp, to: customer_db, edge_style: data}

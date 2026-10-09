@@ -17,14 +17,16 @@ pub(crate) fn layout_topological(
 ) -> Result<LayoutResult> {
     use petgraph::algo::toposort;
 
-    let topo_order = toposort(&compiled.graph, None).map_err(|_| {
+    // A self-loop (a table whose parent is a row of itself) is drawn but never ranks.
+    let no_self_loops = petgraph::visit::EdgeFiltered::from_fn(&compiled.graph, |e| e.source() != e.target());
+    let topo_order = toposort(&no_self_loops, None).map_err(|_| {
         anyhow::anyhow!("topological sort failed — unexpected cycle after FAS pass")
     })?;
 
     // Longest path over the ranking edges (`constraint: false` edges are drawn but
     // never push their target down a rank).
     let ranked_preds = |node: NodeIndex| {
-        compiled.graph.edges_directed(node, petgraph::Direction::Incoming).filter(|e| e.weight().constraint).map(|e| e.source())
+        compiled.graph.edges_directed(node, petgraph::Direction::Incoming).filter(move |e| e.weight().constraint && e.source() != node).map(|e| e.source())
     };
     // A dense web (more than `density_threshold` edges per node) laid out by longest
     // path becomes one long chain with most arrows looping back up it — nearly every

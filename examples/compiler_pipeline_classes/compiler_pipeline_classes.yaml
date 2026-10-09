@@ -1,0 +1,49 @@
+# A compiler front end as a class diagram: an AST visitor hierarchy, tokens,
+# symbol tables, diagnostics and the driver.
+title: "Compiler front end"
+diagram_type: class
+nodes:
+  - {id: driver, label: Driver, type: class, fields: ["- options: Options", "+ compile(path: Path): Result"]}
+  - {id: source, label: SourceFile, type: class, fields: ["- path: Path", "- text: String", "+ line_of(offset: usize): Line"]}
+  - {id: lexer, label: Lexer, type: class, fields: ["- src: &SourceFile", "- pos: usize", "+ next(): Token"]}
+  - {id: token, label: Token, type: struct, fields: ["+ kind: TokenKind", "+ span: Span", "+ text: &str"]}
+  - {id: parser, label: Parser, type: class, fields: ["- lexer: Lexer", "- diags: &Diagnostics", "+ parse(): Module"]}
+  - {id: node, label: AstNode, type: abstract_class, fields: ["# span: Span", "+ accept(v: Visitor): void"]}
+  - {id: module, label: Module, type: class, fields: ["- items: Vec<Item>"]}
+  - {id: item, label: Item, type: abstract_class, fields: ["# name: Symbol"]}
+  - {id: func, label: FunctionDecl, type: class, fields: ["- params: Vec<Param>", "- body: Block"]}
+  - {id: struct_decl, label: StructDecl, type: class, fields: ["- fields: Vec<Field>"]}
+  - {id: expr, label: Expr, type: abstract_class, fields: ["# ty: Option<Type>"]}
+  - {id: binary, label: BinaryExpr, type: class, fields: ["- op: Op", "- lhs: Expr", "- rhs: Expr"]}
+  - {id: call, label: CallExpr, type: class, fields: ["- callee: Expr", "- args: Vec<Expr>"]}
+  - {id: literal, label: Literal, type: class, fields: ["- value: Value"]}
+  - {id: visitor, label: Visitor, type: interface, fields: ["+ visit_module(m: Module)", "+ visit_expr(e: Expr)"]}
+  - {id: resolver, label: NameResolver, type: class, fields: ["- scopes: ScopeStack", "+ visit_expr(e: Expr)"]}
+  - {id: typeck, label: TypeChecker, type: class, fields: ["- table: SymbolTable", "+ visit_expr(e: Expr)"]}
+  - {id: symtab, label: SymbolTable, type: class, fields: ["- symbols: Map<Symbol, Entry>", "+ lookup(s: Symbol): Entry"]}
+  - {id: diags, label: Diagnostics, type: class, fields: ["- errors: Vec<Diagnostic>", "+ report(d: Diagnostic)"]}
+  - {id: diagnostic, label: Diagnostic, type: struct, fields: ["+ level: Level", "+ span: Span", "+ message: String"]}
+edges:
+  - {from: driver, to: source, edge_style: composition, label: "1..*"}
+  - {from: driver, to: parser, edge_style: dependency, label: "creates"}
+  - {from: driver, to: diags, edge_style: aggregation}
+  - {from: lexer, to: source, edge_style: aggregation}
+  - {from: lexer, to: token, edge_style: dependency, label: "produces"}
+  - {from: parser, to: lexer, edge_style: composition}
+  - {from: parser, to: module, edge_style: dependency, label: "produces"}
+  - {from: parser, to: diags, edge_style: aggregation}
+  - {from: module, to: node, edge_style: inheritance}
+  - {from: item, to: node, edge_style: inheritance}
+  - {from: expr, to: node, edge_style: inheritance}
+  - {from: func, to: item, edge_style: inheritance}
+  - {from: struct_decl, to: item, edge_style: inheritance}
+  - {from: binary, to: expr, edge_style: inheritance}
+  - {from: call, to: expr, edge_style: inheritance}
+  - {from: literal, to: expr, edge_style: inheritance}
+  - {from: module, to: item, edge_style: composition, label: "0..*"}
+  - {from: resolver, to: visitor, edge_style: realization}
+  - {from: typeck, to: visitor, edge_style: realization}
+  - {from: node, to: visitor, edge_style: dependency, label: "accept"}
+  - {from: typeck, to: symtab, edge_style: aggregation}
+  - {from: resolver, to: symtab, edge_style: dependency, label: "fills"}
+  - {from: diags, to: diagnostic, edge_style: composition, label: "0..*"}

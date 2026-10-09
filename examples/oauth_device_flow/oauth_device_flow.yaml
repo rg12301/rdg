@@ -1,0 +1,59 @@
+# OAuth 2.0 device authorization grant with polling, user approval on another
+# device, token refresh and revocation.
+title: "OAuth device authorization flow"
+numbered: true
+participants:
+  - {id: tv, label: Smart TV app, type: client}
+  - {id: phone, label: Phone browser, type: client}
+  - {id: user, label: User, type: actor}
+  - {id: authz, label: Authorization server, category: security}
+  - {id: idp, label: Identity provider, type: external}
+  - {id: api, label: Resource API, type: service}
+groups:
+  - {id: devices, label: "User devices", nodes: [tv, phone]}
+sequence:
+  - {from: tv, to: authz, label: "POST /device_authorization"}
+  - {from: authz, to: tv, label: "device_code, user_code, verification_uri", style: reply}
+  - {note: "shows user_code and QR", over: tv, kind: info}
+  - {from: tv, to: user, label: "display code", style: async}
+  - par: "approval and polling"
+    steps:
+      - {from: user, to: phone, label: "open verification_uri"}
+      - {from: phone, to: authz, label: "GET /device?user_code"}
+      - {from: authz, to: idp, label: "authenticate"}
+      - {from: idp, to: authz, label: "id_token", style: reply}
+      - {from: authz, to: phone, label: "consent page", style: reply}
+      - {from: user, to: phone, label: "approve"}
+      - {from: phone, to: authz, label: "POST /device/approve"}
+    and:
+      - loop: "every interval seconds"
+        steps:
+          - {from: tv, to: authz, label: "POST /token (device_code)"}
+          - alt: "pending"
+            steps:
+              - {from: authz, to: tv, label: "authorization_pending", style: reply}
+            else:
+              - label: "slow_down"
+                steps:
+                  - {from: authz, to: tv, label: "slow_down", style: reply}
+                  - {note: "increase interval by 5s", over: tv, kind: warning}
+              - label: "approved"
+                steps:
+                  - {from: authz, to: tv, label: "access_token, refresh_token", style: reply}
+  - {note: "tokens stored in secure storage", over: tv, kind: success}
+  - {from: tv, to: api, label: "GET /profile (Bearer)"}
+  - {from: api, to: authz, label: "introspect"}
+  - {from: authz, to: api, label: "active", style: reply}
+  - {from: api, to: tv, label: "200 profile", style: reply}
+  - divider: "later"
+  - opt: "access token expired"
+    steps:
+      - {from: tv, to: authz, label: "POST /token (refresh_token)"}
+      - {from: authz, to: tv, label: "new access_token", style: reply}
+  - opt: "user revokes"
+    steps:
+      - {from: user, to: phone, label: "revoke device"}
+      - {from: phone, to: authz, label: "POST /revoke"}
+      - {from: tv, to: api, label: "GET /profile"}
+      - {from: api, to: tv, label: "401 invalid_token", style: reply}
+      - {note: "app returns to the sign-in screen", over: tv, kind: error}

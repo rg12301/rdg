@@ -1,0 +1,50 @@
+# ML training and serving pipeline, left to right: data sources, feature
+# engineering, training, registry, deployment, monitoring with feedback.
+title: "ML training and serving pipeline"
+direction: lr
+groups:
+  - {id: sources, label: "Data sources", nodes: [events_src, labels, catalog_src]}
+  - {id: features, label: "Feature engineering", nodes: [validation, transform, feature_store]}
+  - {id: training, label: "Training", nodes: [experiment, trainer, evaluator, tuner]}
+  - {id: registry, label: "Model registry", nodes: [model_registry, approval]}
+  - {id: serving, label: "Serving", nodes: [deployer, online_model, batch_scorer]}
+  - {id: monitoring, label: "Monitoring", nodes: [drift, performance]}
+nodes:
+  - {id: events_src, label: event stream, type: queue, db_type: kafka}
+  - {id: labels, label: labelled data, type: database, db_type: postgres}
+  - {id: catalog_src, label: product catalog, type: database, db_type: postgres}
+  - {id: validation, label: data validation, type: function, language: python}
+  - {id: transform, label: feature transforms, type: service, language: scala}
+  - {id: feature_store, label: feature store, type: database, db_type: redis}
+  - {id: experiment, label: experiment tracker, type: service, language: python}
+  - {id: trainer, label: distributed trainer, type: service, language: python}
+  - {id: evaluator, label: evaluator, type: function, language: python}
+  - {id: tuner, label: hyperparameter tuner, type: service, language: python}
+  - {id: model_registry, label: model registry, type: storage, db_type: s3}
+  - {id: approval, label: approval gate, type: decision}
+  - {id: deployer, label: deployer, type: service, language: go}
+  - {id: online_model, label: online inference, type: service, language: python}
+  - {id: batch_scorer, label: batch scoring, type: function, language: python}
+  - {id: drift, label: drift detector, type: service, language: python}
+  - {id: performance, label: model performance, type: client}
+edges:
+  - {from: events_src, to: validation, edge_style: async}
+  - {from: labels, to: validation, edge_style: data}
+  - {from: catalog_src, to: transform, edge_style: data}
+  - {from: validation, to: transform, label: clean rows}
+  - {from: transform, to: feature_store, label: features, edge_style: data}
+  - {from: feature_store, to: trainer, label: training set, edge_style: data}
+  - {from: tuner, to: trainer, label: trials}
+  - {from: trainer, to: experiment, label: metrics}
+  - {from: trainer, to: evaluator, label: candidate}
+  - {from: evaluator, to: model_registry, label: register, edge_style: data}
+  - {from: model_registry, to: approval}
+  - {from: approval, to: deployer, label: approved}
+  - {from: approval, to: tuner, label: rejected, constraint: false}
+  - {from: deployer, to: online_model, label: canary}
+  - {from: deployer, to: batch_scorer}
+  - {from: feature_store, to: online_model, label: online features, edge_style: data}
+  - {from: online_model, to: drift, label: predictions, edge_style: async}
+  - {from: batch_scorer, to: performance, label: reports}
+  - {from: drift, to: performance}
+  - {from: drift, to: trainer, label: retrain trigger, edge_style: async, constraint: false}

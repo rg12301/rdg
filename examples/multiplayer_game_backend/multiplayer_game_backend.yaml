@@ -1,0 +1,80 @@
+# Multiplayer game backend: clients, edge, matchmaking and session domains,
+# game servers fleet, economy, social, telemetry, stores.
+title: "Multiplayer game backend"
+groups:
+  - {id: clients, label: "Clients", nodes: [pc_client, console_client, mobile_client]}
+  - {id: edge, label: "Edge", nodes: [cdn, auth_svc, api_gw, relay]}
+  - {id: platform, label: "Platform services", nodes: [matchmaking_domain, economy_domain, social_domain]}
+  - {id: matchmaking_domain, label: "Matchmaking & sessions", nodes: [matchmaker, session_svc, fleet_mgr, ranking]}
+  - {id: economy_domain, label: "Economy", nodes: [inventory, store_svc, entitlements]}
+  - {id: social_domain, label: "Social", nodes: [friends, chat, presence]}
+  - {id: servers, label: "Game server fleet", nodes: [gs_us, gs_eu, gs_apac]}
+  - {id: telemetry, label: "Telemetry", nodes: [events, analytics, anticheat]}
+  - {id: stores, label: "Stores", nodes: [player_db, inventory_db, session_cache, leaderboard]}
+  - {id: external, label: "External", nodes: [platform_store, voice]}
+nodes:
+  - {id: pc_client, label: PC client, type: client, language: cpp}
+  - {id: console_client, label: Console client, type: client, language: cpp}
+  - {id: mobile_client, label: Mobile client, type: client, language: swift}
+  - {id: cdn, label: Asset CDN, type: proxy}
+  - {id: auth_svc, label: Player auth, category: security}
+  - {id: api_gw, label: API gateway, type: gateway}
+  - {id: relay, label: UDP relay, type: proxy, language: rust}
+  - {id: matchmaker, label: matchmaker, type: service, language: go}
+  - {id: session_svc, label: session-service, type: service, language: go}
+  - {id: fleet_mgr, label: fleet-manager, type: service, language: go}
+  - {id: ranking, label: ranking-service, type: service, language: python}
+  - {id: inventory, label: inventory-service, type: service, language: java}
+  - {id: store_svc, label: store-service, type: service, language: java}
+  - {id: entitlements, label: entitlements, type: service, language: kotlin}
+  - {id: friends, label: friends-service, type: service, language: go}
+  - {id: chat, label: chat-service, type: service, language: elixir}
+  - {id: presence, label: presence, type: service, language: elixir}
+  - {id: gs_us, label: game servers (us), type: server, language: cpp}
+  - {id: gs_eu, label: game servers (eu), type: server, language: cpp}
+  - {id: gs_apac, label: game servers (apac), type: server, language: cpp}
+  - {id: events, label: game events, type: queue, db_type: kafka}
+  - {id: analytics, label: analytics, type: service, language: scala}
+  - {id: anticheat, label: anti-cheat, type: service, language: python}
+  - {id: player_db, label: players, type: database, db_type: postgres}
+  - {id: inventory_db, label: inventory, type: database, db_type: dynamodb}
+  - {id: session_cache, label: sessions, type: cache, db_type: redis}
+  - {id: leaderboard, label: leaderboards, type: cache, db_type: redis}
+  - {id: platform_store, label: Platform stores, type: external}
+  - {id: voice, label: Voice provider, type: external}
+edges:
+  - {from: pc_client, to: api_gw, label: HTTPS}
+  - {from: console_client, to: api_gw, label: HTTPS}
+  - {from: mobile_client, to: api_gw, label: HTTPS}
+  - {from: pc_client, to: cdn, label: assets}
+  - {from: pc_client, to: relay, label: UDP}
+  - {from: console_client, to: relay, label: UDP}
+  - {from: api_gw, to: auth_svc, label: verify}
+  - {from: api_gw, to: matchmaker}
+  - {from: api_gw, to: store_svc}
+  - {from: api_gw, to: friends}
+  - {from: api_gw, to: chat}
+  - {from: matchmaker, to: ranking, label: MMR}
+  - {from: matchmaker, to: session_svc, label: allocate}
+  - {from: session_svc, to: fleet_mgr, label: reserve}
+  - {from: fleet_mgr, to: gs_us}
+  - {from: fleet_mgr, to: gs_eu}
+  - {from: fleet_mgr, to: gs_apac}
+  - {from: relay, to: gs_us}
+  - {from: relay, to: gs_eu}
+  - {from: session_svc, to: session_cache, edge_style: data}
+  - {from: ranking, to: leaderboard, edge_style: data}
+  - {from: gs_us, to: events, label: match events, edge_style: async}
+  - {from: gs_eu, to: events, edge_style: async}
+  - {from: gs_apac, to: events, edge_style: async}
+  - {from: events, to: analytics, edge_style: async}
+  - {from: events, to: anticheat, edge_style: async}
+  - {from: events, to: ranking, label: results, edge_style: async}
+  - {from: store_svc, to: platform_store, label: receipts}
+  - {from: store_svc, to: entitlements, label: grant}
+  - {from: entitlements, to: inventory}
+  - {from: inventory, to: inventory_db, edge_style: data}
+  - {from: auth_svc, to: player_db, edge_style: data}
+  - {from: friends, to: player_db, edge_style: data}
+  - {from: presence, to: session_cache, edge_style: data}
+  - {from: chat, to: voice, label: SIP}

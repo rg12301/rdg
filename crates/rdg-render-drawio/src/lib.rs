@@ -445,6 +445,10 @@ pub fn render_drawio(
     if let Some(l) = frame.as_ref().and_then(|f| f.legend.as_ref()) {
         write_legend(&mut w, theme, tokens, &l.items, l.x, l.y, l.max_w, l.w, l.align)?;
     }
+    if let Some((x0, x1, y)) = frame.as_ref().and_then(|f| f.rule) {
+        let style = format!("line;strokeWidth=1;strokeColor={};html=1;connectable=0;", theme.title.rule_color);
+        write_vertex(&mut w, "diagram_header_rule", "", &style, (x0, y - 1.0, x1 - x0, 2.0))?;
+    }
 
     w.write_event(Event::End(BytesEnd::new("root")))?;
     w.write_event(Event::End(BytesEnd::new("mxGraphModel")))?;

@@ -114,6 +114,8 @@ pub fn render_sequence_drawio(
 
     let st = &theme.sequence;
     let f = &theme.font;
+    let mut legend_in_header = false;
+    let canvas_w: f64;
     // The canvas, sized like the SVG renderer's, so exports keep the margin.
     {
         let title_w = compiled.title.as_deref().map_or(0.0, |t| 24.0 + t.chars().count() as f64 * tokens.char_width(f.title_size));
@@ -123,12 +125,26 @@ pub fn render_sequence_drawio(
         if rdg_render_core::look::legend_enabled(theme, compiled) {
             let items = rdg_render_core::look::legend_items(theme, compiled);
             if !items.is_empty() {
-                let (lw, lh) = rdg_render_core::look::legend_size(&items, theme, (seq.max_x - seq.min_x).max(tokens.px(40.0)));
-                ch += lh + tokens.px(1.0);
-                cw = cw.max(seq.min_x + lw + tokens.px(3.0));
+                let row_w = rdg_render_core::look::legend_size(&items, theme, f64::INFINITY).0;
+                legend_in_header = title_w.max(desc_w) + tokens.px(4.0) + row_w + tokens.px(3.0) <= cw;
+                if !legend_in_header {
+                    let (lw, lh) = rdg_render_core::look::legend_size(&items, theme, (seq.max_x - seq.min_x).max(tokens.px(40.0)));
+                    ch += lh + tokens.px(1.0);
+                    cw = cw.max(seq.min_x + lw + tokens.px(3.0));
+                }
             }
         }
+        canvas_w = cw;
         crate::write_canvas_cell(&mut w, cw, ch)?;
+    }
+    // The rule under the header band.
+    {
+        let content_top = seq.groups.iter().map(|g| g.y).chain(layout.positions.values().map(|n| n.y)).fold(f64::INFINITY, f64::min);
+        let rule_y = (content_top - tokens.px(1.5)).round();
+        if content_top.is_finite() && rule_y > 20.0 {
+            let style = format!("line;strokeWidth=1;strokeColor={};html=1;connectable=0;", theme.title.rule_color);
+            write_vertex(&mut w, "diagram_header_rule", "", &style, (24.0, rule_y - 1.0, canvas_w - 48.0, 2.0))?;
+        }
     }
     let lbl = f.edge_label_size;
     let cw = tokens.char_width(lbl);
@@ -221,8 +237,10 @@ pub fn render_sequence_drawio(
 
     // Activation bars.
     for (i, a) in seq.activations.iter().enumerate() {
-        let stroke = if st.activation.category_stroke { node_look(theme, &compiled.graph[a.node]).stroke } else { st.activation.stroke.clone() };
-        let style = format!("rounded=0;html=1;fillColor={};strokeColor={stroke};strokeWidth=1.25;connectable=0;", st.activation.fill);
+        let cat = node_look(theme, &compiled.graph[a.node]).stroke;
+        let stroke = if st.activation.category_stroke { cat.clone() } else { st.activation.stroke.clone() };
+        let (fill, opacity) = if st.activation.fill == "@category" { (cat, "fillOpacity=28;") } else { (st.activation.fill.clone(), "") };
+        let style = format!("rounded=0;html=1;fillColor={fill};{opacity}strokeColor={stroke};strokeWidth=1.25;connectable=0;");
         write_vertex(&mut w, &format!("seq_activation_{i}"), "", &style, (a.x, a.y0, a.width, a.y1 - a.y0))?;
     }
 
@@ -254,11 +272,11 @@ pub fn render_sequence_drawio(
     }
 
     // Notes.
-    let ns = &st.note;
     for (i, n) in seq.notes.iter().enumerate() {
+        let (fill, stroke, text) = st.note.colours(&n.kind);
         let style = format!(
             "shape=note;size=8;html=1;whiteSpace=wrap;fillColor={};strokeColor={};strokeWidth=1;fontFamily={};fontSize={};fontColor={};align=left;verticalAlign=middle;spacingLeft={};spacingRight=4;",
-            ns.fill, ns.stroke, f.family, f.node_detail_size, ns.text, tokens.px(1.0) - 2.0
+            fill, stroke, f.family, f.node_detail_size, text, tokens.px(1.0) - 2.0
         );
         let value = n.lines.iter().map(|l| esc(l)).collect::<Vec<_>>().join("<br/>");
         write_vertex(&mut w, &format!("seq_note_{i}"), &value, &style, (n.x, n.y, n.w, n.h))?;
@@ -289,9 +307,14 @@ pub fn render_sequence_drawio(
     if rdg_render_core::look::legend_enabled(theme, compiled) {
         let items = rdg_render_core::look::legend_items(theme, compiled);
         if !items.is_empty() {
-            let max_w = (seq.max_x - seq.min_x).max(tokens.px(40.0));
-            let lw = rdg_render_core::look::legend_size(&items, theme, max_w).0;
-            write_legend(&mut w, theme, tokens, &items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), max_w, lw, rdg_render_core::frame::Align::Left)?;
+            if legend_in_header {
+                let lw = rdg_render_core::look::legend_size(&items, theme, f64::INFINITY).0;
+                write_legend(&mut w, theme, tokens, &items, canvas_w - tokens.px(3.0) - lw, 12.0, f64::INFINITY, lw, rdg_render_core::frame::Align::Right)?;
+            } else {
+                let max_w = (seq.max_x - seq.min_x).max(tokens.px(40.0));
+                let lw = rdg_render_core::look::legend_size(&items, theme, max_w).0;
+                write_legend(&mut w, theme, tokens, &items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), max_w, lw, rdg_render_core::frame::Align::Left)?;
+            }
         }
     }
 

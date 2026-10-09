@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1014" height="1123" viewBox="0 0 1014 1123" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1014" height="1246" viewBox="0 0 1014 1246" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#ea580c" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
-  <text x="990.4" y="1029.0" text-anchor="end" font-size="18" font-weight="bold" fill="#111827">Netflix-style Streaming Platform (Disconnected Subsystems)</text>
-  <rect x="74.0" y="28.0" width="438.0" height="439.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="86.0" y="47.9" font-size="11" font-weight="bold" fill="#94a3b8">Playback Path</text>
-  <rect x="576.0" y="139.0" width="414.0" height="328.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="588.0" y="158.9" font-size="11" font-weight="bold" fill="#94a3b8">Billing &amp; Subscription</text>
-  <rect x="74.0" y="531.0" width="240.0" height="564.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="86.0" y="550.9" font-size="11" font-weight="bold" fill="#94a3b8">Content Operations</text>
-  <path d="M 307.0 101.0 L 378.0 101.0 Q 392.0 101.0 392.0 115.0 L 392.0 204.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 257.0 101.0 L 186.0 101.0 Q 172.0 101.0 172.0 115.0 L 172.0 204.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 172.0 294.0 L 172.0 351.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 191.0 294.0 L 191.0 309.8 Q 191.0 316.0 197.2 316.0 L 355.4 316.0 Q 365.0 316.0 365.0 325.6 L 365.0 350.3" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 384.0 282.0 L 384.0 344.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 670.0 277.0 L 670.0 345.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 694.0 277.0 L 694.0 292.8 Q 694.0 299.0 700.2 299.0 L 847.1 299.0 Q 860.0 299.0 860.0 311.9 L 860.0 345.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 878.0 265.0 L 878.0 345.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 850.0 265.0 L 850.0 307.0 Q 850.0 321.0 836.0 321.0 L 695.7 321.0 Q 689.0 321.0 689.0 327.7 L 689.0 345.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 194.0 813.0 L 194.0 863.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
-  <path d="M 194.0 941.0 L 194.0 991.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 169.0 604.0 L 66.0 604.0 Q 52.0 604.0 52.0 618.0 L 52.0 1013.0 Q 52.0 1027.0 66.0 1027.0 L 114.0 1027.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 194.0 673.0 L 194.0 723.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <rect x="260.0" y="76.0" width="44.0" height="44.0" rx="10.0" fill="#2563eb"/><svg class="node-tech-icon" x="269.7" y="85.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></g></svg><text x="282.0" y="142.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Netflix-style Streaming Platform (Disconnected Subsystems)</text>
+  <rect x="74.0" y="151.0" width="438.0" height="439.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="86.0" y="170.9" font-size="11" font-weight="bold" fill="#94a3b8">Playback Path</text>
+  <rect x="576.0" y="262.0" width="414.0" height="328.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="588.0" y="281.9" font-size="11" font-weight="bold" fill="#94a3b8">Billing &amp; Subscription</text>
+  <rect x="74.0" y="654.0" width="240.0" height="564.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="86.0" y="673.9" font-size="11" font-weight="bold" fill="#94a3b8">Content Operations</text>
+  <path d="M 307.0 224.0 L 378.0 224.0 Q 392.0 224.0 392.0 238.0 L 392.0 327.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 257.0 224.0 L 186.0 224.0 Q 172.0 224.0 172.0 238.0 L 172.0 327.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 172.0 417.0 L 172.0 474.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 191.0 417.0 L 191.0 432.8 Q 191.0 439.0 197.2 439.0 L 355.4 439.0 Q 365.0 439.0 365.0 448.6 L 365.0 473.3" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 384.0 405.0 L 384.0 467.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 670.0 400.0 L 670.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 694.0 400.0 L 694.0 415.8 Q 694.0 422.0 700.2 422.0 L 847.1 422.0 Q 860.0 422.0 860.0 434.9 L 860.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 878.0 388.0 L 878.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 850.0 388.0 L 850.0 430.0 Q 850.0 444.0 836.0 444.0 L 695.7 444.0 Q 689.0 444.0 689.0 450.7 L 689.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 194.0 936.0 L 194.0 986.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
+  <path d="M 194.0 1064.0 L 194.0 1114.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 169.0 727.0 L 66.0 727.0 Q 52.0 727.0 52.0 741.0 L 52.0 1136.0 Q 52.0 1150.0 66.0 1150.0 L 114.0 1150.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 194.0 796.0 L 194.0 846.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <rect x="260.0" y="199.0" width="44.0" height="44.0" rx="10.0" fill="#2563eb"/><svg class="node-tech-icon" x="269.7" y="208.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></g></svg><text x="282.0" y="265.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>TV / Mobile Device</tspan>
   </text>
-  <rect x="370.0" y="204.0" width="44.0" height="44.0" rx="10.0" fill="#0891b2"/><svg class="node-tech-icon" x="379.7" y="213.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1 .25 8.5H7z"/></g></svg><text x="392.0" y="270.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect x="370.0" y="327.0" width="44.0" height="44.0" rx="10.0" fill="#0891b2"/><svg class="node-tech-icon" x="379.7" y="336.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1 .25 8.5H7z"/></g></svg><text x="392.0" y="393.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Open Connect Appliance</tspan>
   </text>
-  <rect x="150.0" y="204.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="159.7" y="213.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="187.7" cy="241.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="181.2" y="235.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#0074BD" d="M47.617 98.12s-4.767 2.774 3.397 3.71c9.892 1.13 14.947.968 25.845-1.092 0 0 2.871 1.795 6.873 3.351-24.439 10.47-55.308-.607-36.115-5.969zm-2.988-13.665s-5.348 3.959 2.823 4.805c10.567 1.091 18.91 1.18 33.354-1.6 0 0 1.993 2.025 5.132 3.131-29.542 8.64-62.446.68-41.309-6.336z"/><path fill="#EA2D2E" d="M69.802 61.271c6.025 6.935-1.58 13.17-1.58 13.17s15.289-7.891 8.269-17.777c-6.559-9.215-11.587-13.792 15.635-29.58 0 .001-42.731 10.67-22.324 34.187z"/><path fill="#0074BD" d="M102.123 108.229s3.529 2.91-3.888 5.159c-14.102 4.272-58.706 5.56-71.094.171-4.451-1.938 3.899-4.625 6.526-5.192 2.739-.593 4.303-.485 4.303-.485-4.953-3.487-32.013 6.85-13.743 9.815 49.821 8.076 90.817-3.637 77.896-9.468zM49.912 70.294s-22.686 5.389-8.033 7.348c6.188.828 18.518.638 30.011-.326 9.39-.789 18.813-2.474 18.813-2.474s-3.308 1.419-5.704 3.053c-23.042 6.061-67.544 3.238-54.731-2.958 10.832-5.239 19.644-4.643 19.644-4.643zm40.697 22.747c23.421-12.167 12.591-23.86 5.032-22.285-1.848.385-2.677.72-2.677.72s.688-1.079 2-1.543c14.953-5.255 26.451 15.503-4.823 23.725 0-.002.359-.327.468-.617z"/><path fill="#EA2D2E" d="M76.491 1.587S89.459 14.563 64.188 34.51c-20.266 16.006-4.621 25.13-.007 35.559-11.831-10.673-20.509-20.07-14.688-28.815C58.041 28.42 81.722 22.195 76.491 1.587z"/><path fill="#0074BD" d="M52.214 126.021c22.476 1.437 57-.8 57.817-11.436 0 0-1.571 4.032-18.577 7.231-19.186 3.612-42.854 3.191-56.887.874 0 .001 2.875 2.381 17.647 3.331z"/></svg><text x="172.0" y="270.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect x="150.0" y="327.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="159.7" y="336.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="187.7" cy="364.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="181.2" y="358.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#0074BD" d="M47.617 98.12s-4.767 2.774 3.397 3.71c9.892 1.13 14.947.968 25.845-1.092 0 0 2.871 1.795 6.873 3.351-24.439 10.47-55.308-.607-36.115-5.969zm-2.988-13.665s-5.348 3.959 2.823 4.805c10.567 1.091 18.91 1.18 33.354-1.6 0 0 1.993 2.025 5.132 3.131-29.542 8.64-62.446.68-41.309-6.336z"/><path fill="#EA2D2E" d="M69.802 61.271c6.025 6.935-1.58 13.17-1.58 13.17s15.289-7.891 8.269-17.777c-6.559-9.215-11.587-13.792 15.635-29.58 0 .001-42.731 10.67-22.324 34.187z"/><path fill="#0074BD" d="M102.123 108.229s3.529 2.91-3.888 5.159c-14.102 4.272-58.706 5.56-71.094.171-4.451-1.938 3.899-4.625 6.526-5.192 2.739-.593 4.303-.485 4.303-.485-4.953-3.487-32.013 6.85-13.743 9.815 49.821 8.076 90.817-3.637 77.896-9.468zM49.912 70.294s-22.686 5.389-8.033 7.348c6.188.828 18.518.638 30.011-.326 9.39-.789 18.813-2.474 18.813-2.474s-3.308 1.419-5.704 3.053c-23.042 6.061-67.544 3.238-54.731-2.958 10.832-5.239 19.644-4.643 19.644-4.643zm40.697 22.747c23.421-12.167 12.591-23.86 5.032-22.285-1.848.385-2.677.72-2.677.72s.688-1.079 2-1.543c14.953-5.255 26.451 15.503-4.823 23.725 0-.002.359-.327.468-.617z"/><path fill="#EA2D2E" d="M76.491 1.587S89.459 14.563 64.188 34.51c-20.266 16.006-4.621 25.13-.007 35.559-11.831-10.673-20.509-20.07-14.688-28.815C58.041 28.42 81.722 22.195 76.491 1.587z"/><path fill="#0074BD" d="M52.214 126.021c22.476 1.437 57-.8 57.817-11.436 0 0-1.571 4.032-18.577 7.231-19.186 3.612-42.854 3.191-56.887.874 0 .001 2.875 2.381 17.647 3.331z"/></svg><text x="172.0" y="393.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Playback Service</tspan>
   </text>
-  <text x="172.0" y="284.3" text-anchor="middle" font-size="10" fill="#5b6474">[Java]</text>
-  <rect x="162.0" y="351.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="171.7" y="360.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="199.7" cy="388.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="193.2" y="382.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet">
+  <text x="172.0" y="407.3" text-anchor="middle" font-size="10" fill="#5b6474">[Java]</text>
+  <rect x="162.0" y="474.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="171.7" y="483.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="199.7" cy="511.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="193.2" y="505.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet">
   <path fill="#00599c" d="M118.766 95.82c.89-1.543 1.441-3.28 1.441-4.843V36.78c0-1.558-.55-3.297-1.441-4.84l-55.32 31.94Zm0 0"/>
   <path fill="#004482" d="m68.36 126.586 46.933-27.094c1.352-.781 2.582-2.129 3.473-3.672l-55.32-31.94L8.12 95.82c.89 1.543 2.121 2.89 3.473 3.672l46.933 27.094c2.703 1.562 7.13 1.562 9.832 0Zm0 0"/>
   <path fill="#659ad2" d="M118.766 31.941c-.891-1.546-2.121-2.894-3.473-3.671L68.359 1.172c-2.703-1.563-7.129-1.563-9.832 0L11.594 28.27C8.89 29.828 6.68 33.66 6.68 36.78v54.196c0 1.562.55 3.3 1.441 4.843L63.445 63.88Zm0 0"/>
   <path fill="#fff" d="M63.445 26.035c-20.867 0-37.843 16.977-37.843 37.844s16.976 37.844 37.843 37.844c13.465 0 26.024-7.247 32.77-18.91L79.84 73.335c-3.38 5.84-9.66 9.465-16.395 9.465-10.433 0-18.922-8.488-18.922-18.922 0-10.434 8.49-18.922 18.922-18.922 6.73 0 13.017 3.629 16.39 9.465l16.38-9.477c-6.75-11.664-19.305-18.91-32.77-18.91zM92.88 57.57v4.207h-4.207v4.203h4.207v4.207h4.203V65.98h4.203v-4.203h-4.203V57.57H92.88zm15.766 0v4.207h-4.204v4.203h4.204v4.207h4.207V65.98h4.203v-4.203h-4.203V57.57h-4.207z"/>
-</svg><text x="184.0" y="417.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+</svg><text x="184.0" y="540.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>DRM License Service</tspan>
   </text>
-  <text x="184.0" y="431.3" text-anchor="middle" font-size="10" fill="#5b6474">[C++]</text><svg class="node-tech-icon" x="360.0" y="352.0" width="48.0" height="48.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#A41E11" d="M121.8 93.1c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.9-11.5 3.8-17.3 1S13 98.1 6.3 94.9c-3.3-1.6-5-2.9-5-4.2V78s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9v12.5c0 1.3-1.5 2.7-4.9 4.4z"/><path fill="#D82C20" d="M121.8 80.5C115.1 84 80.4 98.2 73 102.1c-7.4 3.9-11.5 3.8-17.3 1-5.8-2.8-42.7-17.7-49.4-20.9C-.3 79-.5 76.8 6 74.3c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.9z"/><path fill="#A41E11" d="M121.8 72.5C115.1 76 80.4 90.2 73 94.1c-7.4 3.8-11.5 3.8-17.3 1C49.9 92.3 13 77.4 6.3 74.2c-3.3-1.6-5-2.9-5-4.2V57.3s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9V68c0 1.3-1.5 2.7-4.9 4.5z"/><path fill="#D82C20" d="M121.8 59.8c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.8-11.5 3.8-17.3 1C49.9 79.6 13 64.7 6.3 61.5s-6.8-5.4-.3-7.9c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.9z"/><path fill="#A41E11" d="M121.8 51c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.8-11.5 3.8-17.3 1C49.9 70.9 13 56 6.3 52.8c-3.3-1.6-5.1-2.9-5.1-4.2V35.9s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9v12.5c.1 1.3-1.4 2.6-4.8 4.4z"/><path fill="#D82C20" d="M121.8 38.3C115.1 41.8 80.4 56 73 59.9c-7.4 3.8-11.5 3.8-17.3 1S13 43.3 6.3 40.1s-6.8-5.4-.3-7.9c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.8z"/><path fill="#fff" d="M80.4 26.1l-10.8 1.2-2.5 5.8-3.9-6.5-12.5-1.1 9.3-3.4-2.8-5.2 8.8 3.4 8.2-2.7L72 23zM66.5 54.5l-20.3-8.4 29.1-4.4z"/><ellipse fill="#fff" cx="38.4" cy="35.4" rx="15.5" ry="6"/><path fill="#7A0C00" d="M93.3 27.7l17.2 6.8-17.2 6.8z"/><path fill="#AD2115" d="M74.3 35.3l19-7.6v13.6l-1.9.8z"/></svg><text x="384.0" y="424.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="184.0" y="554.3" text-anchor="middle" font-size="10" fill="#5b6474">[C++]</text><svg class="node-tech-icon" x="360.0" y="475.0" width="48.0" height="48.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#A41E11" d="M121.8 93.1c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.9-11.5 3.8-17.3 1S13 98.1 6.3 94.9c-3.3-1.6-5-2.9-5-4.2V78s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9v12.5c0 1.3-1.5 2.7-4.9 4.4z"/><path fill="#D82C20" d="M121.8 80.5C115.1 84 80.4 98.2 73 102.1c-7.4 3.9-11.5 3.8-17.3 1-5.8-2.8-42.7-17.7-49.4-20.9C-.3 79-.5 76.8 6 74.3c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.9z"/><path fill="#A41E11" d="M121.8 72.5C115.1 76 80.4 90.2 73 94.1c-7.4 3.8-11.5 3.8-17.3 1C49.9 92.3 13 77.4 6.3 74.2c-3.3-1.6-5-2.9-5-4.2V57.3s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9V68c0 1.3-1.5 2.7-4.9 4.5z"/><path fill="#D82C20" d="M121.8 59.8c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.8-11.5 3.8-17.3 1C49.9 79.6 13 64.7 6.3 61.5s-6.8-5.4-.3-7.9c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.9z"/><path fill="#A41E11" d="M121.8 51c-6.7 3.5-41.4 17.7-48.8 21.6-7.4 3.8-11.5 3.8-17.3 1C49.9 70.9 13 56 6.3 52.8c-3.3-1.6-5.1-2.9-5.1-4.2V35.9s48-10.5 55.8-13.2c7.8-2.8 10.4-2.9 17-.5s46.1 9.5 52.6 11.9v12.5c.1 1.3-1.4 2.6-4.8 4.4z"/><path fill="#D82C20" d="M121.8 38.3C115.1 41.8 80.4 56 73 59.9c-7.4 3.8-11.5 3.8-17.3 1S13 43.3 6.3 40.1s-6.8-5.4-.3-7.9c6.5-2.6 43.2-17 51-19.7 7.8-2.8 10.4-2.9 17-.5s41.1 16.1 47.6 18.5c6.7 2.4 6.9 4.4.2 7.8z"/><path fill="#fff" d="M80.4 26.1l-10.8 1.2-2.5 5.8-3.9-6.5-12.5-1.1 9.3-3.4-2.8-5.2 8.8 3.4 8.2-2.7L72 23zM66.5 54.5l-20.3-8.4 29.1-4.4z"/><ellipse fill="#fff" cx="38.4" cy="35.4" rx="15.5" ry="6"/><path fill="#7A0C00" d="M93.3 27.7l17.2 6.8-17.2 6.8z"/><path fill="#AD2115" d="M74.3 35.3l19-7.6v13.6l-1.9.8z"/></svg><text x="384.0" y="547.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Segment Cache</tspan>
   </text>
-  <rect x="658.0" y="187.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="667.7" y="196.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="695.7" cy="224.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="689.2" y="218.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet">
+  <rect x="658.0" y="310.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="667.7" y="319.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="695.7" cy="347.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="689.2" y="341.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet">
   <defs>
     <linearGradient id="n6b-a" x1="500.003" x2="-.097" y1="579.106" y2="1079.206" gradientTransform="translate(15.534 -96.774) scale(.1939)" gradientUnits="userSpaceOnUse">
       <stop offset=".003" stop-color="#e44857"/>
@@ -53,80 +53,81 @@
     </linearGradient>
   </defs>
   <path fill="url(#n6b-a)" d="M112.484 112.484H15.516V15.516h96.968L64 64Zm0 0"/>
-</svg><text x="680.0" y="253.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+</svg><text x="680.0" y="376.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Billing Service</tspan>
   </text>
-  <text x="680.0" y="267.3" text-anchor="middle" font-size="10" fill="#5b6474">[Kotlin]</text>
-  <rect x="648.0" y="345.0" width="44.0" height="44.0" rx="10.0" fill="#0891b2"/><svg class="node-tech-icon" x="657.7" y="354.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1 .25 8.5H7z"/></g></svg><text x="670.0" y="411.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="680.0" y="390.3" text-anchor="middle" font-size="10" fill="#5b6474">[Kotlin]</text>
+  <rect x="648.0" y="468.0" width="44.0" height="44.0" rx="10.0" fill="#0891b2"/><svg class="node-tech-icon" x="657.7" y="477.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1 .25 8.5H7z"/></g></svg><text x="670.0" y="534.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Payment Gateway</tspan>
   </text>
-  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="798.0" y="345.0" width="160.0" height="90.0" rx="6.0"/>
-  <text x="878.0" y="363.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">subscriptions</text>
-  <line x1="798.0" y1="373.0" x2="958.0" y2="373.0" stroke="#7c3aed" stroke-opacity="0.4"/>
-  <text x="810.0" y="385.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#7c3aed" font-weight="bold">id</text>
-  <text x="946.0" y="385.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID [PK]</text>
-  <text x="810.0" y="403.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">plan</text>
-  <text x="946.0" y="403.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TEXT</text>
-  <text x="810.0" y="421.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">renews_at</text>
-  <text x="946.0" y="421.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TIMESTAMP</text>
-  <rect x="846.0" y="187.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="855.7" y="196.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="868.0" y="253.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="798.0" y="468.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="878.0" y="486.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">subscriptions</text>
+  <line x1="798.0" y1="496.0" x2="958.0" y2="496.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="810.0" y="508.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#7c3aed" font-weight="bold">id</text>
+  <text x="946.0" y="508.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID [PK]</text>
+  <text x="810.0" y="526.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">plan</text>
+  <text x="946.0" y="526.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TEXT</text>
+  <text x="810.0" y="544.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">renews_at</text>
+  <text x="946.0" y="544.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TIMESTAMP</text>
+  <rect x="846.0" y="310.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="855.7" y="319.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="868.0" y="376.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Dunning Worker</tspan>
   </text>
-  <rect x="172.0" y="723.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="732.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="209.7" cy="760.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="203.2" y="754.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><linearGradient id="n10b-python-original-a" gradientUnits="userSpaceOnUse" x1="70.252" y1="1237.476" x2="170.659" y2="1151.089" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#5A9FD4"/><stop offset="1" stop-color="#306998"/></linearGradient><linearGradient id="n10b-python-original-b" gradientUnits="userSpaceOnUse" x1="209.474" y1="1098.811" x2="173.62" y2="1149.537" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFE873"/></linearGradient><path fill="url(#n10b-python-original-a)" d="M63.391 1.988c-4.222.02-8.252.379-11.8 1.007-10.45 1.846-12.346 5.71-12.346 12.837v9.411h24.693v3.137H29.977c-7.176 0-13.46 4.313-15.426 12.521-2.268 9.405-2.368 15.275 0 25.096 1.755 7.311 5.947 12.519 13.124 12.519h8.491V67.234c0-8.151 7.051-15.34 15.426-15.34h24.665c6.866 0 12.346-5.654 12.346-12.548V15.833c0-6.693-5.646-11.72-12.346-12.837-4.244-.706-8.645-1.027-12.866-1.008zM50.037 9.557c2.55 0 4.634 2.117 4.634 4.721 0 2.593-2.083 4.69-4.634 4.69-2.56 0-4.633-2.097-4.633-4.69-.001-2.604 2.073-4.721 4.633-4.721z" transform="translate(0 10.26)"/><path fill="url(#n10b-python-original-b)" d="M91.682 28.38v10.966c0 8.5-7.208 15.655-15.426 15.655H51.591c-6.756 0-12.346 5.783-12.346 12.549v23.515c0 6.691 5.818 10.628 12.346 12.547 7.816 2.297 15.312 2.713 24.665 0 6.216-1.801 12.346-5.423 12.346-12.547v-9.412H63.938v-3.138h37.012c7.176 0 9.852-5.005 12.348-12.519 2.578-7.735 2.467-15.174 0-25.096-1.774-7.145-5.161-12.521-12.348-12.521h-9.268zM77.809 87.927c2.561 0 4.634 2.097 4.634 4.692 0 2.602-2.074 4.719-4.634 4.719-2.55 0-4.633-2.117-4.633-4.719 0-2.595 2.083-4.692 4.633-4.692z" transform="translate(0 10.26)"/><radialGradient id="n10b-python-original-c" cx="1825.678" cy="444.45" r="26.743" gradientTransform="matrix(0 -.24 -1.055 0 532.979 557.576)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B8B8B8" stop-opacity=".498"/><stop offset="1" stop-color="#7F7F7F" stop-opacity="0"/></radialGradient><path opacity=".444" fill="url(#n10b-python-original-c)" d="M97.309 119.597c0 3.543-14.816 6.416-33.091 6.416-18.276 0-33.092-2.873-33.092-6.416 0-3.544 14.815-6.417 33.092-6.417 18.275 0 33.091 2.872 33.091 6.417z"/></svg><text x="194.0" y="789.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect x="172.0" y="846.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="855.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><circle cx="209.7" cy="883.7" r="10.5" fill="#f7f8fa" stroke="#059669" stroke-width="1"/><svg class="node-tech-icon" x="203.2" y="877.2" width="13.0" height="13.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><linearGradient id="n10b-python-original-a" gradientUnits="userSpaceOnUse" x1="70.252" y1="1237.476" x2="170.659" y2="1151.089" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#5A9FD4"/><stop offset="1" stop-color="#306998"/></linearGradient><linearGradient id="n10b-python-original-b" gradientUnits="userSpaceOnUse" x1="209.474" y1="1098.811" x2="173.62" y2="1149.537" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFE873"/></linearGradient><path fill="url(#n10b-python-original-a)" d="M63.391 1.988c-4.222.02-8.252.379-11.8 1.007-10.45 1.846-12.346 5.71-12.346 12.837v9.411h24.693v3.137H29.977c-7.176 0-13.46 4.313-15.426 12.521-2.268 9.405-2.368 15.275 0 25.096 1.755 7.311 5.947 12.519 13.124 12.519h8.491V67.234c0-8.151 7.051-15.34 15.426-15.34h24.665c6.866 0 12.346-5.654 12.346-12.548V15.833c0-6.693-5.646-11.72-12.346-12.837-4.244-.706-8.645-1.027-12.866-1.008zM50.037 9.557c2.55 0 4.634 2.117 4.634 4.721 0 2.593-2.083 4.69-4.634 4.69-2.56 0-4.633-2.097-4.633-4.69-.001-2.604 2.073-4.721 4.633-4.721z" transform="translate(0 10.26)"/><path fill="url(#n10b-python-original-b)" d="M91.682 28.38v10.966c0 8.5-7.208 15.655-15.426 15.655H51.591c-6.756 0-12.346 5.783-12.346 12.549v23.515c0 6.691 5.818 10.628 12.346 12.547 7.816 2.297 15.312 2.713 24.665 0 6.216-1.801 12.346-5.423 12.346-12.547v-9.412H63.938v-3.138h37.012c7.176 0 9.852-5.005 12.348-12.519 2.578-7.735 2.467-15.174 0-25.096-1.774-7.145-5.161-12.521-12.348-12.521h-9.268zM77.809 87.927c2.561 0 4.634 2.097 4.634 4.692 0 2.602-2.074 4.719-4.634 4.719-2.55 0-4.633-2.117-4.633-4.719 0-2.595 2.083-4.692 4.633-4.692z" transform="translate(0 10.26)"/><radialGradient id="n10b-python-original-c" cx="1825.678" cy="444.45" r="26.743" gradientTransform="matrix(0 -.24 -1.055 0 532.979 557.576)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B8B8B8" stop-opacity=".498"/><stop offset="1" stop-color="#7F7F7F" stop-opacity="0"/></radialGradient><path opacity=".444" fill="url(#n10b-python-original-c)" d="M97.309 119.597c0 3.543-14.816 6.416-33.091 6.416-18.276 0-33.092-2.873-33.092-6.416 0-3.544 14.815-6.417 33.092-6.417 18.275 0 33.091 2.872 33.091 6.417z"/></svg><text x="194.0" y="912.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Content Ingest Service</tspan>
   </text>
-  <text x="194.0" y="803.3" text-anchor="middle" font-size="10" fill="#5b6474">[Python]</text>
-  <rect x="172.0" y="863.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="872.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="194.0" y="929.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="194.0" y="926.3" text-anchor="middle" font-size="10" fill="#5b6474">[Python]</text>
+  <rect x="172.0" y="986.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="995.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="194.0" y="1052.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Encoder Farm</tspan>
   </text>
-  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="114.0" y="991.0" width="160.0" height="72.0" rx="6.0"/>
-  <text x="194.0" y="1009.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">catalog</text>
-  <line x1="114.0" y1="1019.0" x2="274.0" y2="1019.0" stroke="#7c3aed" stroke-opacity="0.4"/>
-  <text x="126.0" y="1031.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#7c3aed" font-weight="bold">title_id</text>
-  <text x="262.0" y="1031.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID [PK]</text>
-  <text x="126.0" y="1049.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">genre</text>
-  <text x="262.0" y="1049.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TEXT</text>
-  <rect x="172.0" y="579.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="588.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="194.0" y="645.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="114.0" y="1114.0" width="160.0" height="72.0" rx="6.0"/>
+  <text x="194.0" y="1132.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">catalog</text>
+  <line x1="114.0" y1="1142.0" x2="274.0" y2="1142.0" stroke="#7c3aed" stroke-opacity="0.4"/>
+  <text x="126.0" y="1154.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#7c3aed" font-weight="bold">title_id</text>
+  <text x="262.0" y="1154.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID [PK]</text>
+  <text x="126.0" y="1172.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">genre</text>
+  <text x="262.0" y="1172.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TEXT</text>
+  <rect x="172.0" y="702.0" width="44.0" height="44.0" rx="10.0" fill="#059669"/><svg class="node-tech-icon" x="181.7" y="711.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></g></svg><text x="194.0" y="768.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Content</tspan>
   </text>
-  <text x="194.0" y="661.5" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+  <text x="194.0" y="784.5" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Management System</tspan>
   </text>
-  <rect x="268.0" y="151.9" width="120.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="328.0" y="163.2" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS segment fetch</text>
-  <rect x="176.0" y="170.8" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="230.0" y="182.1" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC manifest req</text>
-  <rect x="138.0" y="314.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="153.0" y="326.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
-  <rect x="239.0" y="296.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="278.0" y="307.8" text-anchor="middle" font-size="10" fill="#8b95a5">GET manifest</text>
-  <rect x="388.0" y="305.2" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="424.0" y="316.5" text-anchor="middle" font-size="10" fill="#8b95a5">origin pull</text>
-  <rect x="624.0" y="303.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="645.0" y="314.5" text-anchor="middle" font-size="10" fill="#8b95a5">charge</text>
-  <rect x="765.0" y="279.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="777.0" y="290.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
-  <rect x="882.0" y="297.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="912.0" y="308.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL retry</text>
-  <rect x="730.5" y="325.0" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="769.5" y="336.2" text-anchor="middle" font-size="10" fill="#8b95a5">retry charge</text>
-  <rect x="198.0" y="830.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="231.0" y="841.5" text-anchor="middle" font-size="10" fill="#ea580c">submit job</text>
-  <rect x="198.0" y="958.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="231.0" y="969.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL update</text>
-  <rect x="24.0" y="807.8" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="36.0" y="819.0" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
-  <rect x="198.0" y="690.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="243.0" y="701.5" text-anchor="middle" font-size="10" fill="#8b95a5">trigger ingest</text>
-  <text x="950.4" y="1062.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
-  <rect x="500.0" y="1076.6" width="14" height="14" rx="4" fill="#2563eb"/>
-  <text x="526.0" y="1087.1" font-size="10" fill="#5b6474">Frontend</text>
-  <rect x="598.0" y="1076.6" width="14" height="14" rx="4" fill="#0891b2"/>
-  <text x="624.0" y="1087.1" font-size="10" fill="#5b6474">Edge &amp; cloud</text>
-  <rect x="720.0" y="1076.6" width="14" height="14" rx="4" fill="#059669"/>
-  <text x="746.0" y="1087.1" font-size="10" fill="#5b6474">Backend</text>
-  <rect x="808.0" y="1076.6" width="22" height="14" rx="3" fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.25"/>
-  <text x="838.0" y="1087.1" font-size="10" fill="#5b6474">Data</text>
-  <line x1="882.0" y1="1083.6" x2="904.0" y2="1083.6" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="912.0" y="1087.1" font-size="10" fill="#5b6474">Async / event</text>
+  <rect x="268.0" y="274.9" width="120.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="328.0" y="286.2" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS segment fetch</text>
+  <rect x="176.0" y="293.8" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="230.0" y="305.1" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC manifest req</text>
+  <rect x="138.0" y="437.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="153.0" y="449.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
+  <rect x="239.0" y="419.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="278.0" y="430.8" text-anchor="middle" font-size="10" fill="#8b95a5">GET manifest</text>
+  <rect x="388.0" y="428.2" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="424.0" y="439.5" text-anchor="middle" font-size="10" fill="#8b95a5">origin pull</text>
+  <rect x="624.0" y="426.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="645.0" y="437.5" text-anchor="middle" font-size="10" fill="#8b95a5">charge</text>
+  <rect x="765.0" y="402.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="777.0" y="413.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
+  <rect x="882.0" y="420.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="912.0" y="431.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL retry</text>
+  <rect x="730.5" y="448.0" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="769.5" y="459.2" text-anchor="middle" font-size="10" fill="#8b95a5">retry charge</text>
+  <rect x="198.0" y="953.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="231.0" y="964.5" text-anchor="middle" font-size="10" fill="#ea580c">submit job</text>
+  <rect x="198.0" y="1081.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="231.0" y="1092.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL update</text>
+  <rect x="24.0" y="930.8" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="36.0" y="942.0" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
+  <rect x="198.0" y="813.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="243.0" y="824.5" text-anchor="middle" font-size="10" fill="#8b95a5">trigger ingest</text>
+  <text x="24.0" y="82.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="28.0" y="96.6" width="14" height="14" rx="4" fill="#2563eb"/>
+  <text x="54.0" y="107.1" font-size="10" fill="#5b6474">Frontend</text>
+  <rect x="126.0" y="96.6" width="14" height="14" rx="4" fill="#0891b2"/>
+  <text x="152.0" y="107.1" font-size="10" fill="#5b6474">Edge &amp; cloud</text>
+  <rect x="248.0" y="96.6" width="14" height="14" rx="4" fill="#059669"/>
+  <text x="274.0" y="107.1" font-size="10" fill="#5b6474">Backend</text>
+  <rect x="336.0" y="96.6" width="22" height="14" rx="3" fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.25"/>
+  <text x="366.0" y="107.1" font-size="10" fill="#5b6474">Data</text>
+  <line x1="410.0" y1="103.6" x2="432.0" y2="103.6" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="440.0" y="107.1" font-size="10" fill="#5b6474">Async / event</text>
+  <line x1="24.0" y1="127.0" x2="990.0" y2="127.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

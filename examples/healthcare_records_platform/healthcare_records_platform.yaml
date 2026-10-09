@@ -1,0 +1,71 @@
+# Electronic health records platform: clinics and patients, FHIR edge, clinical
+# domains, interoperability, analytics, stores, external systems.
+title: "Healthcare records platform"
+description: "FHIR API edge, clinical and interoperability domains, analytics"
+groups:
+  - {id: users, label: "Users", nodes: [clinician_app, patient_portal, lab_system, pharmacy_system]}
+  - {id: edge, label: "API edge", nodes: [fhir_gw, consent, audit_proxy]}
+  - {id: clinical, label: "Clinical domain", nodes: [patient_svc, encounter_svc, orders_svc, results_svc, prescriptions_svc]}
+  - {id: interop, label: "Interoperability", nodes: [hl7_adapter, terminology, document_exchange]}
+  - {id: analytics, label: "Analytics", nodes: [deid, cohort, ml_risk]}
+  - {id: stores, label: "Stores", nodes: [ehr_db, documents, fhir_cache, events, lake]}
+  - {id: external, label: "External", nodes: [hie, drug_db, imaging]}
+nodes:
+  - {id: clinician_app, label: Clinician workstation, type: client, language: typescript}
+  - {id: patient_portal, label: Patient portal, type: client, language: typescript}
+  - {id: lab_system, label: Lab system, type: external}
+  - {id: pharmacy_system, label: Pharmacy system, type: external}
+  - {id: fhir_gw, label: FHIR gateway, type: gateway}
+  - {id: consent, label: consent-service, category: security, language: go}
+  - {id: audit_proxy, label: audit-proxy, category: security, language: go}
+  - {id: patient_svc, label: patient-service, type: service, language: java}
+  - {id: encounter_svc, label: encounter-service, type: service, language: java}
+  - {id: orders_svc, label: orders-service, type: service, language: kotlin}
+  - {id: results_svc, label: results-service, type: service, language: kotlin}
+  - {id: prescriptions_svc, label: prescriptions-service, type: service, language: java}
+  - {id: hl7_adapter, label: HL7v2 adapter, type: service, language: csharp}
+  - {id: terminology, label: terminology-service, type: service, language: python}
+  - {id: document_exchange, label: document-exchange, type: service, language: java}
+  - {id: deid, label: de-identification, type: function, language: python}
+  - {id: cohort, label: cohort-builder, type: service, language: python}
+  - {id: ml_risk, label: readmission-risk model, type: service, language: python}
+  - {id: ehr_db, label: ehr, type: database, db_type: postgres}
+  - {id: documents, label: documents, type: storage, db_type: s3}
+  - {id: fhir_cache, label: FHIR cache, type: cache, db_type: redis}
+  - {id: events, label: clinical events, type: queue, db_type: kafka}
+  - {id: lake, label: research lake, type: storage, db_type: s3}
+  - {id: hie, label: Health info exchange, type: external}
+  - {id: drug_db, label: Drug database, type: external}
+  - {id: imaging, label: PACS imaging, type: external}
+edges:
+  - {from: clinician_app, to: fhir_gw, label: FHIR R4}
+  - {from: patient_portal, to: fhir_gw, label: FHIR R4}
+  - {from: lab_system, to: hl7_adapter, label: HL7 ORU}
+  - {from: pharmacy_system, to: hl7_adapter, label: HL7 RDE}
+  - {from: fhir_gw, to: consent, label: scope check}
+  - {from: fhir_gw, to: audit_proxy}
+  - {from: audit_proxy, to: patient_svc}
+  - {from: audit_proxy, to: encounter_svc}
+  - {from: audit_proxy, to: orders_svc}
+  - {from: audit_proxy, to: results_svc}
+  - {from: audit_proxy, to: prescriptions_svc}
+  - {from: patient_svc, to: ehr_db, edge_style: data}
+  - {from: encounter_svc, to: ehr_db, edge_style: data}
+  - {from: orders_svc, to: ehr_db, edge_style: data}
+  - {from: results_svc, to: ehr_db, edge_style: data}
+  - {from: results_svc, to: documents, label: reports, edge_style: data}
+  - {from: prescriptions_svc, to: drug_db, label: interactions}
+  - {from: prescriptions_svc, to: ehr_db, edge_style: data}
+  - {from: patient_svc, to: fhir_cache, edge_style: data}
+  - {from: orders_svc, to: events, label: OrderPlaced, edge_style: async}
+  - {from: results_svc, to: events, label: ResultReady, edge_style: async}
+  - {from: hl7_adapter, to: results_svc, label: results}
+  - {from: hl7_adapter, to: terminology, label: code mapping}
+  - {from: document_exchange, to: hie, label: IHE XDS}
+  - {from: document_exchange, to: documents, edge_style: data}
+  - {from: encounter_svc, to: imaging, label: study link}
+  - {from: events, to: deid, edge_style: async}
+  - {from: deid, to: lake, edge_style: data}
+  - {from: cohort, to: lake, label: query, edge_style: data}
+  - {from: ml_risk, to: lake, label: features, edge_style: data}
+  - {from: ml_risk, to: encounter_svc, label: risk score, constraint: false}

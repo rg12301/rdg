@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1797" height="1293" viewBox="0 0 1797 1293" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-uml-triangle-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-diamond-2" viewBox="-1 -1 16 9" refX="14" refY="3.5" markerWidth="16" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 3.5 L7 0 L14 3.5 L7 7 Z" fill="none" stroke="#8b95a5" stroke-width="1"/></marker><marker id="marker-diamond-1" viewBox="-1 -1 16 9" refX="14" refY="3.5" markerWidth="16" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 3.5 L7 0 L14 3.5 L7 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1"/></marker><marker id="marker-open-3" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#8b95a5" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
+  <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Hotel booking domain</text>
+  <path d="M 1029.0 445.0 L 1201.0 445.0 Q 1215.0 445.0 1215.0 431.0 L 1215.0 184.0 Q 1215.0 170.0 1229.0 170.0 L 1281.0 170.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 578.0 421.0 L 645.0 421.0 Q 659.0 421.0 659.0 407.0 L 659.0 105.0 Q 659.0 91.0 673.0 91.0 L 1374.3 91.0 Q 1381.0 91.0 1381.0 97.7 L 1381.0 115.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1029.0 464.0 L 1199.0 464.0 Q 1213.0 464.0 1213.0 478.0 L 1213.0 745.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 779.0 445.0 L 674.0 445.0 Q 660.0 445.0 660.0 459.0 L 660.0 621.0 Q 660.0 635.0 646.0 635.0 L 167.0 635.0 Q 153.0 635.0 153.0 649.0 L 153.0 748.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 934.0 539.0 L 934.0 739.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 779.0 464.0 L 742.0 464.0 Q 728.0 464.0 728.0 478.0 L 728.0 748.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 173.0 838.0 L 173.0 902.0 Q 173.0 916.0 187.0 916.0 L 229.0 916.0 Q 243.0 916.0 243.0 930.0 L 243.0 1115.0 Q 243.0 1129.0 257.0 1129.0 L 407.0 1129.0 Q 421.0 1129.0 421.0 1143.0 L 421.0 1193.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 153.0 838.0 L 153.0 993.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 308.0 464.0 L 57.0 464.0 Q 43.0 464.0 43.0 478.0 L 43.0 993.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 443.0 521.0 L 443.0 759.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 104.0 1083.0 L 104.0 1193.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 184.0 1038.0 L 212.8 1038.0 Q 224.0 1038.0 224.0 1049.2 L 224.0 1188.0 Q 224.0 1202.0 238.0 1202.0 L 362.0 1202.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 594.0 1038.0 L 565.2 1038.0 Q 554.0 1038.0 554.0 1026.8 L 554.0 932.7 Q 554.0 919.0 567.7 919.0 L 593.1 919.0 Q 603.0 919.0 603.0 909.1 L 603.0 804.2 Q 603.0 793.0 591.8 793.0 L 563.0 793.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 389.0 1011.0 L 389.0 827.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1069.0 215.0 L 1069.0 414.8 Q 1069.0 426.0 1057.8 426.0 L 1029.0 426.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 1089.0 215.0 L 1089.0 1215.0 Q 1089.0 1229.0 1075.0 1229.0 L 522.0 1229.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 443.0 197.0 L 443.0 407.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 804.0 213.0 L 804.0 389.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 1613.0 793.0 L 1584.9 793.0 Q 1574.0 793.0 1574.0 782.1 L 1574.0 475.2 Q 1574.0 464.0 1562.8 464.0 L 1534.0 464.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1453.0 757.0 L 1453.0 498.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1381.0 225.0 L 1381.0 430.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1281.0" y="115.0" width="200.0" height="110.0" rx="6.0"/>
+  <text x="1381.0" y="126.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«abstract»</text>
+  <text x="1381.0" y="147.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827" font-style="italic">AggregateRoot</text>
+  <line x1="1281.0" y1="157.0" x2="1481.0" y2="157.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1293.0" y="169.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># id</text>
+  <text x="1469.0" y="169.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID</text>
+  <text x="1293.0" y="187.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># version</text>
+  <text x="1469.0" y="187.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">int</text>
+  <line x1="1281.0" y1="196.0" x2="1481.0" y2="196.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1293.0" y="211.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ events(): List&lt;DomainEvent&gt;</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="779.0" y="389.0" width="250.0" height="150.0" rx="6.0"/>
+  <text x="904.0" y="407.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Booking</text>
+  <line x1="779.0" y1="417.0" x2="1029.0" y2="417.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="791.0" y="429.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- guest</text>
+  <text x="1017.0" y="429.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">GuestId</text>
+  <text x="791.0" y="447.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- stay</text>
+  <text x="1017.0" y="447.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">StayPeriod</text>
+  <text x="791.0" y="465.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- rooms</text>
+  <text x="1017.0" y="465.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">List&lt;RoomAllocation&gt;</text>
+  <text x="791.0" y="483.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- status</text>
+  <text x="1017.0" y="483.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">BookingStatus</text>
+  <line x1="779.0" y1="492.0" x2="1029.0" y2="492.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="791.0" y="507.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ confirm(policy: CancellationPolicy)</text>
+  <text x="791.0" y="525.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ cancel(at: Instant)</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1133.0" y="745.0" width="160.0" height="96.0" rx="6.0"/>
+  <text x="1213.0" y="763.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">StayPeriod</text>
+  <line x1="1133.0" y1="773.0" x2="1293.0" y2="773.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1145.0" y="785.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ check_in</text>
+  <text x="1281.0" y="785.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Date</text>
+  <text x="1145.0" y="803.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ check_out</text>
+  <text x="1281.0" y="803.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Date</text>
+  <line x1="1133.0" y1="812.0" x2="1293.0" y2="812.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1145.0" y="827.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ nights(): int</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="73.0" y="748.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="153.0" y="766.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">RoomAllocation</text>
+  <line x1="73.0" y1="776.0" x2="233.0" y2="776.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="85.0" y="788.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- room</text>
+  <text x="221.0" y="788.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">RoomId</text>
+  <text x="85.0" y="806.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- rate</text>
+  <text x="221.0" y="806.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Money</text>
+  <text x="85.0" y="824.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- guests</text>
+  <text x="221.0" y="824.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">int</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="893.0" y="739.0" width="160.0" height="108.0" rx="6.0"/>
+  <text x="973.0" y="757.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">BookingStatus</text>
+  <line x1="893.0" y1="767.0" x2="1053.0" y2="767.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="905.0" y="779.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">PENDING</text>
+  <text x="905.0" y="797.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">CONFIRMED</text>
+  <text x="905.0" y="815.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">CHECKED_IN</text>
+  <text x="905.0" y="833.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">CANCELLED</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="362.0" y="1193.0" width="160.0" height="72.0" rx="6.0"/>
+  <text x="442.0" y="1211.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Money</text>
+  <line x1="362.0" y1="1221.0" x2="522.0" y2="1221.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="374.0" y="1233.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ amount</text>
+  <text x="510.0" y="1233.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Decimal</text>
+  <text x="374.0" y="1251.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ currency</text>
+  <text x="510.0" y="1251.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Currency</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="308.0" y="407.0" width="270.0" height="114.0" rx="6.0"/>
+  <text x="443.0" y="425.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Hotel</text>
+  <line x1="308.0" y1="435.0" x2="578.0" y2="435.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="320.0" y="447.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- name</text>
+  <text x="566.0" y="447.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="320.0" y="465.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- rooms</text>
+  <text x="566.0" y="465.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">List&lt;Room&gt;</text>
+  <text x="320.0" y="483.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- policies</text>
+  <text x="566.0" y="483.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">List&lt;CancellationPolicy&gt;</text>
+  <line x1="308.0" y1="492.0" x2="578.0" y2="492.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="320.0" y="507.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ availability(p: StayPeriod): List&lt;Room&gt;</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="993.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="104.0" y="1011.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Room</text>
+  <line x1="24.0" y1="1021.0" x2="184.0" y2="1021.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="36.0" y="1033.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- number</text>
+  <text x="172.0" y="1033.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="36.0" y="1051.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- type</text>
+  <text x="172.0" y="1051.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">RoomType</text>
+  <text x="36.0" y="1069.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- base_rate</text>
+  <text x="172.0" y="1069.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Money</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="24.0" y="1193.0" width="160.0" height="72.0" rx="6.0"/>
+  <text x="104.0" y="1211.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">RoomType</text>
+  <line x1="24.0" y1="1221.0" x2="184.0" y2="1221.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="36.0" y="1233.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- name</text>
+  <text x="172.0" y="1233.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="36.0" y="1251.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- capacity</text>
+  <text x="172.0" y="1251.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">int</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="313.0" y="759.0" width="250.0" height="68.0" rx="6.0"/>
+  <text x="438.0" y="770.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«interface»</text>
+  <text x="438.0" y="791.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">CancellationPolicy</text>
+  <line x1="313.0" y1="801.0" x2="563.0" y2="801.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="325.0" y="813.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ fee(b: Booking, at: Instant): Money</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="594.0" y="1011.0" width="250.0" height="54.0" rx="6.0"/>
+  <text x="719.0" y="1029.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">FlexiblePolicy</text>
+  <line x1="594.0" y1="1039.0" x2="844.0" y2="1039.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="606.0" y="1051.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ fee(b: Booking, at: Instant): Money</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="264.0" y="1011.0" width="250.0" height="54.0" rx="6.0"/>
+  <text x="389.0" y="1029.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">NonRefundablePolicy</text>
+  <line x1="264.0" y1="1039.0" x2="514.0" y2="1039.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="276.0" y="1051.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ fee(b: Booking, at: Instant): Money</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="643.0" y="748.0" width="170.0" height="90.0" rx="6.0"/>
+  <text x="728.0" y="766.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Guest</text>
+  <line x1="643.0" y1="776.0" x2="813.0" y2="776.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="655.0" y="788.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- name</text>
+  <text x="801.0" y="788.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">String</text>
+  <text x="655.0" y="806.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- email</text>
+  <text x="801.0" y="806.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Email</text>
+  <text x="655.0" y="824.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- loyalty</text>
+  <text x="801.0" y="824.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">LoyaltyTier</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="989.0" y="125.0" width="160.0" height="90.0" rx="6.0"/>
+  <text x="1069.0" y="143.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Payment</text>
+  <line x1="989.0" y1="153.0" x2="1149.0" y2="153.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1001.0" y="165.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- booking</text>
+  <text x="1137.0" y="165.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">BookingId</text>
+  <text x="1001.0" y="183.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- amount</text>
+  <text x="1137.0" y="183.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Money</text>
+  <text x="1001.0" y="201.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- captured</text>
+  <text x="1137.0" y="201.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">bool</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="269.0" y="143.0" width="350.0" height="54.0" rx="6.0"/>
+  <text x="444.0" y="161.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">PricingService</text>
+  <line x1="269.0" y1="171.0" x2="619.0" y2="171.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="281.0" y="183.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ quote(h: Hotel, p: StayPeriod, rt: RoomType): Money</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="699.0" y="127.0" width="210.0" height="86.0" rx="6.0"/>
+  <text x="804.0" y="138.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«interface»</text>
+  <text x="804.0" y="159.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">BookingRepository</text>
+  <line x1="699.0" y1="169.0" x2="909.0" y2="169.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="711.0" y="181.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ find(id: BookingId): Booking</text>
+  <text x="711.0" y="199.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ save(b: Booking)</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1364.0" y="430.0" width="170.0" height="68.0" rx="6.0"/>
+  <text x="1449.0" y="441.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«abstract»</text>
+  <text x="1449.0" y="462.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827" font-style="italic">DomainEvent</text>
+  <line x1="1364.0" y1="472.0" x2="1534.0" y2="472.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1376.0" y="484.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827"># occurred_at</text>
+  <text x="1522.0" y="484.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Instant</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1613.0" y="766.0" width="160.0" height="54.0" rx="6.0"/>
+  <text x="1693.0" y="784.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">BookingConfirmed</text>
+  <line x1="1613.0" y1="794.0" x2="1773.0" y2="794.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1625.0" y="806.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- booking</text>
+  <text x="1761.0" y="806.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">BookingId</text>
+  <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="1373.0" y="757.0" width="160.0" height="72.0" rx="6.0"/>
+  <text x="1453.0" y="775.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">BookingCancelled</text>
+  <line x1="1373.0" y1="785.0" x2="1533.0" y2="785.0" stroke="#94a3b8" stroke-opacity="0.4"/>
+  <text x="1385.0" y="797.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- booking</text>
+  <text x="1521.0" y="797.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">BookingId</text>
+  <text x="1385.0" y="815.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">- fee</text>
+  <text x="1521.0" y="815.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">Money</text>
+  <rect x="391.5" y="615.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="406.5" y="626.8" text-anchor="middle" font-size="10" fill="#8b95a5">1..*</text>
+  <rect x="89.0" y="907.8" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="119.0" y="919.0" text-anchor="middle" font-size="10" fill="#8b95a5">refers to</text>
+  <rect x="47.0" y="720.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="62.0" y="732.0" text-anchor="middle" font-size="10" fill="#8b95a5">1..*</text>
+  <rect x="447.0" y="597.9" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="462.0" y="609.2" text-anchor="middle" font-size="10" fill="#8b95a5">0..*</text>
+  <rect x="1385.0" y="319.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1400.0" y="331.0" text-anchor="middle" font-size="10" fill="#8b95a5">0..*</text>
+  <line x1="24.0" y1="67.0" x2="1773.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
+</svg>

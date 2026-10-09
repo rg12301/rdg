@@ -121,9 +121,11 @@ NESTING       A group inside a group: list its id in the outer group's `nodes` (
 BRANCHES      With `numbered: true`, `step: 3a` / `3b` (or `3.1`, `3.2`) marks parallel
               or alternative paths; unnumbered edges continue after the last step.
 
-OUTPUT        The picture is laid out to read squarely (tiers wrap, long chains fold
-              into columns); groups are tight around their content; arrows keep a
-              lane apart, meet boxes at their middle and never run along a border.
+OUTPUT        A header band holds the title (bold), description and legend above a
+              rule; the drawing starts below it. The picture is laid out to read
+              squarely (tiers wrap, long top-to-bottom chains fold into columns);
+              groups are tight around their content; arrows keep a lane apart, meet
+              boxes at their middle, run with the flow and never along a border.
 EXIT CODES    0 written (warnings may be printed)   1 invalid input or failure
               With --strict, also 1 when layout anomalies remain.
 
@@ -318,7 +320,10 @@ order under `sequence:`. Setting `sequence:` makes the diagram a sequence diagra
 Step kinds (exactly one per step)
   message    from, to, label (text), style (flow | reply | return | async), color,
              activate, deactivate, create, destroy
-  note       note: text, plus over: id | [id, id] | left_of: id | right_of: id
+  note       note: text, plus over: id | [id, id] | left_of: id | right_of: id;
+             kind: note (default) | info | warning | error | success — each kind has
+             its own colour and a leading mark (ℹ ⚠ ✖ ✔); use them for invariants,
+             caveats, failure outcomes and confirmed results
   fragment   alt | opt | loop | par | critical | break | region: \"guard\",
              steps: [...], else: {label, steps} or a list (alt), and: … (par)
   divider    divider: \"label\"   (a full-width separator)
@@ -329,7 +334,7 @@ Messages
   create: true — the receiver's box appears at this message instead of the top row.
   destroy: true — the receiver's lifeline ends here with an ✕.
 
-Activations (the bars on lifelines)
+Activations (the bars on lifelines, filled in the participant's colour)
   Automatic: a call opens a bar on the receiver when a reply to it comes later, and
   that reply closes it; bars nest. Arrows meet the bar's edge.
   activate: true / false on a message forces or suppresses the receiver's bar (on a

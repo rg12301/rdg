@@ -862,7 +862,8 @@ pub fn compute_reviewed_layout(
         };
         let (canvas_w, canvas_h) = estimate_canvas_bounds(&layout);
         let anomalies = detect_anomalies(compiled, &layout, &edge_plans, canvas_w, canvas_h, &config.tokens);
-        let count = anomalies.len();
+        // What a wider retry can fix: a lopsided canvas only gets more lopsided.
+        let count = anomalies.iter().filter(|a| !matches!(a.kind, AnomalyKind::ExtremeAspectRatio)).count();
         if std::env::var("RDG_DEBUG_ANOMALIES").is_ok() {
             for a in &anomalies {
                 eprintln!("  pass {attempt}: [{:?}] {}", a.kind, a.description);

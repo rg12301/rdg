@@ -1,0 +1,58 @@
+# IoT fleet platform: devices and gateways, ingestion, stream and rules, device
+# management, digital twins, storage and operator apps. Left-to-right flow.
+title: "IoT fleet platform"
+direction: lr
+groups:
+  - {id: field, label: "Field", nodes: [sensors, trucks, gateway]}
+  - {id: ingest, label: "Ingestion", nodes: [mqtt, lb, auth_dev]}
+  - {id: processing, label: "Stream processing", nodes: [decoder, rules, anomaly, aggregator]}
+  - {id: mgmt, label: "Device management", nodes: [registry, twin, ota, commands]}
+  - {id: storage, label: "Storage", nodes: [tsdb, blob, meta_db, hot_cache]}
+  - {id: apps, label: "Operator apps", nodes: [fleet_ui, alerts_svc, reports]}
+nodes:
+  - {id: sensors, label: Telematics units, type: client}
+  - {id: trucks, label: Vehicle ECUs, type: client}
+  - {id: gateway, label: Edge gateway, type: proxy, language: rust}
+  - {id: mqtt, label: MQTT broker, type: queue, db_type: kafka}
+  - {id: lb, label: Load balancer, type: proxy}
+  - {id: auth_dev, label: Device auth, category: security}
+  - {id: decoder, label: payload-decoder, type: service, language: rust}
+  - {id: rules, label: rules-engine, type: service, language: java}
+  - {id: anomaly, label: anomaly-detector, type: service, language: python}
+  - {id: aggregator, label: aggregator, type: service, language: scala}
+  - {id: registry, label: device-registry, type: service, language: go}
+  - {id: twin, label: digital-twin, type: service, language: go}
+  - {id: ota, label: ota-updates, type: service, language: go}
+  - {id: commands, label: command-dispatch, type: service, language: go}
+  - {id: tsdb, label: telemetry, type: database, db_type: postgres}
+  - {id: blob, label: raw archive, type: storage, db_type: s3}
+  - {id: meta_db, label: device metadata, type: database, db_type: mongodb}
+  - {id: hot_cache, label: latest state, type: cache, db_type: redis}
+  - {id: fleet_ui, label: Fleet console, type: client, language: typescript}
+  - {id: alerts_svc, label: alerting, type: service, language: go}
+  - {id: reports, label: reporting, type: service, language: python}
+edges:
+  - {from: sensors, to: gateway, label: CAN / BLE}
+  - {from: trucks, to: gateway, label: CAN}
+  - {from: gateway, to: lb, label: MQTT over TLS}
+  - {from: lb, to: auth_dev, label: cert check}
+  - {from: lb, to: mqtt}
+  - {from: mqtt, to: decoder, edge_style: async}
+  - {from: decoder, to: rules, edge_style: async}
+  - {from: decoder, to: blob, label: raw, edge_style: data}
+  - {from: rules, to: anomaly, label: suspicious}
+  - {from: rules, to: aggregator}
+  - {from: rules, to: commands, label: actuate}
+  - {from: anomaly, to: alerts_svc, label: alert, edge_style: async}
+  - {from: aggregator, to: tsdb, edge_style: data}
+  - {from: aggregator, to: hot_cache, label: latest, edge_style: data}
+  - {from: twin, to: hot_cache, label: read, edge_style: data}
+  - {from: twin, to: meta_db, edge_style: data}
+  - {from: registry, to: meta_db, edge_style: data}
+  - {from: ota, to: mqtt, label: firmware, edge_style: async}
+  - {from: commands, to: mqtt, label: command, edge_style: async}
+  - {from: fleet_ui, to: twin, label: REST}
+  - {from: fleet_ui, to: registry, label: REST}
+  - {from: fleet_ui, to: ota, label: REST}
+  - {from: reports, to: tsdb, label: SQL, edge_style: data}
+  - {from: alerts_svc, to: fleet_ui, label: push, edge_style: async}

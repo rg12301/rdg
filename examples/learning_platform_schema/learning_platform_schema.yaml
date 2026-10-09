@@ -1,0 +1,39 @@
+# Online learning platform schema: courses, enrolments, lessons, quizzes,
+# submissions, certificates and payments.
+title: "Learning platform schema"
+diagram_type: erd
+nodes:
+  - {id: users, label: users, type: table, fields: ["id UUID PK", "email TEXT", "role TEXT", "created_at TIMESTAMP"]}
+  - {id: instructors, label: instructors, type: table, fields: ["user_id UUID PK FK", "bio TEXT", "payout_account TEXT"]}
+  - {id: courses, label: courses, type: table, fields: ["id UUID PK", "instructor_id UUID FK", "title TEXT", "price DECIMAL", "published BOOL"]}
+  - {id: categories, label: categories, type: table, fields: ["id UUID PK", "name TEXT", "parent_id UUID FK"]}
+  - {id: course_categories, label: course_categories, type: table, fields: ["course_id UUID FK", "category_id UUID FK"]}
+  - {id: modules, label: modules, type: table, fields: ["id UUID PK", "course_id UUID FK", "title TEXT", "position INT"]}
+  - {id: lessons, label: lessons, type: table, fields: ["id UUID PK", "module_id UUID FK", "title TEXT", "video_url TEXT", "duration_s INT"]}
+  - {id: quizzes, label: quizzes, type: table, fields: ["id UUID PK", "lesson_id UUID FK", "pass_mark INT"]}
+  - {id: questions, label: questions, type: table, fields: ["id UUID PK", "quiz_id UUID FK", "prompt TEXT", "answer TEXT"]}
+  - {id: enrolments, label: enrolments, type: table, fields: ["id UUID PK", "user_id UUID FK", "course_id UUID FK", "enrolled_at TIMESTAMP", "progress INT"]}
+  - {id: lesson_progress, label: lesson_progress, type: table, fields: ["enrolment_id UUID FK", "lesson_id UUID FK", "completed_at TIMESTAMP"]}
+  - {id: submissions, label: quiz_submissions, type: table, fields: ["id UUID PK", "enrolment_id UUID FK", "quiz_id UUID FK", "score INT", "submitted_at TIMESTAMP"]}
+  - {id: certificates, label: certificates, type: table, fields: ["id UUID PK", "enrolment_id UUID FK", "issued_at TIMESTAMP", "serial TEXT"]}
+  - {id: payments, label: payments, type: table, fields: ["id UUID PK", "enrolment_id UUID FK", "amount DECIMAL", "provider_ref TEXT", "status TEXT"]}
+  - {id: reviews, label: reviews, type: table, fields: ["id UUID PK", "enrolment_id UUID FK", "rating INT", "body TEXT"]}
+edges:
+  - {from: users, to: instructors, edge_style: one_to_one}
+  - {from: instructors, to: courses, edge_style: one_to_many, label: "teaches"}
+  - {from: courses, to: course_categories, edge_style: one_to_many}
+  - {from: categories, to: course_categories, edge_style: one_to_many}
+  - {from: categories, to: categories, edge_style: one_to_many, label: "parent"}
+  - {from: courses, to: modules, edge_style: one_to_many}
+  - {from: modules, to: lessons, edge_style: one_to_many}
+  - {from: lessons, to: quizzes, edge_style: zero_to_many}
+  - {from: quizzes, to: questions, edge_style: one_to_many}
+  - {from: users, to: enrolments, edge_style: one_to_many}
+  - {from: courses, to: enrolments, edge_style: one_to_many}
+  - {from: enrolments, to: lesson_progress, edge_style: one_to_many}
+  - {from: lessons, to: lesson_progress, edge_style: one_to_many}
+  - {from: enrolments, to: submissions, edge_style: one_to_many}
+  - {from: quizzes, to: submissions, edge_style: one_to_many}
+  - {from: enrolments, to: certificates, edge_style: zero_to_many}
+  - {from: enrolments, to: payments, edge_style: one_to_many}
+  - {from: enrolments, to: reviews, edge_style: zero_to_many}

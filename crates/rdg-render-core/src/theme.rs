@@ -140,6 +140,35 @@ pub struct SeqNoteStyle {
     pub text: String,
     /// Note text wraps at this many characters.
     pub wrap_chars: usize,
+    /// Colours per note kind (`info`, `warning`, `error`, `success`); a kind not listed
+    /// here takes a built-in palette, and `note` takes the colours above.
+    #[serde(default)]
+    pub kinds: std::collections::HashMap<String, NoteKindStyle>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NoteKindStyle {
+    pub fill: String,
+    pub stroke: String,
+    pub text: String,
+}
+
+impl SeqNoteStyle {
+    /// `(fill, stroke, text)` for a note of `kind`.
+    pub fn colours(&self, kind: &str) -> (String, String, String) {
+        if let Some(k) = self.kinds.get(kind) {
+            return (k.fill.clone(), k.stroke.clone(), k.text.clone());
+        }
+        let s = |f: &str, st: &str, t: &str| (f.to_string(), st.to_string(), t.to_string());
+        match kind {
+            "info" => s("#dbeafe", "#3b82f6", "#1e3a8a"),
+            "warning" => s("#fef3c7", "#f59e0b", "#78350f"),
+            "error" => s("#fee2e2", "#ef4444", "#7f1d1d"),
+            "success" => s("#dcfce7", "#22c55e", "#14532d"),
+            _ => (self.fill.clone(), self.stroke.clone(), self.text.clone()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,6 +226,13 @@ pub struct TextColors {
 pub struct Title {
     pub color: String,
     pub description_color: String,
+    /// The rule under the header band (title, description, legend).
+    #[serde(default = "default_rule_color")]
+    pub rule_color: String,
+}
+
+fn default_rule_color() -> String {
+    "#d0d5de".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

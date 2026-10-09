@@ -34,11 +34,18 @@ pub fn render_sequence_svg(
     // The legend (same rules as every other diagram type), under the lifelines.
     let legend = legend_enabled(theme, compiled).then(|| legend_items(theme, compiled)).filter(|v| !v.is_empty());
     let legend_w = (seq.max_x - seq.min_x).max(tokens.px(40.0));
-    if let Some(items) = &legend {
+    // The legend shares the header band with the title when one row of it fits
+    // beside the title; otherwise it goes under the lifelines.
+    let legend_row = legend.as_ref().map(|items| legend_size(items, theme, f64::INFINITY));
+    let legend_in_header = legend_row.is_some_and(|(lw, _)| title_w.max(desc_w) + tokens.px(4.0) + lw + tokens.px(3.0) <= canvas_w);
+    if let (Some(items), false) = (&legend, legend_in_header) {
         let (lw, lh) = legend_size(items, theme, legend_w);
         canvas_h += lh + tokens.px(1.0);
         canvas_w = canvas_w.max(seq.min_x + lw + tokens.px(3.0));
     }
+    // The rule under the header: just above the first thing drawn.
+    let content_top = seq.groups.iter().map(|g| g.y).chain(layout.positions.values().map(|n| n.y)).fold(f64::INFINITY, f64::min);
+    let rule_y = (content_top - tokens.px(1.5)).round();
 
     // Message looks (a reply keeps its own style; the theme dashes it).
     let mut markers = Markers::default();
@@ -183,8 +190,11 @@ pub fn render_sequence_svg(
 
     // Activation bars.
     for a in &seq.activations {
-        let stroke = if st.activation.category_stroke { node_look(theme, &compiled.graph[a.node]).stroke } else { st.activation.stroke.clone() };
-        el(&mut w, "rect", &[("x", f1(a.x)), ("y", f1(a.y0)), ("width", f1(a.width)), ("height", f1(a.y1 - a.y0)), ("fill", st.activation.fill.clone()), ("stroke", stroke), ("stroke-width", "1.25".into())])?;
+        let cat = node_look(theme, &compiled.graph[a.node]).stroke;
+        let stroke = if st.activation.category_stroke { cat.clone() } else { st.activation.stroke.clone() };
+        // `@category`: a solid tint of the participant's colour, not a hollow bar.
+        let (fill, opacity) = if st.activation.fill == "@category" { (cat, "0.28") } else { (st.activation.fill.clone(), "1") };
+        el(&mut w, "rect", &[("x", f1(a.x)), ("y", f1(a.y0)), ("width", f1(a.width)), ("height", f1(a.y1 - a.y0)), ("fill", fill), ("fill-opacity", opacity.into()), ("stroke", stroke), ("stroke-width", "1.25".into())])?;
     }
 
     // Messages.
@@ -226,22 +236,22 @@ pub fn render_sequence_svg(
     let nfs = f.node_detail_size;
     let nlh = tokens.line_height(nfs);
     for n in &seq.notes {
-        let ns = &st.note;
+        let (fill, stroke, text) = st.note.colours(&n.kind);
         let fold = 8.0_f64.min(n.h / 3.0);
         el(
             &mut w,
             "path",
             &[
                 ("d", format!("M {x:.1} {y:.1} H {r1:.1} L {r:.1} {y1:.1} V {b:.1} H {x:.1} Z", x = n.x, y = n.y, r1 = n.x + n.w - fold, r = n.x + n.w, y1 = n.y + fold, b = n.y + n.h)),
-                ("fill", ns.fill.clone()),
-                ("stroke", ns.stroke.clone()),
+                ("fill", fill),
+                ("stroke", stroke.clone()),
                 ("stroke-width", "1".into()),
             ],
         )?;
-        el(&mut w, "path", &[("d", format!("M {:.1} {:.1} V {:.1} H {:.1}", n.x + n.w - fold, n.y, n.y + fold, n.x + n.w)), ("fill", "none".into()), ("stroke", ns.stroke.clone()), ("stroke-width", "1".into())])?;
+        el(&mut w, "path", &[("d", format!("M {:.1} {:.1} V {:.1} H {:.1}", n.x + n.w - fold, n.y, n.y + fold, n.x + n.w)), ("fill", "none".into()), ("stroke", stroke), ("stroke-width", "1".into())])?;
         let top = n.y + (n.h - n.lines.len() as f64 * nlh) / 2.0;
         for (i, line) in n.lines.iter().enumerate() {
-            text_el(&mut w, &[("x", f1(n.x + tokens.px(1.0))), ("y", f1(top + nlh * (i as f64 + 0.75))), ("font-size", format!("{nfs}")), ("fill", ns.text.clone())], line)?;
+            text_el(&mut w, &[("x", f1(n.x + tokens.px(1.0))), ("y", f1(top + nlh * (i as f64 + 0.75))), ("font-size", format!("{nfs}")), ("fill", text.clone())], line)?;
         }
     }
 
@@ -259,8 +269,16 @@ pub fn render_sequence_svg(
     }
 
     if let Some(items) = &legend {
-        let lw = legend_size(items, theme, legend_w).0;
-        draw_legend(&mut w, theme, tokens, items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), legend_w, lw, rdg_render_core::frame::Align::Left)?;
+        if legend_in_header {
+            let lw = legend_row.map_or(0.0, |r| r.0);
+            draw_legend(&mut w, theme, tokens, items, canvas_w - tokens.px(3.0) - lw, 12.0, f64::INFINITY, lw, rdg_render_core::frame::Align::Right)?;
+        } else {
+            let lw = legend_size(items, theme, legend_w).0;
+            draw_legend(&mut w, theme, tokens, items, seq.min_x, seq.lifeline_bottom_y + tokens.px(2.0), legend_w, lw, rdg_render_core::frame::Align::Left)?;
+        }
+    }
+    if content_top.is_finite() && rule_y > 20.0 {
+        el(&mut w, "line", &[("x1", "24".into()), ("y1", f1(rule_y)), ("x2", f1(canvas_w - 24.0)), ("y2", f1(rule_y)), ("stroke", theme.title.rule_color.clone()), ("stroke-width", "1".into())])?;
     }
 
     close(&mut w, "svg")?;
