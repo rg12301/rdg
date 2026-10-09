@@ -207,8 +207,14 @@ fn find_overlapping_edge_pairs(
             let (edge_a, path_a) = &paths[i];
             let (edge_b, path_b) = &paths[j];
             let mut worst = 0.0_f64;
+            let same = |p: (f64, f64), q: (f64, f64)| (p.0 - q.0).abs() < tol && (p.1 - q.1).abs() < tol;
             for wa in path_a.windows(2) {
                 for wb in path_b.windows(2) {
+                    // Two arrows forking from, or joining at, one port share their
+                    // first or last leg on purpose.
+                    if same(wa[0], wb[0]) || same(wa[1], wb[1]) {
+                        continue;
+                    }
                     worst = worst.max(collinear_overlap_len(wa[0], wa[1], wb[0], wb[1], tol));
                 }
             }
@@ -589,6 +595,13 @@ pub struct SpacingMetrics {
     pub bends: usize,
     /// Total routed length, px.
     pub total_len: f64,
+    /// Node faces whose nearest port sits more than a port pitch from the face's
+    /// midpoint (the mark's midpoint for a captioned node) — an arrow that meets the
+    /// box near a corner instead of its middle.
+    pub off_centre_faces: usize,
+    /// Times an edge crosses the border of a group neither of its ends is in — an
+    /// arrow cutting through a container it has no business in.
+    pub foreign_crossings: usize,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -625,10 +638,10 @@ pub fn spacing_metrics(
     // Micro-jogs and crossings, over every edge's full path in a fixed (EdgeIndex) order.
     let mut edge_ids: Vec<&EdgeIndex> = edge_plans.keys().collect();
     edge_ids.sort_by_key(|e| e.index());
-    let paths: Vec<Vec<(f64, f64)>> = edge_ids
+    let (path_edges, paths): (Vec<EdgeIndex>, Vec<Vec<(f64, f64)>>) = edge_ids
         .iter()
-        .filter_map(|&&e| edge_full_path(compiled, layout, e, &edge_plans[&e]))
-        .collect();
+        .filter_map(|&&e| edge_full_path(compiled, layout, e, &edge_plans[&e]).map(|p| (e, p)))
+        .unzip();
     let min_jog = tokens.polish_min_jog();
     for (i, pa) in paths.iter().enumerate() {
         m.bends += pa.len().saturating_sub(2);
@@ -644,9 +657,42 @@ pub fn spacing_metrics(
                 .count();
         }
     }
-    for (gx, gy, gw, gh) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
+    // Every group a node is in, outermost included.
+    let mut node_groups: HashMap<NodeIndex, Vec<usize>> = HashMap::new();
+    for (g, members) in compiled.group_nodes.iter().enumerate() {
+        let chain: Vec<usize> = std::iter::successors(Some(g), |&p| compiled.group_tree.parent[p]).collect();
+        for &n in members {
+            node_groups.entry(n).or_default().extend(chain.iter().copied());
+        }
+    }
+    for (gi, (gx, gy, gw, gh)) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().enumerate().filter_map(|(i, r)| r.map(|r| (i, r))) {
+        for (pe, p) in path_edges.iter().zip(&paths) {
+            let Some((es, ed)) = compiled.graph.edge_endpoints(*pe) else { continue };
+            let own = |n: NodeIndex| node_groups.get(&n).is_some_and(|v| v.contains(&gi));
+            if own(es) || own(ed) {
+                continue;
+            }
+            let inside = |q: (f64, f64)| q.0 > gx + 0.5 && q.0 < gx + gw - 0.5 && q.1 > gy + 0.5 && q.1 < gy + gh - 0.5;
+            for w in p.windows(2) {
+                // A segment with an end inside the box crosses its border once; one
+                // passing right through, twice.
+                let (a, b) = (inside(w[0]), inside(w[1]));
+                let through = !a && !b && {
+                    let horiz = (w[0].1 - w[1].1).abs() < 0.5;
+                    if horiz {
+                        w[0].1 > gy && w[0].1 < gy + gh && w[0].0.min(w[1].0) < gx && w[0].0.max(w[1].0) > gx + gw
+                    } else {
+                        w[0].0 > gx && w[0].0 < gx + gw && w[0].1.min(w[1].1) < gy && w[0].1.max(w[1].1) > gy + gh
+                    }
+                };
+                m.foreign_crossings += usize::from(a != b) + 2 * usize::from(through);
+            }
+        }
+        if std::env::var_os("RDG_DEBUG_METRICS").is_some() {
+            eprintln!("group {gi} {:?} rect=({gx:.0},{gy:.0})-({:.0},{:.0})", compiled.groups.get(gi).map(|g| g.id.as_str()).unwrap_or("?"), gx + gw, gy + gh);
+        }
         let lines = [(true, gy, gx, gx + gw), (true, gy + gh, gx, gx + gw), (false, gx, gy, gy + gh), (false, gx + gw, gy, gy + gh)];
-        for p in &paths {
+        for (pe, p) in path_edges.iter().zip(&paths) {
             for w in p.windows(2) {
                 let (a, b) = (w[0], w[1]);
                 let horiz = (a.1 - b.1).abs() < 0.5;
@@ -657,6 +703,10 @@ pub fn spacing_metrics(
                     let (c, s0, s1) = if horiz { (a.1, a.0.min(b.0), a.0.max(b.0)) } else { (a.0, a.1.min(b.1), a.1.max(b.1)) };
                     if (c - at).abs() < tokens.channel_pitch() * 1.25 && s1.min(hi) - s0.max(lo) > 24.0 {
                         m.border_hugs += 1;
+                        if std::env::var_os("RDG_DEBUG_METRICS").is_some() {
+                            let (es, ed) = compiled.graph.edge_endpoints(*pe).map_or(("?", "?"), |(x, y)| (compiled.graph[x].id.as_str(), compiled.graph[y].id.as_str()));
+                            eprintln!("hug: {es} -> {ed} segment ({:.0},{:.0})-({:.0},{:.0}) along border at {at:.0} ({}) by {:.0}px", a.0, a.1, b.0, b.1, if horiz { "y" } else { "x" }, (c - at).abs());
+                        }
                     }
                 }
             }
@@ -701,12 +751,26 @@ pub fn spacing_metrics(
             crate::routing::Side::Top | crate::routing::Side::Bottom => nl.width,
             crate::routing::Side::Left | crate::routing::Side::Right => nl.height,
         };
-        for w in fracs.windows(2) {
-            let pitch = (w[1] - w[0]) * face_len;
-            if m.min_port_pitch.is_none_or(|c| pitch < c) {
-                m.min_pitch_face = Some(format!("{}.{:?}", compiled.graph[node].id, side));
+        let outline = crate::style::outline_of(&compiled.graph[node], tokens);
+        let (lo, hi) = crate::ortho::port_range(&outline, side, nl);
+        // A face that is one point (a diamond's corner) is shared on purpose: arrows
+        // forking from or joining at it are not ports crowding each other.
+        if hi - lo > 1e-6 {
+            for w in fracs.windows(2) {
+                let pitch = (w[1] - w[0]) * face_len;
+                if m.min_port_pitch.is_none_or(|c| pitch < c) {
+                    m.min_pitch_face = Some(format!("{}.{:?}", compiled.graph[node].id, side));
+                }
+                m.min_port_pitch = min_opt(m.min_port_pitch, pitch);
             }
-            m.min_port_pitch = min_opt(m.min_port_pitch, pitch);
+        }
+        let mid = (lo + hi) / 2.0;
+        let nearest = fracs.iter().map(|f| (f - mid).abs() * face_len).fold(f64::INFINITY, f64::min);
+        if nearest > tokens.min_port_pitch() + 0.5 {
+            m.off_centre_faces += 1;
+            if std::env::var_os("RDG_DEBUG_METRICS").is_some() {
+                eprintln!("offc: {}.{side:?} outline={outline:?} range=({lo:.2},{hi:.2}) ports={fracs:?} nearest={nearest:.0}px face={face_len:.0}", compiled.graph[node].id);
+            }
         }
     }
     m
@@ -815,7 +879,9 @@ pub fn compute_reviewed_layout(
                 }
                 let mut nudged_positions = layout.positions.clone();
                 refine_positions(&mut nudged_positions, compiled, &config.tokens, &extra_clearance);
-                let nudged_layout = LayoutResult { positions: nudged_positions, ..Default::default() };
+                // The nudge moves nodes only: group sizing, title shifts and the flow
+                // direction carry over.
+                let nudged_layout = LayoutResult { positions: nudged_positions, ..layout.clone() };
                 let nudged_edge_plans =
                     plan_all_edge_routes(compiled, &nudged_layout, decision.routing.algorithm, &config.tokens);
                 let (nw, nh) = estimate_canvas_bounds(&nudged_layout);

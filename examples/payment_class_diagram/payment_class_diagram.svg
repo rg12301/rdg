@@ -4,12 +4,12 @@
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="1138.8" y="461.0" text-anchor="end" font-size="18" font-weight="bold" fill="#111827">Payment Processing Domain Model</text>
-  <path d="M 929.0 257.0 L 896.6 257.0 Q 884.0 257.0 884.0 244.4 L 884.0 115.0 Q 884.0 101.0 870.0 101.0 L 829.0 101.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 732.0 251.0 L 732.0 114.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 264.0 272.0 L 297.1 272.0 Q 310.0 272.0 310.0 259.1 L 310.0 114.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 1034.0 242.0 L 1034.0 85.0 Q 1034.0 71.0 1020.0 71.0 L 829.0 71.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 714.0 251.0 L 714.0 114.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 144.0 263.0 L 144.0 85.0 Q 144.0 71.0 158.0 71.0 L 274.0 71.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 449.0 335.0 L 449.0 394.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
-  <path d="M 431.0 114.0 L 431.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
-  <path d="M 599.0 101.0 L 581.0 101.0 Q 574.0 101.0 574.0 108.0 L 574.0 250.0 Q 574.0 257.0 567.0 257.0 L 549.0 257.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
+  <path d="M 449.0 114.0 L 449.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
+  <path d="M 696.0 114.0 L 696.0 166.0 Q 696.0 180.0 682.0 180.0 L 481.0 180.0 Q 467.0 180.0 467.0 194.0 L 467.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="599.0" y="28.0" width="230.0" height="86.0" rx="6.0"/>
   <text x="714.0" y="39.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«interface»</text>
   <text x="714.0" y="60.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">PaymentMethod</text>
@@ -58,16 +58,16 @@
   <text x="144.0" y="281.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">StripeProcessor</text>
   <line x1="24.0" y1="291.0" x2="264.0" y2="291.0" stroke="#94a3b8" stroke-opacity="0.4"/>
   <text x="36.0" y="303.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ process(txn: Transaction): Result</text>
-  <rect x="839.8" y="81.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="872.8" y="92.8" text-anchor="middle" font-size="10" fill="#8b95a5">implements</text>
-  <rect x="736.0" y="174.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="769.0" y="186.0" text-anchor="middle" font-size="10" fill="#8b95a5">implements</text>
-  <rect x="274.7" y="276.0" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="298.7" y="287.2" text-anchor="middle" font-size="10" fill="#8b95a5">extends</text>
+  <rect x="898.5" y="51.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="931.5" y="62.8" text-anchor="middle" font-size="10" fill="#8b95a5">implements</text>
+  <rect x="718.0" y="174.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="751.0" y="186.0" text-anchor="middle" font-size="10" fill="#8b95a5">implements</text>
+  <rect x="185.0" y="51.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="209.0" y="62.8" text-anchor="middle" font-size="10" fill="#8b95a5">extends</text>
   <rect x="453.0" y="356.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="486.0" y="368.0" text-anchor="middle" font-size="10" fill="#8b95a5">has amount</text>
-  <rect x="435.0" y="171.8" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="465.0" y="183.0" text-anchor="middle" font-size="10" fill="#8b95a5">processes</text>
-  <rect x="578.0" y="171.2" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="605.0" y="182.5" text-anchor="middle" font-size="10" fill="#8b95a5">produces</text>
+  <rect x="385.0" y="171.8" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="415.0" y="183.0" text-anchor="middle" font-size="10" fill="#8b95a5">processes</text>
+  <rect x="554.5" y="160.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="581.5" y="171.8" text-anchor="middle" font-size="10" fill="#8b95a5">produces</text>
 </svg>

@@ -450,14 +450,27 @@ Hints (when the automatic tiers are not what you meant)
   follow the direction with more edges; a group of unwired nodes is laid out as a grid.
 
 Routing
-  Every arrow is an orthogonal search over node outlines and channel midlines that
-  weighs length, bends, crossings (dearest), shared lanes, running along a node's
-  face or a container border, and cutting through a container neither end is in;
-  a final pass replaces each route by the simplest clear line between its ports
-  (straight, L, Z, U or three bends) when that adds no crossing. For tuning runs the
-  weights can be overridden with RDG_TUNE_W_BEND, W_CROSS, W_SHARE, W_CROWD,
-  W_ALONG_BORDER, W_ALONG_NODE, BORDER_LANES, NODE_ZONE (RDG_DEBUG_SPACING=1 prints
-  the bends, length, crossings and hugs to judge them by).
+  Two routers plan every layered diagram and the plan that reads better is kept
+  (fewest crossings first, then bends, border hugs, steps, ports off a face's middle,
+  arrows cutting through a container neither end is in, and length):
+  - the channel router draws arrows the way a layered engine does: out of the source
+    across the flow (or by a side face when the line lies beyond the box, a diamond's
+    corner for a branch), along a track in the channel between two rows, down a lane
+    in the gutter between two nodes, into the target's face at its middle — 0, 2 or 4
+    bends; tracks are ordered so legs cross as little as possible and lanes packed a
+    pitch apart in the order their arrows carry on; a back edge loops round the side
+    or runs straight up (an inheritance arrow), whichever bends less;
+  - the search router is an orthogonal search over node outlines and channel
+    midlines weighing length, bends, crossings, shared lanes, running along a face or
+    a border and cutting through a foreign container, followed by a simplification
+    pass (straight, L, Z, U or three bends when that adds no crossing). Edges that
+    name a source_port / target_port always use it.
+  RDG_ROUTER=channels or RDG_ROUTER=ortho forces one; RDG_DEBUG_SPACING=1 prints the
+  bends, length, crossings, hugs, off-centre faces and foreign crossings to judge a
+  plan by; RDG_DEBUG_CHANNELS=1 prints the channel router's bands, lanes and routes and
+  why it left a diagram to the search; RDG_TUNE_W_BEND, W_CROSS, W_SHARE, W_CROWD,
+  W_ALONG_BORDER, W_ALONG_NODE, W_OFF_CENTRE, BORDER_LANES, NODE_ZONE override the
+  search weights for tuning runs.
 
 Self-review
   After layout rdg checks for overlapping nodes, arrows through nodes, arrows drawn on

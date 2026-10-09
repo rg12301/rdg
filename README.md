@@ -38,11 +38,30 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
   - *Custom icons*: an `icons:` map of name → SVG file or inline `<svg>` (or
     `icon: ./logo.svg` on a node) adds any mark the library lacks; it is drawn as a
     full-colour logo, as a tile badge, or as the node itself for a database.
+  - *A second, structural router*: a channel router draws arrows the way a layered
+    engine does — across the flow out of the source, along a track in the channel
+    between two rows, down a lane in the gutter between two nodes, into the target's
+    face at its middle (0, 2 or 4 bends), tracks ordered so legs cross least, lanes a
+    pitch apart in the order their arrows carry on, a branch leaving a decision by its
+    corner, a back edge looping round the side or running straight up (inheritance),
+    never inside a container neither end is in. Every layered diagram is planned by
+    both routers and the plan that measures better is kept (crossings first, then
+    bends, hugs, steps, off-centre ports, foreign containers, length);
+    `RDG_ROUTER=channels|ortho` forces one.
+  - *Layout gutters grow with the arrows that drop through them*: the gap between two
+    units on a tier (and between two items in a group's row) widens by a lane for
+    every edge that has to pass through it — including arrows leaving a group from a
+    node that is not on its bottom row — so lanes no longer pile up against a border
+    or cut through a neighbouring container. A group's title is cleared by the whole
+    mark an arrow enters, not just the box's centre.
   - *Routes*: a final simplification pass replaces a route by the simplest clear line
     between its ports (straight, L, Z, U or three bends) when that adds no crossing;
-    running alongside a node's face or a container border costs the search per pixel;
-    sharing a lane costs a quarter of what it did, so routes stop zigzagging to avoid
-    each other and let the lane fan-out separate them instead.
+    running alongside a node's face or a container border costs the search per pixel
+    (but not beside the route's own node); ports prefer the middle of a face at the
+    price of length, decisions take arrows only at their corners; sharing a lane costs
+    a quarter of what it did, so routes stop zigzagging to avoid each other and let the
+    lane fan-out separate them instead. `RDG_DEBUG_SPACING=1` also reports off-centre
+    faces and arrows through foreign containers.
   - *Components as tiles*: in an architecture diagram a service, client or gateway is a
     small square in its category colour with the category glyph and the caption under
     it, its language or product logo as a corner badge — colour says what kind, the

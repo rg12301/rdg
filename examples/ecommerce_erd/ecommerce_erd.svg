@@ -5,10 +5,10 @@
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="47.0" text-anchor="start" font-size="18" font-weight="bold" fill="#111827">E-Commerce Order Schema</text>
   <path d="M 134.0 166.0 L 134.0 258.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
-  <path d="M 218.0 152.0 L 244.6 152.0 Q 255.0 152.0 255.0 162.4 L 255.0 402.6 Q 255.0 409.0 248.6 409.0 L 236.6 409.0 Q 232.0 409.0 232.0 413.6 L 232.0 458.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
-  <path d="M 152.0 366.0 L 152.0 458.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
-  <path d="M 258.0 565.0 L 284.6 565.0 Q 295.0 565.0 295.0 575.4 L 295.0 676.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
-  <path d="M 350.0 366.0 L 350.0 676.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
+  <path d="M 218.0 121.0 L 242.5 121.0 Q 252.0 121.0 252.0 130.5 L 252.0 395.0 Q 252.0 409.0 238.0 409.0 L 186.7 409.0 Q 173.0 409.0 173.0 422.7 L 173.0 458.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
+  <path d="M 134.0 366.0 L 134.0 458.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
+  <path d="M 258.0 521.0 L 321.0 521.0 Q 335.0 521.0 335.0 535.0 L 335.0 676.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
+  <path d="M 361.0 366.0 L 361.0 676.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 364.0 157.0 L 364.0 258.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 134.0 584.0 L 134.0 685.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-one-1)" marker-start="url(#marker-er-one-1)"/>
   <rect fill="#7c3aed" fill-opacity="0.122" stroke="#7c3aed" stroke-width="1.5" x="48.0" y="76.0" width="170.0" height="90.0" rx="6.0"/>
@@ -88,14 +88,14 @@
   <text x="172.0" y="779.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TEXT</text>
   <rect x="138.0" y="204.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="150.0" y="215.5" text-anchor="middle" font-size="10" fill="#8b95a5">has</text>
-  <rect x="222.5" y="132.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="243.5" y="143.8" text-anchor="middle" font-size="10" fill="#8b95a5">places</text>
-  <rect x="156.0" y="404.2" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="183.0" y="415.5" text-anchor="middle" font-size="10" fill="#8b95a5">ships to</text>
-  <rect x="266.0" y="545.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="293.0" y="556.8" text-anchor="middle" font-size="10" fill="#8b95a5">contains</text>
-  <rect x="354.0" y="513.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="387.0" y="524.5" text-anchor="middle" font-size="10" fill="#8b95a5">appears in</text>
+  <rect x="191.5" y="389.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="212.5" y="400.8" text-anchor="middle" font-size="10" fill="#8b95a5">places</text>
+  <rect x="76.0" y="404.2" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="103.0" y="415.5" text-anchor="middle" font-size="10" fill="#8b95a5">ships to</text>
+  <rect x="269.5" y="501.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="296.5" y="512.8" text-anchor="middle" font-size="10" fill="#8b95a5">contains</text>
+  <rect x="365.0" y="513.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="398.0" y="524.5" text-anchor="middle" font-size="10" fill="#8b95a5">appears in</text>
   <rect x="368.0" y="199.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="401.0" y="211.0" text-anchor="middle" font-size="10" fill="#8b95a5">classifies</text>
   <rect x="138.0" y="626.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>

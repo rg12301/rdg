@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="579" height="1754" viewBox="0 0 579 1754" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="637" height="1754" viewBox="0 0 637 1754" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#dc2626" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="47.0" text-anchor="start" font-size="18" font-weight="bold" fill="#111827">CI pipeline with retries</text>
-  <path d="M 288.0 134.0 L 288.0 176.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 289.0 134.0 L 289.0 176.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 293.0 226.0 L 293.0 274.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 301.0 371.1 L 301.0 448.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 209.0 344.0 L 38.0 344.0 Q 24.0 344.0 24.0 358.0 L 24.0 1521.0 Q 24.0 1535.0 38.0 1535.0 L 204.0 1535.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 301.0 498.0 L 301.0 596.1" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 200.0 660.0 L 123.0 660.0 Q 109.0 660.0 109.0 674.0 L 109.0 835.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 348.0 667.1 L 348.0 826.1" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 464.0 823.6 L 464.0 505.0 Q 464.0 491.0 450.0 491.0 L 362.0 491.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 464.0 896.4 L 464.0 1295.0 Q 464.0 1309.0 450.0 1309.0 L 338.0 1309.0 Q 324.0 1309.0 324.0 1323.0 L 324.0 1524.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 181.0 885.0 L 181.0 1012.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 239.0 1062.0 L 239.0 1175.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 336.0 1240.8 L 336.0 1365.0 Q 336.0 1372.0 343.0 1372.0 L 361.0 1372.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 239.0 1232.6 L 239.0 1364.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 247.0 1414.0 L 247.0 1524.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 464.0 1414.0 L 464.0 1535.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 293.0 374.0 L 293.0 448.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 153.0 324.0 L 38.0 324.0 Q 24.0 324.0 24.0 338.0 L 24.0 1546.0 Q 24.0 1560.0 38.0 1560.0 L 204.0 1560.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 284.0 498.0 L 284.0 590.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 144.0 640.0 L 118.1 640.0 Q 108.0 640.0 108.0 650.1 L 108.0 835.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 284.0 690.0 L 284.0 731.0 Q 284.0 745.0 298.0 745.0 L 395.0 745.0 Q 409.0 745.0 409.0 759.0 L 409.0 800.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 549.0 860.0 L 566.3 860.0 Q 573.0 860.0 573.0 853.3 L 573.0 487.0 Q 573.0 473.0 559.0 473.0 L 362.0 473.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 409.0 920.0 L 409.0 1026.0 Q 409.0 1040.0 423.0 1040.0 L 464.0 1040.0 Q 478.0 1040.0 478.0 1054.0 L 478.0 1295.0 Q 478.0 1309.0 464.0 1309.0 L 338.0 1309.0 Q 324.0 1309.0 324.0 1323.0 L 324.0 1524.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 168.0 885.0 L 168.0 1012.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 274.0 1037.0 L 292.7 1037.0 Q 300.0 1037.0 300.0 1044.3 L 300.0 1154.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 439.0 1204.0 L 459.2 1204.0 Q 467.0 1204.0 467.0 1211.8 L 467.0 1364.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 300.0 1253.6 L 300.0 1295.0 Q 300.0 1309.0 286.0 1309.0 L 252.9 1309.0 Q 240.0 1309.0 240.0 1321.9 L 240.0 1364.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 240.0 1414.0 L 240.0 1524.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 446.0 1414.0 L 446.0 1535.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 490.0 1585.0 L 490.0 1670.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 284.0 1596.0 L 284.0 1670.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <circle cx="287.0" cy="90.0" r="12.0" fill="#111827"/>
@@ -85,65 +85,65 @@
   <text x="284.0" y="1718.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Failed</tspan>
   </text>
-  <rect x="305.0" y="379.4" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="317.0" y="390.6" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
-  <rect x="124.1" y="348.0" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="134.1" y="359.2" text-anchor="middle" font-size="10" fill="#dc2626">no</text>
-  <rect x="117.2" y="664.0" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="129.2" y="675.2" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
-  <rect x="352.0" y="694.9" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="362.0" y="706.2" text-anchor="middle" font-size="10" fill="#8b95a5">no</text>
-  <rect x="424.0" y="780.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="442.0" y="791.4" text-anchor="middle" font-size="10" fill="#dc2626">retry</text>
-  <rect x="468.0" y="924.4" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="492.0" y="935.7" text-anchor="middle" font-size="10" fill="#dc2626">give up</text>
-  <rect x="340.0" y="1258.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="352.0" y="1269.7" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
-  <rect x="243.0" y="1260.7" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="253.0" y="1272.0" text-anchor="middle" font-size="10" fill="#dc2626">no</text>
-  <rect x="468.0" y="1466.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="495.0" y="1478.0" text-anchor="middle" font-size="10" fill="#8b95a5">approved</text>
-  <rect x="265.0" y="141.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="274.0" y="153.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
+  <rect x="297.0" y="382.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="309.0" y="393.5" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
+  <rect x="127.0" y="328.0" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="137.0" y="339.2" text-anchor="middle" font-size="10" fill="#dc2626">no</text>
+  <rect x="116.0" y="644.0" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="128.0" y="655.2" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
+  <rect x="285.3" y="725.5" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="295.3" y="736.8" text-anchor="middle" font-size="10" fill="#8b95a5">no</text>
+  <rect x="577.0" y="850.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="595.0" y="861.5" text-anchor="middle" font-size="10" fill="#dc2626">retry</text>
+  <rect x="413.0" y="928.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="437.0" y="939.5" text-anchor="middle" font-size="10" fill="#dc2626">give up</text>
+  <rect x="439.0" y="1264.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="451.0" y="1275.8" text-anchor="middle" font-size="10" fill="#8b95a5">yes</text>
+  <rect x="278.7" y="1289.5" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="288.7" y="1300.8" text-anchor="middle" font-size="10" fill="#dc2626">no</text>
+  <rect x="450.0" y="1466.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="477.0" y="1478.0" text-anchor="middle" font-size="10" fill="#8b95a5">approved</text>
+  <rect x="266.0" y="141.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="275.0" y="153.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
   <rect x="270.0" y="233.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="279.0" y="245.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
-  <rect x="278.0" y="378.1" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="287.0" y="390.3" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3</text>
-  <rect x="130.0" y="321.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="139.0" y="333.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
-  <rect x="278.0" y="505.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="287.0" y="517.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
-  <rect x="121.0" y="637.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="130.0" y="649.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
-  <rect x="325.0" y="692.1" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="334.0" y="704.3" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
-  <rect x="469.0" y="774.6" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="478.0" y="786.7" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
-  <rect x="441.0" y="927.4" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="450.0" y="939.6" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">9</text>
-  <rect x="156.0" y="892.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="166.0" y="904.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
-  <rect x="214.0" y="1069.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="224.0" y="1081.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
-  <rect x="311.0" y="1259.8" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="321.0" y="1271.9" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">12</text>
-  <rect x="214.0" y="1257.6" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="224.0" y="1269.7" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">13</text>
-  <rect x="222.0" y="1421.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="232.0" y="1433.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">14</text>
-  <rect x="439.0" y="1421.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="449.0" y="1433.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">15</text>
+  <rect x="270.0" y="381.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="279.0" y="393.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3</text>
+  <rect x="128.0" y="301.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="137.0" y="313.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
+  <rect x="261.0" y="505.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="270.0" y="517.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
+  <rect x="119.0" y="617.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="128.0" y="629.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
+  <rect x="261.0" y="697.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="270.0" y="709.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
+  <rect x="556.0" y="865.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="565.0" y="877.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
+  <rect x="386.0" y="927.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="395.0" y="939.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">9</text>
+  <rect x="143.0" y="892.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="153.0" y="904.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
+  <rect x="280.0" y="1014.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="290.0" y="1026.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
+  <rect x="445.0" y="1209.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="455.0" y="1221.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">12</text>
+  <rect x="275.0" y="1260.6" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="285.0" y="1272.8" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">13</text>
+  <rect x="215.0" y="1421.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="225.0" y="1433.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">14</text>
+  <rect x="421.0" y="1421.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="431.0" y="1433.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">15</text>
   <rect x="465.0" y="1592.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="475.0" y="1604.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">16</text>
   <rect x="259.0" y="1603.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="269.0" y="1615.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">17</text>
-  <text x="515.4" y="87.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
-  <rect x="483.0" y="101.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
-  <text x="513.0" y="112.1" font-size="10" fill="#5b6474">Backend</text>
-  <rect x="495.0" y="125.1" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
-  <text x="525.0" y="135.6" font-size="10" fill="#5b6474">Other</text>
-  <rect x="477.0" y="148.6" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
-  <text x="507.0" y="159.1" font-size="10" fill="#5b6474">Frontend</text>
-  <line x1="429.0" y1="179.1" x2="451.0" y2="179.1" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
-  <text x="459.0" y="182.6" font-size="10" fill="#5b6474">Error / fallback</text>
+  <text x="573.4" y="87.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="461.0" y="101.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="491.0" y="112.1" font-size="10" fill="#5b6474">Backend</text>
+  <rect x="553.0" y="101.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
+  <text x="583.0" y="112.1" font-size="10" fill="#5b6474">Other</text>
+  <rect x="535.0" y="125.1" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
+  <text x="565.0" y="135.6" font-size="10" fill="#5b6474">Frontend</text>
+  <line x1="487.0" y1="155.6" x2="509.0" y2="155.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <text x="517.0" y="159.1" font-size="10" fill="#5b6474">Error / fallback</text>
 </svg>

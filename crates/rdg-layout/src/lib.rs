@@ -119,7 +119,7 @@ impl Default for LayoutConfig {
 }
 
 /// Computed spatial positions for every node in the graph.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct LayoutResult {
     /// Maps petgraph [`NodeIndex`] to its computed 2D layout box.
     pub positions: HashMap<NodeIndex, NodeLayout>,
@@ -132,6 +132,10 @@ pub struct LayoutResult {
     /// content right of the group's title, so the nodes fed from above can be entered
     /// from above without the arrow crossing the title text.
     pub group_title_shift: HashMap<usize, f64>,
+    /// The flow direction when the layout is layered (ranks along the flow, nodes in
+    /// bands across it) — what a structural edge router can rely on. `None` for a
+    /// force-directed or sequence layout.
+    pub layered: Option<LayoutDirection>,
 }
 
 // ---------------------------------------------------------------------------

@@ -395,7 +395,7 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
         let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
         let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
         eprintln!(
-            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={} bends={} len={:.0}  [arrow: {}; pitch: {}]",
+            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={} bends={} len={:.0} off_centre={} foreign={}  [arrow: {}; pitch: {}]",
             fmt(m.min_arrow_len),
             fmt(m.min_node_gap),
             fmt(m.min_port_pitch),
@@ -405,6 +405,8 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
             m.border_hugs,
             m.bends,
             m.total_len,
+            m.off_centre_faces,
+            m.foreign_crossings,
             m.min_arrow_edge.as_deref().unwrap_or("-"),
             m.min_pitch_face.as_deref().unwrap_or("-")
         );

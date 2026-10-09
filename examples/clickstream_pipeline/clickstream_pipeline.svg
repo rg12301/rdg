@@ -16,13 +16,13 @@
   <path d="M 436.0 109.0 L 648.8 109.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 710.0 122.0 L 988.0 122.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 1038.0 109.0 L 1267.0 109.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 1038.0 129.0 L 1149.0 129.0 Q 1163.0 129.0 1163.0 143.0 L 1163.0 214.0 Q 1163.0 228.0 1177.0 228.0 L 1600.0 228.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1038.0 89.0 L 1154.9 89.0 Q 1163.0 89.0 1163.0 80.9 L 1163.0 65.8 Q 1163.0 60.0 1168.8 60.0 L 1455.1 60.0 Q 1461.0 60.0 1461.0 65.9 L 1461.0 76.8 Q 1461.0 81.0 1465.2 81.0 L 1600.0 81.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1600.0 122.0 L 1475.0 122.0 Q 1461.0 122.0 1461.0 136.0 L 1461.0 218.0 Q 1461.0 232.0 1447.0 232.0 L 1038.0 232.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1038.0 272.0 L 1305.0 272.0 Q 1319.0 272.0 1319.0 286.0 L 1319.0 318.4 Q 1319.0 331.0 1331.6 331.0 L 1599.3 331.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1038.0 129.0 L 1149.0 129.0 Q 1163.0 129.0 1163.0 143.0 L 1163.0 203.0 Q 1163.0 217.0 1177.0 217.0 L 1600.0 217.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1013.0 84.0 L 1013.0 64.6 Q 1013.0 57.0 1020.6 57.0 L 1450.3 57.0 Q 1457.0 57.0 1457.0 63.7 L 1457.0 76.2 Q 1457.0 81.0 1461.8 81.0 L 1600.0 81.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1600.0 102.0 L 1382.0 102.0 Q 1368.0 102.0 1368.0 116.0 L 1368.0 218.0 Q 1368.0 232.0 1354.0 232.0 L 1038.0 232.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1038.0 272.0 L 1443.0 272.0 Q 1457.0 272.0 1457.0 286.0 L 1457.0 336.0 Q 1457.0 350.0 1471.0 350.0 L 1593.0 350.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1038.0 252.0 L 1600.0 252.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1650.0 208.0 L 1781.2 208.0 Q 1793.0 208.0 1793.0 196.2 L 1793.0 174.5 Q 1793.0 166.0 1801.5 166.0 L 1937.0 166.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 1650.0 248.0 L 1937.0 248.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 1650.0 208.0 L 1780.0 208.0 Q 1794.0 208.0 1794.0 194.0 L 1794.0 159.4 Q 1794.0 146.0 1807.4 146.0 L 1937.0 146.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 1650.0 228.0 L 1784.8 228.0 Q 1794.0 228.0 1794.0 237.2 L 1794.0 254.3 Q 1794.0 261.0 1800.7 261.0 L 1937.0 261.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1650.7 369.0 L 1937.0 369.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <rect x="100.0" y="98.0" width="44.0" height="44.0" rx="10.0" fill="#2563eb"/><svg class="node-tech-icon" x="109.7" y="107.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></g></svg><text x="122.0" y="164.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Web / Mobile SDK</tspan>
@@ -84,22 +84,22 @@
   <text x="542.4" y="100.8" text-anchor="middle" font-size="10" fill="#ea580c">produce</text>
   <rect x="825.0" y="102.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="849.0" y="113.8" text-anchor="middle" font-size="10" fill="#ea580c">consume</text>
-  <rect x="1180.8" y="89.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1201.8" y="100.8" text-anchor="middle" font-size="10" fill="#8b95a5">lookup</text>
-  <rect x="1473.2" y="208.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1494.2" y="219.8" text-anchor="middle" font-size="10" fill="#7c3aed">insert</text>
-  <rect x="1297.0" y="40.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1312.0" y="51.8" text-anchor="middle" font-size="10" fill="#7c3aed">sink</text>
-  <rect x="1503.8" y="102.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1518.8" y="113.8" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
-  <rect x="1414.1" y="311.5" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1459.1" y="322.8" text-anchor="middle" font-size="10" fill="#7c3aed">write features</text>
-  <rect x="1381.0" y="256.0" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1414.0" y="267.2" text-anchor="middle" font-size="10" fill="#7c3aed">aggregates</text>
-  <rect x="1841.2" y="146.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1853.2" y="157.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
-  <rect x="1781.5" y="228.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1793.5" y="239.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
+  <rect x="1131.5" y="89.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1152.5" y="100.8" text-anchor="middle" font-size="10" fill="#8b95a5">lookup</text>
+  <rect x="1313.6" y="197.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1334.6" y="208.8" text-anchor="middle" font-size="10" fill="#7c3aed">insert</text>
+  <rect x="1220.0" y="61.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1235.0" y="72.2" text-anchor="middle" font-size="10" fill="#7c3aed">sink</text>
+  <rect x="1469.0" y="106.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1484.0" y="117.2" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
+  <rect x="1202.5" y="276.0" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1247.5" y="287.2" text-anchor="middle" font-size="10" fill="#7c3aed">write features</text>
+  <rect x="1381.0" y="232.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1414.0" y="243.8" text-anchor="middle" font-size="10" fill="#7c3aed">aggregates</text>
+  <rect x="1721.8" y="188.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1733.8" y="199.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
+  <rect x="1841.7" y="241.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1853.7" y="252.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
   <rect x="1766.9" y="349.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1793.9" y="360.8" text-anchor="middle" font-size="10" fill="#7c3aed">features</text>
   <rect x="190.0" y="127.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
@@ -108,22 +108,22 @@
   <text x="488.0" y="126.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
   <rect x="729.0" y="127.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="738.0" y="139.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3</text>
-  <rect x="1081.0" y="114.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1090.0" y="126.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
-  <rect x="1105.0" y="134.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1114.0" y="146.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
-  <rect x="1081.0" y="66.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1090.0" y="78.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
-  <rect x="1563.0" y="99.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1572.0" y="111.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
+  <rect x="1081.0" y="86.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1090.0" y="98.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
+  <rect x="1081.0" y="134.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1090.0" y="146.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
+  <rect x="1018.0" y="59.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1027.0" y="71.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
+  <rect x="1563.0" y="107.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1572.0" y="119.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
   <rect x="1075.0" y="277.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="1084.0" y="289.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
   <rect x="1075.0" y="229.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="1084.0" y="241.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">9</text>
-  <rect x="1674.0" y="213.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1684.0" y="225.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
-  <rect x="1674.0" y="253.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1684.0" y="265.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
+  <rect x="1674.0" y="185.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1684.0" y="197.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
+  <rect x="1674.0" y="233.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1684.0" y="245.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
   <rect x="1686.7" y="374.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="1696.7" y="386.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">12</text>
   <text x="24.0" y="446.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>

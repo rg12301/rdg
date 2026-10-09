@@ -17,7 +17,7 @@ use crate::LayoutConfig;
 
 /// Parallel channels beyond this many stop widening the gap: a gap that scales
 /// linearly with a huge fan-out would blow the canvas up for little readability gain.
-const MAX_CHANNELS: usize = 12;
+pub(crate) const MAX_CHANNELS: usize = 12;
 
 /// Required gap after each rank (`result[r]` separates rank `r` from `r + 1`), given
 /// each node's rank in `layer`. Edges with an endpoint missing from `layer` (e.g. the

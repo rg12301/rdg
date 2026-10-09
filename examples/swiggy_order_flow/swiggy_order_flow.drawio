@@ -66,18 +66,18 @@
           <mxGeometry x="-0.5167" y="22.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="step_e_payment_notify_restaurant" value="3a" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
-          <mxGeometry x="148" y="401" width="20" height="18" as="geometry"/>
+          <mxGeometry x="121" y="376" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_payment_notify_restaurant" value="success" style="exitX=0.19286;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.83750;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="payment" target="notify_restaurant" parent="1">
+        <mxCell id="e_payment_notify_restaurant" value="success" style="exitX=0.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.66875;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="payment" target="notify_restaurant" parent="1">
           <mxGeometry x="0.0000" y="28.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="step_e_payment_payment_failed" value="3b" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
-          <mxGeometry x="292" y="364" width="20" height="18" as="geometry"/>
+          <mxGeometry x="292" y="346" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_payment_payment_failed" value="declined" style="exitX=1.00000;exitY=0.86000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#dc2626;strokeWidth=1.25;dashed=1;dashPattern=6 3;endArrow=blockThin;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#dc2626;" edge="1" source="payment" target="payment_failed" parent="1">
-          <mxGeometry x="0.2430" y="31.0" relative="1" as="geometry">
+        <mxCell id="e_payment_payment_failed" value="declined" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#dc2626;strokeWidth=1.25;dashed=1;dashPattern=6 3;endArrow=blockThin;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#dc2626;" edge="1" source="payment" target="payment_failed" parent="1">
+          <mxGeometry x="0.2080" y="31.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="312.0" y="387.0"/>
+              <mxPoint x="312.0" y="369.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

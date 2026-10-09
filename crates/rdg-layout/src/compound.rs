@@ -113,6 +113,8 @@ struct Compound<'a> {
     node_group: HashMap<NodeIndex, usize>,
     /// Corner of each top-level unit.
     top_pos: HashMap<Item, (f64, f64)>,
+    /// Tier of each top-level unit, once the tiers are known.
+    unit_row: HashMap<Item, usize>,
 }
 
 impl Compound<'_> {
@@ -199,6 +201,26 @@ impl Compound<'_> {
         }
     }
 
+    /// Whether node `n` can leave group `g`'s box straight along the flow — toward later
+    /// layers when `onward`, earlier ones otherwise — i.e. sits on the box's exit layer
+    /// at every level of nesting between it and `g`. Otherwise the arrow has to leave
+    /// the box sideways and run down a gutter beside it.
+    fn exits_straight(&self, g: usize, n: NodeIndex, onward: bool) -> bool {
+        let mut it = Item::Node(n);
+        loop {
+            let Some(h) = self.container(it) else { return true };
+            let layers = &self.block(h).layers;
+            let edge = if onward { layers.last() } else { layers.first() };
+            if !edge.is_some_and(|l| l.contains(&it)) {
+                return false;
+            }
+            if h == g {
+                return true;
+            }
+            it = Item::Group(h);
+        }
+    }
+
     fn center(&self, n: NodeIndex) -> (f64, f64) {
         let (c, s) = (self.corner(Item::Node(n)), self.node_size[&n]);
         (c.0 + s.0 / 2.0, c.1 + s.1 / 2.0)
@@ -251,7 +273,16 @@ impl Compound<'_> {
             let clear = title_clear_x(group, &self.config.tokens);
             let fed = layers.first().map_or(Vec::new(), |top| self.fed_items(g, top));
             for it in fed {
-                title_shift = title_shift.max(clear - (inset.0 + pos[&it].0 + self.size(it).0 / 2.0));
+                // The whole face an arrow may enter by must be past the title: a tile's
+                // or logo's mark, the ports' span of a card, an inner group's middle.
+                let entry_half = match it {
+                    Item::Node(n) => match crate::caption_mark(&self.compiled.graph[n], &self.config.tokens) {
+                        Some(mark) => mark / 2.0 + self.config.tokens.px(1.0),
+                        None => self.size(it).0 * 0.38,
+                    },
+                    Item::Group(_) => 0.0,
+                };
+                title_shift = title_shift.max(clear - (inset.0 + pos[&it].0 + self.size(it).0 / 2.0 - entry_half));
             }
             title_shift = title_shift.max(0.0).round();
             inset.0 += title_shift;
@@ -350,19 +381,45 @@ impl Compound<'_> {
         }
 
         let spacing = self.config.node_spacing as f64;
-        let cross_len = |layer: &[Item]| -> f64 {
-            layer.iter().map(|&it| self.size(it).0).sum::<f64>() + spacing * layer.len().saturating_sub(1) as f64
-        };
-        let widest = layers.iter().map(|l| cross_len(l)).fold(0.0, f64::max);
+        // Gutters within each layer: the configured spacing, widened where edges from
+        // a layer above to one below drop through (placed as if every layer were
+        // packed from the left, which is what `settle_group` then slides).
+        let cross_gaps: Vec<Vec<f64>> = layers
+            .iter()
+            .enumerate()
+            .map(|(r, layer)| {
+                let base = vec![spacing; layer.len().saturating_sub(1)];
+                let centre = |it: &Item| -> f64 {
+                    let li = &layers[rank_of(it)];
+                    let before: f64 = li.iter().take_while(|x| *x != it).map(|&x| self.size(x).0 + spacing).sum();
+                    before + self.size(*it).0 / 2.0
+                };
+                let through: Vec<f64> = edges
+                    .iter()
+                    .filter(|(a, b)| rank_of(a).min(rank_of(b)) < r && rank_of(a).max(rank_of(b)) > r)
+                    .map(|(a, b)| (centre(a) + centre(b)) / 2.0)
+                    .collect();
+                let mut spans = Vec::with_capacity(layer.len());
+                let mut x = 0.0;
+                for &it in layer {
+                    spans.push((x, x + self.size(it).0));
+                    x += self.size(it).0 + spacing;
+                }
+                let bordered: Vec<bool> = layer.iter().map(|it| matches!(it, Item::Group(_))).collect();
+                gutters_for_through(&spans, &bordered, &through, &base, &self.config.tokens)
+            })
+            .collect();
+        let cross_len = |r: usize| -> f64 { layers[r].iter().map(|&it| self.size(it).0).sum::<f64>() + cross_gaps[r].iter().sum::<f64>() };
+        let widest = (0..layers.len()).map(cross_len).fold(0.0, f64::max);
         let mut pos = HashMap::new();
         let mut main = 0.0;
         for (r, layer) in layers.iter().enumerate() {
             let depth = layer.iter().map(|&it| self.size(it).1).fold(0.0, f64::max);
-            let mut cross = (widest - cross_len(layer)) / 2.0;
-            for &it in layer {
+            let mut cross = (widest - cross_len(r)) / 2.0;
+            for (i, &it) in layer.iter().enumerate() {
                 let (c, m) = self.size(it);
                 pos.insert(it, (cross, main + (depth - m) / 2.0));
-                cross += c + spacing;
+                cross += c + cross_gaps[r].get(i).copied().unwrap_or(0.0);
             }
             main += depth + if r + 1 < n_ranks { gaps[r] } else { 0.0 };
         }
@@ -406,10 +463,48 @@ impl Compound<'_> {
             let mut sorted = layer;
             sorted.sort_by(|a, b| order_key[a].total_cmp(&order_key[b]).then(a.cmp(b)));
             let widths: Vec<f64> = sorted.iter().map(|&it| self.size(it).0).collect();
-            let used = widths.iter().sum::<f64>() + gap * widths.len().saturating_sub(1) as f64;
             let want: Vec<f64> = sorted.iter().map(|it| desired[it].0).collect();
             let wts: Vec<f64> = sorted.iter().map(|it| desired[it].1).collect();
-            let xs = place_in_order(&widths, &want, &wts, &vec![gap; widths.len().saturating_sub(1)], Some((0.0, content_cross - used)));
+            // Edges dropping through this layer — from a layer above to one below, or
+            // from outside the group past it — keep a lane each in the gutter they use.
+            let layer_of = |it: &Item| self.block(g).layers.iter().position(|l| l.contains(it));
+            let my_row = self.unit_row.get(&self.item_in(None, match self.compiled.group_nodes[g].first() {
+                Some(&n) => n,
+                None => return,
+            }).expect("group node has a unit")).copied();
+            let mut through: Vec<f64> = Vec::new();
+            for e in self.compiled.graph.edge_references() {
+                let (a, b) = (e.source(), e.target());
+                let (ia, ib) = (self.item_in(Some(g), a), self.item_in(Some(g), b));
+                let passes = match (ia.and_then(|it| layer_of(&it)), ib.and_then(|it| layer_of(&it))) {
+                    (Some(la), Some(lb)) => la.min(lb) < li && la.max(lb) > li,
+                    (Some(l), None) | (None, Some(l)) => {
+                        let outside = if ia.is_some() { b } else { a };
+                        let their_row = self.item_in(None, outside).and_then(|it| self.unit_row.get(&it).copied());
+                        match (my_row, their_row) {
+                            (Some(mine), Some(theirs)) if theirs < mine => l > li,
+                            (Some(mine), Some(theirs)) if theirs > mine => l < li,
+                            _ => false,
+                        }
+                    }
+                    _ => false,
+                };
+                if passes {
+                    through.push((self.center(a).0 + self.center(b).0) / 2.0 - origin);
+                }
+            }
+            let mut spans = Vec::with_capacity(sorted.len());
+            let mut x = 0.0;
+            for &w in &widths {
+                spans.push((x, x + w));
+                x += w + gap;
+            }
+            let start = sorted.first().map_or(0.0, |it| self.block(g).pos[it].0);
+            let spans: Vec<(f64, f64)> = spans.iter().map(|&(a, b)| (a + start, b + start)).collect();
+            let bordered: Vec<bool> = sorted.iter().map(|it| matches!(it, Item::Group(_))).collect();
+            let gaps = gutters_for_through(&spans, &bordered, &through, &vec![gap; widths.len().saturating_sub(1)], &self.config.tokens);
+            let used = widths.iter().sum::<f64>() + gaps.iter().sum::<f64>();
+            let xs = place_in_order(&widths, &want, &wts, &gaps, Some((0.0, (content_cross - used).max(0.0))));
             let block = self.blocks[g].as_mut().expect("settled group has a block");
             for (it, x) in sorted.iter().zip(xs) {
                 block.pos.get_mut(it).expect("layer item has a position").0 = x;
@@ -417,6 +512,52 @@ impl Compound<'_> {
             block.layers[li] = sorted;
         }
     }
+}
+
+/// Widths of the gutters between boxes placed side by side (`spans` = each box's
+/// `(start, end)` across the flow, in order) once the edges dropping *through* this row
+/// get a lane each: `through` holds where each such edge would like to cross (the
+/// middle of its two ends), and every one is charged to the nearest gutter — the one it
+/// falls in, or the closest when it falls on a box. The gutters outside the row's ends
+/// are free. A gutter beside a bordered box also keeps a lane's width off that border
+/// (where a line would read as tracing it); beside a plain node a stub's clearance.
+/// `base[i]` is the gutter's width without any of that (labels, configured spacing).
+fn gutters_for_through(spans: &[(f64, f64)], bordered: &[bool], through: &[f64], base: &[f64], tokens: &crate::DesignTokens) -> Vec<f64> {
+    let n = spans.len();
+    if n < 2 {
+        return base.to_vec();
+    }
+    let mut demand = vec![0usize; n - 1];
+    for &x in through {
+        if x <= spans[0].0 || x >= spans[n - 1].1 {
+            continue;
+        }
+        let nearest = (1..n)
+            .map(|i| {
+                let (lo, hi) = (spans[i - 1].1, spans[i].0);
+                let d = if x < lo { lo - x } else if x > hi { x - hi } else { 0.0 };
+                (i - 1, d)
+            })
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(i, _)| i);
+        if let Some(i) = nearest {
+            demand[i] += 1;
+        }
+    }
+    let lane = tokens.channel_pitch();
+    let side = |b: bool| if b { lane * 1.25 } else { tokens.stub_clearance() };
+    if std::env::var_os("RDG_DEBUG_GUTTERS").is_some() {
+        eprintln!("gutters: spans={spans:?} through={through:?} demand={demand:?}");
+    }
+    (0..n - 1)
+        .map(|i| {
+            if demand[i] == 0 {
+                return base[i];
+            }
+            let lanes = (demand[i].min(crate::gaps::MAX_CHANNELS) as f64 + 1.0) * lane;
+            base[i].max(lanes + side(bordered[i]) + side(bordered[i + 1]))
+        })
+        .collect()
 }
 
 /// Size of an edge label as the annotation pass will draw it: a long one-line label is
@@ -579,7 +720,7 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
     let frame = Frame { lr: config.direction == LayoutDirection::LeftToRight };
     let node_size = compiled.graph.node_indices().map(|n| (n, frame.swap(crate::layout_node_size(compiled, n, config)))).collect();
     let node_group = (0..compiled.groups.len()).flat_map(|g| compiled.group_nodes[g].iter().map(move |&n| (n, g))).collect();
-    let mut c = Compound { compiled, config, frame, node_size, blocks: vec![None; compiled.groups.len()], node_group, top_pos: HashMap::new() };
+    let mut c = Compound { compiled, config, frame, node_size, blocks: vec![None; compiled.groups.len()], node_group, top_pos: HashMap::new(), unit_row: HashMap::new() };
     let outer_first = compiled.group_tree.outer_first();
     for &g in outer_first.iter().rev() {
         c.layout_group(g);
@@ -661,6 +802,7 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
     for (ri, row) in rows.iter().enumerate() {
         for &u in row {
             row_of[u] = ri;
+            c.unit_row.insert(units[u], ri);
         }
     }
 
@@ -772,6 +914,45 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
                         .min(gap_cross * MAX_LABEL_GAP_FACTOR)
                 })
                 .collect();
+            // Edges with an end above this tier and one below drop through it: a lane
+            // each in the gutter nearest the line between their ends.
+            // So do edges that start or end in a group of this tier at a node the box
+            // won't let out straight along the flow: they leave it sideways and run down
+            // a gutter beside it.
+            let mut through: Vec<f64> = Vec::new();
+            for &(a, b) in &cross {
+                let (ra, rb) = (row_of[unit_of[&a]], row_of[unit_of[&b]]);
+                if ra.min(rb) < ri && ra.max(rb) > ri {
+                    through.push((c.center(a).0 + c.center(b).0) / 2.0);
+                    continue;
+                }
+                for (mine, theirs, onward) in [(a, b, rb > ra), (b, a, ra > rb)] {
+                    let um = unit_of[&mine];
+                    if row_of[um] != ri || row_of[unit_of[&theirs]] == ri {
+                        continue;
+                    }
+                    if let Item::Group(g) = units[um] {
+                        if !c.exits_straight(g, mine, onward) {
+                            through.push(c.center(mine).0);
+                        }
+                    }
+                }
+            }
+            if std::env::var_os("RDG_DEBUG_GUTTERS").is_some() {
+                let names: Vec<String> = row.iter().map(|&u| match units[u] { Item::Node(n) => compiled.graph[n].id.clone(), Item::Group(g) => format!("[{}]", compiled.groups[g].id) }).collect();
+                eprintln!("row {ri} sweep {sweep}: {names:?}");
+            }
+            let mut spans = Vec::with_capacity(row.len());
+            let mut x = 0.0;
+            for (i, &w) in widths.iter().enumerate() {
+                spans.push((x, x + w));
+                x += w + gaps.get(i).copied().unwrap_or(0.0);
+            }
+            // Spans in the row's current frame, so the through points compare to them.
+            let shift = c.top_pos[&units[row[0]]].0;
+            let spans: Vec<(f64, f64)> = spans.iter().map(|&(a, b)| (a + shift, b + shift)).collect();
+            let row_bordered: Vec<bool> = row.iter().map(|&u| bordered(u)).collect();
+            let gaps = gutters_for_through(&spans, &row_bordered, &through, &gaps, &config.tokens);
             let xs = place_in_order(&widths, &want, &wts, &gaps, None);
             for (&u, x) in row.iter().zip(xs) {
                 c.top_pos.get_mut(&units[u]).expect("unit placed").0 = x;
@@ -858,7 +1039,7 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
         .collect();
     let group_widths = c.blocks.iter().enumerate().filter_map(|(g, b)| Some((g, frame.swap(b.as_ref()?.size).0))).collect();
     let group_title_shift = c.blocks.iter().enumerate().filter_map(|(g, b)| b.as_ref().filter(|b| b.title_shift > 0.0).map(|b| (g, b.title_shift))).collect();
-    Ok(LayoutResult { positions, group_widths, group_title_shift, ..Default::default() })
+    Ok(LayoutResult { positions, group_widths, group_title_shift, layered: Some(config.direction), ..Default::default() })
 }
 
 #[cfg(test)]

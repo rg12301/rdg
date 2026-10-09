@@ -670,11 +670,49 @@ pub fn plan_all_edge_routes(
     // planner below stays as the fallback for anything it leaves out (self-loops, a node
     // boxed in completely, an oversize grid). `RDG_LEGACY_ROUTER=1` skips the new router,
     // for A/B comparison.
-    let mut plans = plan_all_edge_routes_legacy(compiled, layout, algorithm, tokens);
-    if std::env::var_os("RDG_LEGACY_ROUTER").is_none() {
-        plans.extend(crate::ortho::route_orthogonal(compiled, layout, tokens));
+    let plans = plan_all_edge_routes_legacy(compiled, layout, algorithm, tokens);
+    if std::env::var_os("RDG_LEGACY_ROUTER").is_some() {
+        return plans;
     }
-    plans
+    // Two routers plan every edge they can: the channel router (structural, for
+    // layered diagrams) and the grid search; whatever either leaves out keeps the
+    // heuristic plan. The set that reads better — fewest crossings first, then bends,
+    // border hugs, jogs and length, the weights the search itself uses — is kept.
+    // `RDG_ROUTER=channels|ortho` forces one.
+    let searched = crate::ortho::route_orthogonal(compiled, layout, tokens);
+    let forced = std::env::var("RDG_ROUTER").ok();
+    let mut with_search = plans.clone();
+    with_search.extend(searched);
+    if forced.as_deref() == Some("ortho") {
+        return with_search;
+    }
+    let channel = crate::channels::route_channels(compiled, layout, tokens);
+    if channel.is_empty() {
+        return with_search;
+    }
+    let mut with_channel = with_search.clone();
+    with_channel.extend(channel);
+    if forced.as_deref() == Some("channels") {
+        return with_channel;
+    }
+    let score = |p: &HashMap<EdgeIndex, EdgeRoutingPlan>| {
+        let m = crate::review::spacing_metrics(compiled, layout, p, tokens);
+        let cramped = m.min_port_pitch.is_some_and(|p| p < 8.0) || m.min_arrow_len.is_some_and(|a| a < tokens.stub_clearance() * 0.6);
+        100.0 * m.crossings as f64
+            + 70.0 * m.crossings_near_bend as f64
+            + 55.0 * m.bends as f64
+            + 40.0 * m.border_hugs as f64
+            + 30.0 * m.micro_jogs as f64
+            + 20.0 * m.off_centre_faces as f64
+            + 160.0 * m.foreign_crossings as f64
+            + 0.1 * m.total_len
+            + if cramped { 1000.0 } else { 0.0 }
+    };
+    let (sc, ss) = (score(&with_channel), score(&with_search));
+    if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {
+        eprintln!("router choice: channels={sc:.0} search={ss:.0} -> {}", if sc <= ss { "channels" } else { "search" });
+    }
+    if sc <= ss { with_channel } else { with_search }
 }
 
 /// The original face-first heuristic planner — see [`plan_all_edge_routes`].

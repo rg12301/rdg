@@ -192,10 +192,7 @@ pub(crate) fn layout_topological(
         axis,
     );
 
-    Ok(LayoutResult {
-        positions,
-        ..Default::default()
-    })
+    Ok(LayoutResult { positions, layered: Some(config.direction), ..Default::default() })
 }
 
 /// 3-pass median crossing minimisation over the compiled graph's nodes.

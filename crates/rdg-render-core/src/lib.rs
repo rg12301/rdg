@@ -8,6 +8,7 @@ pub mod annotate;
 pub mod canvas;
 pub mod frame;
 pub mod look;
+pub mod channels;
 pub mod ortho;
 pub mod polish;
 pub mod review;
