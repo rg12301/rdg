@@ -194,8 +194,8 @@ pub(crate) fn layout_topological(
         axis,
     );
 
-    crate::fold::fold_strip(&mut positions, &layer_buckets, config);
-    Ok(LayoutResult { positions, layered: Some(config.direction), ..Default::default() })
+    let entry_hints = crate::fold::fold_strip(&mut positions, &layer_buckets, compiled, config);
+    Ok(LayoutResult { positions, layered: Some(config.direction), entry_hints, ..Default::default() })
 }
 
 /// 3-pass median crossing minimisation over the compiled graph's nodes.

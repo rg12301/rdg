@@ -103,7 +103,7 @@ const W_INSIDE_FOREIGN: f64 = 0.1;
 const W_ALONG_NODE: f64 = 0.5;
 /// A crossing within [`NEAR_BEND`] of a bend or port of either route — where a reader
 /// can't tell which line turns and which carries on.
-const W_CROSS_NEAR_BEND: f64 = 70.0;
+const W_CROSS_NEAR_BEND: f64 = 180.0;
 const NEAR_BEND: f64 = 20.0;
 /// Each time a route crosses a border of a group one of its ends is in (it has to, at
 /// least once).
@@ -1073,7 +1073,7 @@ pub fn route_orthogonal(
             };
             let data = &compiled.graph[e];
             let src_pins = only(pins_for(s, true), data.source_port.as_deref().and_then(Side::parse));
-            let dst_pins = only(pins_for(d, false), data.target_port.as_deref().and_then(Side::parse));
+            let dst_pins = only(pins_for(d, false), data.target_port.as_deref().or(layout.entry_hints.get(&e).map(String::as_str)).and_then(Side::parse));
             let own_groups = node_groups.get(&s).copied().unwrap_or(0) | node_groups.get(&d).copied().unwrap_or(0);
             let own = [Rect::of(&layout.positions[&s]), Rect::of(&layout.positions[&d])];
             let src_groups = node_groups.get(&s).copied().unwrap_or(0);

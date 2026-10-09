@@ -68,6 +68,12 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
     so its arrow touches it; security is gold (red stays for errors); parallel legs
     are packed exactly, a lane apart (half a lane more over long runs), hopping
     over container borders instead of piling up against them; bends cost more.
+  - *Round 8*: an arrow that continues a folded strip enters the next column's first
+    node from above (a layout entry hint the routers honour); crossing another arrow
+    right beside its port costs the grid router far more; badges on a short arrow
+    may sit anywhere past the arrowhead and can step a little further out from a
+    crossing; error edges are explicitly red; a zigzag route is swapped for a
+    two-bend one whenever a clear corridor exists (`zigzags` in the spacing line).
   - *Labels and badges*: a label prefers the longest straight stretch of its own
     arrow, nearer the source; fragments in sequence diagrams start left of the
     outermost activation bar; an unlabelled start/end/choice marker has no caption.

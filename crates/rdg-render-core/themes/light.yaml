@@ -162,8 +162,8 @@ edge_styles:
   data:          {color: "@database", width: 1.75, label: Data read/write}
   stream:        {color: "@database", width: 1.75, label: Data read/write}
   auth:          {color: "@security", dash: "4 3", label: Auth flow}
-  error:         {color: "@security", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
-  fallback:      {color: "@security", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
+  error:         {color: "#dc2626", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
+  fallback:      {color: "#dc2626", dash: "6 3", head: blockThin, head_fill: false, label: Error / fallback}
   reply:         {color: "#9aa3b2", dash: "4 4", head: open, head_fill: false}
   return:        {color: "#9aa3b2", dash: "4 4", head: open, head_fill: false}
   bidirectional: {tail: blockThin, tail_fill: true}

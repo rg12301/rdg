@@ -445,13 +445,12 @@
         <mxCell id="step_e_impressions_events_lake" value="14" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
           <mxGeometry x="1055" y="645" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_impressions_events_lake" value="" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.73750;entryY=0.07104;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="impressions" target="events_lake" parent="1">
+        <mxCell id="e_impressions_events_lake" value="" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.88385;entryY=0.26136;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="impressions" target="events_lake" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1080.0" y="870.0"/>
               <mxPoint x="1318.0" y="870.0"/>
-              <mxPoint x="1318.0" y="1344.0"/>
-              <mxPoint x="1006.0" y="1344.0"/>
+              <mxPoint x="1318.0" y="1391.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -486,15 +485,15 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="step_e_budget_svc_pacing" value="18" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
-          <mxGeometry x="818" y="966" width="20" height="18" as="geometry"/>
+          <mxGeometry x="817" y="962" width="20" height="18" as="geometry"/>
         </mxCell>
         <mxCell id="e_budget_svc_pacing" value="targets" style="exitX=0.29167;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.67857;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="budget_svc" target="pacing" parent="1">
-          <mxGeometry x="-0.2611" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.0287" y="-28.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="813.0" y="997.0"/>
               <mxPoint x="813.0" y="859.0"/>
-              <mxPoint x="655.0" y="859.0"/>
-              <mxPoint x="655.0" y="565.0"/>
+              <mxPoint x="697.0" y="859.0"/>
+              <mxPoint x="697.0" y="565.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -525,7 +524,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="step_e_targeting_svc_campaign_db" value="21" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
-          <mxGeometry x="784" y="1002" width="20" height="18" as="geometry"/>
+          <mxGeometry x="784" y="1014" width="20" height="18" as="geometry"/>
         </mxCell>
         <mxCell id="e_targeting_svc_campaign_db" value="" style="exitX=0.67857;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="targeting_svc" target="campaign_db" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -552,33 +551,33 @@
         <mxCell id="step_e_bidder_b_creative_svc" value="23" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
           <mxGeometry x="523" y="801" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_bidder_b_creative_svc" value="creatives" style="exitX=0.65370;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.68939;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bidder_b" target="creative_svc" parent="1">
-          <mxGeometry x="-0.4849" y="-34.0" relative="1" as="geometry">
+        <mxCell id="e_bidder_b_creative_svc" value="creatives" style="exitX=0.65000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.68939;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bidder_b" target="creative_svc" parent="1">
+          <mxGeometry x="-0.2339" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="548.4" y="948.0"/>
-              <mxPoint x="602.0" y="948.0"/>
-              <mxPoint x="602.0" y="997.0"/>
+              <mxPoint x="548.0" y="868.0"/>
+              <mxPoint x="610.0" y="868.0"/>
+              <mxPoint x="610.0" y="997.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="step_e_bidder_b_targeting_svc" value="24" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
-          <mxGeometry x="597" y="702" width="20" height="18" as="geometry"/>
+          <mxGeometry x="597" y="730" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_bidder_b_targeting_svc" value="segments" style="exitX=0.70833;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.32143;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bidder_b" target="targeting_svc" parent="1">
-          <mxGeometry x="0.1630" y="31.0" relative="1" as="geometry">
+        <mxCell id="e_bidder_b_targeting_svc" value="segments" style="exitX=0.70833;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25714;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bidder_b" target="targeting_svc" parent="1">
+          <mxGeometry x="-0.4521" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="617.0" y="725.0"/>
-              <mxPoint x="617.0" y="977.0"/>
+              <mxPoint x="677.0" y="725.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="step_e_reports_api_events_lake" value="25" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=9;fontStyle=1;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;spacing=0;" vertex="1" parent="1">
           <mxGeometry x="1437" y="801" width="20" height="18" as="geometry"/>
         </mxCell>
-        <mxCell id="e_reports_api_events_lake" value="aggregate" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.82186;entryY=0.14773;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="reports_api" target="events_lake" parent="1">
-          <mxGeometry x="-0.4237" y="34.0" relative="1" as="geometry">
+        <mxCell id="e_reports_api_events_lake" value="aggregate" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.73750;entryY=0.07104;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="reports_api" target="events_lake" parent="1">
+          <mxGeometry x="-0.4586" y="34.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1462.0" y="1381.0"/>
+              <mxPoint x="1462.0" y="1344.0"/>
+              <mxPoint x="1006.0" y="1344.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

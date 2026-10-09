@@ -95,11 +95,12 @@
         <mxCell id="e_graph_builder_fas_breaker" value="is_cyclic_directed?" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="graph_builder" target="fas_breaker" parent="1">
           <mxGeometry x="0.0000" y="64.0" relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_fas_breaker_sugiyama" value="acyclic CompiledGraph" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.50000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="fas_breaker" target="sugiyama" parent="1">
-          <mxGeometry x="-0.8651" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_fas_breaker_sugiyama" value="acyclic CompiledGraph" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.12000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="fas_breaker" target="sugiyama" parent="1">
+          <mxGeometry x="-0.7272" y="-70.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="909.0" y="1117.0"/>
-              <mxPoint x="909.0" y="206.0"/>
+              <mxPoint x="662.0" y="1117.0"/>
+              <mxPoint x="662.0" y="108.0"/>
+              <mxPoint x="1092.6" y="108.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

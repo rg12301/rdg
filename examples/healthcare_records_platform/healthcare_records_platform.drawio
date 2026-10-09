@@ -381,11 +381,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_audit_proxy_encounter_svc" value="" style="exitX=0.76042;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.32143;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="audit_proxy" target="encounter_svc" parent="1">
+        <mxCell id="e_audit_proxy_encounter_svc" value="" style="exitX=0.76042;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="audit_proxy" target="encounter_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="637.0" y="549.0"/>
-              <mxPoint x="637.0" y="803.0"/>
+              <mxPoint x="627.0" y="549.0"/>
+              <mxPoint x="627.0" y="690.0"/>
+              <mxPoint x="758.0" y="690.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -399,11 +400,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_audit_proxy_prescriptions_svc" value="" style="exitX=0.76042;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.35119;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="audit_proxy" target="prescriptions_svc" parent="1">
+        <mxCell id="e_audit_proxy_prescriptions_svc" value="" style="exitX=0.76042;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.38095;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="audit_proxy" target="prescriptions_svc" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="609.0" y="569.0"/>
-              <mxPoint x="609.0" y="955.0"/>
+              <mxPoint x="599.0" y="569.0"/>
+              <mxPoint x="599.0" y="906.0"/>
+              <mxPoint x="700.0" y="906.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -422,8 +424,8 @@
         <mxCell id="e_encounter_svc_ehr_db" value="" style="exitX=0.67857;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.77988;entryY=0.14773;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="encounter_svc" target="ehr_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1006.0" y="843.0"/>
-              <mxPoint x="1006.0" y="1426.0"/>
+              <mxPoint x="968.0" y="843.0"/>
+              <mxPoint x="968.0" y="1426.0"/>
               <mxPoint x="703.0" y="1426.0"/>
               <mxPoint x="703.0" y="1455.0"/>
             </Array>
@@ -450,28 +452,28 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_results_svc_documents" value="reports" style="exitX=0.70161;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.79762;entryY=0.23611;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="results_svc" target="documents" parent="1">
-          <mxGeometry x="-0.2531" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.2239" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="586.0" y="955.0"/>
               <mxPoint x="586.0" y="1109.0"/>
-              <mxPoint x="1061.0" y="1109.0"/>
-              <mxPoint x="1061.0" y="1466.0"/>
+              <mxPoint x="988.0" y="1109.0"/>
+              <mxPoint x="988.0" y="1466.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_prescriptions_svc_drug_db" value="interactions" style="exitX=0.64881;exitY=0.20238;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.27679;entryY=0.34722;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="prescriptions_svc" target="drug_db" parent="1">
-          <mxGeometry x="-0.2676" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_prescriptions_svc_drug_db" value="interactions" style="exitX=0.64881;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.27679;entryY=0.34722;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="prescriptions_svc" target="drug_db" parent="1">
+          <mxGeometry x="-0.5546" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1068.0" y="947.0"/>
-              <mxPoint x="1068.0" y="895.0"/>
+              <mxPoint x="945.0" y="955.0"/>
+              <mxPoint x="945.0" y="895.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_prescriptions_svc_ehr_db" value="" style="exitX=0.64881;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="prescriptions_svc" target="ehr_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="981.0" y="975.0"/>
-              <mxPoint x="981.0" y="1365.0"/>
+              <mxPoint x="945.0" y="975.0"/>
+              <mxPoint x="945.0" y="1365.0"/>
               <mxPoint x="574.0" y="1365.0"/>
             </Array>
           </mxGeometry>
@@ -503,12 +505,12 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_hl7_adapter_results_svc" value="results" style="exitX=0.27679;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.70161;entryY=0.05952;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="hl7_adapter" target="results_svc" parent="1">
-          <mxGeometry x="-0.3786" y="28.0" relative="1" as="geometry">
+          <mxGeometry x="-0.3330" y="28.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="722.0" y="409.0"/>
-              <mxPoint x="722.0" y="774.0"/>
-              <mxPoint x="605.0" y="774.0"/>
-              <mxPoint x="605.0" y="935.0"/>
+              <mxPoint x="703.0" y="409.0"/>
+              <mxPoint x="703.0" y="776.0"/>
+              <mxPoint x="617.0" y="776.0"/>
+              <mxPoint x="617.0" y="935.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -522,16 +524,15 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_document_exchange_documents" value="" style="exitX=0.67857;exitY=0.53571;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.79762;entryY=0.62500;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="document_exchange" target="documents" parent="1">
+        <mxCell id="e_document_exchange_documents" value="" style="exitX=0.42857;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.79762;entryY=0.62500;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="document_exchange" target="documents" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1245.0" y="429.0"/>
-              <mxPoint x="1245.0" y="1494.0"/>
+              <mxPoint x="1013.0" y="1494.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_encounter_svc_imaging" value="study link" style="exitX=0.67857;exitY=0.05952;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="encounter_svc" target="imaging" parent="1">
-          <mxGeometry x="-0.1097" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.0705" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1327.0" y="803.0"/>
             </Array>
@@ -574,10 +575,10 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_ml_risk_encounter_svc" value="risk score" style="exitX=0.64205;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.67857;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="ml_risk" target="encounter_svc" parent="1">
-          <mxGeometry x="-0.0351" y="37.0" relative="1" as="geometry">
+          <mxGeometry x="-0.1400" y="37.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="949.0" y="1229.0"/>
-              <mxPoint x="949.0" y="823.0"/>
+              <mxPoint x="927.0" y="1229.0"/>
+              <mxPoint x="927.0" y="823.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

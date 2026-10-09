@@ -21,7 +21,7 @@
   <path d="M 282.0 581.0 L 282.0 637.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 282.0 727.0 L 282.0 886.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 282.0 956.0 L 282.0 1012.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 427.0 1117.0 L 895.0 1117.0 Q 909.0 1117.0 909.0 1103.0 L 909.0 220.0 Q 909.0 206.0 923.0 206.0 L 1071.0 206.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 427.0 1117.0 L 648.0 1117.0 Q 662.0 1117.0 662.0 1103.0 L 662.0 122.0 Q 662.0 108.0 676.0 108.0 L 1078.6 108.0 Q 1092.6 108.0 1092.6 122.0 L 1092.6 171.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 1161.0 241.0 L 1161.0 297.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 1161.0 367.0 L 1161.0 423.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 1246.0 485.0 L 1266.9 485.0 Q 1275.0 485.0 1275.0 493.1 L 1275.0 823.5 Q 1275.0 833.0 1265.5 833.0 L 1241.0 833.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
@@ -192,8 +192,8 @@
   <text x="340.0" y="810.0" text-anchor="middle" font-size="10" fill="#7c3aed">NodeDef / EdgeDef</text>
   <rect x="286.0" y="976.2" width="120.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="346.0" y="987.5" text-anchor="middle" font-size="10" fill="#8b95a5">is_cyclic_directed?</text>
-  <rect x="465.9" y="1097.5" width="132.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="531.9" y="1108.8" text-anchor="middle" font-size="10" fill="#7c3aed">acyclic CompiledGraph</text>
+  <rect x="666.0" y="1107.2" width="132.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="732.0" y="1118.5" text-anchor="middle" font-size="10" fill="#7c3aed">acyclic CompiledGraph</text>
   <rect x="1165.0" y="261.2" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1204.0" y="272.5" text-anchor="middle" font-size="10" fill="#7c3aed">ranked ranks</text>
   <rect x="1165.0" y="387.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>

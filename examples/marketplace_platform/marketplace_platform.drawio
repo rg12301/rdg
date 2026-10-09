@@ -723,11 +723,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_bus_search_indexer" value="" style="exitX=0.19347;exitY=0.14773;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.70833;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="bus" target="search_indexer" parent="1">
+        <mxCell id="e_bus_search_indexer" value="" style="exitX=0.19347;exitY=0.14773;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.57500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="bus" target="search_indexer" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="686.0" y="2099.0"/>
-              <mxPoint x="686.0" y="2291.0"/>
+              <mxPoint x="608.0" y="2099.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -746,10 +745,12 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_search_indexer_es" value="" style="exitX=0.65833;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.10000;entryY=0.36364;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="search_indexer" target="es" parent="1">
+        <mxCell id="e_search_indexer_es" value="" style="exitX=0.34167;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.10000;entryY=0.36364;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="search_indexer" target="es" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="618.0" y="1886.0"/>
+              <mxPoint x="580.0" y="2005.0"/>
+              <mxPoint x="621.0" y="2005.0"/>
+              <mxPoint x="621.0" y="1886.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

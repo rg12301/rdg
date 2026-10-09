@@ -16,13 +16,20 @@ pub(crate) const FOLD_ASPECT: f64 = 2.2;
 /// Folds `tiers` (each a rank's nodes, in flow order) into two or three columns when
 /// the layout is a strip. Columns stand a gap apart that leaves room for the arrow
 /// looping from the foot of one to the head of the next.
-pub(crate) fn fold_strip(positions: &mut HashMap<NodeIndex, NodeLayout>, tiers: &[Vec<NodeIndex>], config: &LayoutConfig) {
+pub(crate) fn fold_strip(
+    positions: &mut HashMap<NodeIndex, NodeLayout>,
+    tiers: &[Vec<NodeIndex>],
+    compiled: &rdg_graph::CompiledGraph,
+    config: &LayoutConfig,
+) -> HashMap<petgraph::stable_graph::EdgeIndex, String> {
+    use petgraph::visit::{EdgeRef, IntoEdgeReferences};
+    let mut hints = HashMap::new();
     let lr = config.direction == LayoutDirection::LeftToRight;
     // Only top-to-bottom strips fold: columns of a downward flow read like text,
     // while a left-to-right strip folded into bands either drags a ribbon of arrows
     // back across the page or loops its hops round the outside.
     if tiers.len() < FOLD_MIN_TIERS || lr {
-        return;
+        return hints;
     }
     // (main, cross) extents of a tier: along the flow and across it.
     let extent = |nodes: &[NodeIndex], positions: &HashMap<NodeIndex, NodeLayout>| {
@@ -34,10 +41,20 @@ pub(crate) fn fold_strip(positions: &mut HashMap<NodeIndex, NodeLayout>, tiers: 
     let all: Vec<NodeIndex> = tiers.iter().flatten().copied().collect();
     let (m0, m1, c0, c1) = extent(&all, positions);
     if !(m0.is_finite() && c0.is_finite()) || (m1 - m0) <= FOLD_ASPECT * (c1 - c0) {
-        return;
+        return hints;
     }
     let cols = (((m1 - m0) / (c1 - c0)).sqrt().round() as usize).clamp(2, 3);
     let per = tiers.len().div_ceil(cols);
+    // The arrows that continue the strip in the next column enter its first node
+    // from above.
+    let tier_of: HashMap<NodeIndex, usize> = tiers.iter().enumerate().flat_map(|(t, ns)| ns.iter().map(move |&n| (n, t))).collect();
+    for e in compiled.graph.edge_references() {
+        if let (Some(&ta), Some(&tb)) = (tier_of.get(&e.source()), tier_of.get(&e.target())) {
+            if tb > ta && tb % per == 0 && tb / per == ta / per + 1 {
+                hints.insert(e.id(), "top".to_string());
+            }
+        }
+    }
     let gap = (config.node_spacing as f64) * 2.0 + 4.0 * config.tokens.channel_pitch();
     let mut cross_start = c0;
     for col in 0..cols {
@@ -71,11 +88,16 @@ pub(crate) fn fold_strip(positions: &mut HashMap<NodeIndex, NodeLayout>, tiers: 
         }
         cross_start += (cc1 - cc0) + gap;
     }
+    hints
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn empty_graph() -> rdg_graph::CompiledGraph {
+        rdg_graph::build_graph(&rdg_schema::DiagramPayload::default()).expect("an empty diagram compiles")
+    }
 
     #[test]
     fn a_long_chain_folds_into_columns_and_a_square_does_not() {
@@ -88,7 +110,7 @@ mod tests {
                 vec![n]
             })
             .collect();
-        fold_strip(&mut positions, &tiers, &config);
+        fold_strip(&mut positions, &tiers, &empty_graph(), &config);
         let max_y = positions.values().map(|p| p.y + p.height).fold(0.0, f64::max);
         let max_x = positions.values().map(|p| p.x + p.width).fold(0.0, f64::max);
         assert!(max_y < 700.0, "folded: {max_y}");
@@ -99,7 +121,7 @@ mod tests {
         let mut square = HashMap::new();
         let tiers: Vec<Vec<NodeIndex>> = (0..6).map(|i| { let n = NodeIndex::new(i); square.insert(n, NodeLayout { x: 0.0, y: i as f64 * 60.0, width: 300.0, height: 40.0 }); vec![n] }).collect();
         let before = square.clone();
-        fold_strip(&mut square, &tiers, &config);
+        fold_strip(&mut square, &tiers, &empty_graph(), &config);
         assert_eq!(square[&NodeIndex::new(5)].y, before[&NodeIndex::new(5)].y);
     }
 }

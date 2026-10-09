@@ -1223,9 +1223,16 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
     };
     let cross_w = (0..rows.len()).map(|ri| row_span(&c, ri)).fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), (l, h)| (a.min(l), b.max(h)));
     let cross_w = cross_w.1 - cross_w.0;
+    let mut entry_hints: HashMap<petgraph::stable_graph::EdgeIndex, String> = HashMap::new();
     if !frame.lr && rows.len() >= FOLD_MIN_TIERS && main_len > FOLD_ASPECT * cross_w {
         let cols = ((main_len / cross_w).sqrt().round() as usize).clamp(2, 3);
         let per = rows.len().div_ceil(cols);
+        for e in compiled.graph.edge_references() {
+            let (ra, rb) = (row_of[unit_of[&e.source()]], row_of[unit_of[&e.target()]]);
+            if rb > ra && rb % per == 0 && rb / per == ra / per + 1 {
+                entry_hints.insert(e.id(), "top".to_string());
+            }
+        }
         let fold_gap = gap_cross * 2.0 + 4.0 * config.tokens.channel_pitch();
         let mut x_start = 0.0;
         for col in 0..cols {
@@ -1263,7 +1270,7 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
         .collect();
     let group_widths = c.blocks.iter().enumerate().filter_map(|(g, b)| Some((g, frame.swap(b.as_ref()?.size).0))).collect();
     let group_title_shift = c.blocks.iter().enumerate().filter_map(|(g, b)| b.as_ref().filter(|b| b.title_shift > 0.0).map(|b| (g, b.title_shift))).collect();
-    Ok(LayoutResult { positions, group_widths, group_title_shift, layered: Some(config.direction), ..Default::default() })
+    Ok(LayoutResult { positions, group_widths, group_title_shift, layered: Some(config.direction), entry_hints, ..Default::default() })
 }
 
 #[cfg(test)]

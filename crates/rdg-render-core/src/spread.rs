@@ -309,6 +309,7 @@ pub fn spread_parallels(
     }
     let debug = std::env::var_os("RDG_DEBUG_SPREAD").is_some();
     let mut moved_any = false;
+    let mut paths_out: Option<Vec<Vec<Pt>>> = None;
 
     for round in 0..4 {
         let vertical = round % 2 == 0;
@@ -528,6 +529,15 @@ pub fn spread_parallels(
             moved_any = true;
         }
     }
+    // A route that zigzags (four bends or more) is replaced by a two-bend one when a
+    // clear line exists: the search settles for a zigzag when the straight way was
+    // a lane too close to something at the time, and spreading has since moved it.
+    if resimplify(&paths, &ends, &boxes, &borders, pitch, stub, border_lane, debug, &mut paths_out) {
+        moved_any = true;
+    }
+    let paths = paths_out.take().unwrap_or(paths);
+    let mut paths = paths;
+
     // Bends on shared lines: every sliding leg snaps to the lane grid of the channel
     // it runs in (the midline between the node rows or columns either side, a pitch
     // apart), when the spot is clear and keeps a lane from every other leg. Routes
@@ -642,6 +652,170 @@ pub fn spread_parallels(
         let simplified = simplify(p);
         plan.waypoints = simplified[1..simplified.len() - 1].to_vec();
     }
+}
+
+/// Replaces every route of four or more bends by a two-bend route (a Z between two
+/// facing faces, an L between a vertical and a horizontal face) when one is clear of
+/// boxes and border bands, crosses no more routes and runs alongside none within a
+/// lane. Writes the new paths to `out`; returns whether any route changed.
+#[allow(clippy::too_many_arguments)]
+fn resimplify(
+    paths: &[Vec<Pt>],
+    ends: &Ends,
+    boxes: &[Box2],
+    borders: &[(bool, f64, f64, f64)],
+    pitch: f64,
+    stub: f64,
+    border_lane: f64,
+    debug: bool,
+    out: &mut Option<Vec<Vec<Pt>>>,
+) -> bool {
+    let mut work = paths.to_vec();
+    let mut changed = false;
+    let is_v = |side: Side| matches!(side, Side::Top | Side::Bottom);
+    let sign = |side: Side| match side {
+        Side::Top | Side::Left => -1.0,
+        Side::Bottom | Side::Right => 1.0,
+    };
+    for pi in 0..work.len() {
+        let pts = work[pi].clone();
+        if pts.len() < 6 {
+            continue;
+        }
+        let (p0, pn) = (pts[0], pts[pts.len() - 1]);
+        let (s, d) = (ends.ports[pi][0].side, ends.ports[pi][1].side);
+        let (ss, ds) = (sign(s), sign(d));
+        // Candidate routes, nearest the midpoint first.
+        let mut cands: Vec<Vec<Pt>> = Vec::new();
+        match (is_v(s), is_v(d)) {
+            (true, true) => {
+                // Z: a horizontal middle leg at y, beyond both stubs in their directions.
+                let (lo, hi) = {
+                    let a = if ss > 0.0 { (p0.1 + stub, f64::INFINITY) } else { (f64::NEG_INFINITY, p0.1 - stub) };
+                    let b = if ds > 0.0 { (pn.1 + stub, f64::INFINITY) } else { (f64::NEG_INFINITY, pn.1 - stub) };
+                    (a.0.max(b.0), a.1.min(b.1))
+                };
+                if lo <= hi {
+                    let mid = ((p0.1 + pn.1) / 2.0).clamp(lo.min(hi), hi.max(lo));
+                    for k in 0..12 {
+                        for dir in [1.0, -1.0] {
+                            let y = (mid + dir * k as f64 * pitch).round();
+                            if y >= lo && y <= hi && (k > 0 || dir > 0.0) {
+                                cands.push(vec![p0, (p0.0, y), (pn.0, y), pn]);
+                            }
+                        }
+                    }
+                }
+            }
+            (false, false) => {
+                let (lo, hi) = {
+                    let a = if ss > 0.0 { (p0.0 + stub, f64::INFINITY) } else { (f64::NEG_INFINITY, p0.0 - stub) };
+                    let b = if ds > 0.0 { (pn.0 + stub, f64::INFINITY) } else { (f64::NEG_INFINITY, pn.0 - stub) };
+                    (a.0.max(b.0), a.1.min(b.1))
+                };
+                if lo <= hi {
+                    let mid = ((p0.0 + pn.0) / 2.0).clamp(lo.min(hi), hi.max(lo));
+                    for k in 0..12 {
+                        for dir in [1.0, -1.0] {
+                            let x = (mid + dir * k as f64 * pitch).round();
+                            if x >= lo && x <= hi && (k > 0 || dir > 0.0) {
+                                cands.push(vec![p0, (x, p0.1), (x, pn.1), pn]);
+                            }
+                        }
+                    }
+                }
+            }
+            (true, false) => {
+                // L: down/up from the source, then across into the side face.
+                let corner = (p0.0, pn.1);
+                if (corner.1 - p0.1) * ss >= stub && (corner.0 - pn.0) * ds >= stub {
+                    cands.push(vec![p0, corner, pn]);
+                }
+            }
+            (false, true) => {
+                let corner = (pn.0, p0.1);
+                if (corner.0 - p0.0) * ss >= stub && (corner.1 - pn.1) * ds >= stub {
+                    cands.push(vec![p0, corner, pn]);
+                }
+            }
+        }
+        let others: Vec<&Vec<Pt>> = work.iter().enumerate().filter(|(j, _)| *j != pi).map(|(_, q)| q).collect();
+        let before: usize = others.iter().map(|q| crossings(&pts, q)).sum();
+        let leg_clear = |a: Pt, b: Pt, first: bool, last: bool| -> bool {
+            let vertical = (a.0 - b.0).abs() < 0.5;
+            let (at, mut lo, mut hi) = if vertical { (a.0, a.1.min(b.1), a.1.max(b.1)) } else { (a.1, a.0.min(b.0), a.0.max(b.0)) };
+            // The ends of a port leg sit inside their own node's inflated box.
+            let trim = pitch + 2.0;
+            if first {
+                if (vertical && a.1 < b.1) || (!vertical && a.0 < b.0) { lo += trim } else { hi -= trim }
+            }
+            if last {
+                if (vertical && b.1 < a.1) || (!vertical && b.0 < a.0) { lo += trim } else { hi -= trim }
+            }
+            if hi <= lo {
+                return true;
+            }
+            if boxes.iter().any(|bx| bx.crossed_by(vertical, at, lo, hi)) {
+                return false;
+            }
+            !borders.iter().any(|bd| bd.0 == vertical && (bd.1 - at).abs() < border_lane && hi.min(bd.3) - lo.max(bd.2) > MIN_PARALLEL)
+        };
+        let alongside_any = |cand: &[Pt]| -> bool {
+            for (k, w) in cand.windows(2).enumerate() {
+                if k == 0 || k + 2 == cand.len() {
+                    continue;
+                }
+                let vertical = (w[0].0 - w[1].0).abs() < 0.5;
+                let (at, lo, hi) = if vertical { (w[0].0, w[0].1.min(w[1].1), w[0].1.max(w[1].1)) } else { (w[0].1, w[0].0.min(w[1].0), w[0].0.max(w[1].0)) };
+                for q in &others {
+                    for v in q.windows(2) {
+                        let ov = (v[0].0 - v[1].0).abs() < 0.5 && (v[0].1 - v[1].1).abs() >= 0.5;
+                        let oh = (v[0].1 - v[1].1).abs() < 0.5 && (v[0].0 - v[1].0).abs() >= 0.5;
+                        if (vertical && !ov) || (!vertical && !oh) {
+                            continue;
+                        }
+                        let (oat, olo, ohi) = if vertical { (v[0].0, v[0].1.min(v[1].1), v[0].1.max(v[1].1)) } else { (v[0].1, v[0].0.min(v[1].0), v[0].0.max(v[1].0)) };
+                        if (oat - at).abs() < pitch - 1.0 && hi.min(ohi) - lo.max(olo) >= MIN_PARALLEL {
+                            return true;
+                        }
+                    }
+                }
+            }
+            false
+        };
+        let (mut n_box, mut n_cross, mut n_along) = (0, 0, 0);
+        let n_cands = cands.len();
+        let chosen = cands.into_iter().find(|cand| {
+            let n = cand.len();
+            if !cand.windows(2).enumerate().all(|(k, w)| leg_clear(w[0], w[1], k == 0, k + 2 == n)) {
+                n_box += 1;
+                return false;
+            }
+            if others.iter().map(|q| crossings(cand, q)).sum::<usize>() > before {
+                n_cross += 1;
+                return false;
+            }
+            if alongside_any(cand) {
+                n_along += 1;
+                return false;
+            }
+            true
+        });
+        if debug && chosen.is_none() {
+            eprintln!("resimplify: path {pi} ({} bends, {s:?}->{d:?}) kept: {n_cands} candidates, {n_box} blocked, {n_cross} cross more, {n_along} alongside", pts.len() - 2);
+        }
+        if let Some(cand) = chosen {
+            if debug {
+                eprintln!("resimplify: path {pi} {} bends -> {}", pts.len() - 2, cand.len() - 2);
+            }
+            work[pi] = cand;
+            changed = true;
+        }
+    }
+    if changed {
+        *out = Some(work);
+    }
+    changed
 }
 
 /// Drops collinear interior points and zero-length segments.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1707" height="2070" viewBox="0 0 1707 2070" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#ca8a04" stroke-width="1" stroke-linejoin="round"/></marker></defs>
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#dc2626" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Hybrid cloud deployment</text>
@@ -32,7 +32,7 @@
   <path d="M 854.0 314.0 L 854.0 356.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 858.0 434.0 L 858.0 476.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 872.0 554.0 L 872.0 873.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 887.0 501.0 L 1432.0 501.0 Q 1446.0 501.0 1446.0 515.0 L 1446.0 798.0" fill="none" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 887.0 501.0 L 1432.0 501.0 Q 1446.0 501.0 1446.0 515.0 L 1446.0 798.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
   <path d="M 856.0 898.0 L 829.4 898.0 Q 819.0 898.0 819.0 887.6 L 819.0 659.0 Q 819.0 645.0 805.0 645.0 L 319.0 645.0 Q 305.0 645.0 305.0 659.0 L 305.0 859.4 Q 305.0 872.0 292.4 872.0 L 260.0 872.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 881.0 951.0 L 881.0 1005.0 Q 881.0 1019.0 867.0 1019.0 L 463.0 1019.0 Q 449.0 1019.0 449.0 1005.0 L 449.0 904.9 Q 449.0 892.0 436.1 892.0 L 403.0 892.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 260.0 911.0 L 294.6 911.0 Q 308.0 911.0 308.0 924.4 L 308.0 1055.0 Q 308.0 1069.0 322.0 1069.0 L 695.0 1069.0 Q 709.0 1069.0 709.0 1083.0 L 709.0 1148.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
@@ -113,7 +113,7 @@
   <rect x="876.0" y="690.9" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="897.0" y="702.2" text-anchor="middle" font-size="10" fill="#8b95a5">active</text>
   <rect x="1139.5" y="481.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1166.5" y="492.8" text-anchor="middle" font-size="10" fill="#ca8a04">failover</text>
+  <text x="1166.5" y="492.8" text-anchor="middle" font-size="10" fill="#dc2626">failover</text>
   <rect x="751.5" y="726.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="772.5" y="737.8" text-anchor="middle" font-size="10" fill="#8b95a5">egress</text>
   <rect x="923.5" y="1153.5" width="108.0" height="15.5" rx="2" fill="#f7f8fa"/>
@@ -133,7 +133,7 @@
   <text x="1257.0" y="64.1" font-size="10" fill="#5b6474">Backend</text>
   <rect x="1323.0" y="53.6" width="14" height="14" rx="4" fill="#ca8a04"/>
   <text x="1349.0" y="64.1" font-size="10" fill="#5b6474">Security</text>
-  <line x1="1417.0" y1="60.6" x2="1439.0" y2="60.6" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <line x1="1417.0" y1="60.6" x2="1439.0" y2="60.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
   <text x="1447.0" y="64.1" font-size="10" fill="#5b6474">Error / fallback</text>
   <line x1="1563.0" y1="60.6" x2="1585.0" y2="60.6" stroke="#7c3aed" stroke-width="1.8"/>
   <text x="1593.0" y="64.1" font-size="10" fill="#5b6474">Data read/write</text>

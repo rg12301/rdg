@@ -335,7 +335,8 @@ pub fn place_edge_annotations(
         let total = path_len(&path);
         let (bw, bh) = badge_size(&step, tokens);
         let badge = |c: Pt| (c.0 - bw / 2.0, c.1 - bh / 2.0, bw, bh);
-        let d_max = (total * 0.5).clamp(16.0, 96.0);
+        // Anywhere along a short arrow (past the arrowhead), the first half of a long one.
+        let d_max = if total < 140.0 { (total - 16.0).max(16.0) } else { (total * 0.5).clamp(16.0, 96.0) };
         let mut best: Option<(f64, Pt)> = None;
         let mut d = 16.0;
         while d <= d_max + 1e-9 {
@@ -343,11 +344,19 @@ pub fn place_edge_annotations(
             // Beside the line: half the badge's extent across it, plus a little air.
             let off = if dir.0.abs() >= dir.1.abs() { bh / 2.0 } else { bw / 2.0 } + 5.0;
             // Right-hand side of travel first (screen coords, y down) — a stable tie-break.
+            // A second spot a little further out lets the badge step off a line that
+            // crosses its arrow right there.
             for (k, sign) in [(0.0, 1.0), (3.0, -1.0)] {
-                let c = (p.0 - dir.1 * off * sign, p.1 + dir.0 * off * sign);
-                let cost = scene.cost(badge(c), edge_idx, false, 0.0) + d * 0.6 + k;
-                if best.is_none_or(|(b, _)| cost < b - 1e-9) {
-                    best = Some((cost, c));
+                for extra in [0.0, 12.0] {
+                    let o = off + extra;
+                    let c = (p.0 - dir.1 * o * sign, p.1 + dir.0 * o * sign);
+                    let cost = scene.cost(badge(c), edge_idx, false, 0.0) + d * 0.6 + k + extra * 1.5;
+                    if std::env::var_os("RDG_DEBUG_BADGES").is_some() {
+                        eprintln!("badge {step}: d={d:.0} sign={sign} extra={extra} at=({:.0},{:.0}) cost={cost:.0} scene={:.0}", c.0, c.1, scene.cost(badge(c), edge_idx, false, 0.0));
+                    }
+                    if best.is_none_or(|(b, _)| cost < b - 1e-9) {
+                        best = Some((cost, c));
+                    }
                 }
             }
             d += 6.0;

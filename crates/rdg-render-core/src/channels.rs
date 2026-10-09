@@ -455,7 +455,7 @@ pub fn route_channels(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &
             continue;
         }
         let data = &compiled.graph[e];
-        if data.source_port.is_some() || data.target_port.is_some() {
+        if data.source_port.is_some() || data.target_port.is_some() || layout.entry_hints.contains_key(&e) {
             // Explicit faces: the search router honours them; mixing routers would
             // overlap, so the whole diagram goes to it.
             if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {

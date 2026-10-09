@@ -24,9 +24,9 @@
   <path d="M 492.0 764.0 L 492.0 877.0 Q 492.0 891.0 506.0 891.0 L 645.0 891.0 Q 659.0 891.0 659.0 905.0 L 659.0 1024.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 467.0 699.0 L 279.0 699.0 Q 265.0 699.0 265.0 713.0 L 265.0 912.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 265.0 1018.0 L 265.0 1068.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
-  <path d="M 274.0 1074.0 L 632.5 1074.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 274.0 1092.0 L 659.0 1092.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 249.0 1158.0 L 249.0 1208.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 274.0 1232.0 L 550.0 1232.0 Q 564.0 1232.0 564.0 1218.0 L 564.0 1069.0 Q 564.0 1055.0 578.0 1055.0 L 627.0 1055.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 274.0 1232.0 L 550.0 1232.0 Q 564.0 1232.0 564.0 1218.0 L 564.0 1070.0 Q 564.0 1056.0 578.0 1056.0 L 627.0 1056.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 920.0 764.0 L 920.0 1024.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 895.0 699.0 L 837.0 699.0 Q 823.0 699.0 823.0 713.0 L 823.0 878.1 Q 823.0 891.0 810.1 891.0 L 786.3 891.0 Q 777.0 891.0 777.0 900.3 L 777.0 1144.2 Q 777.0 1156.0 788.8 1156.0 L 810.5 1156.0 Q 819.0 1156.0 819.0 1164.5 L 819.0 1186.3" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 703.0 764.0 L 703.0 994.9 Q 703.0 1005.0 713.1 1005.0 L 731.7 1005.0 Q 739.0 1005.0 739.0 1012.3 L 739.0 1199.7 Q 739.0 1212.0 726.7 1212.0 L 695.0 1212.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -134,8 +134,8 @@
   <text x="344.5" y="690.8" text-anchor="middle" font-size="10" fill="#ea580c">enqueue job</text>
   <rect x="269.0" y="1035.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="293.0" y="1046.5" text-anchor="middle" font-size="10" fill="#ea580c">consume</text>
-  <rect x="414.3" y="1054.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="453.3" y="1065.8" text-anchor="middle" font-size="10" fill="#8b95a5">PUT segments</text>
+  <rect x="427.5" y="1072.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="466.5" y="1083.8" text-anchor="middle" font-size="10" fill="#8b95a5">PUT segments</text>
   <rect x="253.0" y="1175.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="274.0" y="1186.5" text-anchor="middle" font-size="10" fill="#8b95a5">invoke</text>
   <rect x="377.0" y="1212.5" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>

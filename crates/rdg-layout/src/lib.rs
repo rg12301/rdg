@@ -137,6 +137,10 @@ pub struct LayoutResult {
     /// bands across it) — what a structural edge router can rely on. `None` for a
     /// force-directed or sequence layout.
     pub layered: Option<LayoutDirection>,
+    /// Faces the layout wants certain edges to enter their target by (`"top"`,
+    /// `"bottom"`, `"left"`, `"right"`): the arrows that continue a folded strip in
+    /// the next column enter its first node from above, like text.
+    pub entry_hints: HashMap<petgraph::stable_graph::EdgeIndex, String>,
 }
 
 // ---------------------------------------------------------------------------

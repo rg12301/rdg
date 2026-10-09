@@ -607,6 +607,8 @@ pub struct SpacingMetrics {
     pub close_parallels: usize,
     /// One line per close pair (`a -> b | c -> d at Npx for Mpx`), for diagnostics.
     pub close_list: Vec<String>,
+    /// Routes with four or more bends — the W and M shapes a reader has to trace.
+    pub zigzags: usize,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -656,6 +658,9 @@ pub fn spacing_metrics(
     }
     for (i, pa) in paths.iter().enumerate() {
         m.bends += pa.len().saturating_sub(2);
+        if pa.len() >= 6 {
+            m.zigzags += 1;
+        }
         m.total_len += pa.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum::<f64>();
         m.micro_jogs += crate::polish::micro_jog_segments(pa, min_jog).len();
         for pb in &paths[i + 1..] {
