@@ -9,7 +9,7 @@
   <path d="M 144.0 263.0 L 144.0 85.0 Q 144.0 71.0 158.0 71.0 L 274.0 71.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 449.0 335.0 L 449.0 394.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 449.0 114.0 L 449.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
-  <path d="M 696.0 114.0 L 696.0 166.0 Q 696.0 180.0 682.0 180.0 L 481.0 180.0 Q 467.0 180.0 467.0 194.0 L 467.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
+  <path d="M 695.0 114.0 L 695.0 166.0 Q 695.0 180.0 681.0 180.0 L 482.0 180.0 Q 468.0 180.0 468.0 194.0 L 468.0 245.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="599.0" y="28.0" width="230.0" height="86.0" rx="6.0"/>
   <text x="714.0" y="39.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«interface»</text>
   <text x="714.0" y="60.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">PaymentMethod</text>
@@ -66,8 +66,8 @@
   <text x="209.0" y="62.8" text-anchor="middle" font-size="10" fill="#8b95a5">extends</text>
   <rect x="453.0" y="356.8" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="486.0" y="368.0" text-anchor="middle" font-size="10" fill="#8b95a5">has amount</text>
-  <rect x="385.0" y="171.8" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="415.0" y="183.0" text-anchor="middle" font-size="10" fill="#8b95a5">processes</text>
+  <rect x="453.0" y="151.9" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="483.0" y="163.2" text-anchor="middle" font-size="10" fill="#8b95a5">processes</text>
   <rect x="554.5" y="160.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="581.5" y="171.8" text-anchor="middle" font-size="10" fill="#8b95a5">produces</text>
 </svg>

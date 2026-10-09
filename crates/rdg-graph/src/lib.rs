@@ -288,7 +288,13 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
 
         let data = NodeData {
             id: node_def.id.clone(),
-            label: node_def.resolved_label(),
+            // A start/end dot or a choice diamond with no label stays unlabelled: its
+            // id is a handle for edges, not a caption to print.
+            label: if node_def.label.trim().is_empty() && node_def.text().is_none() && matches!(node_def.node_type.as_str(), "start" | "end" | "choice") {
+                String::new()
+            } else {
+                node_def.resolved_label()
+            },
             text: node_def.text(),
             node_type: node_def.node_type.clone(),
             metadata: node_def.metadata.clone(),

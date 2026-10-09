@@ -10,12 +10,21 @@ pub const LONG_ABOUT: &str = "\
 rdg compiles a YAML description of a diagram (nodes, edges, groups) into a laid-out
 draw.io (.drawio) or SVG (.svg) file. You describe WHAT to draw; rdg decides WHERE:
 positions, sizes, arrow routes, label and badge placement. Never write coordinates.
+This help is written for an LLM agent: read it once in full, then follow WORKFLOW.
 
-WORKFLOW
-  1. Write YAML (template: `rdg --example`).
-  2. Validate:  rdg --check -i diagram.yaml          (writes nothing; lists every problem)
-  3. Render:    rdg -i diagram.yaml -o diagram.drawio   (or .svg)
-  Add `--format json` to either for machine-readable results on stdout.
+WORKFLOW (agent)
+  1. Decide the diagram type and read its rules:  rdg --guide rules
+     (what to include, how to name and label, how many nodes/groups, what to leave
+     out — for HLD, LLD/class, sequence, flowchart, state, ERD, pipeline, deployment).
+  2. Write the YAML (template: rdg --example; every field: rdg --guide schema).
+  3. Validate:  rdg --check -i diagram.yaml --format json
+     Fix every error (the `hint` names the right key or id) and every warning.
+  4. Render:    rdg -i diagram.yaml -o diagram.svg      (or .drawio for editing)
+     Read stderr / the JSON: `anomalies` and \"cycles were broken\" are content
+     problems first (too many edges, a back-reference, long labels) — simplify
+     before adding layout hints.
+  5. Look at the output when you can (render .svg to .png). If it is cramped or
+     tangled: fewer edges, shorter labels, split the diagram, then hints (LAYOUT).
 
 MINIMAL YAML
   title: \"Checkout Service\"              # optional banner; `description:` adds a subtitle
@@ -37,23 +46,43 @@ MINIMAL YAML
     - {from: gateway, to: api}
     - {from: api, to: db, label: \"SQL\", edge_style: data, step: 2a}   # branches: 2a, 2b, 2.1
 
-NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type, category, display (card|icon), technology, language,
-              db_type, icon, provider (aws|gcp), metadata (tooltip), fields (table rows /
-              class members), color, width, height, link, class (a node_styles preset),
-              style_extra (raw draw.io style), rank (layout hint: pin to a tier),
+TEN RULES (the rest: rdg --guide rules)
+  1. One question per diagram; 8-25 nodes; split anything bigger.
+  2. Titles are real names written whole; role/technology in subtitle; prose in
+     description (≤ 2 lines) or metadata (not drawn).
+  3. `type` says what a node is and sets its colour; never `color:` to tell nodes apart.
+  4. Every edge points from caller to callee / writer to store; label with protocol
+     or action, ≤ 22 chars per line, ≤ 2 lines; edge_style for meaning (async, data,
+     reply, error).
+  5. Group by one criterion (domain, tier, boundary); 3-7 groups, ≤ 2 levels deep,
+     ≥ 2 members each, titles ≤ 32 chars.
+  6. Declare in reading order: triggers/clients first, then services, then stores
+     and third parties; the returning edge of a cycle goes last.
+  7. `numbered: true` only for one walkthrough (≤ 20 steps; 3a/3b for branches).
+  8. Sequence: 3-8 participants in first-use order; one-line messages; fragments
+     only for real control flow; replies as `style: reply`.
+  9. Class/ERD: inheritance child → parent (drawn upward); 2-6 fields per class;
+     multiplicity on associations.
+ 10. No hints unless the picture is wrong: same_rank, rank, constraint: false, lr.
+
+NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type, category,
+              display (card|icon), technology, language, db_type, icon, provider (aws|gcp),
+              metadata (tooltip), fields (table rows / class members), color, width, height,
+              link, class (a node_styles preset), style_extra (raw draw.io style),
+              rank (layout hint: pin to a tier),
               appearance: fill, text_color, font, font_size, stroke_width, shape
 EDGE FIELDS   from, to, label, edge_style, color, width, line_style (solid|dashed|dotted),
-              label_color, font, font_size,
-              head, tail, source_port / target_port (top|bottom|left|right),
+              label_color, font, font_size, head, tail,
+              source_port / target_port (top|bottom|left|right),
               step (3, or a branch: 3a, 3b, 3.1), constraint (false: the edge is drawn
               but does not push its target down a rank), class (an edge_styles preset),
               style_extra
 TOP LEVEL     title, description, diagram_type, direction, theme, legend, numbered,
               icons (name: svg file or inline <svg>), groups (id, label, nodes: node or
               group ids, parent, rank, fill, text_color, font, font_size, stroke_width,
-              line_style), nodes, edges,
-              same_rank (lists of ids to draw side by side), node_styles, edge_styles,
-              canvas {margin, background}, spacing {rank, node, group_gap_x, group_gap_y}
+              line_style), nodes, edges, same_rank (lists of ids to draw side by side),
+              node_styles, edge_styles, canvas {margin, background},
+              spacing {rank, node, group_gap_x, group_gap_y}
 Unknown keys are errors (with a did-you-mean), so a typo can't silently drop a field.
 
 NODE TYPES    service|server|backend  proxy|gateway|api  database|db|storage (cylinder)
@@ -65,7 +94,7 @@ EDGE STYLES   flow (default)  async  sync|call  reply|return  data|stream  error
               bidirectional  one_to_many  many_to_many  one_to_one  zero_to_many
               inheritance  realization  composition  aggregation  dependency
 
-DIAGRAM TYPES architecture | flowchart | sequence | erd | class | state
+DIAGRAM TYPES architecture (default) | flowchart | sequence | erd | class | state
 SEQUENCE      `participants:` + an ordered `sequence:` of messages, notes, fragments
               (alt/else, opt, loop, par/and, critical, break, region) and dividers;
               activations, create/destroy and numbering are automatic or per message.
@@ -75,39 +104,38 @@ COLOUR = MEANING  Every node has a category (from its type, or `category:`): fro
               backend, database, messagebus, cloud, security, external, neutral. The
               category alone sets its colour; edge styles reuse them (async = messaging
               hue, data = database hue, error/auth = security hue), and a legend
-              explains them. Containers stay neutral. So: pick the right `type` (or
-              `category:`), and do NOT set `color:` to tell boxes or groups apart —
-              five services are five green boxes, and that is correct (--check warns).
-              Icons mean something too: a logo shows the technology; a group's language
-              icon replaces the same icon on each member. Infra with a logo (postgres,
+              explains them. Containers stay neutral. Infra with a logo (postgres,
               redis, kafka, …) is drawn as its logo; `display: card` keeps a box.
 THEMES        --theme light|dark|mono-light|mono-dark|classic, or a theme YAML file.
               `rdg --guide theming` explains overriding any colour/font/size.
 
-NODE TEXT     Say what each part is: `title` (the name, bold, never split or restyled —
-              write service names whole, e.g. \"payments-bank-connector-service\"),
-              `subtitle` (one short muted line), `description` (muted text, wrapped
-              for you). `label` is a shorthand whose first line is the title and later
-              lines are details — do not use it to split a name across lines.
-LABEL TIPS    Edge labels: at most ~22 characters per line, at most 2 lines; name the
-                protocol or action (\"gRPC\", \"publish order\"). Good:
-                \"Verify Credentials\\n& User State\". Bad: \"Verify Credentials & User State\".
-                (Unsplit labels over 22 chars are wrapped onto two lines for you.)
-              Node text: a title plus a subtitle or a 1-2 line description; put long
-                explanations in `metadata` (a tooltip, not drawn).
+NODE TEXT     `title` (the name, bold, never split — write service names whole, e.g.
+              \"payments-bank-connector-service\"), `subtitle` (one short muted line),
+              `description` (muted, wrapped for you). `label` is a shorthand whose
+              first line is the title and later lines are details.
+LABEL TIPS    Edge labels: ≤ ~22 characters per line, ≤ 2 lines; name the protocol or
+              action (\"gRPC\", \"publish order\"). Good: \"Verify Credentials\\n& User State\".
+              Group titles longer than 32 characters are wrapped onto two lines.
 NESTING       A group inside a group: list its id in the outer group's `nodes` (or set
               `parent:`). Each container is sized around everything inside it.
 BRANCHES      With `numbered: true`, `step: 3a` / `3b` (or `3.1`, `3.2`) marks parallel
               or alternative paths; unnumbered edges continue after the last step.
 
+OUTPUT        The picture is laid out to read squarely (tiers wrap, long chains fold
+              into columns); groups are tight around their content; arrows keep a
+              lane apart, meet boxes at their middle and never run along a border.
 EXIT CODES    0 written (warnings may be printed)   1 invalid input or failure
               With --strict, also 1 when layout anomalies remain.
 
-MORE          rdg --guide <schema|nodes|edges|groups|styles|theming|typography|layout|output|all>
-              rdg --example   rdg --schema (JSON Schema)   rdg --list-icons";
+MORE          rdg --guide <rules|schema|nodes|edges|groups|styles|theming|sequence|
+                           typography|layout|output|all>
+              rdg --example   rdg --schema (JSON Schema)   rdg --list-icons
+";
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Topic {
+    /// What makes a good HLD, LLD, sequence, flowchart, state, ERD or pipeline diagram: read before writing YAML.
+    Rules,
     /// Every field, with aliases.
     Schema,
     /// Node types, shapes, icons, sizing.
@@ -131,6 +159,128 @@ pub enum Topic {
     /// All of the above.
     All,
 }
+
+const RULES: &str = "\
+RULES FOR GOOD TECHNICAL DIAGRAMS (read before writing YAML; rdg enforces the
+layout, you control the content — these rules are about the content)
+
+GENERAL (every diagram type)
+  Scope   One diagram answers one question. 8-25 nodes reads well; above ~35 split
+          it (one overview with groups as single nodes, then one diagram per group).
+          Do not draw every edge: show the ones a reader needs to follow the story.
+  Names   Node titles are the real names (service, table, class, queue) written
+          whole: \"payments-bank-connector-service\", not \"Payments Bank\\nConnector\".
+          Put role or technology in `subtitle` / `technology`, prose in `description`
+          (1-2 short lines) or `metadata` (a tooltip, not drawn).
+  Types   Pick the `type` that matches the thing (service, gateway, database, queue,
+          cache, client, external, decision, …): type sets colour and glyph, and the
+          legend explains them. Never set `color:` to tell nodes apart; set
+          `category:` when no type fits.
+  Edges   Every edge has a direction that means something (calls, reads/writes,
+          publishes, inherits). Label it with the protocol or action, ≤ 22 characters
+          per line, at most 2 lines (\"gRPC\", \"publish OrderPaid\", \"SQL\\nread replica\").
+          Use `edge_style` for meaning: async for events/queues, data for reads and
+          writes, reply for returns, error for failure paths. Do not label the obvious.
+  Groups  Group by one criterion per diagram (domain, tier, deployment boundary,
+          namespace) — 3-7 groups; nest at most two deep. Short titles (≤ 32
+          characters). A group needs ≥ 2 members; an empty group is dropped.
+  Flow    Declare nodes and edges in reading order: sources first (clients, triggers),
+          then what they call, then stores and third parties. The layout follows
+          declaration order on ties, cycles are broken at the edge that returns, so a
+          back-reference declared last is the one drawn against the flow.
+  Numbers `numbered: true` only for a walkthrough of one request/path; number ≤ 20
+          steps; use `step: 3a` / `3b` for parallel branches. Do not number a
+          structural diagram (ERD, class, deployment).
+  Hints   Prefer no hints. Use `same_rank` to put peers side by side, `rank` to pin a
+          tier, `constraint: false` on an edge that must not pull its target down
+          (monitoring, back-references, cross-cutting arrows), `direction: lr` for
+          pipelines and sequences of stages.
+
+HLD / ARCHITECTURE (diagram_type: architecture — the default)
+  - Tiers top to bottom: clients → edge (CDN, WAF, gateway, auth) → services (grouped
+    by domain) → messaging → data stores → third parties / observability at the side.
+    Left to right only for pipelines (ingest → process → store → serve).
+  - One node per deployable component; replicas are one node (say \"x3\" in subtitle).
+    Infra with a logo: `db_type: postgres|redis|kafka|...` draws the logo.
+  - Edges: synchronous calls plain, events `edge_style: async`, persistence
+    `edge_style: data`. Point an arrow from the caller to the callee; a reply is not
+    an edge. Each service → ≤ 3-4 outgoing edges; more means the diagram is a map,
+    not a design — split it.
+  - Cross-cutting concerns (observability, auth, config) get their own group at the
+    edge of the diagram with `constraint: false` edges, or are left out.
+  - A good HLD: 12-30 nodes, 3-6 groups, 15-45 edges, labels on the edges that
+    carry a protocol or payload, a title and one-line description.
+
+LLD / CLASS (diagram_type: class)
+  - `type: class | interface | abstract_class | struct`; `fields:` is the list of
+    members in UML notation (\"+ send(msg: Message): Result\", \"- id: UUID\",
+    \"# retries: int\"). 2-6 fields per class: the ones that explain the design.
+  - Relations: `inheritance` (child → parent), `realization` (class → interface),
+    `composition` (owner → part, part cannot live alone), `aggregation` (owner →
+    part), `dependency` (user → used), `one_to_many` etc. for data models.
+    Inheritance points UP: declare the child → parent edge and rdg draws parents on
+    top. Label associations with multiplicity (\"1..*\", \"0..1\") or a role (\"assignee\").
+  - One inheritance tree per diagram plus its collaborators; 8-20 classes.
+  - No getters/setters, no framework base classes, no utility classes.
+
+SEQUENCE (participants + sequence)
+  - 3-8 participants, left to right in the order they are first used: actor, UI,
+    API, services, stores, external. `type: actor` for people.
+  - 10-30 messages; each label is one short line (verb + object or an API call:
+    \"POST /orders\", \"authorize(amount)\"). Replies `style: reply` with the result
+    (\"201 Created\", \"order_id\"); async events `style: async`.
+  - Fragments for control flow only: alt (branches with guards), opt, loop (with a
+    bound), par, break, critical. Nest ≤ 2 deep. Notes for invariants and
+    idempotency keys, not for narration. Use `divider:` between phases.
+  - Activations are automatic (call + reply); set `activate:` only to correct them.
+
+FLOWCHART (diagram_type: flowchart)
+  - `type: start` / `end` for the terminals (label them: \"Push to main\", \"Released\"),
+    `decision` for a question (label it as a question), everything else a step.
+  - A decision has 2-3 outgoing edges labelled with the answers (\"yes\" / \"no\",
+    \"[authorized]\"). The main path goes straight down; exceptions branch sideways.
+  - `numbered: true` with `step:` branches (3a, 3b) to narrate; ≤ 25 steps.
+  - Loops: the edge back to an earlier step is drawn against the flow — declare it
+    last and label it (\"retry\", \"< 3 attempts\").
+
+STATE MACHINE (diagram_type: state)
+  - `type: start` (unlabelled or with the entry event), `state` for every state,
+    `choice` for a guard split, `end` for terminals. Transition labels are
+    \"event [guard] / action\", short. 6-15 states; one diagram per entity.
+  - The happy path is declared first so it runs down the middle; cancellations and
+    error states branch off; a terminal state shared by several paths is fine.
+
+ERD (diagram_type: erd)
+  - `type: table` with `fields:` of \"name TYPE [PK|FK]\" rows; 6-15 tables; name
+    tables as in the schema. Edges `edge_style: one_to_many | many_to_many |
+    one_to_one | zero_to_many` from parent to child, labelled with the verb
+    (\"publishes\", \"holds\") when it adds meaning.
+  - Junction tables are tables; do not draw columns that exist only to join.
+
+DATA PIPELINE / ETL (direction: lr)
+  - Stages left to right: sources → ingestion → storage layers → compute → serving.
+    Group by stage; `edge_style: data` for data movement, `async` for streams.
+  - Orchestration (schedulers) with `constraint: false` edges so it does not become
+    a stage; or leave it out.
+
+DEPLOYMENT / INFRASTRUCTURE
+  - Groups are boundaries (cloud account → region → VPC → subnet / namespace);
+    nest ≤ 3 deep. Nodes are instances, pods, managed services with `provider:` or
+    `db_type:` for logos. Edges only for traffic and replication.
+
+SELF-CHECK BEFORE RENDERING
+  - Every node id is used by ≥ 1 edge or is deliberately standalone.
+  - No edge label > 22 characters per line; no node title split across lines.
+  - No `color:` on nodes/groups; one `type` per node that matches its role.
+  - Groups: ≤ 7, nested ≤ 2 deep, each with ≥ 2 members, short titles.
+  - Run `rdg --check -i diagram.yaml --format json`: fix every error (unknown id,
+    unknown key — the hint names the correct one) and read every warning.
+  - After rendering, read stderr: \"cycles in the graph were broken\" means a
+    back-reference was drawn against the flow (expected for retries/loops; otherwise
+    reorder edges or add `constraint: false`); \"anomalies remain\" means the layout
+    could not satisfy itself — simplify (fewer edges, split the diagram, shorter
+    labels) rather than adding hints.
+";
 
 const SEQUENCE: &str = "\
 SEQUENCE DIAGRAMS
@@ -497,6 +647,7 @@ Exit codes: 0 success; 1 invalid input or failure (or anomalies, with --strict).
 
 pub fn text(topic: Topic) -> String {
     match topic {
+        Topic::Rules => RULES.into(),
         Topic::Schema => SCHEMA.into(),
         Topic::Nodes => NODES.into(),
         Topic::Edges => EDGES.into(),
@@ -507,6 +658,6 @@ pub fn text(topic: Topic) -> String {
         Topic::Typography => TYPOGRAPHY.into(),
         Topic::Layout => LAYOUT.into(),
         Topic::Output => OUTPUT.into(),
-        Topic::All => [SCHEMA, NODES, EDGES, GROUPS, STYLES, THEMING, SEQUENCE, TYPOGRAPHY, LAYOUT, OUTPUT].join("\n"),
+        Topic::All => [RULES, SCHEMA, NODES, EDGES, GROUPS, STYLES, THEMING, SEQUENCE, TYPOGRAPHY, LAYOUT, OUTPUT].join("\n"),
     }
 }

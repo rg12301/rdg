@@ -397,9 +397,12 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     // A "jog" is now any interior leg under 24px (was 12px), so this counts small steps
     // between a port stub and its lane too (measured: 6).
     assert!(total_jogs <= 8.0, "micro-jogs across bundled diagrams: {total_jogs} (budget 8)");
-    assert!(total_crossings <= 72.0, "crossings across bundled diagrams: {total_crossings} (budget 72)");
+    // Five large fixtures joined the set in round 5 (ride-hailing platform alone has
+    // 50 crossings over 48 edges; measured total 125).
+    assert!(total_crossings <= 140.0, "crossings across bundled diagrams: {total_crossings} (budget 140)");
     assert!(total_near_bend <= 11.0, "crossings at a bend/arrow end: {total_near_bend} (budget 11)");
     // A "hug" is now a leg within one lane (22px) of a border for over 24px, not within
     // 8px (measured: 12 over 21 fixtures, the router pays 2px/px to avoid them).
-    assert!(total_border_hugs <= 14.0, "arrows tracing a group border: {total_border_hugs} (budget 14)");
+    // Measured 23 over the 28 fixtures of round 5 (the five large ones added 9).
+    assert!(total_border_hugs <= 28.0, "arrows tracing a group border: {total_border_hugs} (budget 28)");
 }

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1291" height="1360" viewBox="0 0 1291 1360" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs><marker id="marker-arrow-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#9aa3b2" stroke-width="1.3" stroke-linejoin="round"/></marker><marker id="marker-open-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#ea580c" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
+  <rect width="100%" height="100%" fill="#f7f8fa"/>
+  <text x="24" y="31.4" font-size="18" font-weight="bold" fill="#111827">Incident response</text>
+  <rect x="229.0" y="64.0" width="318.0" height="1227.8" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="237.0" y="80.8" font-size="11" font-weight="bold" fill="#94a3b8">Automation</text>
+  <rect x="244.0" y="285.9" width="1014.6" height="124.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 244.0 285.9 H 278.0 V 301.4 L 272.0 307.4 H 244.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="250.0" y="300.1" font-size="10" font-weight="bold" fill="#111827">par</text>
+  <text x="286.0" y="300.1" font-size="10" fill="#5b6474">[notify]</text>
+  <line x1="244.0" y1="356.9" x2="1258.6" y2="356.9" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <rect x="41.0" y="512.9" width="832.6" height="264.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 41.0 512.9 H 81.0 V 528.4 L 75.0 534.4 H 41.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="47.0" y="527.1" font-size="10" font-weight="bold" fill="#111827">loop</text>
+  <text x="89.0" y="527.1" font-size="10" fill="#5b6474">[up to 3 attempts]</text>
+  <rect x="411.0" y="704.4" width="315.0" height="61.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 411.0 704.4 H 457.0 V 719.9 L 451.0 725.9 H 411.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="417.0" y="718.6" font-size="10" font-weight="bold" fill="#111827">break</text>
+  <text x="465.0" y="718.6" font-size="10" fill="#5b6474">[rate &lt; 1%]</text>
+  <rect x="620.0" y="801.4" width="638.6" height="338.0" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 620.0 801.4 H 654.0 V 816.9 L 648.0 822.9 H 620.0 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="626.0" y="815.6" font-size="10" font-weight="bold" fill="#111827">alt</text>
+  <text x="662.0" y="815.6" font-size="10" fill="#5b6474">[still failing]</text>
+  <line x1="620.0" y1="1086.3" x2="1258.6" y2="1086.3" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="628.0" y="1097.8" font-size="10" fill="#5b6474">[mitigated]</text>
+  <rect x="753.6" y="963.9" width="357.0" height="100.5" fill="none" stroke="#8b95a5" stroke-width="1.2"/>
+  <path d="M 753.6 963.9 H 817.6 V 979.4 L 811.6 985.4 H 753.6 Z" fill="#eef1f5" stroke="#8b95a5" stroke-width="1.2"/>
+  <text x="759.6" y="978.1" font-size="10" font-weight="bold" fill="#111827">critical</text>
+  <text x="825.6" y="978.1" font-size="10" fill="#5b6474">[rollback]</text>
+  <line x1="24.0" y1="1170.1" x2="1266.6" y2="1170.1" stroke="#c3c9d3" stroke-width="1.0"/>
+  <rect x="607.3" y="1163.3" width="76.0" height="13.5" rx="6.8" fill="#f7f8fa" stroke="#c3c9d3" stroke-width="1.0"/>
+  <text x="645.3" y="1173.6" text-anchor="middle" font-size="10" fill="#5b6474">postmortem</text>
+  <line x1="89.0" y1="148.8" x2="89.0" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="291.0" y1="138.8" x2="291.0" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="465.0" y1="168.8" x2="465.0" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="667.0" y1="151.1" x2="667.0" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="825.6" y1="138.8" x2="825.6" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="1033.6" y1="151.1" x2="1033.6" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <line x1="1211.6" y1="138.8" x2="1211.6" y2="1283.8" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
+  <rect x="460.0" y="488.9" width="10.0" height="264.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="820.6" y="561.9" width="10.0" height="39.5" fill="#ffffff" stroke="#0891b2" stroke-width="1.25"/>
+  <rect x="84.0" y="640.9" width="10.0" height="39.5" fill="#ffffff" stroke="#059669" stroke-width="1.25"/>
+  <rect x="820.6" y="1012.9" width="10.0" height="39.5" fill="#ffffff" stroke="#0891b2" stroke-width="1.25"/>
+  <rect x="662.0" y="1216.3" width="10.0" height="39.5" fill="#ffffff" stroke="#94a3b8" stroke-width="1.25"/>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 89.0 212.3 H 291.0"/>
+  <rect x="113.0" y="194.8" width="154.0" height="13.5" fill="#f7f8fa"/>
+  <text x="190.0" y="205.7" text-anchor="middle" font-size="10" fill="#ea580c">1. alert: error rate &gt; 5%</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 291.0 334.9 H 667.0"/>
+  <rect x="456.0" y="317.4" width="46.0" height="13.5" fill="#f7f8fa"/>
+  <text x="479.0" y="328.2" text-anchor="middle" font-size="10" fill="#ea580c">2. page</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 291.0 397.9 H 1211.6"/>
+  <rect x="680.3" y="380.4" width="142.0" height="13.5" fill="#f7f8fa"/>
+  <text x="751.3" y="391.2" text-anchor="middle" font-size="10" fill="#ea580c">3. post &apos;investigating&apos;</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 667.0 449.4 H 291.0"/>
+  <rect x="435.0" y="431.9" width="88.0" height="13.5" fill="#f7f8fa"/>
+  <text x="479.0" y="442.7" text-anchor="middle" font-size="10" fill="#8b95a5">4. acknowledge</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 667.0 488.9 H 470.0"/>
+  <rect x="491.5" y="471.4" width="154.0" height="13.5" fill="#f7f8fa"/>
+  <text x="568.5" y="482.2" text-anchor="middle" font-size="10" fill="#8b95a5">5. /mitigate checkout-api</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 470.0 561.9 H 820.6"/>
+  <rect x="589.3" y="544.4" width="112.0" height="13.5" fill="#f7f8fa"/>
+  <text x="645.3" y="555.1" text-anchor="middle" font-size="10" fill="#8b95a5">6. rollout restart</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 820.6 601.4 H 470.0"/>
+  <rect x="628.3" y="583.9" width="34.0" height="13.5" fill="#f7f8fa"/>
+  <text x="645.3" y="594.6" text-anchor="middle" font-size="10" fill="#9aa3b2">7. ok</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 460.0 640.9 H 94.0"/>
+  <rect x="218.0" y="623.4" width="118.0" height="13.5" fill="#f7f8fa"/>
+  <text x="277.0" y="634.1" text-anchor="middle" font-size="10" fill="#8b95a5">8. query error rate</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 94.0 680.4 H 460.0"/>
+  <rect x="254.0" y="662.9" width="46.0" height="13.5" fill="#f7f8fa"/>
+  <text x="277.0" y="673.6" text-anchor="middle" font-size="10" fill="#9aa3b2">9. rate</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 470.0 753.4 H 667.0"/>
+  <rect x="527.5" y="735.9" width="82.0" height="13.5" fill="#f7f8fa"/>
+  <text x="568.5" y="746.6" text-anchor="middle" font-size="10" fill="#9aa3b2">10. mitigated</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 667.0 850.4 H 1033.6"/>
+  <rect x="812.3" y="832.9" width="76.0" height="13.5" fill="#f7f8fa"/>
+  <text x="850.3" y="843.6" text-anchor="middle" font-size="10" fill="#ea580c">11. escalate</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 1033.6 876.4 H 1061.6 V 900.4 H 1033.6"/>
+  <text x="1067.6" y="891.7" font-size="10" fill="#8b95a5">12. declare SEV-1</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 1033.6 939.9 H 1211.6"/>
+  <rect x="1057.6" y="922.4" width="130.0" height="13.5" fill="#f7f8fa"/>
+  <text x="1122.6" y="933.1" text-anchor="middle" font-size="10" fill="#ea580c">13. post &apos;identified&apos;</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 1033.6 1012.9 H 830.6"/>
+  <rect x="861.1" y="995.4" width="142.0" height="13.5" fill="#f7f8fa"/>
+  <text x="932.1" y="1006.1" text-anchor="middle" font-size="10" fill="#8b95a5">14. rollback deployment</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 830.6 1052.3 H 1033.6"/>
+  <rect x="852.1" y="1034.8" width="160.0" height="13.5" fill="#f7f8fa"/>
+  <text x="932.1" y="1045.6" text-anchor="middle" font-size="10" fill="#9aa3b2">15. previous revision live</text>
+  <path fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-0)" d="M 667.0 1127.3 H 1211.6"/>
+  <rect x="880.3" y="1109.8" width="118.0" height="13.5" fill="#f7f8fa"/>
+  <text x="939.3" y="1120.6" text-anchor="middle" font-size="10" fill="#ea580c">16. post &apos;resolved&apos;</text>
+  <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-1)" d="M 1033.6 1216.3 H 672.0"/>
+  <rect x="790.8" y="1198.8" width="124.0" height="13.5" fill="#f7f8fa"/>
+  <text x="852.8" y="1209.6" text-anchor="middle" font-size="10" fill="#8b95a5">17. timeline request</text>
+  <path fill="none" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#marker-open-2)" d="M 672.0 1255.8 H 1033.6"/>
+  <rect x="769.8" y="1238.3" width="166.0" height="13.5" fill="#f7f8fa"/>
+  <text x="852.8" y="1249.1" text-anchor="middle" font-size="10" fill="#9aa3b2">18. timeline + action items</text>
+  <path d="M 309.0 236.3 H 449.0 L 457.0 244.3 V 261.9 H 309.0 Z" fill="#fef9c3" stroke="#e2c55a" stroke-width="1"/>
+  <path d="M 449.0 236.3 V 244.3 H 457.0" fill="none" stroke="#e2c55a" stroke-width="1"/>
+  <text x="317.0" y="252.5" font-size="10" fill="#4a3f12">deduplicated for 5 min</text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="24.0" y="98.8" width="130.0" height="50.0" rx="6.0"/><svg class="node-tech-icon" x="40.0" y="113.8" width="20.0" height="20.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><path fill="#e75225" d="M64.125.51C99.229.517 128.045 29.133 128 63.951c-.045 35.342-28.742 63.564-64.608 63.539C28.325 127.466-.025 98.818 0 63.434.023 28.834 28.898.503 64.125.51ZM44.72 22.793c.803 3.96.025 7.655-1.167 11.289-.823 2.515-1.962 4.94-2.642 7.492-1.122 4.203-2.391 8.43-2.859 12.726-.671 6.181 1.758 11.625 5.914 17.04L24.86 67.318c.033.602 0 .83.065 1.024 1.811 5.32 4.998 9.802 8.57 14.03.377.446 1.237.674 1.877.674 19.05.038 38.101.034 57.152.009.59 0 1.381-.11 1.741-.49 4.084-4.294 7.205-9.185 9.16-15.342l-20.228 3.962c1.336-2.618 2.855-4.916 3.733-7.443 2.994-8.643 1.752-16.998-2.545-24.88-3.449-6.324-6.631-12.62-4.91-20.243-3.642 3.6-5.043 8.179-5.932 12.898-.872 4.65-1.389 9.364-2.065 14.083-.098-.143-.22-.25-.242-.373a13.964 13.964 0 0 1-.176-1.49c-.413-7.726-1.92-15.17-5.106-22.28-1.873-4.182-3.941-8.462-2.008-13.456-1.307.693-2.49 1.377-3.338 2.356-2.527 2.92-3.573 6.428-3.842 10.269-.231 3.282-.546 6.579-1.156 9.806-.64 3.392-1.65 6.714-3.932 9.831-.918-6.656-1.02-13.244-6.956-17.47ZM93.842 88.88H34.088v10.38h59.754Zm-47.904 15.746c-.049 8.642 8.753 15.081 19.633 14.614 9.02-.389 16.999-7.484 16.315-14.614zm0 0"/></svg><text x="102.0" y="128.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Monitoring</tspan>
+  </text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="241.0" y="98.8" width="100.0" height="40.0" rx="6.0"/>
+  <text x="291.0" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Pager</tspan>
+  </text>
+  <circle cx="667.0" cy="104.0" r="5.1" fill="none" stroke="#94a3b8" stroke-width="1.75"/>
+  <path d="M 667.0 109.1 V 120.6 M 657.4 113.2 H 676.6 M 667.0 120.6 L 658.7 130.8 M 667.0 120.6 L 675.3 130.8" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round"/>
+  <text x="667.0" y="147.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">On-call engineer</text>
+  <rect fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.5" x="395.0" y="98.8" width="140.0" height="70.0" rx="6.0"/><svg class="node-tech-icon" x="412.4" y="117.1" width="20.0" height="20.0" viewBox="0 0 128 128" preserveAspectRatio="xMidYMid meet"><linearGradient id="n3-python-original-a" gradientUnits="userSpaceOnUse" x1="70.252" y1="1237.476" x2="170.659" y2="1151.089" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#5A9FD4"/><stop offset="1" stop-color="#306998"/></linearGradient><linearGradient id="n3-python-original-b" gradientUnits="userSpaceOnUse" x1="209.474" y1="1098.811" x2="173.62" y2="1149.537" gradientTransform="matrix(.563 0 0 -.568 -29.215 707.817)"><stop offset="0" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFE873"/></linearGradient><path fill="url(#n3-python-original-a)" d="M63.391 1.988c-4.222.02-8.252.379-11.8 1.007-10.45 1.846-12.346 5.71-12.346 12.837v9.411h24.693v3.137H29.977c-7.176 0-13.46 4.313-15.426 12.521-2.268 9.405-2.368 15.275 0 25.096 1.755 7.311 5.947 12.519 13.124 12.519h8.491V67.234c0-8.151 7.051-15.34 15.426-15.34h24.665c6.866 0 12.346-5.654 12.346-12.548V15.833c0-6.693-5.646-11.72-12.346-12.837-4.244-.706-8.645-1.027-12.866-1.008zM50.037 9.557c2.55 0 4.634 2.117 4.634 4.721 0 2.593-2.083 4.69-4.634 4.69-2.56 0-4.633-2.097-4.633-4.69-.001-2.604 2.073-4.721 4.633-4.721z" transform="translate(0 10.26)"/><path fill="url(#n3-python-original-b)" d="M91.682 28.38v10.966c0 8.5-7.208 15.655-15.426 15.655H51.591c-6.756 0-12.346 5.783-12.346 12.549v23.515c0 6.691 5.818 10.628 12.346 12.547 7.816 2.297 15.312 2.713 24.665 0 6.216-1.801 12.346-5.423 12.346-12.547v-9.412H63.938v-3.138h37.012c7.176 0 9.852-5.005 12.348-12.519 2.578-7.735 2.467-15.174 0-25.096-1.774-7.145-5.161-12.521-12.348-12.521h-9.268zM77.809 87.927c2.561 0 4.634 2.097 4.634 4.692 0 2.602-2.074 4.719-4.634 4.719-2.55 0-4.633-2.117-4.633-4.719 0-2.595 2.083-4.692 4.633-4.692z" transform="translate(0 10.26)"/><radialGradient id="n3-python-original-c" cx="1825.678" cy="444.45" r="26.743" gradientTransform="matrix(0 -.24 -1.055 0 532.979 557.576)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B8B8B8" stop-opacity=".498"/><stop offset="1" stop-color="#7F7F7F" stop-opacity="0"/></radialGradient><path opacity=".444" fill="url(#n3-python-original-c)" d="M97.309 119.597c0 3.543-14.816 6.416-33.091 6.416-18.276 0-33.092-2.873-33.092-6.416 0-3.544 14.815-6.417 33.092-6.417 18.275 0 33.091 2.872 33.091 6.417z"/></svg><text x="478.0" y="131.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Runbook bot</tspan>
+  </text>
+  <text x="465.0" y="149.2" text-anchor="middle" font-size="10" fill="#5b6474">[Python]</text>
+  <rect fill="#0891b2" fill-opacity="0.122" stroke="#0891b2" stroke-width="1.5" x="760.6" y="98.8" width="130.0" height="40.0" rx="6.0"/>
+  <text x="825.6" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Kubernetes API</tspan>
+  </text>
+  <circle cx="1033.6" cy="104.0" r="5.1" fill="none" stroke="#94a3b8" stroke-width="1.75"/>
+  <path d="M 1033.6 109.1 V 120.6 M 1024.0 113.2 H 1043.2 M 1033.6 120.6 L 1025.3 130.8 M 1033.6 120.6 L 1041.9 130.8" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round"/>
+  <text x="1033.6" y="147.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">Incident lead</text>
+  <rect fill="#64748b" fill-opacity="0.078" stroke="#64748b" stroke-width="1.5" x="1156.6" y="98.8" width="110.0" height="40.0" rx="6.0"/>
+  <text x="1211.6" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
+    <tspan>Status page</tspan>
+  </text>
+  <text x="24.0" y="1311.7" font-size="11" font-weight="bold" fill="#111827">Legend</text>
+  <rect x="24.0" y="1325.4" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
+  <text x="54.0" y="1335.9" font-size="10" fill="#5b6474">Backend</text>
+  <rect x="116.0" y="1325.4" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
+  <text x="146.0" y="1335.9" font-size="10" fill="#5b6474">Other</text>
+  <rect x="196.0" y="1325.4" width="22" height="14" rx="3" fill="#0891b2" fill-opacity="0.122" stroke="#0891b2" stroke-width="1.25"/>
+  <text x="226.0" y="1335.9" font-size="10" fill="#5b6474">Edge &amp; cloud</text>
+  <rect x="318.0" y="1325.4" width="22" height="14" rx="3" fill="#64748b" fill-opacity="0.078" stroke="#64748b" stroke-width="1.25"/>
+  <text x="348.0" y="1335.9" font-size="10" fill="#5b6474">External</text>
+  <line x1="416.0" y1="1332.4" x2="438.0" y2="1332.4" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="446.0" y="1335.9" font-size="10" fill="#5b6474">Async / event</text>
+</svg>

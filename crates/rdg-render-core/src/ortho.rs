@@ -62,6 +62,8 @@ struct Weights {
     bend: f64,
     cross: f64,
     share: f64,
+    /// Per crossing of a border of a group neither end is in.
+    foreign: f64,
     crowd: f64,
     along_border: f64,
     along_node: f64,
@@ -74,6 +76,7 @@ impl Weights {
             bend: tune("W_BEND", W_BEND),
             cross: tune("W_CROSS", W_CROSS),
             share: tune("W_SHARE", W_SHARE),
+            foreign: tune("W_FOREIGN", W_FOREIGN_BORDER),
             crowd: tune("W_CROWD", W_CROWD),
             along_border: tune("W_ALONG_BORDER", W_ALONG_BORDER),
             along_node: tune("W_ALONG_NODE", W_ALONG_NODE),
@@ -105,10 +108,13 @@ const NEAR_BEND: f64 = 20.0;
 /// Each time a route crosses a border of a group one of its ends is in (it has to, at
 /// least once).
 const W_BORDER_CROSS: f64 = 12.0;
+/// Extra for crossing the source's own container border in the direction away from
+/// the target (see `step_cost`).
+const W_BACK_EXIT: f64 = 320.0;
 /// Each time a route crosses a border of a group neither of its ends is in — cutting
 /// through a container it has no business in reads as if the edge touched that group,
 /// so it is worth a long detour (several bends) to go round.
-const W_FOREIGN_BORDER: f64 = 160.0;
+const W_FOREIGN_BORDER: f64 = 400.0;
 /// Two edges using the same port, or ports closer than the minimum pitch.
 const W_PORT_TAKEN: f64 = 400.0;
 /// Per px a port sits off its face's centre: an arrow meets a face at its middle unless
@@ -446,7 +452,7 @@ impl Router<'_> {
     /// node's face. `beside_own` says whether a point sits beside one of the route's
     /// own end nodes, where running along the face is just leaving it.
     #[allow(clippy::too_many_arguments)]
-    fn step_cost(&self, i: usize, j: usize, ni: usize, nj: usize, d: Dir, nd: Dir, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect]) -> StepCost {
+    fn step_cost(&self, i: usize, j: usize, ni: usize, nj: usize, d: Dir, nd: Dir, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> StepCost {
         let g = &self.grid;
         let beside_own = |i: usize, j: usize| {
             let (x, y) = g.pt(i, j);
@@ -487,7 +493,13 @@ impl Router<'_> {
             (g.on_hborder[nid], g.hborder_groups[nid], g.near_vborder[nid] && g.near_vborder[here], g.near_vnode[nid] && g.near_vnode[here])
         };
         if on_border {
-            c.border = if border_groups & !own_groups != 0 { W_FOREIGN_BORDER } else { W_BORDER_CROSS };
+            c.border = if border_groups & !own_groups != 0 { self.w.foreign } else { W_BORDER_CROSS };
+            // Leaving a container the source is in by the side facing away from the
+            // target — out through the top when the target is below — is a detour a
+            // reader never expects: the arrow should leave toward where it goes.
+            if border_groups & src_groups != 0 && away == Some(nd) {
+                c.border += W_BACK_EXIT;
+            }
         }
         if near_border {
             c.along_border = self.w.along_border * len;
@@ -506,14 +518,14 @@ impl Router<'_> {
 
     /// The cost terms of a whole route, for `RDG_DEBUG_ORTHO=costs`: the pins' own
     /// costs plus every move's breakdown, summed.
-    fn explain(&self, r: &Route, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect]) -> (StepCost, usize) {
+    fn explain(&self, r: &Route, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> (StepCost, usize) {
         let mut total = StepCost::default();
         let mut d = Dir::out_of(r.src.side);
         let mut bends = 0;
         for w in r.cells.windows(2) {
             let ((i, j), (ni, nj)) = (w[0], w[1]);
             let nd = if ni != i { if ni > i { Dir::Right } else { Dir::Left } } else if nj > j { Dir::Down } else { Dir::Up };
-            let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own);
+            let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away);
             if nd != d {
                 bends += 1;
             }
@@ -526,7 +538,8 @@ impl Router<'_> {
     /// A* from any `srcs` pin to any `dsts` pin. `None` when unreachable. `own` holds the
     /// two end nodes' boxes: a route leaving a face naturally runs beside its own node
     /// for a moment, which is not hugging it.
-    fn search(&self, srcs: &[Pin], dsts: &[Pin], occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect]) -> Option<Route> {
+    #[allow(clippy::too_many_arguments)]
+    fn search(&self, srcs: &[Pin], dsts: &[Pin], occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> Option<Route> {
         let g = &self.grid;
         let (nx, ny) = (g.xs.len(), g.ys.len());
         let n_states = nx * ny * 4;
@@ -620,7 +633,7 @@ impl Router<'_> {
                 if blocked {
                     continue;
                 }
-                let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own).total();
+                let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away).total();
                 let ns = state(ni, nj, nd);
                 let ng = gc + c;
                 if ng < best[ns] - 1e-9 {
@@ -1064,9 +1077,23 @@ pub fn route_orthogonal(
             let own_groups = node_groups.get(&s).copied().unwrap_or(0) | node_groups.get(&d).copied().unwrap_or(0);
             let own = [Rect::of(&layout.positions[&s]), Rect::of(&layout.positions[&d])];
             let src_groups = node_groups.get(&s).copied().unwrap_or(0);
-            if let Some(r) = router.search(&src_pins, &dst_pins, &occ, own_groups, src_groups, &own) {
+            // The flow-axis direction that leads away from the target, if the ends are
+            // on different tiers.
+            let away = {
+                let (a, b) = (&layout.positions[&s], &layout.positions[&d]);
+                if !tb {
+                    if b.x >= a.x + a.width { Some(Dir::Left) } else if b.x + b.width <= a.x { Some(Dir::Right) } else { None }
+                } else if b.y >= a.y + a.height {
+                    Some(Dir::Up)
+                } else if b.y + b.height <= a.y {
+                    Some(Dir::Down)
+                } else {
+                    None
+                }
+            };
+            if let Some(r) = router.search(&src_pins, &dst_pins, &occ, own_groups, src_groups, &own, away) {
                 if round == REROUTE_ROUNDS && std::env::var("RDG_DEBUG_ORTHO").is_ok_and(|v| v == "costs") {
-                    let (c, bends) = router.explain(&r, &occ, own_groups, src_groups, &own);
+                    let (c, bends) = router.explain(&r, &occ, own_groups, src_groups, &own, away);
                     let pts: Vec<String> = r.cells.iter().map(|&(i, j)| { let (x, y) = router.grid.pt(i, j); format!("({x:.0},{y:.0})") }).collect();
                     eprintln!(
                         "cost {} -> {}: pins {:.0}+{:.0} len {:.0} bends {bends}={:.0} share {:.0} crowd {:.0} cross {:.0} border {:.0} along_border {:.0} along_node {:.0} | {}",
@@ -1094,6 +1121,9 @@ pub fn route_orthogonal(
         pts.extend(r.cells.iter().map(|&(i, j)| router.grid.pt(i, j)));
         pts.push(r.dst.port);
         paths.push((e, simplify(pts), r.src, r.dst));
+    }
+    for (_, pts, src, dst) in &mut paths {
+        stand_off_faces(pts, src.side, dst.side, router.clearance);
     }
     // Lanes may run closer to a node than a route's search clearance: that clearance
     // keeps stubs readable, but a nudged lane only needs to stay visibly off the box.
@@ -1154,6 +1184,53 @@ pub(crate) fn is_top_to_bottom(compiled: &CompiledGraph, layout: &LayoutResult) 
         }
     }
     down >= side
+}
+
+/// Makes sure a route leaves and enters by a stub standing off the face: a first or
+/// last leg running *along* the face it starts on (the search can reach the port
+/// along the face's own grid line) is lifted a clearance off it, so the arrow meets
+/// the box squarely.
+fn stand_off_faces(pts: &mut Vec<Pt>, src: Side, dst: Side, clearance: f64) {
+    let along_face = |a: Pt, b: Pt, side: Side| match side {
+        Side::Top | Side::Bottom => (a.1 - b.1).abs() < 0.01 && (a.0 - b.0).abs() > 0.01,
+        Side::Left | Side::Right => (a.0 - b.0).abs() < 0.01 && (a.1 - b.1).abs() > 0.01,
+    };
+    let n = pts.len();
+    if n >= 3 && along_face(pts[0], pts[1], src) {
+        let (p0, p2) = (pts[0], pts[2]);
+        let (vertical_face, sign) = match src {
+            Side::Top => (true, -1.0),
+            Side::Bottom => (true, 1.0),
+            Side::Left => (false, -1.0),
+            Side::Right => (false, 1.0),
+        };
+        let reach = if vertical_face { (p2.1 - p0.1) * sign } else { (p2.0 - p0.0) * sign };
+        if reach >= clearance {
+            let at = if vertical_face { p0.1 + sign * clearance } else { p0.0 + sign * clearance };
+            let lifted = if vertical_face { (pts[1].0, at) } else { (at, pts[1].1) };
+            let stub = if vertical_face { (p0.0, at) } else { (at, p0.1) };
+            pts[1] = lifted;
+            pts.insert(1, stub);
+        }
+    }
+    let n = pts.len();
+    if n >= 3 && along_face(pts[n - 2], pts[n - 1], dst) {
+        let (p0, p2) = (pts[n - 1], pts[n - 3]);
+        let (vertical_face, sign) = match dst {
+            Side::Top => (true, -1.0),
+            Side::Bottom => (true, 1.0),
+            Side::Left => (false, -1.0),
+            Side::Right => (false, 1.0),
+        };
+        let reach = if vertical_face { (p2.1 - p0.1) * sign } else { (p2.0 - p0.0) * sign };
+        if reach >= clearance {
+            let at = if vertical_face { p0.1 + sign * clearance } else { p0.0 + sign * clearance };
+            let lifted = if vertical_face { (pts[n - 2].0, at) } else { (at, pts[n - 2].1) };
+            let stub = if vertical_face { (p0.0, at) } else { (at, p0.1) };
+            pts[n - 2] = lifted;
+            pts.insert(n - 1, stub);
+        }
+    }
 }
 
 /// Drops collinear interior points and zero-length segments.

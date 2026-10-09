@@ -10,7 +10,7 @@
   <path d="M 234.0 681.0 L 262.1 681.0 Q 273.0 681.0 273.0 670.1 L 273.0 496.9 Q 273.0 486.0 283.9 486.0 L 312.0 486.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 1005.0 246.0 L 1167.0 246.0 Q 1181.0 246.0 1181.0 260.0 L 1181.0 441.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 925.0 312.0 L 925.0 441.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
-  <path d="M 845.0 246.0 L 822.0 246.0 Q 813.0 246.0 813.0 255.0 L 813.0 476.8 Q 813.0 486.0 803.8 486.0 L 780.0 486.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
+  <path d="M 845.0 246.0 L 821.2 246.0 Q 812.0 246.0 812.0 255.2 L 812.0 477.0 Q 812.0 486.0 803.0 486.0 L 780.0 486.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 709.0 106.0 L 709.0 203.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
   <path d="M 862.0 67.0 L 911.0 67.0 Q 925.0 67.0 925.0 81.0 L 925.0 180.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="537.0" y="203.0" width="230.0" height="86.0" rx="6.0"/>
@@ -97,8 +97,8 @@
   <text x="664.0" y="92.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">+ dispatch(msg: Message): void</text>
   <rect x="1083.0" y="226.5" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1093.0" y="237.8" text-anchor="middle" font-size="10" fill="#8b95a5">to</text>
-  <rect x="817.0" y="358.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="859.0" y="369.5" text-anchor="middle" font-size="10" fill="#8b95a5">rendered from</text>
+  <rect x="816.0" y="358.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="858.0" y="369.5" text-anchor="middle" font-size="10" fill="#8b95a5">rendered from</text>
   <rect x="713.0" y="146.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="728.0" y="158.0" text-anchor="middle" font-size="10" fill="#8b95a5">1..*</text>
 </svg>

@@ -602,6 +602,11 @@ pub struct SpacingMetrics {
     /// Times an edge crosses the border of a group neither of its ends is in — an
     /// arrow cutting through a container it has no business in.
     pub foreign_crossings: usize,
+    /// Pairs of legs of different edges running side by side closer than a lane
+    /// (see `spread::close_pairs`) — lines a reader can't tell apart.
+    pub close_parallels: usize,
+    /// One line per close pair (`a -> b | c -> d at Npx for Mpx`), for diagnostics.
+    pub close_list: Vec<String>,
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -643,6 +648,12 @@ pub fn spacing_metrics(
         .filter_map(|&&e| edge_full_path(compiled, layout, e, &edge_plans[&e]).map(|p| (e, p)))
         .unzip();
     let min_jog = tokens.polish_min_jog();
+    let close = crate::spread::close_pairs(&paths, tokens.channel_pitch().max(10.0));
+    m.close_parallels = close.len();
+    for (a, b, d, len) in &close {
+        let name = |e: EdgeIndex| compiled.graph.edge_endpoints(e).map_or(String::from("?"), |(s, t)| format!("{} -> {}", compiled.graph[s].id, compiled.graph[t].id));
+        m.close_list.push(format!("{} | {} at {d:.0}px for {len:.0}px", name(path_edges[*a]), name(path_edges[*b])));
+    }
     for (i, pa) in paths.iter().enumerate() {
         m.bends += pa.len().saturating_sub(2);
         m.total_len += pa.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum::<f64>();

@@ -192,6 +192,7 @@ pub(crate) fn layout_topological(
         axis,
     );
 
+    crate::fold::fold_strip(&mut positions, &layer_buckets, config);
     Ok(LayoutResult { positions, layered: Some(config.direction), ..Default::default() })
 }
 

@@ -21,11 +21,29 @@ pub struct Padding {
     pub bottom: f64,
 }
 
-/// Padding for a group whose content (nodes and inner groups) spans `content_w` ×
-/// `content_h`: content-aware sides and bottom, and the title row on top.
-pub fn group_padding(tokens: &DesignTokens, content_w: f64, content_h: f64) -> Padding {
+/// Padding for `group` when its content (nodes and inner groups) spans `content_w` ×
+/// `content_h`: content-aware sides and bottom, and the title's lines on top.
+pub fn group_padding(tokens: &DesignTokens, group: &GroupDef, content_w: f64, content_h: f64) -> Padding {
     let side = tokens.group_pad_for(content_w, content_h);
-    Padding { left: side, right: side, top: tokens.group_pad_top_for(content_w, content_h), bottom: side }
+    let extra_lines = group_title_lines(group, tokens).len().saturating_sub(1) as f64;
+    let top = tokens.group_pad_top_for(content_w, content_h) + extra_lines * tokens.line_height(tokens.group_title_font_size);
+    Padding { left: side, right: side, top: top.round(), bottom: side }
+}
+
+/// The title as drawn: one line, or two balanced lines when it is longer than
+/// [`DesignTokens::group_title_wrap_chars`] and has a space to break at.
+pub fn group_title_lines(group: &GroupDef, tokens: &DesignTokens) -> Vec<String> {
+    let label = group.label.trim();
+    let n = label.chars().count();
+    if n <= tokens.group_title_wrap_chars || !label.contains(' ') {
+        return vec![label.to_string()];
+    }
+    // The space nearest the middle gives the most even split.
+    let mid = n / 2;
+    let Some((i, _)) = label.char_indices().filter(|&(_, c)| c == ' ').min_by_key(|&(i, _)| (label[..i].chars().count() as i64 - mid as i64).abs()) else {
+        return vec![label.to_string()];
+    };
+    vec![label[..i].to_string(), label[i + 1..].to_string()]
 }
 
 /// Offset of the title text (its icon first, when it has one) from the box's top-left.
@@ -43,7 +61,8 @@ fn title_text_width(group: &GroupDef, tokens: &DesignTokens) -> f64 {
     let font = tokens.group_title_font_size;
     let (icon, gap) = group_icon_size(tokens);
     let icon_w = if group.resolved_icon().is_some() { icon + gap } else { 0.0 };
-    group.label.chars().count() as f64 * tokens.char_width(font) + icon_w
+    let longest = group_title_lines(group, tokens).iter().map(|l| l.chars().count()).max().unwrap_or(0);
+    longest as f64 * tokens.char_width(font) + icon_w
 }
 
 /// The narrowest a group's box may be: its title, inset on both sides.
@@ -65,7 +84,7 @@ pub fn title_clear_x(group: &GroupDef, tokens: &DesignTokens) -> f64 {
 pub fn group_title_rect(group: &GroupDef, rect: Rect, tokens: &DesignTokens) -> Rect {
     let font = tokens.group_title_font_size;
     let w = title_text_width(group, tokens) + tokens.px(2.5);
-    let h = tokens.px(1.0) + tokens.line_height(font) + tokens.px(1.25);
+    let h = tokens.px(1.0) + group_title_lines(group, tokens).len() as f64 * tokens.line_height(font) + tokens.px(1.25);
     (rect.0, rect.1, w.min(rect.2), h)
 }
 
@@ -94,7 +113,7 @@ pub fn group_rects(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &Des
         }
         let Some((x0, y0, x1, y1)) = ext else { continue };
         let (cw, ch) = (x1 - x0, y1 - y0);
-        let pad = group_padding(tokens, cw, ch);
+        let pad = group_padding(tokens, &compiled.groups[g], cw, ch);
         // Extra room on the left so nodes fed from above sit past the title (the layout's
         // call); any further widening to the minimum width is shared evenly.
         let shift = layout.group_title_shift.get(&g).copied().unwrap_or(0.0);

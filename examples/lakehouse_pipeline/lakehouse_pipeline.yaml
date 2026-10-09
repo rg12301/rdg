@@ -1,0 +1,59 @@
+# Lakehouse data platform, left to right: sources, ingestion, bronze/silver/gold
+# layers, orchestration on top, serving on the right. Many labelled edges.
+title: "Lakehouse data platform"
+direction: lr
+groups:
+  - {id: sources, label: "Sources", nodes: [app_db, crm, clickstream, files]}
+  - {id: ingest, label: "Ingestion", nodes: [cdc, kafka, batch_loader]}
+  - {id: lake, label: "Lakehouse", nodes: [bronze, silver, gold]}
+  - {id: bronze, label: "Bronze (raw)", nodes: [raw_events, raw_tables]}
+  - {id: silver, label: "Silver (cleaned)", nodes: [events_clean, customers, orders]}
+  - {id: gold, label: "Gold (marts)", nodes: [sales_mart, churn_features]}
+  - {id: compute, label: "Compute & orchestration", nodes: [spark, airflow, dbt]}
+  - {id: serving, label: "Serving", nodes: [warehouse, bi, ml_model, reverse_etl]}
+nodes:
+  - {id: app_db, label: app database, type: database, db_type: postgres}
+  - {id: crm, label: CRM, type: external}
+  - {id: clickstream, label: clickstream SDK, type: client, language: typescript}
+  - {id: files, label: partner files, subtitle: SFTP, type: storage}
+  - {id: cdc, label: CDC connector, subtitle: Debezium, type: service, language: java}
+  - {id: kafka, label: event bus, type: queue, db_type: kafka}
+  - {id: batch_loader, label: batch loader, type: function, language: python}
+  - {id: raw_events, label: raw_events, type: table}
+  - {id: raw_tables, label: raw_tables, type: table}
+  - {id: events_clean, label: events, type: table}
+  - {id: customers, label: customers, type: table}
+  - {id: orders, label: orders, type: table}
+  - {id: sales_mart, label: sales_mart, type: table}
+  - {id: churn_features, label: churn_features, type: table}
+  - {id: spark, label: Spark jobs, type: service, language: scala}
+  - {id: airflow, label: Airflow, type: service, language: python}
+  - {id: dbt, label: dbt, type: service}
+  - {id: warehouse, label: warehouse, type: database, db_type: snowflake}
+  - {id: bi, label: BI dashboards, type: client}
+  - {id: ml_model, label: churn model, type: service, language: python}
+  - {id: reverse_etl, label: reverse ETL, type: function, language: python}
+edges:
+  - {from: app_db, to: cdc, label: WAL, edge_style: data}
+  - {from: cdc, to: kafka, label: change events, edge_style: async}
+  - {from: clickstream, to: kafka, label: events, edge_style: async}
+  - {from: crm, to: batch_loader, label: nightly export}
+  - {from: files, to: batch_loader, label: CSV}
+  - {from: kafka, to: raw_events, label: stream, edge_style: data}
+  - {from: batch_loader, to: raw_tables, label: load, edge_style: data}
+  - {from: raw_events, to: events_clean, label: dedupe, edge_style: data}
+  - {from: raw_tables, to: customers, label: conform, edge_style: data}
+  - {from: raw_tables, to: orders, label: conform, edge_style: data}
+  - {from: events_clean, to: churn_features, label: aggregate, edge_style: data}
+  - {from: customers, to: sales_mart, edge_style: data}
+  - {from: orders, to: sales_mart, edge_style: data}
+  - {from: customers, to: churn_features, edge_style: data}
+  - {from: sales_mart, to: warehouse, label: sync, edge_style: data}
+  - {from: warehouse, to: bi, label: SQL}
+  - {from: churn_features, to: ml_model, label: train / score}
+  - {from: ml_model, to: reverse_etl, label: scores}
+  - {from: reverse_etl, to: crm, label: write back}
+  - {from: airflow, to: spark, label: schedule, constraint: false}
+  - {from: airflow, to: dbt, label: schedule, constraint: false}
+  - {from: spark, to: events_clean, label: transforms, constraint: false}
+  - {from: dbt, to: sales_mart, label: models, constraint: false}

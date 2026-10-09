@@ -92,6 +92,10 @@ pub struct DesignTokens {
     pub icon_halo_circle: bool,
     /// Edge labels longer than this wrap onto two lines.
     pub edge_label_wrap_chars: usize,
+    /// A group title longer than this (in characters) is split onto two balanced
+    /// lines: one long line would widen a narrow box, or push its content right of
+    /// the title, for nothing but whitespace.
+    pub group_title_wrap_chars: usize,
 
     // -- Sequence diagrams (set from the theme's `sequence:` section) ------------------
     /// Minimum gap between neighbouring participant boxes, px.
@@ -299,6 +303,7 @@ impl Default for DesignTokens {
             tile_badge_size: 18.0,
             icon_halo_circle: true,
             edge_label_wrap_chars: 22,
+            group_title_wrap_chars: 32,
             seq_participant_gap: 32.0,
             seq_message_gap: 20.0,
             seq_activation_width: 10.0,
@@ -403,7 +408,9 @@ impl DesignTokens {
     /// box — see that field's docs. `content_w`/`content_h` are the group's member
     /// nodes' combined bounding box, *before* padding.
     pub fn group_pad_for(&self, content_w: f64, content_h: f64) -> f64 {
-        let scale = (content_w + content_h) * 0.5;
+        // Scaled by the content's smaller side: a wide, flat tier of services wants the
+        // margin of a short box, not of a wide one — the extra was pure whitespace.
+        let scale = content_w.min(content_h);
         // Whole pixels: a group box is `node bbox - pad`, so an integer pad keeps its
         // corner on the same pixel grid as the (snapped) nodes inside it — draw.io rounds
         // every cell and group-relative coordinate independently, and a fractional pad is

@@ -44,6 +44,7 @@ const SIBLING_LINK_MAX: usize = 2;
 const GRID_FROM: usize = 5;
 /// Placement sweeps (units, then items within groups) — enough for positions to settle.
 const SWEEPS: usize = 4;
+use crate::fold::{FOLD_ASPECT, FOLD_MIN_TIERS};
 /// A gap widened for crossing edge labels grows to at most this many group gaps.
 const MAX_LABEL_GAP_FACTOR: f64 = 5.0;
 
@@ -260,10 +261,10 @@ impl Compound<'_> {
         }
         let (layers, pos, content) = self.arrange(g, &items);
         let (w, h) = self.frame.swap(content);
-        let pad = self.frame.pad(group_padding(&self.config.tokens, w, h));
+        let group = &self.compiled.groups[g];
+        let pad = self.frame.pad(group_padding(&self.config.tokens, group, w, h));
         let mut inset = (pad[0], pad[2]);
         let mut size = (content.0 + pad[0] + pad[1], content.1 + pad[2] + pad[3]);
-        let group = &self.compiled.groups[g];
         // Top-to-bottom, an arrow dropping in from above onto a node in the top layer
         // must not cross the title: the content is shifted right until every such
         // node's centre is past the title's end (real width is the cross axis
@@ -369,9 +370,31 @@ impl Compound<'_> {
             layers[rank[i]].push(it);
         }
         order_layers(&mut layers, &edges);
+        // Top-to-bottom the slot under the group's title is best taken by a top-layer
+        // item nothing enters from above: a fed item there forces the whole content
+        // right of the title (see `layout_group`), leaving an empty band under it.
+        if !self.frame.lr {
+            if let Some(top) = layers.first_mut() {
+                let fed = self.fed_items(g, top);
+                if top.first().is_some_and(|it| fed.contains(it)) {
+                    if let Some(i) = top.iter().position(|it| !fed.contains(it)) {
+                        let it = top.remove(i);
+                        top.insert(0, it);
+                    }
+                }
+            }
+        }
 
         let rank_of = |it: &Item| rank[index[it]];
-        let mut gaps = crate::gaps::gaps_for_spans(n_ranks, edges.iter().map(|(a, b)| (rank_of(a), rank_of(b))), self.config);
+        // Where each item's centre falls across the flow with every layer packed from
+        // the left — what `settle_group` then slides, keeping the order.
+        let spacing = self.config.node_spacing as f64;
+        let centre = |it: &Item| -> f64 {
+            let li = &layers[rank_of(it)];
+            let before: f64 = li.iter().take_while(|x| *x != it).map(|&x| self.size(x).0 + spacing).sum();
+            before + self.size(*it).0 / 2.0
+        };
+        let mut gaps = crate::gaps::gaps_for_tracks(n_ranks, edges.iter().map(|(a, b)| ((rank_of(a), rank_of(b)), (centre(a), centre(b)))), self.config);
         for &(a, b, l) in &labels {
             let (ra, rb) = (rank_of(&a), rank_of(&b));
             if ra.abs_diff(rb) == 1 {
@@ -380,20 +403,13 @@ impl Compound<'_> {
             }
         }
 
-        let spacing = self.config.node_spacing as f64;
         // Gutters within each layer: the configured spacing, widened where edges from
-        // a layer above to one below drop through (placed as if every layer were
-        // packed from the left, which is what `settle_group` then slides).
+        // a layer above to one below drop through.
         let cross_gaps: Vec<Vec<f64>> = layers
             .iter()
             .enumerate()
             .map(|(r, layer)| {
                 let base = vec![spacing; layer.len().saturating_sub(1)];
-                let centre = |it: &Item| -> f64 {
-                    let li = &layers[rank_of(it)];
-                    let before: f64 = li.iter().take_while(|x| *x != it).map(|&x| self.size(x).0 + spacing).sum();
-                    before + self.size(*it).0 / 2.0
-                };
                 let through: Vec<f64> = edges
                     .iter()
                     .filter(|(a, b)| rank_of(a).min(rank_of(b)) < r && rank_of(a).max(rank_of(b)) > r)
@@ -409,21 +425,112 @@ impl Compound<'_> {
                 gutters_for_through(&spans, &bordered, &through, &base, &self.config.tokens)
             })
             .collect();
+        if std::env::var_os("RDG_DEBUG_GUTTERS").is_some() {
+            let depths: Vec<f64> = layers.iter().map(|l| l.iter().map(|&it| self.size(it).1).fold(0.0, f64::max)).collect();
+            eprintln!("group {} layers={} depths={depths:?} gaps={gaps:?}", self.compiled.groups[g].id, layers.len());
+        }
         let cross_len = |r: usize| -> f64 { layers[r].iter().map(|&it| self.size(it).0).sum::<f64>() + cross_gaps[r].iter().sum::<f64>() };
         let widest = (0..layers.len()).map(cross_len).fold(0.0, f64::max);
         let mut pos = HashMap::new();
         let mut main = 0.0;
         for (r, layer) in layers.iter().enumerate() {
-            let depth = layer.iter().map(|&it| self.size(it).1).fold(0.0, f64::max);
+            let offsets = self.layer_offsets(layer);
+            let depth = layer.iter().zip(&offsets).map(|(&it, o)| o + self.size(it).1).fold(0.0, f64::max);
             let mut cross = (widest - cross_len(r)) / 2.0;
             for (i, &it) in layer.iter().enumerate() {
-                let (c, m) = self.size(it);
-                pos.insert(it, (cross, main + (depth - m) / 2.0));
+                let c = self.size(it).0;
+                pos.insert(it, (cross, main + offsets[i]));
                 cross += c + cross_gaps[r].get(i).copied().unwrap_or(0.0);
             }
             main += depth + if r + 1 < n_ranks { gaps[r] } else { 0.0 };
         }
         (layers, pos, (widest, main))
+    }
+
+    /// How far along the flow each item of a layer starts. Top-to-bottom the marks of
+    /// captioned nodes (tiles, logos, flowchart markers) line up — their centres on one
+    /// line, the way a row of icons reads — and a box starts level with the marks'
+    /// tops; a node with a longer caption just hangs lower. Left-to-right every item is
+    /// centred across its column, which centres its mark too.
+    fn layer_offsets(&self, layer: &[Item]) -> Vec<f64> {
+        let mark = |it: Item| match it {
+            Item::Node(n) => crate::caption_mark(&self.compiled.graph[n], &self.config.tokens),
+            Item::Group(_) => None,
+        };
+        if self.frame.lr || layer.iter().all(|&it| mark(it).is_none()) {
+            let depth = layer.iter().map(|&it| self.size(it).1).fold(0.0, f64::max);
+            return layer.iter().map(|&it| (depth - self.size(it).1) / 2.0).collect();
+        }
+        let line = layer.iter().filter_map(|&it| mark(it)).fold(0.0, f64::max) / 2.0;
+        layer.iter().map(|&it| mark(it).map_or(0.0, |m| line - m / 2.0)).collect()
+    }
+
+    /// Refits group `g`'s box across the flow to where its items ended up: settling
+    /// slides items toward their neighbours inside a box sized before the slide, which
+    /// left an empty band on one side. The box keeps its place on the canvas (its
+    /// corner moves by what was trimmed), the padding and the title rule are re-applied
+    /// to the settled positions, and nothing inside moves.
+    fn tighten_group(&mut self, g: usize) {
+        let frame = self.frame;
+        let tokens = &self.config.tokens;
+        let group = &self.compiled.groups[g];
+        let block = self.block(g);
+        let items: Vec<Item> = block.pos.keys().copied().collect();
+        let (lo, hi) = items.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &it| {
+            let x = block.pos[&it].0;
+            (lo.min(x), hi.max(x + self.size(it).0))
+        });
+        if !lo.is_finite() {
+            return;
+        }
+        let content = (hi - lo, block.content.1);
+        let (w, h) = frame.swap(content);
+        let pad = frame.pad(group_padding(tokens, group, w, h));
+        let mut inset0 = pad[0];
+        let mut size0 = content.0 + pad[0] + pad[1];
+        let mut title_shift = 0.0_f64;
+        if !frame.lr {
+            let clear = title_clear_x(group, tokens);
+            let fed = block.layers.first().map_or(Vec::new(), |top| self.fed_items(g, top));
+            for it in fed {
+                let entry_half = match it {
+                    Item::Node(n) => match crate::caption_mark(&self.compiled.graph[n], tokens) {
+                        Some(mark) => mark / 2.0 + tokens.px(1.0),
+                        None => self.size(it).0 * 0.38,
+                    },
+                    Item::Group(_) => 0.0,
+                };
+                title_shift = title_shift.max(clear - (inset0 + block.pos[&it].0 - lo + self.size(it).0 / 2.0 - entry_half));
+            }
+            title_shift = title_shift.max(0.0).round();
+            inset0 += title_shift;
+            size0 += title_shift;
+        }
+        if !frame.lr {
+            let min_w = group_min_width(group, tokens);
+            if size0 < min_w {
+                inset0 += (min_w - size0) / 2.0;
+                size0 = min_w;
+            }
+        }
+        if std::env::var_os("RDG_DEBUG_GUTTERS").is_some() {
+            eprintln!("tighten {}: items {lo:.0}..{hi:.0} content {:.0} -> {:.0} inset {:.0} -> {inset0:.0} shift {title_shift:.0} size {:.0} -> {size0:.0}", group.id, block.content.0, content.0, block.inset.0, block.size.0);
+        }
+        // Items stay put on the canvas: the corner absorbs the trim and the new inset.
+        let old_inset = block.inset.0;
+        let delta = old_inset + lo - inset0;
+        let block = self.blocks[g].as_mut().expect("tightened group has a block");
+        for p in block.pos.values_mut() {
+            p.0 -= lo;
+        }
+        block.content.0 = content.0;
+        block.inset.0 = inset0;
+        block.size.0 = size0;
+        block.title_shift = title_shift;
+        match self.compiled.group_tree.parent[g] {
+            None => self.top_pos.get_mut(&Item::Group(g)).expect("top-level group placed").0 += delta,
+            Some(parent) => self.blocks[parent].as_mut().expect("parent block").pos.get_mut(&Item::Group(g)).expect("child placed").0 += delta,
+        }
     }
 
     /// Slides the items of every layer of group `g` across the flow toward their
@@ -716,7 +823,55 @@ fn unit_ranks(n: usize, edges: &[(usize, usize)], is_group: &[bool], hints: &Ran
 }
 
 /// Tiered placement for diagrams with visual groups — see the module docs.
+/// Lays the diagram out with the tier width that makes it squarest: the default
+/// budget first, then wider tiers when the result is tall and narrower when it is
+/// wide, keeping whichever aspect lies closest to 1 (ties keep the default). A
+/// reader sees a square more easily than a strip, and so does a page.
 pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -> Result<LayoutResult> {
+    let aspect = |r: &LayoutResult| -> f64 {
+        let (mut x0, mut y0, mut x1, mut y1) = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+        for nl in r.positions.values() {
+            x0 = x0.min(nl.x);
+            y0 = y0.min(nl.y);
+            x1 = x1.max(nl.x + nl.width);
+            y1 = y1.max(nl.y + nl.height);
+        }
+        if x1 > x0 && y1 > y0 { ((x1 - x0) / (y1 - y0)).ln().abs() } else { 0.0 }
+    };
+    let base = layout_compound_with(compiled, config, 1.0)?;
+    let mut best = (aspect(&base), base);
+    if best.0 < 0.4_f64.ln().abs() {
+        return Ok(best.1);
+    }
+    // Tall (more height than width along the page) wants wider tiers; wide wants
+    // narrower ones. The frame decides which way "wider tiers" goes.
+    let tall = {
+        let (mut x0, mut y0, mut x1, mut y1) = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+        for nl in best.1.positions.values() {
+            x0 = x0.min(nl.x);
+            y0 = y0.min(nl.y);
+            x1 = x1.max(nl.x + nl.width);
+            y1 = y1.max(nl.y + nl.height);
+        }
+        (y1 - y0) > (x1 - x0)
+    };
+    let lr = config.direction == LayoutDirection::LeftToRight;
+    // Top-to-bottom a tall page needs wider tiers; left-to-right the tiers run down
+    // the page, so a tall page needs narrower ones.
+    let scales: &[f64] = if tall != lr { &[1.5, 2.2, 3.2] } else { &[0.7, 0.5, 0.35] };
+    for &k in scales {
+        let r = layout_compound_with(compiled, config, k)?;
+        let a = aspect(&r);
+        if a + 1e-9 < best.0 {
+            best = (a, r);
+        } else {
+            break;
+        }
+    }
+    Ok(best.1)
+}
+
+fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_scale: f64) -> Result<LayoutResult> {
     let frame = Frame { lr: config.direction == LayoutDirection::LeftToRight };
     let node_size = compiled.graph.node_indices().map(|n| (n, frame.swap(crate::layout_node_size(compiled, n, config)))).collect();
     let node_group = (0..compiled.groups.len()).flat_map(|g| compiled.group_nodes[g].iter().map(move |&n| (n, g))).collect();
@@ -771,7 +926,7 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
     let max_w = (0..nu).map(|u| usize_of(u).0).fold(0.0, f64::max);
     let area: f64 = (0..nu).map(|u| usize_of(u).0 * usize_of(u).1).sum();
     // Always room for two of the widest units side by side.
-    let row_budget = (max_w * ROW_WIDTH_SLACK + gap_cross).max((area * ROW_AREA_FACTOR).sqrt());
+    let row_budget = (max_w * ROW_WIDTH_SLACK + gap_cross).max((area * ROW_AREA_FACTOR).sqrt()) * budget_scale;
     let max_rank = rank.iter().copied().max().unwrap_or(0);
     let mut rows: Vec<Vec<usize>> = Vec::new();
     for r in 0..=max_rank {
@@ -964,6 +1119,12 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
                 c.settle_group(g);
             }
         }
+        // Inner groups first: a tightened child shrinks its parent's content.
+        for &g in outer_first.iter().rev() {
+            if c.blocks[g].is_some() {
+                c.tighten_group(g);
+            }
+        }
     }
 
     // --- Along the flow: tiers stacked, gaps sized for the edges crossing them ------
@@ -974,11 +1135,19 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
             let (ra, rb) = (row_of[a], row_of[b]);
             ra.min(rb) < ri && ra.max(rb) >= ri
         };
-        let crossing = cross.iter().filter(|(a, b)| spans(unit_of[a], unit_of[b])).count();
         let has_border = rows[ri - 1].iter().chain(&rows[ri]).any(|&u| bordered(u));
-        // Most edges crossing a tier gap drop straight through it; only those that turn
-        // there need a lane of their own — about half, in practice.
-        let mut gap = crate::gaps::gap_for(crossing.div_ceil(2), config).max(if has_border { gap_main } else { 0.0 });
+        // Edges crossing a tier gap drop straight through it unless their ends are
+        // offset; those turn in the first gap they cross, and the deepest pile of
+        // overlapping turns sets how many tracks the gap must hold.
+        let straight = config.tokens.min_port_pitch();
+        let turns: Vec<(f64, f64)> = cross
+            .iter()
+            .filter(|(a, b)| spans(unit_of[a], unit_of[b]) && row_of[unit_of[a]].min(row_of[unit_of[b]]) == ri - 1)
+            .map(|(a, b)| (c.center(*a).0, c.center(*b).0))
+            .filter(|(xa, xb)| (xa - xb).abs() > straight)
+            .map(|(xa, xb)| (xa.min(xb), xa.max(xb)))
+            .collect();
+        let mut gap = crate::gaps::gap_for(crate::gaps::max_overlap(&turns), config).max(if has_border { gap_main } else { 0.0 });
         for &(a, b, _, along) in &labelled {
             if row_of[a].abs_diff(row_of[b]) == 1 && spans(a, b) {
                 gap = gap.max((along + c.label_room()).min(gap_main * MAX_LABEL_GAP_FACTOR));
@@ -1024,6 +1193,48 @@ pub(crate) fn layout_compound(compiled: &CompiledGraph, config: &LayoutConfig) -
             if cnt > 0.0 {
                 c.top_pos.get_mut(&units[u]).expect("unit placed").1 = (sum / cnt).clamp(row_y[ri], row_y[ri] + slack);
             }
+        }
+    }
+
+    // --- Folding: a long strip of narrow tiers reads as columns on a page ----------
+    // A chain of steps (a flowchart, a state machine, a stack of small groups) is
+    // many times taller than wide; like a long procedure in print it continues in
+    // the next column, the arrow from the bottom of one column to the top of the
+    // next looping round. Only strips fold: anything already near square is left.
+    let main_len = row_y.last().copied().unwrap_or(0.0) + row_h.last().copied().unwrap_or(0.0);
+    let row_span = |c: &Compound, ri: usize| -> (f64, f64) {
+        rows[ri].iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &u| {
+            let x = c.top_pos[&units[u]].0;
+            (lo.min(x), hi.max(x + usize_of(u).0))
+        })
+    };
+    let cross_w = (0..rows.len()).map(|ri| row_span(&c, ri)).fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), (l, h)| (a.min(l), b.max(h)));
+    let cross_w = cross_w.1 - cross_w.0;
+    if !frame.lr && rows.len() >= FOLD_MIN_TIERS && main_len > FOLD_ASPECT * cross_w {
+        let cols = ((main_len / cross_w).sqrt().round() as usize).clamp(2, 3);
+        let per = rows.len().div_ceil(cols);
+        let fold_gap = gap_cross * 2.0 + 4.0 * config.tokens.channel_pitch();
+        let mut x_start = 0.0;
+        for col in 0..cols {
+            let span = col * per..((col + 1) * per).min(rows.len());
+            if span.is_empty() {
+                break;
+            }
+            let (lo, hi) = span.clone().map(|ri| row_span(&c, ri)).fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), (l, h)| (a.min(l), b.max(h)));
+            let y0 = row_y[span.start];
+            // Left to right the bands snake back and forth, each starting under the
+            // end of the one before (short hops between bands); top to bottom the
+            // columns read like text.
+            let mirror = frame.lr && col % 2 == 1;
+            for ri in span.clone() {
+                for &u in &rows[ri] {
+                    let main = usize_of(u).1;
+                    let p = c.top_pos.get_mut(&units[u]).expect("unit placed");
+                    p.0 += x_start - lo;
+                    p.1 = if mirror { main_len - (p.1 - y0) - main } else { p.1 - y0 };
+                }
+            }
+            x_start += (hi - lo) + fold_gap;
         }
     }
 

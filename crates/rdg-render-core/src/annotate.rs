@@ -401,7 +401,9 @@ pub fn place_edge_annotations(
         const ON_LINE: f64 = -1.0;
         let gaps = [(4.0, 0.0), (12.0, 40.0), (24.0, 120.0), (ON_LINE, 260.0)];
         let mut best: Option<(f64, LabelSpot)> = None;
-        for (s0, s1) in segment_spans(path) {
+        let spans = segment_spans(path);
+        let longest = spans.iter().map(|(a, b)| b - a).fold(0.0, f64::max);
+        for &(s0, s1) in &spans {
             let len = s1 - s0;
             if len < 1.0 {
                 continue;
@@ -434,9 +436,14 @@ pub fn place_edge_annotations(
                             // Above a horizontal leg / right of a vertical leg first.
                             let (cx, cy) = if horizontal { (p.0, p.1 - off * sign) } else { (p.0 + off * sign, p.1) };
                             let spot = LabelSpot { text: variant.clone(), cx, cy, w, h, anchor: p, dir, along: s, total };
+                            // The longest straight stretch reads as the arrow's body;
+                            // a label there is unmistakably its own. Nearer the source
+                            // when otherwise equal, where a reader starts following it.
                             let soft = if horizontal { 0.0 } else { 30.0 }
                                 + 0.1 * (s - seg_mid).abs()
-                                + 0.05 * (s - total / 2.0).abs()
+                                + 0.02 * (s - total / 2.0).abs()
+                                + 0.25 * (longest - len)
+                                + 0.03 * s
                                 + drift * s
                                 + wrap_pen
                                 + gap_pen

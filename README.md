@@ -38,6 +38,31 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
   - *Custom icons*: an `icons:` map of name → SVG file or inline `<svg>` (or
     `icon: ./logo.svg` on a node) adds any mark the library lacks; it is drawn as a
     full-colour logo, as a tile badge, or as the node itself for a database.
+  - *Arrows a lane apart, bends on shared lines*: a spreading pass runs on the
+    finished routes — any two legs of different arrows running side by side closer
+    than a lane are pushed a lane apart (an end leg by sliding its port along the
+    face, a pitch from the face's other ports), then every leg snaps to the lane grid
+    of the channel it runs in, so arrows turning in one gap turn on the same few
+    lines. A leg that reached a port along its own face is lifted a clearance off it.
+    The grid router charges an arrow for leaving its container by the side facing
+    away from its target, and far more for cutting through a foreign container.
+  - *Squarer pages*: a strip of tiers many times taller than wide folds into two or
+    three columns (left to right the bands snake back), the tier width is chosen for
+    the squarest page, and a rank gap holds only as many tracks as the deepest pile
+    of turning arrows needs, not one per edge.
+  - *Tight containers*: a group's box is refitted to where its items settled, its
+    padding scales with the content's shorter side, a long title wraps onto two
+    balanced lines (`group_title_wrap_chars`, 32), an item nothing enters from above
+    takes the slot under the title, and the marks of a row of tiles sit on one line.
+  - *Labels and badges*: a label prefers the longest straight stretch of its own
+    arrow, nearer the source; fragments in sequence diagrams start left of the
+    outermost activation bar; an unlabelled start/end/choice marker has no caption.
+  - *Help for agents*: `rdg --help` opens with the agent workflow and ten content
+    rules; `rdg --guide rules` is the full set — what to include, name, label and
+    leave out of an HLD, LLD/class, sequence, flowchart, state, ERD, pipeline or
+    deployment diagram, with a self-check list. Five new fixtures (ride-hailing
+    platform, warehouse domain model, order state machine, incident response
+    sequence, lakehouse pipeline) join the bundled examples.
   - *A second, structural router*: a channel router draws arrows the way a layered
     engine does — across the flow out of the source, along a track in the channel
     between two rows, down a lane in the gutter between two nodes, into the target's
@@ -477,13 +502,19 @@ $ rdg --check --format json -i diagram.yaml
  "anomalies":[]}
 ```
 
+`rdg --guide rules` is the content guide an agent should read before writing a
+diagram: scope (8-25 nodes, split beyond that), naming, edge labels, grouping,
+declaration order, and per-type rules for HLD, LLD/class, sequence, flowchart, state,
+ERD, pipeline and deployment diagrams, ending in a self-check list.
+
 **Recommended system prompt addition:**
 
 ```
-You have access to the `rdg` CLI. To draw an architecture or flow diagram, write the
-diagram as rdg YAML (read `rdg --help` once for the format), then run
-  rdg --check --format json -i diagram.yaml     # fix every error it lists
-  rdg -i diagram.yaml -o diagram.drawio
+You have access to the `rdg` CLI. To draw an architecture or flow diagram, read
+`rdg --help` once and `rdg --guide rules` for the diagram type, write the diagram as
+rdg YAML, then run
+  rdg --check --format json -i diagram.yaml     # fix every error and warning it lists
+  rdg -i diagram.yaml -o diagram.svg            # or .drawio for editing
 Never compute coordinates or write draw.io XML/SVG yourself.
 ```
 

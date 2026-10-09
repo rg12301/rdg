@@ -1,0 +1,42 @@
+# Order lifecycle as a state machine: happy path down the middle, cancellations and
+# refunds branching off, a choice pseudo-state and two terminal states.
+title: "Order lifecycle"
+diagram_type: state
+numbered: false
+nodes:
+  - {id: start, label: "", type: start}
+  - {id: created, label: Created, type: state}
+  - {id: awaiting_payment, label: "Awaiting payment", type: state}
+  - {id: payment_check, label: "", type: choice}
+  - {id: paid, label: Paid, type: state}
+  - {id: payment_failed, label: "Payment failed", type: state}
+  - {id: picking, label: Picking, type: state}
+  - {id: packed, label: Packed, type: state}
+  - {id: shipped, label: Shipped, type: state}
+  - {id: delivered, label: Delivered, type: state}
+  - {id: cancelled, label: Cancelled, type: state}
+  - {id: return_requested, label: "Return requested", type: state}
+  - {id: refunded, label: Refunded, type: state}
+  - {id: closed, label: "", type: end}
+  - {id: abandoned, label: "", type: end}
+edges:
+  - {from: start, to: created}
+  - {from: created, to: awaiting_payment, label: "checkout"}
+  - {from: awaiting_payment, to: payment_check, label: "payment result"}
+  - {from: payment_check, to: paid, label: "[authorized]"}
+  - {from: payment_check, to: payment_failed, label: "[declined]"}
+  - {from: payment_failed, to: awaiting_payment, label: "retry"}
+  - {from: payment_failed, to: abandoned, label: "after 3 attempts"}
+  - {from: paid, to: picking, label: "allocate stock"}
+  - {from: picking, to: packed, label: "all items picked"}
+  - {from: packed, to: shipped, label: "carrier pickup"}
+  - {from: shipped, to: delivered, label: "proof of delivery"}
+  - {from: delivered, to: closed, label: "after 30 days"}
+  - {from: delivered, to: return_requested, label: "customer returns"}
+  - {from: return_requested, to: refunded, label: "item received"}
+  - {from: refunded, to: closed}
+  - {from: created, to: cancelled, label: "cancel"}
+  - {from: awaiting_payment, to: cancelled, label: "cancel"}
+  - {from: paid, to: cancelled, label: "cancel before pick"}
+  - {from: cancelled, to: refunded, label: "if paid"}
+  - {from: cancelled, to: closed, label: "if unpaid"}

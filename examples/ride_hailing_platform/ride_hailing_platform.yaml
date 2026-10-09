@@ -1,0 +1,106 @@
+# Ride-hailing platform — a large event-driven HLD: four client types, an edge tier,
+# three service domains with nested sub-domains, streaming, ML, data stores,
+# observability and third parties. Stress test for routing through many containers.
+title: "Ride-hailing platform"
+description: "Clients, edge, trip and payments domains, streaming, ML serving, storage"
+direction: tb
+groups:
+  - {id: clients, label: "Clients", nodes: [rider_app, driver_app, web, partner_api]}
+  - {id: edge, label: "Edge & API", nodes: [cdn, waf, gateway, idp]}
+  - {id: core, label: "Core platform services", nodes: [trip_domain, marketplace, growth]}
+  - {id: trip_domain, label: "Trip domain", nodes: [trip_svc, matching, eta, dispatch]}
+  - {id: marketplace, label: "Marketplace & money", nodes: [pricing, surge, payments, wallet, invoicing]}
+  - {id: growth, label: "Growth & comms", nodes: [promo, notifications, rating]}
+  - {id: streaming, label: "Streaming backbone", nodes: [location_topic, trip_events, flink]}
+  - {id: ml, label: "ML platform", nodes: [feature_store, eta_model, fraud_model]}
+  - {id: stores, label: "Data stores", nodes: [trips_db, users_db, ledger_db, geo_index, cache, lake]}
+  - {id: observability, label: "Observability", nodes: [otel, prometheus, grafana]}
+  - {id: third, label: "Third parties", nodes: [maps_api, stripe, twilio]}
+nodes:
+  - {id: rider_app, label: Rider app, type: client, language: swift}
+  - {id: driver_app, label: Driver app, type: client, language: kotlin}
+  - {id: web, label: Web, type: client, language: typescript}
+  - {id: partner_api, label: Partner integrations, type: external}
+  - {id: cdn, label: CDN, type: proxy}
+  - {id: waf, label: WAF, category: security}
+  - {id: gateway, label: API Gateway, subtitle: Envoy, type: gateway}
+  - {id: idp, label: Identity, subtitle: OIDC, category: security}
+  - {id: trip_svc, label: trip-service, type: service, language: go}
+  - {id: matching, label: matching-service, type: service, language: go}
+  - {id: eta, label: eta-service, type: service, language: python}
+  - {id: dispatch, label: dispatch-service, type: service, language: java}
+  - {id: pricing, label: pricing-service, type: service, language: kotlin}
+  - {id: surge, label: surge-engine, type: service, language: scala}
+  - {id: payments, label: payments-service, type: service, language: kotlin}
+  - {id: wallet, label: wallet-service, type: service, language: rust}
+  - {id: invoicing, label: invoicing-worker, type: service, language: python}
+  - {id: promo, label: promo-service, type: service, language: python}
+  - {id: notifications, label: notification-service, type: service, language: go}
+  - {id: rating, label: rating-service, type: service, language: ruby}
+  - {id: location_topic, label: driver-locations, type: queue, db_type: kafka}
+  - {id: trip_events, label: trip-events, type: queue, db_type: kafka}
+  - {id: flink, label: stream-processor, subtitle: Flink, type: service, language: java}
+  - {id: feature_store, label: feature store, type: database, db_type: redis}
+  - {id: eta_model, label: ETA model serving, type: service, language: python}
+  - {id: fraud_model, label: fraud scoring, type: service, language: python}
+  - {id: trips_db, label: trips, type: database, db_type: postgres}
+  - {id: users_db, label: users, type: database, db_type: postgres}
+  - {id: ledger_db, label: ledger, type: database, db_type: postgres}
+  - {id: geo_index, label: geo index, type: database, db_type: redis}
+  - {id: cache, label: session cache, type: cache, db_type: redis}
+  - {id: lake, label: data lake, type: storage, db_type: s3}
+  - {id: otel, label: otel-collector, type: service, language: go}
+  - {id: prometheus, label: Prometheus, type: service, icon: prometheus}
+  - {id: grafana, label: Grafana, type: client, icon: grafana}
+  - {id: maps_api, label: Maps API, type: external}
+  - {id: stripe, label: Stripe, type: external}
+  - {id: twilio, label: Twilio, type: external}
+edges:
+  - {from: rider_app, to: waf, label: HTTPS}
+  - {from: driver_app, to: waf, label: HTTPS}
+  - {from: web, to: cdn, label: static}
+  - {from: web, to: waf, label: HTTPS}
+  - {from: partner_api, to: waf, label: HTTPS}
+  - {from: waf, to: gateway}
+  - {from: gateway, to: idp, label: verify JWT}
+  - {from: gateway, to: trip_svc, label: gRPC}
+  - {from: gateway, to: pricing, label: gRPC}
+  - {from: gateway, to: payments, label: gRPC}
+  - {from: gateway, to: promo, label: gRPC}
+  - {from: gateway, to: rating, label: gRPC}
+  - {from: driver_app, to: location_topic, label: "location ping", edge_style: async}
+  - {from: trip_svc, to: matching, label: request driver}
+  - {from: matching, to: geo_index, label: nearby drivers, edge_style: data}
+  - {from: matching, to: dispatch, label: offer trip}
+  - {from: dispatch, to: notifications, label: push offer, edge_style: async}
+  - {from: trip_svc, to: eta, label: ETA}
+  - {from: eta, to: eta_model, label: predict}
+  - {from: eta, to: maps_api, label: routes}
+  - {from: eta_model, to: feature_store, label: features, edge_style: data}
+  - {from: trip_svc, to: pricing, label: quote}
+  - {from: pricing, to: surge, label: multiplier}
+  - {from: surge, to: feature_store, label: demand, edge_style: data}
+  - {from: trip_svc, to: trips_db, edge_style: data}
+  - {from: trip_svc, to: trip_events, label: TripUpdated, edge_style: async}
+  - {from: payments, to: fraud_model, label: score}
+  - {from: payments, to: stripe, label: charge}
+  - {from: payments, to: ledger_db, edge_style: data}
+  - {from: payments, to: wallet, label: top up}
+  - {from: wallet, to: ledger_db, edge_style: data}
+  - {from: trip_events, to: invoicing, label: TripCompleted, edge_style: async}
+  - {from: invoicing, to: payments, label: capture}
+  - {from: trip_events, to: notifications, label: TripUpdated, edge_style: async}
+  - {from: notifications, to: twilio, label: SMS}
+  - {from: promo, to: users_db, edge_style: data}
+  - {from: rating, to: trips_db, edge_style: data}
+  - {from: idp, to: users_db, edge_style: data}
+  - {from: gateway, to: cache, label: sessions, edge_style: data}
+  - {from: location_topic, to: flink, edge_style: async}
+  - {from: trip_events, to: flink, edge_style: async}
+  - {from: flink, to: geo_index, label: upsert, edge_style: data}
+  - {from: flink, to: feature_store, label: features, edge_style: data}
+  - {from: flink, to: lake, label: parquet, edge_style: data}
+  - {from: trip_svc, to: otel, label: traces, edge_style: async}
+  - {from: payments, to: otel, label: traces, edge_style: async}
+  - {from: otel, to: prometheus, label: metrics}
+  - {from: grafana, to: prometheus, label: query}

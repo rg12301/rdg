@@ -625,7 +625,9 @@ pub fn compute_sequence_layout(compiled: &CompiledGraph, config: &LayoutConfig) 
                     }
                     let bottom = st.cursor - t.seq_message_gap + t.px(1.5);
                     st.cursor = bottom + t.seq_message_gap;
-                    let pad = t.px(1.5);
+                    // The keyword tab sits left of the outermost lifeline's activation
+                    // bar, never under it.
+                    let pad = m.bar_w / 2.0 + kind.chars().count() as f64 * m.lbl_cw + t.px(3.0);
                     let (mut x0, mut x1) = inner.map_or((px_of[0] - sizes[0].0 / 2.0, px_of[px_of.len() - 1] + sizes[sizes.len() - 1].0 / 2.0), |(a, b)| (a - pad, b + pad));
                     let need = fragment_header_w(kind, sections, t, m);
                     if x1 - x0 < need {

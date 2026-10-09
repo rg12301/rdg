@@ -4,6 +4,7 @@
 //! crossing minimisation, and a compound 2D grid placement for visual groups.
 
 mod compound;
+mod fold;
 mod fcose;
 mod force;
 mod gaps;

@@ -683,18 +683,26 @@ pub fn plan_all_edge_routes(
     let forced = std::env::var("RDG_ROUTER").ok();
     let mut with_search = plans.clone();
     with_search.extend(searched);
+    // Either way, legs of different arrows end up a lane apart.
+    let spread = |mut p: HashMap<EdgeIndex, EdgeRoutingPlan>| {
+        if std::env::var_os("RDG_NO_SPREAD").is_none() {
+            crate::spread::spread_parallels(compiled, layout, &mut p, tokens);
+        }
+        p
+    };
     if forced.as_deref() == Some("ortho") {
-        return with_search;
+        return spread(with_search);
     }
     let channel = crate::channels::route_channels(compiled, layout, tokens);
     if channel.is_empty() {
-        return with_search;
+        return spread(with_search);
     }
     let mut with_channel = with_search.clone();
     with_channel.extend(channel);
     if forced.as_deref() == Some("channels") {
-        return with_channel;
+        return spread(with_channel);
     }
+    let (with_channel, with_search) = (spread(with_channel), spread(with_search));
     let score = |p: &HashMap<EdgeIndex, EdgeRoutingPlan>| {
         let m = crate::review::spacing_metrics(compiled, layout, p, tokens);
         let cramped = m.min_port_pitch.is_some_and(|p| p < 8.0) || m.min_arrow_len.is_some_and(|a| a < tokens.stub_clearance() * 0.6);
@@ -705,6 +713,7 @@ pub fn plan_all_edge_routes(
             + 30.0 * m.micro_jogs as f64
             + 20.0 * m.off_centre_faces as f64
             + 160.0 * m.foreign_crossings as f64
+            + 45.0 * m.close_parallels as f64
             + 0.1 * m.total_len
             + if cramped { 1000.0 } else { 0.0 }
     };

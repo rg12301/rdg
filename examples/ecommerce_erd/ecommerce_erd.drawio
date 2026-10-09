@@ -36,16 +36,16 @@
           <mxGeometry x="0.0000" y="16.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_users_orders" value="places" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="users" target="orders" parent="1">
-          <mxGeometry x="0.6067" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.3164" y="25.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="252.0" y="121.0"/>
-              <mxPoint x="252.0" y="409.0"/>
-              <mxPoint x="173.0" y="409.0"/>
+              <mxPoint x="249.0" y="121.0"/>
+              <mxPoint x="249.0" y="412.0"/>
+              <mxPoint x="173.0" y="412.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_addresses_orders" value="ships to" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.27059;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="addresses" target="orders" parent="1">
-          <mxGeometry x="0.0000" y="-31.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4348" y="31.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_orders_order_items" value="contains" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="orders" target="order_items" parent="1">
           <mxGeometry x="-0.6681" y="11.8" relative="1" as="geometry">

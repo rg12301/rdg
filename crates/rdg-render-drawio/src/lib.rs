@@ -158,14 +158,19 @@ pub fn render_drawio(
         let (parent_id, (px, py)) = parent_of(compiled.group_tree.parent[gi]);
         let look = group_look(theme, group);
         let style_owned = group_style(theme, &look);
+        // The title as the layout measured it: split onto two lines when long.
+        let title = rdg_layout::groups::group_title_lines(group, tokens)
+            .into_iter()
+            .map(|l| if theme.group.title_uppercase { l.to_uppercase() } else { l })
+            .collect::<Vec<_>>()
+            .join("<br>");
         let group_value = match group.resolved_icon().and_then(|k| rdg_icons::icon_as_data_uri(&k, theme.icon_style())) {
             Some(uri) => format!(
-                "<img src=\"{uri}\" width=\"{s}\" height=\"{s}\" style=\"vertical-align:middle;margin-right:{gap}px;\"/>{}",
-                look.title,
+                "<img src=\"{uri}\" width=\"{s}\" height=\"{s}\" style=\"vertical-align:middle;margin-right:{gap}px;\"/>{title}",
                 s = rdg_layout::groups::group_icon_size(tokens).0,
                 gap = rdg_layout::groups::group_icon_size(tokens).1,
             ),
-            None => look.title.clone(),
+            None => title,
         };
 
         let mut g_cell = BytesStart::new("mxCell");

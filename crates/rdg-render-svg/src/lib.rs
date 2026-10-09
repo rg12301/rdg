@@ -296,17 +296,23 @@ pub fn render_svg(
                 tx += icon_size + icon_gap;
             }
         }
-        let mut title_attrs = vec![
-            ("x", f1(tx)),
-            ("y", f1(ty)),
-            ("font-size", format!("{}", look.title_size)),
-            ("font-weight", if look.title_bold { "bold" } else { "normal" }.into()),
-            ("fill", look.title_color.clone()),
-        ];
-        if let Some(font) = &look.font {
-            title_attrs.push(("font-family", font.clone()));
+        let title_lines: Vec<String> = rdg_layout::groups::group_title_lines(group, tokens)
+            .into_iter()
+            .map(|l| if theme.group.title_uppercase { l.to_uppercase() } else { l })
+            .collect();
+        for (li, line) in title_lines.iter().enumerate() {
+            let mut title_attrs = vec![
+                ("x", f1(tx)),
+                ("y", f1(ty + li as f64 * tokens.line_height(f.group_title_size))),
+                ("font-size", format!("{}", look.title_size)),
+                ("font-weight", if look.title_bold { "bold" } else { "normal" }.into()),
+                ("fill", look.title_color.clone()),
+            ];
+            if let Some(font) = &look.font {
+                title_attrs.push(("font-family", font.clone()));
+            }
+            text_el(&mut w, &title_attrs, line)?;
         }
-        text_el(&mut w, &title_attrs, &look.title)?;
     }
 
     // --- Edges (under nodes) -----------------------------------------------------------

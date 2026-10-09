@@ -78,10 +78,10 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_message_template" value="rendered from" style="exitX=0.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.00000;entryY=0.50000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="message" target="template" parent="1">
-          <mxGeometry x="-0.0033" y="46.0" relative="1" as="geometry">
+          <mxGeometry x="0.0033" y="46.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="813.0" y="246.0"/>
-              <mxPoint x="813.0" y="486.0"/>
+              <mxPoint x="812.0" y="246.0"/>
+              <mxPoint x="812.0" y="486.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

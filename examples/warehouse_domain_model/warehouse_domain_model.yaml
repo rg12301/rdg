@@ -1,0 +1,54 @@
+# Warehouse domain model — a large class diagram: interfaces, abstract bases,
+# three inheritance trees, compositions, aggregations and dependencies.
+title: "Warehouse management domain model"
+diagram_type: class
+nodes:
+  - {id: entity, label: Entity, type: abstract_class, fields: ["# id: UUID", "# createdAt: Instant", "+ equals(o: Object): bool"]}
+  - {id: auditable, label: Auditable, type: interface, fields: ["+ audit(): AuditTrail"]}
+  - {id: warehouse, label: Warehouse, type: class, fields: ["- code: String", "- zones: List<Zone>", "+ locate(sku: Sku): Location"]}
+  - {id: zone, label: Zone, type: class, fields: ["- name: String", "- temperature: Range", "+ bins(): List<Bin>"]}
+  - {id: bin, label: Bin, type: class, fields: ["- coordinates: Coord", "- capacity: int", "+ store(item: StockItem)"]}
+  - {id: stock_item, label: StockItem, type: class, fields: ["- sku: Sku", "- quantity: int", "- lot: Lot", "+ reserve(n: int): Reservation"]}
+  - {id: sku, label: Sku, type: struct, fields: ["+ code: String", "+ unit: Unit"]}
+  - {id: lot, label: Lot, type: class, fields: ["- number: String", "- expiresAt: Date"]}
+  - {id: movement, label: Movement, type: abstract_class, fields: ["# item: StockItem", "# at: Instant", "+ apply(): void"]}
+  - {id: inbound, label: Inbound, type: class, fields: ["- supplier: Supplier", "- asn: String"]}
+  - {id: outbound, label: Outbound, type: class, fields: ["- order: Order", "- carrier: Carrier"]}
+  - {id: transfer, label: Transfer, type: class, fields: ["- fromBin: Bin", "- toBin: Bin"]}
+  - {id: adjustment, label: Adjustment, type: class, fields: ["- reason: Reason", "- approvedBy: User"]}
+  - {id: reservation, label: Reservation, type: class, fields: ["- quantity: int", "- expiresAt: Instant", "+ release(): void"]}
+  - {id: order, label: Order, type: class, fields: ["- lines: List<OrderLine>", "- status: Status", "+ allocate(): List<Reservation>"]}
+  - {id: order_line, label: OrderLine, type: class, fields: ["- sku: Sku", "- quantity: int"]}
+  - {id: picking, label: PickingStrategy, type: interface, fields: ["+ plan(order: Order): PickList"]}
+  - {id: fifo, label: FifoPicking, type: class, fields: ["+ plan(order: Order): PickList"]}
+  - {id: fefo, label: FefoPicking, type: class, fields: ["+ plan(order: Order): PickList"]}
+  - {id: pick_list, label: PickList, type: class, fields: ["- tasks: List<PickTask>", "- assignee: User"]}
+  - {id: user, label: User, type: class, fields: ["- name: String", "- role: Role"]}
+edges:
+  - {from: warehouse, to: entity, edge_style: inheritance}
+  - {from: stock_item, to: entity, edge_style: inheritance}
+  - {from: movement, to: entity, edge_style: inheritance}
+  - {from: order, to: entity, edge_style: inheritance}
+  - {from: movement, to: auditable, edge_style: realization}
+  - {from: order, to: auditable, edge_style: realization}
+  - {from: inbound, to: movement, edge_style: inheritance}
+  - {from: outbound, to: movement, edge_style: inheritance}
+  - {from: transfer, to: movement, edge_style: inheritance}
+  - {from: adjustment, to: movement, edge_style: inheritance}
+  - {from: fifo, to: picking, edge_style: realization}
+  - {from: fefo, to: picking, edge_style: realization}
+  - {from: warehouse, to: zone, edge_style: composition, label: "1..*"}
+  - {from: zone, to: bin, edge_style: composition, label: "1..*"}
+  - {from: bin, to: stock_item, edge_style: aggregation, label: "0..*"}
+  - {from: stock_item, to: sku, edge_style: aggregation}
+  - {from: stock_item, to: lot, edge_style: aggregation, label: "0..1"}
+  - {from: stock_item, to: reservation, edge_style: composition, label: "0..*"}
+  - {from: movement, to: stock_item, edge_style: dependency}
+  - {from: transfer, to: bin, edge_style: dependency, label: "from / to"}
+  - {from: order, to: order_line, edge_style: composition, label: "1..*"}
+  - {from: order_line, to: sku, edge_style: aggregation}
+  - {from: order, to: reservation, edge_style: aggregation, label: "allocates"}
+  - {from: outbound, to: order, edge_style: dependency}
+  - {from: picking, to: pick_list, edge_style: dependency, label: "creates"}
+  - {from: pick_list, to: user, edge_style: aggregation, label: "assignee"}
+  - {from: adjustment, to: user, edge_style: aggregation, label: "approver"}

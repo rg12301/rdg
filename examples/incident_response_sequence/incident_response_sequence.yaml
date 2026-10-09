@@ -1,0 +1,49 @@
+# Incident response: an alert fans out to on-call, with parallel notifications, a
+# loop of mitigation attempts and an escalation branch — nested fragments and notes.
+title: "Incident response"
+numbered: true
+participants:
+  - {id: monitor, label: Monitoring, type: service, icon: prometheus}
+  - {id: pager, label: Pager, type: service}
+  - {id: oncall, label: On-call engineer, type: actor}
+  - {id: runbook, label: Runbook bot, type: service, language: python}
+  - {id: k8s, label: Kubernetes API, type: gateway}
+  - {id: lead, label: Incident lead, type: actor}
+  - {id: status, label: Status page, type: external}
+groups:
+  - {id: automation, label: Automation, nodes: [pager, runbook]}
+sequence:
+  - {from: monitor, to: pager, label: "alert: error rate > 5%", style: async}
+  - {note: "deduplicated for 5 min", right_of: pager}
+  - par: "notify"
+    steps:
+      - {from: pager, to: oncall, label: "page", style: async}
+    and:
+      - {from: pager, to: status, label: "post 'investigating'", style: async}
+  - {from: oncall, to: pager, label: "acknowledge"}
+  - {from: oncall, to: runbook, label: "/mitigate checkout-api"}
+  - loop: "up to 3 attempts"
+    steps:
+      - {from: runbook, to: k8s, label: "rollout restart"}
+      - {from: k8s, to: runbook, label: "ok", style: reply}
+      - {from: runbook, to: monitor, label: "query error rate"}
+      - {from: monitor, to: runbook, label: "rate", style: reply}
+      - break: "rate < 1%"
+        steps:
+          - {from: runbook, to: oncall, label: "mitigated", style: reply}
+  - alt: "still failing"
+    steps:
+      - {from: oncall, to: lead, label: "escalate", style: async}
+      - {from: lead, to: lead, label: "declare SEV-1"}
+      - {from: lead, to: status, label: "post 'identified'", style: async}
+      - critical: "rollback"
+        steps:
+          - {from: lead, to: k8s, label: "rollback deployment"}
+          - {from: k8s, to: lead, label: "previous revision live", style: reply}
+    else:
+      label: "mitigated"
+      steps:
+        - {from: oncall, to: status, label: "post 'resolved'", style: async}
+  - divider: "postmortem"
+  - {from: lead, to: oncall, label: "timeline request"}
+  - {from: oncall, to: lead, label: "timeline + action items", style: reply}
