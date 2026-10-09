@@ -20,7 +20,7 @@ categories:
   database:   {fill: "#ffffff", stroke: "#a78bfa"}
   messagebus: {fill: "#ffffff", stroke: "#fb923c"}
   cloud:      {fill: "#ffffff", stroke: "#22d3ee"}
-  security:   {fill: "#ffffff", stroke: "#f87171"}
+  security:   {fill: "#ffffff", stroke: "#d97706"}
   external:   {fill: "#ffffff", stroke: "#94a3b8"}
   neutral:    {fill: "#ffffff", stroke: "#cbd5e1"}
 shapes:

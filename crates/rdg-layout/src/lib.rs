@@ -239,8 +239,12 @@ pub(crate) fn layout_node_size(
     // flowchart marker. The box holds both, so groups, routing and labels all make room
     // for the caption; arrows attach to the mark (see `rdg_render_core::style::Outline`).
     if let Some(mark) = caption_mark(data, &tokens) {
+        // Arrows meet the mark, not the caption: the box grows across the flow for
+        // its ports but never below the caption (a taller box would leave the arrow
+        // starting in the air under the mark).
         let (w, h) = captioned_size(data, mark, &tokens);
-        return grow_for_degree(compiled, idx, (w, h), config);
+        let (w, _) = grow_for_degree(compiled, idx, (w, h), config);
+        return (w, h);
     }
     // Only `icon` is drawn (a node's language can be shown on its group instead).
     let (w, h) = estimate_node_box(data, data.icon.is_some(), config.node_width, config.node_height, &tokens);
@@ -268,7 +272,7 @@ pub fn caption_gap(tokens: &DesignTokens) -> f64 {
 /// Box for a `mark`-sized shape with the node's caption lines (and technology line)
 /// underneath, rounded up to 4px.
 fn captioned_size(data: &rdg_graph::NodeData, mark: f64, t: &DesignTokens) -> (f64, f64) {
-    let lines = node_lines(data, t.wrap_chars_normal);
+    let lines: Vec<LabelLine> = node_lines(data, t.wrap_chars_normal).into_iter().filter(|l| !l.text.trim().is_empty()).collect();
     let font = |l: &LabelLine| if l.is_subtitle { t.detail_font_size } else { t.font_size };
     let mut text_w = lines.iter().map(|l| strip_markdown_tokens(&l.text).chars().count() as f64 * t.char_width(font(l))).fold(0.0, f64::max);
     let mut text_h: f64 = lines.iter().map(|l| t.line_height(font(l))).sum();
@@ -277,7 +281,8 @@ fn captioned_size(data: &rdg_graph::NodeData, mark: f64, t: &DesignTokens) -> (f
         text_h += t.line_height(t.detail_font_size);
     }
     let w = (text_w + t.px(2.0)).max(mark + t.px(2.0));
-    let h = mark + caption_gap(t) + text_h;
+    // No caption (an unlabelled start or end dot): the box is the mark.
+    let h = if text_h > 0.0 { mark + caption_gap(t) + text_h } else { mark };
     ((w / 4.0).ceil() * 4.0, (h / 4.0).ceil() * 4.0)
 }
 

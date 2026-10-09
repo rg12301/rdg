@@ -394,12 +394,12 @@ pub fn place_edge_annotations(
         if let Some(three) = wrapped_in_three(text) {
             variants.push((three, 110.0));
         }
-        // Distance between the line and the near edge of the box: snug first, a little
-        // further out (less clearly attached, so penalised) when snug collides.
-        // Last resort: centred on the line itself, the label background masking the
-        // stroke — still clearly its own, and better than covering another line.
+        // Distance between the line and the near edge of the box: snug beside the
+        // line, else centred on the line itself with the background masking the
+        // stroke. Never further out: a label a lane away reads as orphaned, or as
+        // belonging to whichever other arrow runs there.
         const ON_LINE: f64 = -1.0;
-        let gaps = [(4.0, 0.0), (12.0, 40.0), (24.0, 120.0), (ON_LINE, 260.0)];
+        let gaps = [(4.0, 0.0), (ON_LINE, 45.0)];
         let mut best: Option<(f64, LabelSpot)> = None;
         let spans = segment_spans(path);
         let longest = spans.iter().map(|(a, b)| b - a).fold(0.0, f64::max);

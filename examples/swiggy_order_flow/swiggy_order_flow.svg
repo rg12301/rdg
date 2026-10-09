@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="764" height="758" viewBox="0 0 764 758" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#dc2626" stroke-width="1" stroke-linejoin="round"/></marker></defs>
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#ca8a04" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Food Delivery Order Flow</text>
   <path d="M 201.0 166.0 L 201.0 208.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 201.0 328.0 L 201.0 376.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 165.0 426.0 L 165.0 503.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 271.0 401.0 L 289.7 401.0 Q 297.0 401.0 297.0 408.3 L 297.0 500.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
-  <path d="M 297.0 562.0 L 297.0 635.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 271.0 401.0 L 289.7 401.0 Q 297.0 401.0 297.0 408.3 L 297.0 500.0" fill="none" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 297.0 562.0 L 297.0 635.0" fill="none" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
   <path d="M 104.0 553.0 L 104.0 630.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 104.0 690.0 L 104.0 718.8 Q 104.0 730.0 115.2 730.0 L 447.0 730.0 Q 461.0 730.0 461.0 716.0 L 461.0 152.0 Q 461.0 138.0 475.0 138.0 L 575.0 138.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 645.0 168.0 L 645.0 216.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -74,7 +74,7 @@
   <rect x="169.0" y="456.8" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="193.0" y="468.0" text-anchor="middle" font-size="10" fill="#8b95a5">success</text>
   <rect x="301.0" y="442.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="328.0" y="454.0" text-anchor="middle" font-size="10" fill="#dc2626">declined</text>
+  <text x="328.0" y="454.0" text-anchor="middle" font-size="10" fill="#ca8a04">declined</text>
   <rect x="178.0" y="173.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
   <text x="187.0" y="185.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
   <rect x="178.0" y="335.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
@@ -100,7 +100,7 @@
   <text x="472.0" y="64.1" font-size="10" fill="#5b6474">Other</text>
   <rect x="522.0" y="53.6" width="22" height="14" rx="3" fill="#059669" fill-opacity="0.122" stroke="#059669" stroke-width="1.25"/>
   <text x="552.0" y="64.1" font-size="10" fill="#5b6474">Backend</text>
-  <line x1="614.0" y1="60.6" x2="636.0" y2="60.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <line x1="614.0" y1="60.6" x2="636.0" y2="60.6" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3"/>
   <text x="644.0" y="64.1" font-size="10" fill="#5b6474">Error / fallback</text>
   <line x1="24.0" y1="84.0" x2="740.0" y2="84.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

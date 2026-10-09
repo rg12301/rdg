@@ -47,7 +47,7 @@ type FacePins = HashMap<(NodeIndex, Side), Vec<(f64, Pt, Pt)>>;
 // A crossing stays dearer than a bend (Purchase 1997: crossings hurt reading most,
 // bends next), and both dearer than before so a route takes a modest detour, not a
 // lap of the canvas, to save one.
-const W_BEND: f64 = 55.0;
+const W_BEND: f64 = 75.0;
 const W_CROSS: f64 = 100.0;
 
 /// A router weight, overridable for tuning runs with `RDG_TUNE_<NAME>=<value>` (e.g.

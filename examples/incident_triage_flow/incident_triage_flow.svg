@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1440" height="1070" viewBox="0 0 1440 1070" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#dc2626" stroke-width="1" stroke-linejoin="round"/></marker></defs>
+  <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-uml-triangle-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="none" stroke="#ca8a04" stroke-width="1" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
   <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Incident triage</text>
@@ -15,7 +15,7 @@
   <path d="M 465.0 698.0 L 528.0 698.0 Q 542.0 698.0 542.0 712.0 L 542.0 858.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 84.0 858.0 L 84.0 222.0 Q 84.0 208.0 98.0 208.0 L 822.0 208.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 428.0 883.0 L 451.0 883.0 Q 460.0 883.0 460.0 874.0 L 460.0 817.0 Q 460.0 803.0 474.0 803.0 L 704.0 803.0 Q 718.0 803.0 718.0 789.0 L 718.0 122.0 Q 718.0 108.0 732.0 108.0 L 1200.2 108.0 Q 1207.0 108.0 1207.0 114.8 L 1207.0 132.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 1207.0 251.6 L 1207.0 398.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
+  <path d="M 1207.0 251.6 L 1207.0 398.0" fill="none" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
   <path d="M 1322.0 423.0 L 1356.6 423.0 Q 1370.0 423.0 1370.0 409.6 L 1370.0 198.7 Q 1370.0 192.0 1363.3 192.0 L 1346.0 192.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1066.0 192.0 L 1043.0 192.0 Q 1034.0 192.0 1034.0 201.0 L 1034.0 311.0 Q 1034.0 325.0 1048.0 325.0 L 1100.0 325.0 Q 1114.0 325.0 1114.0 339.0 L 1114.0 576.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 936.0 217.0 L 936.0 398.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -115,7 +115,7 @@
   <rect x="472.8" y="678.5" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="490.8" y="689.8" text-anchor="middle" font-size="10" fill="#8b95a5">SEV-3</text>
   <rect x="1211.0" y="259.8" width="20.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1221.0" y="271.1" text-anchor="middle" font-size="10" fill="#dc2626">no</text>
+  <text x="1221.0" y="271.1" text-anchor="middle" font-size="10" fill="#ca8a04">no</text>
   <rect x="1374.0" y="299.8" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1395.0" y="311.0" text-anchor="middle" font-size="10" fill="#8b95a5">repage</text>
   <rect x="1038.0" y="172.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
@@ -131,7 +131,7 @@
   <text x="1148.0" y="64.1" font-size="10" fill="#5b6474">Backend</text>
   <rect x="1210.0" y="53.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
   <text x="1240.0" y="64.1" font-size="10" fill="#5b6474">Other</text>
-  <line x1="1290.0" y1="60.6" x2="1312.0" y2="60.6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <line x1="1290.0" y1="60.6" x2="1312.0" y2="60.6" stroke="#ca8a04" stroke-width="1.2" stroke-dasharray="6 3"/>
   <text x="1320.0" y="64.1" font-size="10" fill="#5b6474">Error / fallback</text>
   <line x1="24.0" y1="84.0" x2="1416.0" y2="84.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

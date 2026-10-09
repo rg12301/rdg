@@ -103,11 +103,10 @@
         <mxCell id="e_labels_validation" value="" style="exitX=0.78221;exitY=0.42045;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.48571;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="labels" target="validation" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_catalog_src_transform" value="" style="exitX=0.75794;exitY=0.37500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.85714;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="catalog_src" target="transform" parent="1">
+        <mxCell id="e_catalog_src_transform" value="" style="exitX=0.75794;exitY=0.37500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=1.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="catalog_src" target="transform" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="580.0" y="436.0"/>
-              <mxPoint x="580.0" y="370.0"/>
+              <mxPoint x="732.0" y="436.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -165,23 +164,21 @@
         <mxCell id="e_deployer_batch_scorer" value="" style="exitX=1.00000;exitY=0.81429;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.18571;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="deployer" target="batch_scorer" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_feature_store_online_model" value="online features" style="exitX=0.50000;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.40000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="feature_store" target="online_model" parent="1">
-          <mxGeometry x="-0.0644" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_feature_store_online_model" value="online features" style="exitX=0.50000;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="feature_store" target="online_model" parent="1">
+          <mxGeometry x="-0.0027" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="990.0" y="127.0"/>
-              <mxPoint x="2707.0" y="127.0"/>
-              <mxPoint x="2707.0" y="326.0"/>
+              <mxPoint x="2899.0" y="127.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_online_model_drift" value="predictions" style="exitX=1.00000;exitY=0.62857;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.11429;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="online_model" target="drift" parent="1">
           <mxGeometry x="0.0000" y="11.8" relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_batch_scorer_performance" value="reports" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.90000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="batch_scorer" target="performance" parent="1">
-          <mxGeometry x="-0.2207" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_batch_scorer_performance" value="reports" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=1.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="batch_scorer" target="performance" parent="1">
+          <mxGeometry x="-0.0433" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="3354.0" y="429.0"/>
-              <mxPoint x="3354.0" y="399.0"/>
+              <mxPoint x="3527.0" y="429.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

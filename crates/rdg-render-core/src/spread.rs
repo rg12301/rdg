@@ -26,6 +26,8 @@ type Pt = (f64, f64);
 
 /// Two legs must run side by side at least this far before they read as parallel.
 pub(crate) const MIN_PARALLEL: f64 = 12.0;
+/// Side by side this far, two legs want more than a lane between them.
+const LONG_RUN: f64 = 160.0;
 
 /// One leg of one path, in the axis it can slide along.
 #[derive(Debug, Clone, Copy)]
@@ -310,56 +312,143 @@ pub fn spread_parallels(
 
     for round in 0..4 {
         let vertical = round % 2 == 0;
-        let ls = legs(&paths, Some(&ends), vertical, min_len, stub);
+        let mut ls = legs(&paths, Some(&ends), vertical, min_len, stub);
+        // A leg's range stops at the nearest box or border band on either side: the
+        // relaxation then shares a deficit only between moves that can be made,
+        // instead of pushing one leg into a wall and leaving the pair as it was.
+        for l in &mut ls {
+            if !l.movable() {
+                continue;
+            }
+            let (mut lo, mut hi) = l.range;
+            for b in &boxes {
+                let (s0, s1, c0, c1) = if vertical { (b.y0, b.y1, b.x0, b.x1) } else { (b.x0, b.x1, b.y0, b.y1) };
+                if s1 <= l.lo || s0 >= l.hi || (l.at > c0 && l.at < c1) {
+                    continue;
+                }
+                if c1 <= l.at {
+                    lo = lo.max(c1);
+                } else {
+                    hi = hi.min(c0);
+                }
+            }
+            l.range = (lo.min(l.at), hi.max(l.at));
+        }
+        // Border bands a leg must not land in: the packing hops over them.
+        let bands_for = |l: &Leg| -> Vec<(f64, f64)> {
+            borders
+                .iter()
+                .filter(|b| b.0 == vertical && l.hi.min(b.3) - l.lo.max(b.2) > MIN_PARALLEL && (b.1 - l.at).abs() >= border_lane)
+                .map(|b| (b.1 - border_lane, b.1 + border_lane))
+                .collect()
+        };
+        let hop = |l: &Leg, v: f64, up: bool| -> f64 {
+            let mut v = v;
+            for _ in 0..4 {
+                match bands_for(l).into_iter().find(|&(a, b)| v > a && v < b) {
+                    Some((a, b)) => v = if up { b } else { a },
+                    None => break,
+                }
+            }
+            v
+        };
         let mut target: Vec<f64> = ls.iter().map(|l| l.at).collect();
-        let mut pairs: Vec<(usize, usize)> = Vec::new();
+        // Two legs running together for a long stretch read as a ribbon at one lane;
+        // they get half a lane more.
+        let need = |a: &Leg, b: &Leg| if overlap(a, b) > LONG_RUN { pitch * 1.5 } else { pitch };
+        // Clusters of legs that run alongside one another, chained; each is packed
+        // left to right (or top to bottom) within every leg's own range: forward,
+        // each leg a lane past the one before; backward, pulling legs that overshot
+        // their range back and the ones before them with it. A fixed leg anchors.
+        let mut parent: Vec<usize> = (0..ls.len()).collect();
+        fn find(p: &mut [usize], i: usize) -> usize {
+            let mut r = i;
+            while p[r] != r {
+                r = p[r];
+            }
+            let mut j = i;
+            while p[j] != r {
+                let n = p[j];
+                p[j] = r;
+                j = n;
+            }
+            r
+        }
+        let mut any_close = false;
         for i in 0..ls.len() {
             for j in i + 1..ls.len() {
-                if (ls[i].at - ls[j].at).abs() < pitch - 0.5 && alongside(&paths, &ls[i], &ls[j]) && (ls[i].movable() || ls[j].movable()) {
-                    pairs.push((i, j));
+                if alongside(&paths, &ls[i], &ls[j]) && (ls[i].at - ls[j].at).abs() < need(&ls[i], &ls[j]) + pitch {
+                    if (ls[i].at - ls[j].at).abs() < need(&ls[i], &ls[j]) - 0.5 {
+                        any_close = true;
+                    }
+                    let (a, b) = (find(&mut parent, i), find(&mut parent, j));
+                    if a != b {
+                        parent[a] = b;
+                    }
                 }
             }
         }
-        if pairs.is_empty() {
+        if !any_close {
             continue;
         }
-        // Relax: every close pair splits its deficit between the two, each within its
-        // own range (a fixed leg has none). Repeated until nothing moves.
-        for _ in 0..24 {
-            let mut changed = false;
-            for &(i, j) in &pairs {
-                let (a, b) = if target[i] <= target[j] { (i, j) } else { (j, i) };
-                let gap = target[b] - target[a];
-                if gap >= pitch - 1e-6 {
-                    continue;
-                }
-                let deficit = pitch - gap;
-                let room_a = (target[a] - ls[a].range.0).max(0.0);
-                let room_b = (ls[b].range.1 - target[b]).max(0.0);
-                if room_a + room_b < 1e-6 {
-                    continue;
-                }
-                let mut da = (deficit / 2.0).min(room_a);
-                let db = (deficit - da).min(room_b);
-                if da + db < deficit - 1e-6 {
-                    da = (deficit - db).min(room_a);
-                }
-                if da > 1e-6 || db > 1e-6 {
-                    target[a] -= da;
-                    target[b] += db;
-                    changed = true;
-                }
+        let mut clusters: HashMap<usize, Vec<usize>> = HashMap::new();
+        for i in 0..ls.len() {
+            let r = find(&mut parent, i);
+            clusters.entry(r).or_default().push(i);
+        }
+        let mut roots: Vec<usize> = clusters.keys().copied().collect();
+        roots.sort_unstable();
+        for r in roots {
+            let mut members = clusters[&r].clone();
+            if members.len() < 2 {
+                continue;
             }
-            if !changed {
-                break;
+            members.sort_by(|&a, &b| ls[a].at.total_cmp(&ls[b].at).then(a.cmp(&b)));
+            let gap_to = |i: usize, j: usize| if alongside(&paths, &ls[i], &ls[j]) { need(&ls[i], &ls[j]) } else { 0.0 };
+            let mut x: Vec<f64> = members.iter().map(|&i| ls[i].at).collect();
+            for k in 0..members.len() {
+                let i = members[k];
+                let mut v = ls[i].range.0.max(ls[i].at.min(ls[i].range.1));
+                if k > 0 {
+                    // Past every earlier leg it runs alongside, not just the previous.
+                    for q in 0..k {
+                        v = v.max(x[q] + gap_to(members[q], i));
+                    }
+                }
+                x[k] = hop(&ls[i], v, true).clamp(ls[i].range.0, ls[i].range.1);
+            }
+            for k in (0..members.len()).rev() {
+                let i = members[k];
+                if k + 1 < members.len() {
+                    for q in k + 1..members.len() {
+                        let limit = x[q] - gap_to(i, members[q]);
+                        x[k] = x[k].min(limit);
+                    }
+                }
+                x[k] = hop(&ls[i], x[k], false).clamp(ls[i].range.0, ls[i].range.1);
+            }
+            for (k, &i) in members.iter().enumerate() {
+                target[i] = x[k];
             }
         }
         // Apply each move that stays clear of nodes and borders and adds no crossing.
+        // Moves are checked against where the other legs are *now* (an earlier move
+        // may have been refused), so a leg never lands on one that stayed behind.
+        let mut cur: Vec<f64> = ls.iter().map(|l| l.at).collect();
         let mut order: Vec<usize> = (0..ls.len()).filter(|&i| ls[i].movable() && (target[i] - ls[i].at).abs() > 0.5).collect();
         order.sort_by(|&i, &j| ls[i].path.cmp(&ls[j].path).then(ls[i].k.cmp(&ls[j].k)));
         for i in order {
             let l = ls[i];
             let want = target[i].round();
+            let too_close = |at: f64| {
+                ls.iter().enumerate().any(|(j, m)| {
+                    j != i && alongside(&paths, &l, m) && {
+                        let before = (l.at - cur[j]).abs();
+                        let after = (at - cur[j]).abs();
+                        after < (pitch - 1.0).min(before) - 0.5
+                    }
+                })
+            };
             let pts = paths[l.path].clone();
             let n = pts.len();
             let axis_of = |p: Pt| if vertical { p.0 } else { p.1 };
@@ -389,7 +478,7 @@ pub fn spread_parallels(
             let (boxes_now, borders_now) = touches(l.at);
             let ok = |at: f64| -> bool {
                 let (b, r) = touches(at);
-                b.iter().all(|x| boxes_now.contains(x)) && r.iter().all(|x| borders_now.contains(x))
+                b.iter().all(|x| boxes_now.contains(x)) && r.iter().all(|x| borders_now.contains(x)) && !too_close(at)
             };
             // Nearest clear spot to the target, searched a px at a time back toward the
             // leg's present place; nothing clear means it stays.
@@ -402,6 +491,13 @@ pub fn spread_parallels(
                     break;
                 }
                 at += dir;
+            }
+            if debug && found != Some(want.clamp(l.range.0, l.range.1)) {
+                let probe = want.clamp(l.range.0, l.range.1);
+                let (b, r) = touches(probe);
+                let new_b: Vec<String> = b.iter().filter(|x| !boxes_now.contains(x)).map(|&i| format!("box{i}=({:.0},{:.0})-({:.0},{:.0})", boxes[i].x0, boxes[i].y0, boxes[i].x1, boxes[i].y1)).collect();
+                let new_r: Vec<String> = r.iter().filter(|x| !borders_now.contains(x)).map(|&i| format!("border{i}@{:.0}", borders[i].1)).collect();
+                eprintln!("spread: path {} leg {} blocked at {probe:.0}: {} {}", l.path, l.k, new_b.join(" "), new_r.join(" "));
             }
             let Some(at) = found else { continue };
             let mut new_pts = pts.clone();
@@ -419,7 +515,7 @@ pub fn spread_parallels(
             }
             if debug {
                 let (s, d) = compiled.graph.edge_endpoints(path_edge[l.path]).map_or(("?", "?"), |(a, b)| (compiled.graph[a].id.as_str(), compiled.graph[b].id.as_str()));
-                eprintln!("spread: {s} -> {d} leg {} ({}) {:.0} -> {at:.0}", l.k, if vertical { "x" } else { "y" }, l.at);
+                eprintln!("spread: {s} -> {d} leg {} ({}) {:.0} -> {at:.0} (want {want:.0}, range {:.0}..{:.0}, span {:.0}..{:.0})", l.k, if vertical { "x" } else { "y" }, l.at, l.range.0, l.range.1, l.lo, l.hi);
             }
             if l.k == 0 {
                 ends.ports[l.path][0].at = at;
@@ -427,6 +523,7 @@ pub fn spread_parallels(
             if l.k + 2 == n {
                 ends.ports[l.path][1].at = at;
             }
+            cur[i] = at;
             paths[l.path] = new_pts;
             moved_any = true;
         }

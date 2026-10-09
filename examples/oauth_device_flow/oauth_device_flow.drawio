@@ -116,25 +116,25 @@
             <mxPoint x="1152.0" y="1678.0" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="seq_activation_0" value="" style="rounded=0;html=1;fillColor=#dc2626;fillOpacity=28;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="seq_activation_0" value="" style="rounded=0;html=1;fillColor=#ca8a04;fillOpacity=28;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="773.0" y="194.6" width="10.0" height="39.5" as="geometry"/>
         </mxCell>
-        <mxCell id="seq_activation_1" value="" style="rounded=0;html=1;fillColor=#dc2626;fillOpacity=28;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="seq_activation_1" value="" style="rounded=0;html=1;fillColor=#ca8a04;fillOpacity=28;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="773.0" y="435.6" width="10.0" height="118.5" as="geometry"/>
         </mxCell>
         <mxCell id="seq_activation_2" value="" style="rounded=0;html=1;fillColor=#64748b;fillOpacity=28;strokeColor=#64748b;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="975.0" y="475.1" width="10.0" height="39.5" as="geometry"/>
         </mxCell>
-        <mxCell id="seq_activation_3" value="" style="rounded=0;html=1;fillColor=#dc2626;fillOpacity=28;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="seq_activation_3" value="" style="rounded=0;html=1;fillColor=#ca8a04;fillOpacity=28;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="773.0" y="729.5" width="10.0" height="73.0" as="geometry"/>
         </mxCell>
         <mxCell id="seq_activation_4" value="" style="rounded=0;html=1;fillColor=#059669;fillOpacity=28;strokeColor=#059669;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="1147.0" y="1103.0" width="10.0" height="118.5" as="geometry"/>
         </mxCell>
-        <mxCell id="seq_activation_5" value="" style="rounded=0;html=1;fillColor=#dc2626;fillOpacity=28;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="seq_activation_5" value="" style="rounded=0;html=1;fillColor=#ca8a04;fillOpacity=28;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="773.0" y="1142.5" width="10.0" height="39.5" as="geometry"/>
         </mxCell>
-        <mxCell id="seq_activation_6" value="" style="rounded=0;html=1;fillColor=#dc2626;fillOpacity=28;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="seq_activation_6" value="" style="rounded=0;html=1;fillColor=#ca8a04;fillOpacity=28;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="773.0" y="1332.0" width="10.0" height="39.5" as="geometry"/>
         </mxCell>
         <mxCell id="seq_activation_7" value="" style="rounded=0;html=1;fillColor=#059669;fillOpacity=28;strokeColor=#059669;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
@@ -329,7 +329,7 @@
         <mxCell id="user" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=none;strokeColor=#94a3b8;strokeWidth=1.75;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=12;fontColor=#111827;fontStyle=1;spacingTop=2;" vertex="1" parent="1">
           <mxGeometry x="622.1" y="98.8" width="19.8" height="32.0" as="geometry"/>
         </mxCell>
-        <mxCell id="authz" value="&lt;b&gt;Authorization server&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;html=1;whiteSpace=wrap;fillColor=#dc2626;fillOpacity=10;strokeColor=#dc2626;strokeWidth=1.5;shadow=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=12;fontColor=#111827;fontStyle=0;align=center;verticalAlign=middle;spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
+        <mxCell id="authz" value="&lt;b&gt;Authorization server&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;html=1;whiteSpace=wrap;fillColor=#ca8a04;fillOpacity=10;strokeColor=#ca8a04;strokeWidth=1.5;shadow=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=12;fontColor=#111827;fontStyle=0;align=center;verticalAlign=middle;spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
           <mxGeometry x="688.0" y="98.8" width="180.0" height="40.0" as="geometry"/>
         </mxCell>
         <mxCell id="idp" value="&lt;b&gt;Identity provider&lt;/b&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;html=1;whiteSpace=wrap;fillColor=#64748b;fillOpacity=8;strokeColor=#64748b;strokeWidth=1.5;shadow=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=12;fontColor=#111827;fontStyle=0;align=center;verticalAlign=middle;spacingTop=4;spacingBottom=4;spacingLeft=8;spacingRight=8;" vertex="1" parent="1">
@@ -353,7 +353,7 @@
         <mxCell id="legend_0_1_label" value="Other" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">
           <mxGeometry x="766.0" y="32.9" width="50.0" height="23.5" as="geometry"/>
         </mxCell>
-        <mxCell id="legend_0_2_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#dc2626;fillOpacity=10;strokeColor=#dc2626;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
+        <mxCell id="legend_0_2_swatch" value="" style="rounded=1;absoluteArcSize=1;arcSize=6;fillColor=#ca8a04;fillOpacity=10;strokeColor=#ca8a04;strokeWidth=1.25;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="816.0" y="37.6" width="22.0" height="14.0" as="geometry"/>
         </mxCell>
         <mxCell id="legend_0_2_label" value="Security" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#5b6474;fontStyle=0;" vertex="1" parent="1">

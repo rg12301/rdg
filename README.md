@@ -63,6 +63,11 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
     in the participant's colour (`activation.fill: "@category"`), fragment tabs
     clear the bars. Tiers order their units so same-tier arrows run with the reading
     direction; a self-referencing table no longer breaks the layout.
+  - *Round 7 fixes*: a label sits snug beside its own arrow or on it, never a lane
+    away where it reads as orphaned; an unlabelled start/end dot is exactly its mark,
+    so its arrow touches it; security is gold (red stays for errors); parallel legs
+    are packed exactly, a lane apart (half a lane more over long runs), hopping
+    over container borders instead of piling up against them; bends cost more.
   - *Labels and badges*: a label prefers the longest straight stretch of its own
     arrow, nearer the source; fragments in sequence diagrams start left of the
     outermost activation bar; an unlabelled start/end/choice marker has no caption.

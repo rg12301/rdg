@@ -17,7 +17,7 @@ categories:
   database:   {fill: "#4c1d9566", stroke: "#a78bfa"}
   messagebus: {fill: "#7c2d124d", stroke: "#fb923c"}
   cloud:      {fill: "#164e634d", stroke: "#22d3ee"}
-  security:   {fill: "#7f1d1d66", stroke: "#f87171"}
+  security:   {fill: "#713f1266", stroke: "#fbbf24"}
   external:   {fill: "#1e293b80", stroke: "#94a3b8"}
   neutral:    {fill: "#0f172a", stroke: "#475569"}
 edge_styles:

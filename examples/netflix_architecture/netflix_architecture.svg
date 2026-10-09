@@ -16,7 +16,7 @@
   <path d="M 191.0 417.0 L 191.0 432.8 Q 191.0 439.0 197.2 439.0 L 355.4 439.0 Q 365.0 439.0 365.0 448.6 L 365.0 473.3" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 384.0 405.0 L 384.0 467.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 670.0 400.0 L 670.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 694.0 400.0 L 694.0 415.8 Q 694.0 422.0 700.2 422.0 L 847.1 422.0 Q 860.0 422.0 860.0 434.9 L 860.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 694.0 400.0 L 694.0 418.0 Q 694.0 425.0 701.0 425.0 L 848.0 425.0 Q 860.0 425.0 860.0 437.0 L 860.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 878.0 388.0 L 878.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 850.0 388.0 L 850.0 430.0 Q 850.0 444.0 836.0 444.0 L 695.7 444.0 Q 689.0 444.0 689.0 450.7 L 689.0 468.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 194.0 936.0 L 194.0 986.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
@@ -104,8 +104,8 @@
   <text x="424.0" y="439.5" text-anchor="middle" font-size="10" fill="#8b95a5">origin pull</text>
   <rect x="624.0" y="426.2" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="645.0" y="437.5" text-anchor="middle" font-size="10" fill="#8b95a5">charge</text>
-  <rect x="765.0" y="402.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="777.0" y="413.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
+  <rect x="765.0" y="405.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="777.0" y="416.8" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
   <rect x="882.0" y="420.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="912.0" y="431.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL retry</text>
   <rect x="730.5" y="448.0" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>

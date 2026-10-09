@@ -16,9 +16,9 @@
   <path d="M 436.0 189.0 L 648.8 189.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 710.0 202.0 L 988.0 202.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 1038.0 189.0 L 1267.0 189.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 1038.0 209.0 L 1146.0 209.0 Q 1160.0 209.0 1160.0 223.0 L 1160.0 281.0 Q 1160.0 295.0 1174.0 295.0 L 1600.0 295.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1038.0 209.0 L 1146.0 209.0 Q 1160.0 209.0 1160.0 223.0 L 1160.0 274.0 Q 1160.0 288.0 1174.0 288.0 L 1600.0 288.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1013.0 164.0 L 1013.0 144.6 Q 1013.0 137.0 1020.6 137.0 L 1450.3 137.0 Q 1457.0 137.0 1457.0 143.7 L 1457.0 156.2 Q 1457.0 161.0 1461.8 161.0 L 1600.0 161.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1600.0 182.0 L 1383.0 182.0 Q 1369.0 182.0 1369.0 196.0 L 1369.0 299.0 Q 1369.0 313.0 1355.0 313.0 L 1038.0 313.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1600.0 182.0 L 1383.0 182.0 Q 1369.0 182.0 1369.0 196.0 L 1369.0 298.0 Q 1369.0 312.0 1355.0 312.0 L 1038.0 312.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1038.0 352.0 L 1438.0 352.0 Q 1452.0 352.0 1452.0 366.0 L 1452.0 416.0 Q 1452.0 430.0 1466.0 430.0 L 1593.0 430.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1038.0 332.0 L 1600.0 332.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1650.0 288.0 L 1779.0 288.0 Q 1793.0 288.0 1793.0 274.0 L 1793.0 239.4 Q 1793.0 226.0 1806.4 226.0 L 1937.0 226.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -86,12 +86,12 @@
   <text x="849.0" y="193.8" text-anchor="middle" font-size="10" fill="#ea580c">consume</text>
   <rect x="1131.5" y="169.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1152.5" y="180.8" text-anchor="middle" font-size="10" fill="#8b95a5">lookup</text>
-  <rect x="1307.8" y="275.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1328.8" y="286.8" text-anchor="middle" font-size="10" fill="#7c3aed">insert</text>
+  <rect x="1307.8" y="268.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1328.8" y="279.8" text-anchor="middle" font-size="10" fill="#7c3aed">insert</text>
   <rect x="1220.0" y="141.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1235.0" y="152.2" text-anchor="middle" font-size="10" fill="#7c3aed">sink</text>
-  <rect x="1117.2" y="293.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1132.2" y="304.8" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
+  <rect x="1117.2" y="292.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1132.2" y="303.8" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
   <rect x="1200.0" y="356.0" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1245.0" y="367.2" text-anchor="middle" font-size="10" fill="#7c3aed">write features</text>
   <rect x="1391.0" y="312.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>

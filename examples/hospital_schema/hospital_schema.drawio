@@ -72,10 +72,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_wards_admissions" value="" style="exitX=0.23750;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.00000;entryY=0.37500;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="wards" target="admissions" parent="1">
+        <mxCell id="e_wards_admissions" value="" style="exitX=0.36875;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.00000;entryY=0.37500;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="wards" target="admissions" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="765.0" y="635.0"/>
+              <mxPoint x="786.0" y="635.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -93,10 +93,10 @@
         <mxCell id="e_admissions_procedures" value="" style="exitX=0.49412;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.60000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="admissions" target="procedures" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_admissions_prescriptions" value="" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="admissions" target="prescriptions" parent="1">
+        <mxCell id="e_admissions_prescriptions" value="" style="exitX=1.00000;exitY=0.50694;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="admissions" target="prescriptions" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="776.0" y="653.0"/>
+              <mxPoint x="776.0" y="654.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -123,20 +123,18 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_staff_diagnoses" value="records" style="exitX=0.62500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.62500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="staff" target="diagnoses" parent="1">
-          <mxGeometry x="-0.5843" y="11.8" relative="1" as="geometry">
+        <mxCell id="e_staff_diagnoses" value="records" style="exitX=0.62500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.75625;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="staff" target="diagnoses" parent="1">
+          <mxGeometry x="-0.5102" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="603.0" y="486.0"/>
-              <mxPoint x="803.0" y="486.0"/>
-              <mxPoint x="803.0" y="788.0"/>
-              <mxPoint x="1020.0" y="788.0"/>
+              <mxPoint x="1041.0" y="486.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_medications_prescriptions" value="" style="exitX=0.62500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.62500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="medications" target="prescriptions" parent="1">
+        <mxCell id="e_medications_prescriptions" value="" style="exitX=0.75000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.62500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="medications" target="prescriptions" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1051.0" y="807.0"/>
+              <mxPoint x="1071.0" y="807.0"/>
               <mxPoint x="796.0" y="807.0"/>
             </Array>
           </mxGeometry>

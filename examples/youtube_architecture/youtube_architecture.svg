@@ -14,12 +14,12 @@
   <text x="522.0" y="995.9" font-size="11" font-weight="bold" fill="#94a3b8">Data Stores</text>
   <path d="M 682.0 234.0 L 682.0 249.8 Q 682.0 256.0 688.2 256.0 L 716.2 256.0 Q 724.0 256.0 724.0 263.8 L 724.0 284.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 832.0 234.0 L 832.0 295.0 Q 832.0 309.0 818.0 309.0 L 749.0 309.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 706.0 181.0 L 743.0 181.0 Q 757.0 181.0 757.0 195.0 L 757.0 242.0 Q 757.0 256.0 771.0 256.0 L 798.4 256.0 Q 809.0 256.0 809.0 266.6 L 809.0 510.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 656.0 181.0 L 548.0 181.0 Q 534.0 181.0 534.0 195.0 L 534.0 501.0 Q 534.0 515.0 548.0 515.0 L 764.0 515.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 857.0 181.0 L 1033.0 181.0 Q 1047.0 181.0 1047.0 195.0 L 1047.0 501.0 Q 1047.0 515.0 1033.0 515.0 L 814.0 515.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 814.0 555.0 L 1087.0 555.0 Q 1101.0 555.0 1101.0 569.0 L 1101.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 764.0 535.0 L 506.0 535.0 Q 492.0 535.0 492.0 549.0 L 492.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 764.0 555.0 L 506.0 555.0 Q 492.0 555.0 492.0 569.0 L 492.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 814.0 535.0 L 906.0 535.0 Q 920.0 535.0 920.0 549.0 L 920.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 764.0 555.0 L 717.0 555.0 Q 703.0 555.0 703.0 569.0 L 703.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 764.0 535.0 L 696.0 535.0 Q 682.0 535.0 682.0 549.0 L 682.0 674.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1101.0 764.0 L 1101.0 1024.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 492.0 764.0 L 492.0 877.0 Q 492.0 891.0 506.0 891.0 L 645.0 891.0 Q 659.0 891.0 659.0 905.0 L 659.0 1024.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 467.0 699.0 L 279.0 699.0 Q 265.0 699.0 265.0 713.0 L 265.0 912.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
@@ -109,23 +109,23 @@
     <tspan>view_events</tspan>
   </text>
   <text x="1009.0" y="1274.3" text-anchor="middle" font-size="10" fill="#5b6474">[Kafka]</text>
-  <rect x="667.0" y="241.5" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
-  <text x="703.0" y="252.2" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS video</text>
-  <text x="703.0" y="266.8" text-anchor="middle" font-size="10" fill="#8b95a5">playback</text>
-  <rect x="836.0" y="263.8" width="126.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="899.0" y="275.0" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS video playback</text>
-  <rect x="813.0" y="368.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="843.0" y="379.5" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS API</text>
+  <rect x="640.0" y="248.2" width="126.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="703.0" y="259.5" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS video playback</text>
+  <rect x="775.4" y="313.0" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
+  <text x="811.4" y="323.8" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS video</text>
+  <text x="811.4" y="338.2" text-anchor="middle" font-size="10" fill="#8b95a5">playback</text>
+  <rect x="538.0" y="340.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="568.0" y="351.5" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS API</text>
   <rect x="1051.0" y="340.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1081.0" y="351.5" text-anchor="middle" font-size="10" fill="#8b95a5">HTTPS API</text>
   <rect x="942.5" y="535.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="957.5" y="546.8" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
-  <rect x="613.0" y="515.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="628.0" y="526.8" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
+  <rect x="613.0" y="535.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="628.0" y="546.8" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
   <rect x="924.0" y="596.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="939.0" y="608.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
-  <rect x="707.2" y="559.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="722.2" y="570.2" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
+  <rect x="686.0" y="596.8" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="701.0" y="608.0" text-anchor="middle" font-size="10" fill="#8b95a5">gRPC</text>
   <rect x="1105.0" y="886.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1117.0" y="897.5" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
   <rect x="542.5" y="871.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>

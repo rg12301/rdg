@@ -39,13 +39,13 @@
   <line x1="778.0" y1="138.8" x2="778.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="980.0" y1="138.8" x2="980.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
   <line x1="1152.0" y1="138.8" x2="1152.0" y2="1678.0" stroke="#9aa3b2" stroke-width="1.2" stroke-dasharray="6 6"/>
-  <rect x="773.0" y="194.6" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
-  <rect x="773.0" y="435.6" width="10.0" height="118.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="773.0" y="194.6" width="10.0" height="39.5" fill="#ca8a04" fill-opacity="0.28" stroke="#ca8a04" stroke-width="1.25"/>
+  <rect x="773.0" y="435.6" width="10.0" height="118.5" fill="#ca8a04" fill-opacity="0.28" stroke="#ca8a04" stroke-width="1.25"/>
   <rect x="975.0" y="475.1" width="10.0" height="39.5" fill="#64748b" fill-opacity="0.28" stroke="#64748b" stroke-width="1.25"/>
-  <rect x="773.0" y="729.5" width="10.0" height="73.0" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="773.0" y="729.5" width="10.0" height="73.0" fill="#ca8a04" fill-opacity="0.28" stroke="#ca8a04" stroke-width="1.25"/>
   <rect x="1147.0" y="1103.0" width="10.0" height="118.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
-  <rect x="773.0" y="1142.5" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
-  <rect x="773.0" y="1332.0" width="10.0" height="39.5" fill="#dc2626" fill-opacity="0.28" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="773.0" y="1142.5" width="10.0" height="39.5" fill="#ca8a04" fill-opacity="0.28" stroke="#ca8a04" stroke-width="1.25"/>
+  <rect x="773.0" y="1332.0" width="10.0" height="39.5" fill="#ca8a04" fill-opacity="0.28" stroke="#ca8a04" stroke-width="1.25"/>
   <rect x="1147.0" y="1535.5" width="10.0" height="39.5" fill="#059669" fill-opacity="0.28" stroke="#059669" stroke-width="1.25"/>
   <path fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)" d="M 254.0 194.6 H 773.0"/>
   <rect x="424.5" y="177.1" width="178.0" height="13.5" fill="#f7f8fa"/>
@@ -141,7 +141,7 @@
   <circle cx="632.0" cy="104.0" r="5.1" fill="none" stroke="#94a3b8" stroke-width="1.75"/>
   <path d="M 632.0 109.1 V 120.6 M 622.4 113.2 H 641.6 M 632.0 120.6 L 623.7 130.8 M 632.0 120.6 L 640.3 130.8" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round"/>
   <text x="632.0" y="147.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">User</text>
-  <rect fill="#dc2626" fill-opacity="0.102" stroke="#dc2626" stroke-width="1.5" x="688.0" y="98.8" width="180.0" height="40.0" rx="6.0"/>
+  <rect fill="#ca8a04" fill-opacity="0.102" stroke="#ca8a04" stroke-width="1.5" x="688.0" y="98.8" width="180.0" height="40.0" rx="6.0"/>
   <text x="778.0" y="123.0" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Authorization server</tspan>
   </text>
@@ -158,7 +158,7 @@
   <text x="668.0" y="48.1" font-size="10" fill="#5b6474">Frontend</text>
   <rect x="736.0" y="37.6" width="22" height="14" rx="3" fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.25"/>
   <text x="766.0" y="48.1" font-size="10" fill="#5b6474">Other</text>
-  <rect x="816.0" y="37.6" width="22" height="14" rx="3" fill="#dc2626" fill-opacity="0.102" stroke="#dc2626" stroke-width="1.25"/>
+  <rect x="816.0" y="37.6" width="22" height="14" rx="3" fill="#ca8a04" fill-opacity="0.102" stroke="#ca8a04" stroke-width="1.25"/>
   <text x="846.0" y="48.1" font-size="10" fill="#5b6474">Security</text>
   <rect x="914.0" y="37.6" width="22" height="14" rx="3" fill="#64748b" fill-opacity="0.078" stroke="#64748b" stroke-width="1.25"/>
   <text x="944.0" y="48.1" font-size="10" fill="#5b6474">External</text>

@@ -178,10 +178,10 @@
           <mxGeometry x="0.0000" y="-25.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_billing_svc_billing_db" value="SQL" style="exitX=0.61290;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.38750;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="billing_svc" target="billing_db" parent="1">
-          <mxGeometry x="-0.1026" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.0769" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="694.0" y="422.0"/>
-              <mxPoint x="860.0" y="422.0"/>
+              <mxPoint x="694.0" y="425.0"/>
+              <mxPoint x="860.0" y="425.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

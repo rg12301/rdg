@@ -6,20 +6,20 @@
   <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Hotel booking domain</text>
   <path d="M 1029.0 445.0 L 1201.0 445.0 Q 1215.0 445.0 1215.0 431.0 L 1215.0 184.0 Q 1215.0 170.0 1229.0 170.0 L 1281.0 170.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 578.0 421.0 L 645.0 421.0 Q 659.0 421.0 659.0 407.0 L 659.0 105.0 Q 659.0 91.0 673.0 91.0 L 1374.3 91.0 Q 1381.0 91.0 1381.0 97.7 L 1381.0 115.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 1029.0 464.0 L 1199.0 464.0 Q 1213.0 464.0 1213.0 478.0 L 1213.0 745.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 1029.0 474.0 L 1199.0 474.0 Q 1213.0 474.0 1213.0 488.0 L 1213.0 745.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 779.0 445.0 L 674.0 445.0 Q 660.0 445.0 660.0 459.0 L 660.0 621.0 Q 660.0 635.0 646.0 635.0 L 167.0 635.0 Q 153.0 635.0 153.0 649.0 L 153.0 748.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 934.0 539.0 L 934.0 739.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
   <path d="M 779.0 464.0 L 742.0 464.0 Q 728.0 464.0 728.0 478.0 L 728.0 748.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
-  <path d="M 173.0 838.0 L 173.0 902.0 Q 173.0 916.0 187.0 916.0 L 229.0 916.0 Q 243.0 916.0 243.0 930.0 L 243.0 1115.0 Q 243.0 1129.0 257.0 1129.0 L 407.0 1129.0 Q 421.0 1129.0 421.0 1143.0 L 421.0 1193.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 173.0 838.0 L 173.0 902.0 Q 173.0 916.0 187.0 916.0 L 229.0 916.0 Q 243.0 916.0 243.0 930.0 L 243.0 1215.0 Q 243.0 1229.0 257.0 1229.0 L 362.0 1229.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 153.0 838.0 L 153.0 993.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 308.0 464.0 L 57.0 464.0 Q 43.0 464.0 43.0 478.0 L 43.0 993.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 443.0 521.0 L 443.0 759.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
   <path d="M 104.0 1083.0 L 104.0 1193.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
-  <path d="M 184.0 1038.0 L 212.8 1038.0 Q 224.0 1038.0 224.0 1049.2 L 224.0 1188.0 Q 224.0 1202.0 238.0 1202.0 L 362.0 1202.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 184.0 1038.0 L 212.8 1038.0 Q 224.0 1038.0 224.0 1049.2 L 224.0 1242.0 Q 224.0 1256.0 238.0 1256.0 L 362.0 1256.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 594.0 1038.0 L 565.2 1038.0 Q 554.0 1038.0 554.0 1026.8 L 554.0 932.7 Q 554.0 919.0 567.7 919.0 L 593.1 919.0 Q 603.0 919.0 603.0 909.1 L 603.0 804.2 Q 603.0 793.0 591.8 793.0 L 563.0 793.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 389.0 1011.0 L 389.0 827.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 1069.0 215.0 L 1069.0 414.8 Q 1069.0 426.0 1057.8 426.0 L 1029.0 426.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
-  <path d="M 1089.0 215.0 L 1089.0 1215.0 Q 1089.0 1229.0 1075.0 1229.0 L 522.0 1229.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
+  <path d="M 1097.0 215.0 L 1097.0 1215.0 Q 1097.0 1229.0 1083.0 1229.0 L 522.0 1229.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-1)"/>
   <path d="M 443.0 197.0 L 443.0 407.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 804.0 213.0 L 804.0 389.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 1613.0 793.0 L 1584.9 793.0 Q 1574.0 793.0 1574.0 782.1 L 1574.0 475.2 Q 1574.0 464.0 1562.8 464.0 L 1534.0 464.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>

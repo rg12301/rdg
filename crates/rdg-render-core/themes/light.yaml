@@ -115,7 +115,7 @@ categories:
   database:   {label: Data,         fill: "#7c3aed1f", stroke: "#7c3aed", glyph: glyph-database}
   messagebus: {label: Messaging,    fill: "#ea580c1f", stroke: "#ea580c", glyph: glyph-queue}
   cloud:      {label: Edge & cloud, fill: "#0891b21f", stroke: "#0891b2", glyph: glyph-cloud}
-  security:   {label: Security,     fill: "#dc26261a", stroke: "#dc2626", glyph: glyph-security}
+  security:   {label: Security,     fill: "#ca8a041a", stroke: "#ca8a04", glyph: glyph-security}
   external:   {label: External,     fill: "#64748b14", stroke: "#64748b", glyph: glyph-external}
   neutral:    {label: Other,        fill: "#ffffff",   stroke: "#94a3b8", glyph: glyph-generic}
 
