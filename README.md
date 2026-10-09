@@ -68,6 +68,11 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
     so its arrow touches it; security is gold (red stays for errors); parallel legs
     are packed exactly, a lane apart (half a lane more over long runs), hopping
     over container borders instead of piling up against them; bends cost more.
+  - *Round 9*: a group nothing feeds from above that is wired both ways with the tier
+    it feeds (an analytics box reading one store and writing another) sits beside
+    that tier instead of in a tier of its own across the main flow; on the healthcare
+    fixture that took crossings from 30 to 18 and removed every foreign-container
+    crossing.
   - *Round 8*: an arrow that continues a folded strip enters the next column's first
     node from above (a layout entry hint the routers honour); crossing another arrow
     right beside its port costs the grid router far more; badges on a short arrow

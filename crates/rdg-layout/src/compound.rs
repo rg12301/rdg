@@ -783,7 +783,15 @@ fn unit_ranks(n: usize, edges: &[(usize, usize)], is_group: &[bool], hints: &Ran
     for c in 0..nc {
         if preds[c].is_empty() {
             if let Some(m) = succs[c].iter().map(|&s| rank[s]).min() {
-                rank[c] = m.saturating_sub(1);
+                // A group nothing feeds from above that is wired both ways with the
+                // tier it feeds (an analytics box reading a store and writing another)
+                // sits *beside* that tier, not in a tier of its own above it: a tier
+                // of its own would sit across the main flow dropping into that tier.
+                let mutual = sccs[c].iter().any(|v| {
+                    let u = v.index();
+                    is_group[u] && succs[c].iter().any(|&sc| sccs[sc].iter().any(|w| count.contains_key(&(w.index(), u))))
+                });
+                rank[c] = if mutual { m } else { m.saturating_sub(1) };
             }
         }
     }

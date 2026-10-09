@@ -389,6 +389,15 @@ pub fn spread_parallels(
                 }
             }
         }
+        if debug {
+            for i in 0..ls.len() {
+                for j in i + 1..ls.len() {
+                    if alongside(&paths, &ls[i], &ls[j]) && (ls[i].at - ls[j].at).abs() < need(&ls[i], &ls[j]) - 0.5 {
+                        eprintln!("pair: path {} leg {} at {:.0} range {:.0}..{:.0} | path {} leg {} at {:.0} range {:.0}..{:.0}", ls[i].path, ls[i].k, ls[i].at, ls[i].range.0, ls[i].range.1, ls[j].path, ls[j].k, ls[j].at, ls[j].range.0, ls[j].range.1);
+                    }
+                }
+            }
+        }
         if !any_close {
             continue;
         }
