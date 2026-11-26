@@ -675,6 +675,7 @@ OUTPUT
    \"errors\": [{\"path\": \"edges[2].to\", \"message\": \"unknown node id `dbb`\",
                \"hint\": \"did you mean `db`?\"}],
    \"warnings\": [...], \"anomalies\": [{\"kind\": \"EdgeThroughNode\", \"message\": \"...\"}],
+   \"advisories\": [{\"kind\": \"Detour\", \"message\": \"...\"}],
    \"quality\": {\"edges\": 48, \"crossings\": 46, \"crossing_ceiling\": 24, \"bends\": 92,
                \"bend_ceiling\": 96, \"max_bends\": 7, \"close_parallels\": 3,
                \"foreign_crossings\": 2, \"crossings_near_bend\": 2, \"detours\": 0,
@@ -683,8 +684,9 @@ OUTPUT
   is no `quality` (nor for a sequence diagram). `exceeded` names the ceilings a
   readable diagram keeps and this one does not; in text mode the same is one
   `ℹ quality:` line on stderr, and the scale warning from --check names the hubs
-  and collectors to cut. Layout advisories (detours, tangled routes) are printed in
-  text mode; the JSON carries their counts in `quality`.
+  and collectors to cut. `advisories` are layout problems wider spacing cannot fix
+  (a detour round the drawing, a route over five bends): reported, never failed on,
+  even with --strict.
 
 Exit codes: 0 success; 1 invalid input or failure (or anomalies, with --strict).
 ";

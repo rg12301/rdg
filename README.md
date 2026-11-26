@@ -552,7 +552,8 @@ $ rdg --check --format json -i diagram.yaml
  "anomalies":[]}
 ```
 
-A render adds a `quality` object: edge count, crossings, bends, worst route, close
+A render adds an `advisories` list (layout problems that only less content can fix,
+such as a detour round the drawing) and a `quality` object: edge count, crossings, bends, worst route, close
 parallels, foreign crossings, crossings at ports, detours and floating labels, with
 an `exceeded` list naming the ceilings a readable diagram keeps and this one does
 not. An agent that sees `exceeded` non-empty should simplify the content (fewer

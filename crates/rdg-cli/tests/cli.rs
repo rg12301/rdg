@@ -406,3 +406,17 @@ fn test_bundled_diagrams_keep_arrows_and_ports_readable() {
     // Measured 49 over the 49 fixtures of round 6 (one per fixture on average).
     assert!(total_border_hugs <= 58.0, "arrows tracing a group border: {total_border_hugs} (budget 58)");
 }
+
+#[test]
+fn test_json_report_lists_anomalies_and_advisories_separately() {
+    let yaml = "nodes:\n  - {id: a, label: A}\n  - {id: b, label: B}\nedges:\n  - {from: a, to: b}\n";
+    let output = run_with_stdin(&["--format", "json", "-o", "/dev/null", "--svg-engine", "native"], yaml);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    let json = String::from_utf8(output.stdout).expect("stdout should be UTF-8");
+    // Both keys are always present (empty arrays here), and quality follows them.
+    assert!(json.contains("\"anomalies\":[]"), "{json}");
+    assert!(json.contains("\"advisories\":[]"), "{json}");
+    assert!(json.contains("\"quality\":{"), "{json}");
+    // Nothing is printed on stderr in json mode (advisories go into the object).
+    assert!(!String::from_utf8_lossy(&output.stderr).contains("advisory"));
+}
