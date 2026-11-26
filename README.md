@@ -28,6 +28,30 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
+- **Unreleased — layout rules pass** (research-backed rules in
+  [`docs/layout-rules.md`](docs/layout-rules.md); measured on 45 fixtures, total
+  crossings 284 → 243, fintech's arrows through foreign containers 8 → 0, game
+  backend 41 → 19):
+  - *Labels own their arrow*: a label sits in a band beside its own leg and nowhere
+    near another's, branch labels at the source or the decision corner, clear of
+    bends and arrowheads; a label with no room hangs off a thin leader line; the
+    same label on three or more arrows of a fan is written once, on the middle one.
+  - *Foreign containers are obstacles*: an arrow crosses a container neither end is
+    in only along a public corridor (an arrow-free gutter running border to border)
+    or a lane the layout reserved for it; a route that loops round the drawing or
+    takes more than five bends is reported as a layout advisory.
+  - *Layout variants, scored*: sinks and collectors may stand in a side column, long
+    arrows get corridors between units and reserved lanes through the groups they
+    pass, folded strips continue in the gutter — each tried and kept only when the
+    routed plan measures better. A composite router keeps the structural plan and
+    searches only the arrows it could not place.
+  - *Hubs*: three or more arrows of one meaning between a group and a node share a
+    trunk with junction dots (fan-in and fan-out); two arrows forking off one face
+    turn on one line; past ten crossings lines hop over each other.
+  - *Agents*: `--check` warns on scale (over 25 nodes or 1.5 arrows per node,
+    naming the hubs and collectors to cut) and on a label repeated across the
+    diagram; a render reports a `quality` object (`--format json`) or one
+    `ℹ quality:` line with the ceilings the diagram exceeds.
 - **v1.3.0 — tiles, clean connections, layout quality pass** (battle-tested on 16 new
   diagrams, easy to very complex, every diagram type):
   - *Every component is configurable*: per node `fill`, `text_color`, `font`,
@@ -527,6 +551,12 @@ $ rdg --check --format json -i diagram.yaml
  "warnings":[{"path":"nodes[1].type","message":"unknown node type `servce` renders as a plain card","hint":"did you mean `service`?"}],
  "anomalies":[]}
 ```
+
+A render adds a `quality` object: edge count, crossings, bends, worst route, close
+parallels, foreign crossings, crossings at ports, detours and floating labels, with
+an `exceeded` list naming the ceilings a readable diagram keeps and this one does
+not. An agent that sees `exceeded` non-empty should simplify the content (fewer
+arrows, a split diagram) before reaching for layout hints.
 
 `rdg --guide rules` is the content guide an agent should read before writing a
 diagram: scope (8-25 nodes, split beyond that), naming, edge labels, grouping,

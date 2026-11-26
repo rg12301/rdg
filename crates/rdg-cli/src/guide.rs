@@ -20,9 +20,12 @@ WORKFLOW (agent)
   3. Validate:  rdg --check -i diagram.yaml --format json
      Fix every error (the `hint` names the right key or id) and every warning.
   4. Render:    rdg -i diagram.yaml -o diagram.svg      (or .drawio for editing)
-     Read stderr / the JSON: `anomalies` and \"cycles were broken\" are content
-     problems first (too many edges, a back-reference, long labels) — simplify
-     before adding layout hints.
+     Read stderr / the JSON: `anomalies`, `quality.exceeded` (crossings over
+     half the edge count, bends over two per edge, a route over five bends, a
+     detour, a floating label), layout advisories, the scale warning and
+     \"cycles were broken\" are content problems first (too many edges, a hub
+     with eight arrows, a back-reference, long labels) — simplify before
+     adding layout hints.
   5. Look at the output when you can (render .svg to .png). If it is cramped or
      tangled: fewer edges, shorter labels, split the diagram, then hints (LAYOUT).
 
@@ -125,7 +128,12 @@ OUTPUT        A header band holds the title (bold), description and legend above
               rule; the drawing starts below it. The picture is laid out to read
               squarely (tiers wrap, long top-to-bottom chains fold into columns);
               groups are tight around their content; arrows keep a lane apart, meet
-              boxes at their middle, run with the flow and never along a border.
+              boxes at their middle, run with the flow, never along a border and
+              never through a container neither end is in; three or more arrows of
+              one meaning between a group and a node share a trunk (junction dots);
+              two arrows forking off one face turn on one line; a label sits by its
+              own arrow or hangs off a thin leader; past ten crossings lines hop
+              over each other.
 EXIT CODES    0 written (warnings may be printed)   1 invalid input or failure
               With --strict, also 1 when layout anomalies remain.
 
@@ -605,9 +613,10 @@ Hints (when the automatic tiers are not what you meant)
   follow the direction with more edges; a group of unwired nodes is laid out as a grid.
 
 Routing
-  Two routers plan every layered diagram and the plan that reads better is kept
-  (fewest crossings first, then bends, border hugs, steps, ports off a face's middle,
-  arrows cutting through a container neither end is in, and length):
+  Every layered diagram is planned up to three ways and the plan that reads better is
+  kept, scored by crossings (far more at a port or a bend), bends, border hugs, steps,
+  ports off a face's middle, arrows cutting through a container neither end is in,
+  detours round the drawing, two arrows a lane apart, and length:
   - the channel router draws arrows the way a layered engine does: out of the source
     across the flow (or by a side face when the line lies beyond the box, a diamond's
     corner for a branch), along a track in the channel between two rows, down a lane
@@ -618,19 +627,40 @@ Routing
   - the search router is an orthogonal search over node outlines and channel
     midlines weighing length, bends, crossings, shared lanes, running along a face or
     a border and cutting through a foreign container, followed by a simplification
-    pass (straight, L, Z, U or three bends when that adds no crossing). Edges that
-    name a source_port / target_port always use it.
-  RDG_ROUTER=channels or RDG_ROUTER=ortho forces one; RDG_DEBUG_SPACING=1 prints the
-  bends, length, crossings, hugs, off-centre faces and foreign crossings to judge a
-  plan by; RDG_DEBUG_CHANNELS=1 prints the channel router's bands, lanes and routes and
-  why it left a diagram to the search; RDG_TUNE_W_BEND, W_CROSS, W_SHARE, W_CROWD,
-  W_ALONG_BORDER, W_ALONG_NODE, W_OFF_CENTRE, BORDER_LANES, NODE_ZONE override the
-  search weights for tuning runs.
+    pass (straight, L, Z, U or three bends when that adds no crossing). A foreign
+    container is an obstacle to it, crossed only along a public corridor (an
+    arrow-free gutter running border to border) or a lane the layout reserved;
+  - the composite keeps every arrow the channel router placed and searches only the
+    rest around them.
+  Edges that name a source_port / target_port always use it. On the finished routes:
+  parallel legs are spread a lane apart; three or more arrows of one meaning from a
+  group to one node (or from one node into a group) join a trunk with junction dots
+  and one arrowhead; two arrows forking off one face turn on one line; past ten
+  crossings the SVG and draw.io lines hop over each other.
+  The layout itself is tried in variants and judged by the same score: a sink or
+  collector that only gathers arrows may stand in a side column, and an arrow that
+  spans several tiers gets a corridor between units, or a reserved lane through a
+  group it must pass.
+  RDG_ROUTER=channels|composite|ortho forces a router; RDG_SIDE=off and RDG_PASS=off
+  drop a layout variant; RDG_NO_BUNDLE=1 and RDG_NO_SPREAD=1 skip trunks and
+  spreading. RDG_DEBUG_SPACING=1 prints the bends, length, crossings (and those near
+  a bend), hugs, off-centre faces, foreign crossings, close pairs, detours, worst
+  route and sibling turns to judge a plan by; RDG_DEBUG_CHANNELS=1 prints the channel
+  router's bands, lanes and routes and why it left an arrow to the search;
+  RDG_DEBUG_CORRIDORS, RDG_DEBUG_SIDE, RDG_DEBUG_BUNDLE, RDG_DEBUG_SPREAD and
+  RDG_DEBUG_ANNOTATE trace the corridors, side columns, trunks, spreading and label
+  placement; RDG_TUNE_W_BEND, W_CROSS, W_SHARE, W_CROWD, W_ALONG_BORDER,
+  W_ALONG_NODE, W_OFF_CENTRE, BORDER_LANES, NODE_ZONE override the search weights for
+  tuning runs.
 
 Self-review
   After layout rdg checks for overlapping nodes, arrows through nodes, arrows drawn on
   top of each other and zig-zag routes, and retries with wider spacing if needed.
   It always writes its best attempt; --strict makes remaining problems exit 1.
+  A route that loops round the drawing (over 2.5 times the straight distance) or
+  takes more than five bends is a *layout advisory*: printed, never failed on, since
+  wider spacing cannot fix it — fewer edges or a split diagram can. The quality
+  line / JSON object (see --guide output) says which ceilings the diagram exceeds.
 ";
 
 const OUTPUT: &str = "\
@@ -644,8 +674,17 @@ OUTPUT
   {\"ok\": true, \"output\": \"out.drawio\", \"layout\": \"sugiyama\",
    \"errors\": [{\"path\": \"edges[2].to\", \"message\": \"unknown node id `dbb`\",
                \"hint\": \"did you mean `db`?\"}],
-   \"warnings\": [...], \"anomalies\": [{\"kind\": \"EdgeThroughNode\", \"message\": \"...\"}]}
-  `ok` is false when nothing was written. With --check, `output` is null.
+   \"warnings\": [...], \"anomalies\": [{\"kind\": \"EdgeThroughNode\", \"message\": \"...\"}],
+   \"quality\": {\"edges\": 48, \"crossings\": 46, \"crossing_ceiling\": 24, \"bends\": 92,
+               \"bend_ceiling\": 96, \"max_bends\": 7, \"close_parallels\": 3,
+               \"foreign_crossings\": 2, \"crossings_near_bend\": 2, \"detours\": 0,
+               \"floating_labels\": 1, \"exceeded\": [\"crossings\", \"max_bends\", ...]}}
+  `ok` is false when nothing was written. With --check, `output` is null and there
+  is no `quality` (nor for a sequence diagram). `exceeded` names the ceilings a
+  readable diagram keeps and this one does not; in text mode the same is one
+  `ℹ quality:` line on stderr, and the scale warning from --check names the hubs
+  and collectors to cut. Layout advisories (detours, tangled routes) are printed in
+  text mode; the JSON carries their counts in `quality`.
 
 Exit codes: 0 success; 1 invalid input or failure (or anomalies, with --strict).
 ";
