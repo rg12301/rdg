@@ -95,8 +95,8 @@
         <mxCell id="e_attach_close" value="" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=1.10714;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="attach" target="close" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="812.0" y="573.0"/>
-              <mxPoint x="812.0" y="1071.0"/>
+              <mxPoint x="736.0" y="573.0"/>
+              <mxPoint x="736.0" y="1071.0"/>
               <mxPoint x="1334.0" y="1071.0"/>
             </Array>
           </mxGeometry>
@@ -134,8 +134,8 @@
             <Array as="points">
               <mxPoint x="460.0" y="893.0"/>
               <mxPoint x="460.0" y="832.0"/>
-              <mxPoint x="699.0" y="832.0"/>
-              <mxPoint x="699.0" y="137.0"/>
+              <mxPoint x="718.0" y="832.0"/>
+              <mxPoint x="718.0" y="137.0"/>
               <mxPoint x="1207.0" y="137.0"/>
             </Array>
           </mxGeometry>

@@ -25,15 +25,15 @@
   <path d="M 1172.0 280.0 L 1297.0 280.0 Q 1311.0 280.0 1311.0 266.0 L 1311.0 122.0 Q 1311.0 108.0 1325.0 108.0 L 2614.0 108.0 Q 2628.0 108.0 2628.0 122.0 L 2628.0 244.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1383.0 301.0 L 1567.0 301.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1358.0 379.0 L 1358.0 456.0 Q 1358.0 470.0 1372.0 470.0 L 1567.0 470.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 1358.0 289.0 L 1358.0 151.0 Q 1358.0 137.0 1372.0 137.0 L 2192.0 137.0 Q 2206.0 137.0 2206.0 151.0 L 2206.0 201.0 Q 2206.0 215.0 2220.0 215.0 L 2314.0 215.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 1358.0 289.0 L 1358.0 151.0 Q 1358.0 137.0 1372.0 137.0 L 2199.0 137.0 Q 2213.0 137.0 2213.0 151.0 L 2213.0 201.0 Q 2213.0 215.0 2227.0 215.0 L 2314.0 215.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1617.0 284.0 L 1711.1 284.0 Q 1722.0 284.0 1722.0 294.9 L 1722.0 315.1 Q 1722.0 323.0 1729.9 323.0 L 1836.0 323.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 1586.0 535.0 L 1586.0 685.0 Q 1586.0 699.0 1600.0 699.0 L 2489.0 699.0 Q 2503.0 699.0 2503.0 685.0 L 2503.0 406.0 Q 2503.0 392.0 2517.0 392.0 L 2602.3 392.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1605.0 535.0 L 1605.0 713.0 Q 1605.0 727.0 1619.0 727.0 L 2513.0 727.0 Q 2527.0 727.0 2527.0 713.0 L 2527.0 631.0 Q 2527.0 617.0 2541.0 617.0 L 2601.5 617.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1605.0 535.0 L 1605.0 713.0 Q 1605.0 727.0 1619.0 727.0 L 2511.0 727.0 Q 2525.0 727.0 2525.0 713.0 L 2525.0 631.0 Q 2525.0 617.0 2539.0 617.0 L 2601.5 617.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 2364.0 576.0 L 2479.0 576.0 A 5.0 5.0 0 0 1 2489.0 576.0 L 2498.0 576.0 A 5.0 5.0 0 0 1 2508.0 576.0 L 2605.8 576.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 2364.0 542.0 L 2450.4 542.0 Q 2461.0 542.0 2461.0 531.4 L 2461.0 511.7 Q 2461.0 504.0 2468.7 504.0 L 2479.0 504.0 A 5.0 5.0 0 0 1 2489.0 504.0 L 2498.0 504.0 A 5.0 5.0 0 0 1 2508.0 504.0 L 2601.5 504.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 2364.0 447.0 L 2455.1 447.0 Q 2461.0 447.0 2461.0 452.9 L 2461.0 463.8 Q 2461.0 468.0 2465.2 468.0 L 2479.0 468.0 A 5.0 5.0 0 0 1 2489.0 468.0 L 2498.0 468.0 A 5.0 5.0 0 0 1 2508.0 468.0 L 2601.5 468.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 2314.0 324.0 L 2182.0 324.0 Q 2168.0 324.0 2168.0 310.0 L 2168.0 207.0 Q 2168.0 193.0 2154.0 193.0 L 1363.0 193.0 A 5.0 5.0 0 0 0 1353.0 193.0 L 1316.0 193.0 A 5.0 5.0 0 0 0 1306.0 193.0 L 890.0 193.0 Q 876.0 193.0 876.0 207.0 L 876.0 266.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
-  <path d="M 2314.0 234.0 L 2201.0 234.0 Q 2187.0 234.0 2187.0 220.0 L 2187.0 179.0 Q 2187.0 165.0 2173.0 165.0 L 1363.0 165.0 A 5.0 5.0 0 0 0 1353.0 165.0 L 1316.0 165.0 A 5.0 5.0 0 0 0 1306.0 165.0 L 909.0 165.0 Q 895.0 165.0 895.0 179.0 L 895.0 272.3" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
+  <path d="M 2364.0 542.0 L 2448.4 542.0 Q 2459.0 542.0 2459.0 531.4 L 2459.0 511.7 Q 2459.0 504.0 2466.7 504.0 L 2479.0 504.0 A 5.0 5.0 0 0 1 2489.0 504.0 L 2498.0 504.0 A 5.0 5.0 0 0 1 2508.0 504.0 L 2601.5 504.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 2364.0 447.0 L 2453.1 447.0 Q 2459.0 447.0 2459.0 452.9 L 2459.0 463.8 Q 2459.0 468.0 2463.2 468.0 L 2479.0 468.0 A 5.0 5.0 0 0 1 2489.0 468.0 L 2498.0 468.0 A 5.0 5.0 0 0 1 2508.0 468.0 L 2601.5 468.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 2314.0 324.0 L 2189.0 324.0 Q 2175.0 324.0 2175.0 310.0 L 2175.0 207.0 Q 2175.0 193.0 2161.0 193.0 L 1363.0 193.0 A 5.0 5.0 0 0 0 1353.0 193.0 L 1316.0 193.0 A 5.0 5.0 0 0 0 1306.0 193.0 L 890.0 193.0 Q 876.0 193.0 876.0 207.0 L 876.0 266.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
+  <path d="M 2314.0 234.0 L 2208.0 234.0 Q 2194.0 234.0 2194.0 220.0 L 2194.0 179.0 Q 2194.0 165.0 2180.0 165.0 L 1363.0 165.0 A 5.0 5.0 0 0 0 1353.0 165.0 L 1316.0 165.0 A 5.0 5.0 0 0 0 1306.0 165.0 L 909.0 165.0 Q 895.0 165.0 895.0 179.0 L 895.0 272.3" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <path d="M 2199.0 433.0 L 2199.0 542.0 Q 2199.0 556.0 2213.0 556.0 L 2314.0 556.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <circle cx="2199.0" cy="433.0" r="3.2" fill="#8b95a5"/>
   <path d="M 2081.0 433.0 L 2314.0 433.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -132,10 +132,10 @@
   <text x="1630.0" y="582.2" text-anchor="middle" font-size="10" fill="#7c3aed">latest</text>
   <rect x="2402.1" y="580.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="2417.1" y="591.2" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
-  <rect x="2179.0" y="304.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="2206.0" y="315.8" text-anchor="middle" font-size="10" fill="#ea580c">firmware</text>
-  <rect x="2133.1" y="157.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="2157.1" y="168.5" text-anchor="middle" font-size="10" fill="#ea580c">command</text>
+  <rect x="2177.1" y="304.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="2204.1" y="315.8" text-anchor="middle" font-size="10" fill="#ea580c">firmware</text>
+  <rect x="2140.0" y="157.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="2164.0" y="168.5" text-anchor="middle" font-size="10" fill="#ea580c">command</text>
   <rect x="2148.4" y="413.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="2163.4" y="424.8" text-anchor="middle" font-size="10" fill="#8b95a5">REST</text>
   <rect x="1865.0" y="533.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
