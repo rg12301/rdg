@@ -28,7 +28,7 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
-- **Unreleased**:
+- **v1.6.0 — tracks**:
   - *Tracks*: arrows crossing a gap between rows or columns run on shared lines, a
     lane apart, ordered so their turns cross least (the structural router's rule,
     now applied to the search router's routes too); `RDG_TRACKS=off` disables it.
