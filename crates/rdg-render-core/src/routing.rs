@@ -633,6 +633,11 @@ pub fn choose_edge_sides(
     best_pair
 }
 
+/// From this many crossings in a diagram, its renderers draw line jumps: a horizontal
+/// leg hops over each vertical one it crosses (the theme's `edge.line_jumps` turns them
+/// on regardless). A last resort: the layout and routing rules come first.
+pub const JUMPS_FROM_CROSSINGS: usize = 10;
+
 /// Routing plan containing resolved attachment faces, distributed ports, channels, and collision-free waypoints.
 #[derive(Debug, Clone)]
 pub struct EdgeRoutingPlan {
@@ -651,6 +656,14 @@ pub struct EdgeRoutingPlan {
     /// Planned by the search router ([`crate::ortho`]), which already optimises bends,
     /// crossings and lanes globally — the polish pass leaves such edges alone.
     pub searched: bool,
+    /// The edge ends here, on another edge's line, instead of at its target: one of a
+    /// bundle of same-meaning arrows from one group to one node that join a trunk
+    /// (see [`crate::trunk`]). Drawn without an arrowhead, with a junction dot.
+    pub junction: Option<(f64, f64)>,
+    /// The edge starts here, on another edge's line, instead of at its source: one of
+    /// a bundle of same-meaning arrows from one node into one group that branch off a
+    /// trunk (see [`crate::trunk`]). Drawn with a junction dot instead of a tail.
+    pub start: Option<(f64, f64)>,
 }
 
 /// Computes intelligent, obstacle-aware routing plans for all edges in the graph.
@@ -661,6 +674,20 @@ pub struct EdgeRoutingPlan {
 /// 3. Multi-channel corridor staggering (parallel horizontal segments have dedicated channels, zero overlapping lines).
 /// 4. Obstacle-aware vertical corridor allocation (prevents lines from routing through intermediate components).
 pub fn plan_all_edge_routes(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    algorithm: RoutingAlgorithm,
+    tokens: &DesignTokens,
+) -> HashMap<EdgeIndex, EdgeRoutingPlan> {
+    let mut plans = plan_all_edge_routes_unbundled(compiled, layout, algorithm, tokens);
+    // Last: the arrows of a collector (one meaning, one group, one node) join a trunk.
+    if std::env::var_os("RDG_NO_BUNDLE").is_none() {
+        crate::trunk::bundle_collectors(compiled, layout, &mut plans, tokens);
+    }
+    plans
+}
+
+fn plan_all_edge_routes_unbundled(
     compiled: &CompiledGraph,
     layout: &LayoutResult,
     algorithm: RoutingAlgorithm,
@@ -687,6 +714,8 @@ pub fn plan_all_edge_routes(
     let spread = |mut p: HashMap<EdgeIndex, EdgeRoutingPlan>| {
         if std::env::var_os("RDG_NO_SPREAD").is_none() {
             crate::spread::spread_parallels(compiled, layout, &mut p, tokens);
+            // Then sibling forks turn on one line.
+            crate::siblings::align_sibling_turns(compiled, layout, &mut p, tokens);
         }
         p
     };
@@ -694,34 +723,55 @@ pub fn plan_all_edge_routes(
         return spread(with_search);
     }
     let channel = crate::channels::route_channels(compiled, layout, tokens);
-    if channel.is_empty() {
+    // Composite: the structural plans that stood, the few the channel router could not
+    // place searched around them — so one awkward edge no longer costs the whole
+    // diagram its structure.
+    let composite = {
+        let (placed, failed) = crate::channels::route_channels_partial(compiled, layout, tokens);
+        if failed > 0 && !placed.is_empty() {
+            let rest = crate::ortho::route_orthogonal_with(compiled, layout, tokens, &placed);
+            let mut p = plans.clone();
+            p.extend(placed);
+            p.extend(rest);
+            Some(p)
+        } else {
+            None
+        }
+    };
+    if channel.is_empty() && composite.is_none() {
         return spread(with_search);
     }
-    let mut with_channel = with_search.clone();
-    with_channel.extend(channel);
-    if forced.as_deref() == Some("channels") {
-        return spread(with_channel);
+    let mut candidates: Vec<(&str, HashMap<EdgeIndex, EdgeRoutingPlan>)> = Vec::new();
+    if !channel.is_empty() {
+        let mut with_channel = with_search.clone();
+        with_channel.extend(channel);
+        candidates.push(("channels", with_channel));
     }
-    let (with_channel, with_search) = (spread(with_channel), spread(with_search));
-    let score = |p: &HashMap<EdgeIndex, EdgeRoutingPlan>| {
-        let m = crate::review::spacing_metrics(compiled, layout, p, tokens);
-        let cramped = m.min_port_pitch.is_some_and(|p| p < 8.0) || m.min_arrow_len.is_some_and(|a| a < tokens.stub_clearance() * 0.6);
-        100.0 * m.crossings as f64
-            + 70.0 * m.crossings_near_bend as f64
-            + 55.0 * m.bends as f64
-            + 40.0 * m.border_hugs as f64
-            + 30.0 * m.micro_jogs as f64
-            + 20.0 * m.off_centre_faces as f64
-            + 160.0 * m.foreign_crossings as f64
-            + 45.0 * m.close_parallels as f64
-            + 0.1 * m.total_len
-            + if cramped { 1000.0 } else { 0.0 }
-    };
-    let (sc, ss) = (score(&with_channel), score(&with_search));
+    if let Some(c) = composite {
+        candidates.push(("composite", c));
+    }
+    candidates.push(("search", with_search));
+    if let Some(name) = forced.as_deref() {
+        if let Some(k) = candidates.iter().position(|(n, _)| *n == name) {
+            return spread(candidates.swap_remove(k).1);
+        }
+    }
+    let score = |p: &HashMap<EdgeIndex, EdgeRoutingPlan>| crate::review::plan_score(&crate::review::spacing_metrics(compiled, layout, p, tokens), tokens);
+    let mut best: Option<(&str, f64, HashMap<EdgeIndex, EdgeRoutingPlan>)> = None;
+    let mut shown = Vec::new();
+    for (name, p) in candidates {
+        let p = spread(p);
+        let s = score(&p);
+        shown.push(format!("{name}={s:.0}"));
+        if best.as_ref().is_none_or(|(_, b, _)| s < *b) {
+            best = Some((name, s, p));
+        }
+    }
+    let (name, _, plans) = best.expect("at least the search plan");
     if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {
-        eprintln!("router choice: channels={sc:.0} search={ss:.0} -> {}", if sc <= ss { "channels" } else { "search" });
+        eprintln!("router choice: {} -> {name}", shown.join(" "));
     }
-    if sc <= ss { with_channel } else { with_search }
+    plans
 }
 
 /// The original face-first heuristic planner — see [`plan_all_edge_routes`].
@@ -1099,6 +1149,8 @@ fn plan_all_edge_routes_legacy(
                 waypoints,
                 corridor_bucket_size,
                 searched: false,
+                junction: None,
+                start: None,
             },
         );
     }
@@ -1223,8 +1275,8 @@ pub(crate) fn edge_full_path(
     plan: &EdgeRoutingPlan,
 ) -> Option<Vec<(f64, f64)>> {
     let (_s_idx, _d_idx, src_nl, dst_nl) = resolve_edge_layout(compiled, layout, edge_idx)?;
-    let p1 = port_point(src_nl, plan.src_side, plan.exit_port);
-    let p2 = port_point(dst_nl, plan.dst_side, plan.entry_port);
+    let p1 = plan.start.unwrap_or_else(|| port_point(src_nl, plan.src_side, plan.exit_port));
+    let p2 = plan.junction.unwrap_or_else(|| port_point(dst_nl, plan.dst_side, plan.entry_port));
     let mut pts = Vec::with_capacity(plan.waypoints.len() + 2);
     pts.push(p1);
     pts.extend_from_slice(&plan.waypoints);

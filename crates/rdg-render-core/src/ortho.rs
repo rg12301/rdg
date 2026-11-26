@@ -132,6 +132,9 @@ const W_SIDE_ENTRY: f64 = 8.0;
 const W_AGAINST_FLOW: f64 = 45.0;
 /// Attaching to an icon node's bottom face, under its label.
 const W_UNDER_LABEL: f64 = 700.0;
+/// Per px an edge with a lane hint (`LayoutResult::lane_hints`) runs along the flow
+/// more than a lane off the hinted line: the gutter a folded strip reserved for it.
+const W_OFF_LANE: f64 = 0.6;
 /// Rip-up-and-reroute rounds after the initial pass.
 const REROUTE_ROUNDS: usize = 2;
 /// Refuse (and let the caller fall back) past this many grid points.
@@ -261,6 +264,17 @@ struct Grid {
     near_hnode: Vec<bool>,
     /// Groups whose box strictly contains the point (bit per group index).
     inside_groups: Vec<u64>,
+    /// Groups whose box strictly contains the point *and* whose interior may not be
+    /// travelled vertically / horizontally along this point's grid line: a route with
+    /// no end in such a group is barred from it there (see `public corridors` in
+    /// [`route_orthogonal`]).
+    foreign_v: Vec<u64>,
+    foreign_h: Vec<u64>,
+    /// Point lies on a lane the layout reserved through a group (`LayoutResult::
+    /// corridors`), running vertically / horizontally: crossing a foreign border along
+    /// it is the lane's purpose, not a trespass.
+    reserved_v: Vec<bool>,
+    reserved_h: Vec<bool>,
 }
 
 impl Grid {
@@ -452,7 +466,7 @@ impl Router<'_> {
     /// node's face. `beside_own` says whether a point sits beside one of the route's
     /// own end nodes, where running along the face is just leaving it.
     #[allow(clippy::too_many_arguments)]
-    fn step_cost(&self, i: usize, j: usize, ni: usize, nj: usize, d: Dir, nd: Dir, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> StepCost {
+    fn step_cost(&self, i: usize, j: usize, ni: usize, nj: usize, d: Dir, nd: Dir, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>, lane: Option<f64>) -> StepCost {
         let g = &self.grid;
         let beside_own = |i: usize, j: usize| {
             let (x, y) = g.pt(i, j);
@@ -493,7 +507,10 @@ impl Router<'_> {
             (g.on_hborder[nid], g.hborder_groups[nid], g.near_vborder[nid] && g.near_vborder[here], g.near_vnode[nid] && g.near_vnode[here])
         };
         if on_border {
-            c.border = if border_groups & !own_groups != 0 { self.w.foreign } else { W_BORDER_CROSS };
+            // Crossing a foreign border along a lane the layout reserved for exactly
+            // that costs what an own border does.
+            let reserved = if nd.horizontal() { g.reserved_h[nid] && g.reserved_h[here] } else { g.reserved_v[nid] && g.reserved_v[here] };
+            c.border = if border_groups & !own_groups != 0 && !reserved { self.w.foreign } else { W_BORDER_CROSS };
             // Leaving a container the source is in by the side facing away from the
             // target — out through the top when the target is below — is a detour a
             // reader never expects: the arrow should leave toward where it goes.
@@ -513,19 +530,26 @@ impl Router<'_> {
         if near_node && !(beside_own(i, j) && beside_own(ni, nj)) {
             c.along_node = self.w.along_node * len;
         }
+        // A hinted edge runs its long leg where the layout left room for it.
+        if let Some(x) = lane {
+            if !nd.horizontal() && (g.xs[i] - x).abs() > self.tokens.channel_pitch().max(10.0) {
+                c.along_node += W_OFF_LANE * len;
+            }
+        }
         c
     }
 
     /// The cost terms of a whole route, for `RDG_DEBUG_ORTHO=costs`: the pins' own
     /// costs plus every move's breakdown, summed.
-    fn explain(&self, r: &Route, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> (StepCost, usize) {
+    #[allow(clippy::too_many_arguments)]
+    fn explain(&self, r: &Route, occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>, lane: Option<f64>) -> (StepCost, usize) {
         let mut total = StepCost::default();
         let mut d = Dir::out_of(r.src.side);
         let mut bends = 0;
         for w in r.cells.windows(2) {
             let ((i, j), (ni, nj)) = (w[0], w[1]);
             let nd = if ni != i { if ni > i { Dir::Right } else { Dir::Left } } else if nj > j { Dir::Down } else { Dir::Up };
-            let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away);
+            let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away, lane);
             if nd != d {
                 bends += 1;
             }
@@ -537,9 +561,10 @@ impl Router<'_> {
 
     /// A* from any `srcs` pin to any `dsts` pin. `None` when unreachable. `own` holds the
     /// two end nodes' boxes: a route leaving a face naturally runs beside its own node
-    /// for a moment, which is not hugging it.
+    /// for a moment, which is not hugging it. `strict`: containers neither end is in are
+    /// obstacles except along their public corridors (`Grid::foreign_v` / `foreign_h`).
     #[allow(clippy::too_many_arguments)]
-    fn search(&self, srcs: &[Pin], dsts: &[Pin], occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>) -> Option<Route> {
+    fn search(&self, srcs: &[Pin], dsts: &[Pin], occ: &Occupancy, own_groups: u64, src_groups: u64, own: &[Rect], away: Option<Dir>, strict: bool, lane: Option<f64>) -> Option<Route> {
         let g = &self.grid;
         let (nx, ny) = (g.xs.len(), g.ys.len());
         let n_states = nx * ny * 4;
@@ -593,6 +618,7 @@ impl Router<'_> {
             let cell = s / 4;
             let d = Dir::ALL[s % 4];
             let (i, j) = (cell % nx, cell / nx);
+            let here = cell;
 
             if let Some(pins) = goal.get(&cell) {
                 for &k in pins {
@@ -633,7 +659,14 @@ impl Router<'_> {
                 if blocked {
                     continue;
                 }
-                let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away).total();
+                if strict {
+                    let inside = if nd.horizontal() { g.foreign_h[here] | g.foreign_h[nid] } else { g.foreign_v[here] | g.foreign_v[nid] };
+                    let reserved = if nd.horizontal() { g.reserved_h[here] && g.reserved_h[nid] } else { g.reserved_v[here] && g.reserved_v[nid] };
+                    if inside & !own_groups != 0 && !reserved {
+                        continue;
+                    }
+                }
+                let c = self.step_cost(i, j, ni, nj, d, nd, occ, own_groups, src_groups, own, away, lane).total();
                 let ns = state(ni, nj, nd);
                 let ng = gc + c;
                 if ng < best[ns] - 1e-9 {
@@ -730,6 +763,19 @@ pub fn route_orthogonal(
     layout: &LayoutResult,
     tokens: &DesignTokens,
 ) -> HashMap<EdgeIndex, EdgeRoutingPlan> {
+    route_orthogonal_with(compiled, layout, tokens, &HashMap::new())
+}
+
+/// Routes every edge not in `fixed` around the `fixed` plans: their lines and ports are
+/// in the search's occupancy from the start, so a searched route crosses them only at
+/// a price and never takes their port — the structural router's plans stand, the few it
+/// could not place are threaded around them.
+pub fn route_orthogonal_with(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    tokens: &DesignTokens,
+    fixed: &HashMap<EdgeIndex, EdgeRoutingPlan>,
+) -> HashMap<EdgeIndex, EdgeRoutingPlan> {
     let clearance = tokens.stub_clearance();
     let pitch = tokens.min_port_pitch().max(tokens.px(2.0));
     let tb = !layout.positions.is_empty() && is_top_to_bottom(compiled, layout);
@@ -738,7 +784,7 @@ pub fn route_orthogonal(
     let mut todo: Vec<(EdgeIndex, NodeIndex, NodeIndex)> = Vec::new();
     for e in compiled.graph.edge_indices() {
         if let Some((s, d, _, _)) = resolve_edge_layout(compiled, layout, e) {
-            if s != d {
+            if s != d && !fixed.contains_key(&e) {
                 todo.push((e, s, d));
             }
         }
@@ -746,6 +792,12 @@ pub fn route_orthogonal(
     if todo.is_empty() {
         return HashMap::new();
     }
+    // The fixed plans' lines, as drawn, in a fixed order.
+    let mut fixed_paths: Vec<(EdgeIndex, Vec<Pt>)> = fixed
+        .iter()
+        .filter_map(|(&e, p)| crate::routing::edge_full_path(compiled, layout, e, p).map(|pts| (e, pts)))
+        .collect();
+    fixed_paths.sort_by_key(|(e, _)| e.index());
 
     // --- Obstacles -----------------------------------------------------------------
     let mut node_ids: Vec<NodeIndex> = layout.positions.keys().copied().collect();
@@ -892,6 +944,24 @@ pub fn route_orthogonal(
         xs.extend([gr.x0, gr.x1]);
         ys.extend([gr.y0, gr.y1]);
     }
+    // Lanes the layout reserved through groups are grid lines in their own right.
+    let reserved: Vec<(Pt, Pt)> = layout.corridors.iter().map(|&(x0, y0, x1, y1)| ((x0, y0), (x1, y1))).collect();
+    for (a, b) in &reserved {
+        if (a.0 - b.0).abs() < 0.5 {
+            xs.push(a.0);
+        } else {
+            ys.push(a.1);
+        }
+    }
+    // The gutter of a folded strip is a grid line, so the continuation can run on it.
+    xs.extend(layout.lane_hints.values().copied());
+    // So are the lines of the plans that stand: the search must see exactly where they run.
+    for (_, pts) in &fixed_paths {
+        for p in pts {
+            xs.push(p.0);
+            ys.push(p.1);
+        }
+    }
     let (min_x, max_x) = xs.iter().fold((f64::MAX, f64::MIN), |(a, b), &x| (a.min(x), b.max(x)));
     let (min_y, max_y) = ys.iter().fold((f64::MAX, f64::MIN), |(a, b), &y| (a.min(y), b.max(y)));
     let outer = tokens.px(2.0);
@@ -947,7 +1017,33 @@ pub fn route_orthogonal(
     let mut near_vnode = vec![false; nx * ny];
     let mut near_hnode = vec![false; nx * ny];
     let mut inside_groups = vec![0u64; nx * ny];
+    let mut foreign_v = vec![0u64; nx * ny];
+    let mut foreign_h = vec![0u64; nx * ny];
+    let mut reserved_v = vec![false; nx * ny];
+    let mut reserved_h = vec![false; nx * ny];
     let border_lane = tokens.channel_pitch().max(10.0) * tune("BORDER_LANES", 1.25);
+    // Public corridors: a container an edge has no end in is an obstacle, except along
+    // a grid line that runs clear through it — a lane's width inside its borders and
+    // clear of every member box (plus clearance) and every inner container (plus a
+    // border lane). Crossing there is still charged as a foreign border crossing, but
+    // it is the only way through; anything else goes round.
+    let ancestors = |g: usize| std::iter::successors(Some(g), |&p| compiled.group_tree.parent[p]);
+    let (v_corridor, h_corridor): (Vec<Vec<bool>>, Vec<Vec<bool>>) = group_ids
+        .iter()
+        .zip(&groups)
+        .map(|(&gi, g)| {
+            let bit = group_bit(gi);
+            let mut blockers: Vec<Rect> = node_ids
+                .iter()
+                .filter(|n| node_groups.get(n).copied().unwrap_or(0) & bit != 0)
+                .map(|n| Rect::of(&layout.positions[n]).inflate(clearance))
+                .collect();
+            blockers.extend(group_ids.iter().zip(&groups).filter(|&(&gj, _)| gj != gi && ancestors(gj).any(|a| a == gi)).map(|(_, r)| r.inflate(border_lane)));
+            let v = xs.iter().map(|&x| x > g.x0 + border_lane && x < g.x1 - border_lane && !blockers.iter().any(|b| x > b.x0 && x < b.x1)).collect();
+            let h = ys.iter().map(|&y| y > g.y0 + border_lane && y < g.y1 - border_lane && !blockers.iter().any(|b| y > b.y0 && y < b.y1)).collect();
+            (v, h)
+        })
+        .unzip();
     // Under a group's title (its own box, at the top-left inside the border) a line
     // runs along the title text as well as the border: that strip is a hug too.
     let title_strips: Vec<Rect> = crate::routing::compute_group_title_zones(compiled, layout, tokens)
@@ -980,9 +1076,24 @@ pub fn route_orthogonal(
             }
             on_vborder[id] = vborder_groups[id] != 0;
             on_hborder[id] = hborder_groups[id] != 0;
-            for (&gi, g) in group_ids.iter().zip(&groups) {
+            for (k, (&gi, g)) in group_ids.iter().zip(&groups).enumerate() {
                 if p.0 > g.x0 + 0.5 && p.0 < g.x1 - 0.5 && p.1 > g.y0 + 0.5 && p.1 < g.y1 - 0.5 {
                     inside_groups[id] |= group_bit(gi);
+                    if !v_corridor[k][i] {
+                        foreign_v[id] |= group_bit(gi);
+                    }
+                    if !h_corridor[k][j] {
+                        foreign_h[id] |= group_bit(gi);
+                    }
+                }
+            }
+            for (a, b) in &reserved {
+                if (a.0 - b.0).abs() < 0.5 {
+                    if (p.0 - a.0).abs() <= 4.0 && p.1 >= a.1.min(b.1) && p.1 <= a.1.max(b.1) {
+                        reserved_v[id] = true;
+                    }
+                } else if (p.1 - a.1).abs() <= 4.0 && p.0 >= a.0.min(b.0) && p.0 <= a.0.max(b.0) {
+                    reserved_h[id] = true;
                 }
             }
             near_vnode[id] = node_rects.iter().any(|r| {
@@ -999,7 +1110,7 @@ pub fn route_orthogonal(
             }) || title_strips.iter().any(|t| p.0 >= t.x0 && p.0 <= t.x1 && p.1 >= t.y0 && p.1 <= t.y1);
         }
     }
-    let grid = Grid { xs, ys, blocked, hblock, vblock, on_vborder, on_hborder, vborder_groups, hborder_groups, near_vborder, near_hborder, near_vnode, near_hnode, inside_groups };
+    let grid = Grid { xs, ys, blocked, hblock, vblock, on_vborder, on_hborder, vborder_groups, hborder_groups, near_vborder, near_hborder, near_vnode, near_hnode, inside_groups, foreign_v, foreign_h, reserved_v, reserved_h };
     let router = Router { grid, tokens, clearance, pitch, node_zone, w: Weights::load() };
 
     let pins_for = |n: NodeIndex, exit: bool| -> Vec<Pin> {
@@ -1058,6 +1169,46 @@ pub fn route_orthogonal(
         da.total_cmp(&db).then(a.0.cmp(&b.0))
     });
     let mut occ = Occupancy::default();
+    // Seed the occupancy with the plans that stand: every cell their lines pass, their
+    // bends, and the ports they hold.
+    let nearest = |v: &[f64], x: f64| -> Option<usize> {
+        let k = v.partition_point(|&a| a < x);
+        [k.checked_sub(1), Some(k)].into_iter().flatten().filter(|&i| i < v.len()).min_by(|&a, &b| (v[a] - x).abs().total_cmp(&(v[b] - x).abs())).filter(|&i| (v[i] - x).abs() <= 4.0)
+    };
+    for (e, pts) in &fixed_paths {
+        let plan = &fixed[e];
+        let Some((s, d, _, _)) = resolve_edge_layout(compiled, layout, *e) else { continue };
+        let mut cells: Vec<(usize, usize)> = Vec::new();
+        let mut ok = true;
+        for w in pts.windows(2) {
+            let (Some(i0), Some(j0), Some(i1), Some(j1)) = (nearest(&router.grid.xs, w[0].0), nearest(&router.grid.ys, w[0].1), nearest(&router.grid.xs, w[1].0), nearest(&router.grid.ys, w[1].1)) else {
+                ok = false;
+                break;
+            };
+            if i0 != i1 && j0 != j1 {
+                ok = false;
+                break;
+            }
+            if cells.is_empty() {
+                cells.push((i0, j0));
+            }
+            if i0 == i1 {
+                let (a, b) = (j0.min(j1), j0.max(j1));
+                let steps: Vec<usize> = if j1 >= j0 { (a..=b).collect() } else { (a..=b).rev().collect() };
+                cells.extend(steps.into_iter().skip(1).map(|j| (i0, j)));
+            } else {
+                let (a, b) = (i0.min(i1), i0.max(i1));
+                let steps: Vec<usize> = if i1 >= i0 { (a..=b).collect() } else { (a..=b).rev().collect() };
+                cells.extend(steps.into_iter().skip(1).map(|i| (i, j0)));
+            }
+        }
+        if !ok || cells.len() < 2 {
+            continue;
+        }
+        let src = Pin { node: s, side: plan.src_side, port: pts[0], grid: cells[0], cost: 0.0 };
+        let dst = Pin { node: d, side: plan.dst_side, port: pts[pts.len() - 1], grid: cells[cells.len() - 1], cost: 0.0 };
+        apply(&mut occ, &router.grid, &Route { cells, src, dst }, 1);
+    }
     let mut routes: HashMap<EdgeIndex, Route> = HashMap::new();
     for round in 0..=REROUTE_ROUNDS {
         for &(e, s, d) in &todo {
@@ -1091,9 +1242,18 @@ pub fn route_orthogonal(
                     None
                 }
             };
-            if let Some(r) = router.search(&src_pins, &dst_pins, &occ, own_groups, src_groups, &own, away) {
+            // Foreign containers are obstacles first; only an edge that cannot be routed
+            // at all without entering one gets the search that merely charges for it.
+            let lane = layout.lane_hints.get(&e).copied();
+            let found = router.search(&src_pins, &dst_pins, &occ, own_groups, src_groups, &own, away, true, lane).or_else(|| {
+                if std::env::var_os("RDG_DEBUG_ORTHO").is_some() {
+                    eprintln!("ortho {} -> {}: no route clear of foreign containers, relaxing", compiled.graph[s].id, compiled.graph[d].id);
+                }
+                router.search(&src_pins, &dst_pins, &occ, own_groups, src_groups, &own, away, false, lane)
+            });
+            if let Some(r) = found {
                 if round == REROUTE_ROUNDS && std::env::var("RDG_DEBUG_ORTHO").is_ok_and(|v| v == "costs") {
-                    let (c, bends) = router.explain(&r, &occ, own_groups, src_groups, &own, away);
+                    let (c, bends) = router.explain(&r, &occ, own_groups, src_groups, &own, away, lane);
                     let pts: Vec<String> = r.cells.iter().map(|&(i, j)| { let (x, y) = router.grid.pt(i, j); format!("({x:.0},{y:.0})") }).collect();
                     eprintln!(
                         "cost {} -> {}: pins {:.0}+{:.0} len {:.0} bends {bends}={:.0} share {:.0} crowd {:.0} cross {:.0} border {:.0} along_border {:.0} along_node {:.0} | {}",
@@ -1167,6 +1327,8 @@ pub fn route_orthogonal(
                 waypoints,
                 corridor_bucket_size: 1,
                 searched: true,
+                junction: None,
+                start: None,
             },
         );
     }
@@ -1813,6 +1975,10 @@ mod tests {
             near_vnode: vec![false; 18],
             near_hnode: vec![false; 18],
             inside_groups: vec![0; 18],
+            foreign_v: vec![0; 18],
+            foreign_h: vec![0; 18],
+            reserved_v: vec![false; 18],
+            reserved_h: vec![false; 18],
         };
         let router = Router { grid, tokens: &tokens, clearance: tokens.stub_clearance(), pitch: 16.0, node_zone: 20.0, w: Weights::load() };
         simplify_routes(&mut paths, &obstacles, &[], &router);

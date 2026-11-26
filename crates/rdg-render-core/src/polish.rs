@@ -964,6 +964,27 @@ pub fn snap_to_pixels(
             let f = (v - lo) / len;
             (0.0..=1.0).contains(&f).then_some(f)
         };
+        // An arrow that joins or leaves a bundle's trunk ends or starts at a junction,
+        // not on a face: those points round as they are.
+        if plan.junction.is_some() || plan.start.is_some() {
+            let mut np = plan.clone();
+            if plan.start.is_some() {
+                np.start = Some(p1);
+            } else {
+                let Some(exit) = frac(p1, plan.src_side, src_nl) else { continue };
+                np.exit_port = exit;
+            }
+            if plan.junction.is_some() {
+                np.junction = Some(p2);
+            } else {
+                let Some(entry) = frac(p2, plan.dst_side, dst_nl) else { continue };
+                np.entry_port = entry;
+            }
+            np.waypoints = r[1..n - 1].to_vec();
+            edge_plans.insert(e, np);
+            snapped += 1;
+            continue;
+        }
         let (Some(exit), Some(entry)) = (frac(p1, plan.src_side, src_nl), frac(p2, plan.dst_side, dst_nl)) else {
             continue;
         };

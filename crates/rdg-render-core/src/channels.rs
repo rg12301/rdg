@@ -358,11 +358,23 @@ fn lane_chain(allowed: &[Vec<(f64, f64)>], ideal: f64, from_end: bool) -> Option
 /// Routes every edge it can; see the module docs. Edges missing from the result go to
 /// the fallback router.
 pub fn route_channels(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &DesignTokens) -> HashMap<EdgeIndex, EdgeRoutingPlan> {
+    route_channels_inner(compiled, layout, tokens, false).0
+}
+
+/// Like [`route_channels`], but keeps the edges it could place when some could not:
+/// those plans plus how many edges are left for another router to thread around
+/// them (see `ortho::route_orthogonal_with`). Empty when a named port sends the whole
+/// diagram to the search router.
+pub fn route_channels_partial(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &DesignTokens) -> (HashMap<EdgeIndex, EdgeRoutingPlan>, usize) {
+    route_channels_inner(compiled, layout, tokens, true)
+}
+
+fn route_channels_inner(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &DesignTokens, partial: bool) -> (HashMap<EdgeIndex, EdgeRoutingPlan>, usize) {
     let mut out = HashMap::new();
     // Only a layered layout has the bands and channels this router builds on; the flow
     // is the layout's own, not a guess from where the arrows point.
     let Some(direction) = layout.layered.filter(|_| !layout.positions.is_empty()) else {
-        return out;
+        return (out, 0);
     };
     let frame = Frame { lr: direction == rdg_layout::LayoutDirection::LeftToRight };
     let clearance = tokens.stub_clearance();
@@ -461,7 +473,7 @@ pub fn route_channels(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &
             if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {
                 eprintln!("channels: {} -> {} names a port: the whole diagram goes to the search router", compiled.graph[s].id, compiled.graph[t].id);
             }
-            return HashMap::new();
+            return (HashMap::new(), 0);
         }
         let (sr, tr) = (ctx.nodes[&s], ctx.nodes[&t]);
         let (bs, bt) = (ctx.band_of(&sr), ctx.band_of(&tr));
@@ -517,18 +529,25 @@ pub fn route_channels(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &
     assign_tracks(&ctx, &mut work);
 
     // --- Phase E: polylines ------------------------------------------------------------
-    // All or nothing: a diagram with one edge left to another router would have that
-    // edge's ports and lanes placed without knowledge of the others.
-    if work.iter().any(|w| w.failed) {
-        return HashMap::new();
+    // All or nothing by default: a diagram with one edge left to another router would
+    // have that edge's ports and lanes placed without knowledge of the others. In
+    // partial mode the placed edges stand and the rest are counted, for a router that
+    // threads them around these plans.
+    let mut failed = work.iter().filter(|w| w.failed).count();
+    if !partial && failed > 0 {
+        return (HashMap::new(), failed);
     }
-    for w in &work {
+    for w in work.iter().filter(|w| !w.failed) {
         let pts = polyline(&ctx, w);
         if pts.len() < 2 || !path_clear(&ctx, &pts, w) {
             if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {
                 eprintln!("channels: {} -> {} left to the fallback router ({pts:?})", compiled.graph[w.s].id, compiled.graph[w.t].id);
             }
-            return HashMap::new();
+            if !partial {
+                return (HashMap::new(), failed + 1);
+            }
+            failed += 1;
+            continue;
         }
         if std::env::var_os("RDG_DEBUG_CHANNELS").is_some() {
             let shown: Vec<String> = pts.iter().map(|p| format!("({:.0},{:.0})", p.0, p.1)).collect();
@@ -552,10 +571,12 @@ pub fn route_channels(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &
                 waypoints,
                 corridor_bucket_size: 1,
                 searched: true,
+                junction: None,
+                start: None,
             },
         );
     }
-    out
+    (out, failed)
 }
 
 fn face_frac(nl: &NodeLayout, side: Side, p: Pt) -> f64 {

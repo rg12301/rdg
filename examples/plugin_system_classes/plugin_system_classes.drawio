@@ -78,14 +78,14 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_registry_handle" value="0..*" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=none;endFill=1;endSize=7;startArrow=diamond;startFill=1;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="registry" target="handle" parent="1">
-          <mxGeometry x="-0.6635" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.7725" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="859.0" y="327.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_registry_loader" value="by extension" style="exitX=0.26000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.71111;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=none;endFill=1;endSize=7;startArrow=diamond;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="registry" target="loader" parent="1">
-          <mxGeometry x="0.0000" y="43.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.5472" y="43.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_handle_lifecycle" value="" style="exitX=1.00000;exitY=0.50000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=none;endFill=1;endSize=7;startArrow=diamond;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="handle" target="lifecycle" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -119,7 +119,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_bus_handler" value="0..*" style="exitX=0.17826;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.73125;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=none;endFill=1;endSize=7;startArrow=diamond;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bus" target="handler" parent="1">
-          <mxGeometry x="0.0000" y="19.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4894" y="19.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_bus_event" value="" style="exitX=0.75652;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.11250;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bus" target="event" parent="1">
           <mxGeometry relative="1" as="geometry"/>
@@ -128,8 +128,8 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="604.0" y="1029.0"/>
-              <mxPoint x="604.0" y="892.0"/>
-              <mxPoint x="444.0" y="892.0"/>
+              <mxPoint x="604.0" y="898.0"/>
+              <mxPoint x="444.0" y="898.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -137,8 +137,8 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="270.0" y="1029.0"/>
-              <mxPoint x="270.0" y="898.0"/>
-              <mxPoint x="400.0" y="898.0"/>
+              <mxPoint x="270.0" y="917.0"/>
+              <mxPoint x="400.0" y="917.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -172,10 +172,10 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_wasm_loader_wasm_plugin" value="creates" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.24706;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="wasm_loader" target="wasm_plugin" parent="1">
-          <mxGeometry x="0.0000" y="28.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.7600" y="28.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_native_loader_native_plugin" value="creates" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.65882;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="native_loader" target="native_plugin" parent="1">
-          <mxGeometry x="0.0000" y="28.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.7600" y="28.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="diagram_header_rule" value="" style="line;strokeWidth=1;strokeColor=#d0d5de;html=1;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="24.0" y="66.0" width="1200.0" height="2.0" as="geometry"/>

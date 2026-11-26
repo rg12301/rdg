@@ -158,38 +158,38 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_mobile_app_api_gateway" value="HTTPS / GraphQL" style="exitX=0.27679;exitY=0.25000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.58750;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="mobile_app" target="api_gateway" parent="1">
-          <mxGeometry x="0.5462" y="52.0" relative="1" as="geometry">
+          <mxGeometry x="0.5549" y="52.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="830.0" y="181.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_api_gateway_auth_svc" value="gRPC: ValidateToken" style="exitX=0.58750;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.26852;entryY=0.25000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="api_gateway" target="auth_svc" parent="1">
-          <mxGeometry x="-0.3148" y="64.0" relative="1" as="geometry">
+          <mxGeometry x="-0.5940" y="64.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="830.0" y="565.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_api_gateway_order_svc" value="gRPC: CreateOrder" style="exitX=0.41250;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.68939;entryY=0.25000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="api_gateway" target="order_svc" parent="1">
-          <mxGeometry x="-0.3180" y="-58.0" relative="1" as="geometry">
+          <mxGeometry x="-0.5959" y="-58.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="802.0" y="565.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_order_svc_payment_svc" value="POST /v1/charge" style="exitX=0.50000;exitY=1.06000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="order_svc" target="payment_svc" parent="1">
-          <mxGeometry x="0.0000" y="-52.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2000" y="-52.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_order_svc_event_bus" value="emit OrderCreated" style="exitX=0.31061;exitY=0.25000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="order_svc" target="event_bus" parent="1">
-          <mxGeometry x="-0.3351" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.7558" y="-11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="239.0" y="565.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_order_svc_orders_db" value="INSERT / COMMIT" style="exitX=0.64394;exitY=1.06000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="order_svc" target="orders_db" parent="1">
-          <mxGeometry x="0.3374" y="52.0" relative="1" as="geometry">
+          <mxGeometry x="-0.7499" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="742.0" y="668.0"/>
               <mxPoint x="939.0" y="668.0"/>
@@ -197,17 +197,17 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_auth_svc_user_cache" value="GET / SET EX" style="exitX=0.73148;exitY=0.25000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="auth_svc" target="user_cache" parent="1">
-          <mxGeometry x="0.3105" y="43.0" relative="1" as="geometry">
+          <mxGeometry x="-0.7349" y="11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1173.0" y="565.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_event_bus_analytics_worker" value="consume partitions" style="exitX=0.37097;exitY=1.06000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="event_bus" target="analytics_worker" parent="1">
-          <mxGeometry x="0.0000" y="-61.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2000" y="-61.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_analytics_worker_analytics_lake" value="append events" style="exitX=0.66026;exitY=0.25000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.29497;entryY=0.33000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="analytics_worker" target="analytics_lake" parent="1">
-          <mxGeometry x="-0.1389" y="11.8" relative="1" as="geometry"/>
+          <mxGeometry x="-0.3874" y="11.8" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="legend_title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="1245.4" y="28.0" width="43.6" height="14.9" as="geometry"/>

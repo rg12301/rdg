@@ -26,11 +26,103 @@ pub struct Report {
     anomalies: Vec<(String, String)>,
     layout: Option<String>,
     output: Option<String>,
+    quality: Option<Quality>,
+}
+
+/// How the routed diagram measures against the ceilings a readable diagram keeps:
+/// crossings at most half the edge count, bends at most two per edge, no route over
+/// five bends, no two arrows a lane apart, no arrow through a foreign container, no
+/// crossing at a port or bend, no detour round the drawing, no label that floats.
+#[derive(Debug, Clone, Default)]
+pub struct Quality {
+    pub edges: usize,
+    pub crossings: usize,
+    pub bends: usize,
+    pub max_bends: usize,
+    pub close_parallels: usize,
+    pub foreign_crossings: usize,
+    pub crossings_near_bend: usize,
+    pub detours: usize,
+    pub floating_labels: usize,
+}
+
+impl Quality {
+    /// The ceilings this diagram exceeds, by name.
+    pub fn exceeded(&self) -> Vec<&'static str> {
+        let mut out = Vec::new();
+        if self.crossings * 2 > self.edges {
+            out.push("crossings");
+        }
+        if self.bends > 2 * self.edges {
+            out.push("bends");
+        }
+        if self.max_bends > 5 {
+            out.push("max_bends");
+        }
+        if self.close_parallels > 0 {
+            out.push("close_parallels");
+        }
+        if self.foreign_crossings > 0 {
+            out.push("foreign_crossings");
+        }
+        if self.crossings_near_bend > 0 {
+            out.push("crossings_near_bend");
+        }
+        if self.detours > 0 {
+            out.push("detours");
+        }
+        if self.floating_labels > 0 {
+            out.push("floating_labels");
+        }
+        out
+    }
+
+    fn json(&self) -> String {
+        let exceeded: Vec<String> = self.exceeded().iter().map(|e| esc(e)).collect();
+        format!(
+            "{{\"edges\":{},\"crossings\":{},\"crossing_ceiling\":{},\"bends\":{},\"bend_ceiling\":{},\"max_bends\":{},\"close_parallels\":{},\"foreign_crossings\":{},\"crossings_near_bend\":{},\"detours\":{},\"floating_labels\":{},\"exceeded\":[{}]}}",
+            self.edges,
+            self.crossings,
+            self.edges / 2,
+            self.bends,
+            2 * self.edges,
+            self.max_bends,
+            self.close_parallels,
+            self.foreign_crossings,
+            self.crossings_near_bend,
+            self.detours,
+            self.floating_labels,
+            exceeded.join(",")
+        )
+    }
 }
 
 impl Report {
     pub fn new(format: Format) -> Self {
-        Report { format, errors: Vec::new(), warnings: Vec::new(), anomalies: Vec::new(), layout: None, output: None }
+        Report { format, errors: Vec::new(), warnings: Vec::new(), anomalies: Vec::new(), layout: None, output: None, quality: None }
+    }
+
+    /// The routed diagram's measure (see [`Quality`]); in text mode one line names what
+    /// it exceeds, so an agent knows what to simplify.
+    pub fn quality(&mut self, q: Quality) {
+        let over = q.exceeded();
+        if self.format == Format::Text && !over.is_empty() {
+            eprintln!(
+                "ℹ  quality: over the ceiling on {} (crossings {}/{}, bends {}/{}, max bends {}, close {}, foreign {}, at ports {}, detours {}, floating labels {})",
+                over.join(", "),
+                q.crossings,
+                q.edges / 2,
+                q.bends,
+                2 * q.edges,
+                q.max_bends,
+                q.close_parallels,
+                q.foreign_crossings,
+                q.crossings_near_bend,
+                q.detours,
+                q.floating_labels
+            );
+        }
+        self.quality = Some(q);
     }
 
     pub fn is_json(&self) -> bool {
@@ -116,7 +208,11 @@ impl Report {
             }
             let _ = write!(s, "{{\"kind\":{},\"message\":{}}}", esc(kind), esc(m));
         }
-        s.push_str("]}");
+        s.push(']');
+        if let Some(q) = &self.quality {
+            let _ = write!(s, ",\"quality\":{}", q.json());
+        }
+        s.push('}');
         println!("{s}");
     }
 }

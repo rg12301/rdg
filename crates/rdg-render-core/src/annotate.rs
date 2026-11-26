@@ -16,7 +16,7 @@
 
 use std::collections::HashMap;
 
-use petgraph::stable_graph::EdgeIndex;
+use petgraph::stable_graph::{EdgeIndex, NodeIndex};
 
 use rdg_graph::CompiledGraph;
 use rdg_layout::{DesignTokens, LayoutResult};
@@ -45,6 +45,9 @@ pub struct LabelSpot {
     /// Arc length from the path start to `anchor`, and the path's total length.
     pub along: f64,
     pub total: f64,
+    /// The label stands off its line (no spot beside it could be owned), so a thin
+    /// leader from `anchor` to the box says whose it is.
+    pub leader: bool,
 }
 
 impl LabelSpot {
@@ -69,6 +72,13 @@ pub struct EdgeAnnotations {
     pub labels: HashMap<EdgeIndex, LabelSpot>,
     /// Badge centre per numbered edge (its size: [`badge_size`] of the edge's `step`).
     pub badges: HashMap<EdgeIndex, Pt>,
+    /// Labels that still break the ownership rule (another arrow less than a lane
+    /// further away than the label's own line), one line each, for `RDG_DEBUG_SPACING`.
+    pub floating: Vec<String>,
+    /// Edges whose label is deliberately not drawn: three or more arrows of one node
+    /// with the same text say it once, on the one in the middle of the fan (or on the
+    /// bundle's trunk), and a renderer must not fall back to drawing it itself.
+    pub folded: std::collections::HashSet<EdgeIndex>,
 }
 
 /// Size of an edge label's box (text plus the thin background pad both backends draw).
@@ -146,8 +156,8 @@ pub fn edge_polyline(
     let src_side = plan.map_or(Side::Bottom, |p| p.src_side);
     let dst_side = plan.map_or(Side::Top, |p| p.dst_side);
     let exit = plan.map_or(0.5, |p| p.exit_port);
-    let (x1, y1) = node_attach_point(compiled, s_idx, src_nl, src_side, exit, tokens);
-    let p2 = node_attach_point(compiled, d_idx, dst_nl, dst_side, plan.map_or(0.5, |p| p.entry_port), tokens);
+    let (x1, y1) = plan.and_then(|p| p.start).unwrap_or_else(|| node_attach_point(compiled, s_idx, src_nl, src_side, exit, tokens));
+    let p2 = plan.and_then(|p| p.junction).unwrap_or_else(|| node_attach_point(compiled, d_idx, dst_nl, dst_side, plan.map_or(0.5, |p| p.entry_port), tokens));
     let mut pts = vec![(x1, y1)];
     pts.extend(plan.map_or(&[][..], |p| p.waypoints.as_slice()).iter().copied());
     pts.push(p2);
@@ -194,9 +204,13 @@ struct Scene {
     nodes: Vec<Rect>,
     titles: Vec<Rect>,
     borders: Vec<(Pt, Pt)>,
+    /// Group boxes, each with the bit of its group (see [`group_bit`]).
+    groups: Vec<(Rect, u64)>,
     paths: Vec<(EdgeIndex, Vec<Pt>)>,
     /// Badges and labels placed so far; the flag marks labels.
     placed: Vec<(EdgeIndex, bool, Rect)>,
+    /// One lane: the room every other arrow keeps from a label's own line.
+    lane: f64,
 }
 
 // Penalty weights. Anything that makes text unreadable or ambiguous (sitting on a box,
@@ -205,14 +219,77 @@ struct Scene {
 const W_AREA: f64 = 60.0;
 const W_LINE: f64 = 80.0;
 const W_BORDER: f64 = 30.0;
-const W_NEAR_LINE: f64 = 4.0;
+/// Per px of another arrow running inside the ownership band, at full strength when
+/// it touches the box and fading to nothing at the band's edge.
+const W_NEAR_LINE: f64 = 8.0;
+/// A label on a leg outside the span of its own two nodes (a loop round the drawing):
+/// nothing there tells the reader whose arrow it is.
+const W_PERIMETER: f64 = 600.0;
+/// A label inside a container neither of its nodes belongs to reads as that
+/// container's.
+const W_FOREIGN_BOX: f64 = 300.0;
+/// A branch label (an edge leaving a decision) further than this from the decision
+/// costs [`W_BRANCH_AWAY`] plus a steep drift.
+const BRANCH_REACH: f64 = 40.0;
+const W_BRANCH_AWAY: f64 = 200.0;
+/// A label's own nodes' box grows by this much on every side before a leg counts
+/// as outside it (room for the stubs and one lane of detour).
+const SPAN_PAD: f64 = 64.0;
+/// A label keeps this far from a bend of its own line.
+const BEND_CLEAR: f64 = 10.0;
+/// A label this far or further from its line gets a leader line to it.
+const LEADER_FROM: f64 = 16.0;
+
+/// Bit of group `g` in a membership mask (groups past 63 share the last bit).
+fn group_bit(g: usize) -> u64 {
+    1u64 << g.min(63)
+}
+
+/// Arc length of the prefix two paths share (the run before they part), measured along
+/// `a`; 0 when only their first point is common.
+pub fn shared_prefix_len(a: &[Pt], b: &[Pt]) -> f64 {
+    let same = |p: Pt, q: Pt| (p.0 - q.0).abs() < 0.5 && (p.1 - q.1).abs() < 0.5;
+    let common = a.iter().zip(b).take_while(|(p, q)| same(**p, **q)).count();
+    if common < 2 {
+        return 0.0;
+    }
+    a[..common].windows(2).map(|w| ((w[1].0 - w[0].0).powi(2) + (w[1].1 - w[0].1).powi(2)).sqrt()).sum()
+}
+
+/// Distance from segment `a→b` to rect `r` (0 when they touch).
+fn seg_rect_dist(a: Pt, b: Pt, r: Rect) -> f64 {
+    let gap = |lo: f64, hi: f64, p0: f64, p1: f64| (lo - p1).max(p0 - hi).max(0.0);
+    if (a.1 - b.1).abs() < 0.5 || (a.0 - b.0).abs() < 0.5 {
+        // Axis-aligned: the segment is a degenerate box, and box-to-box distance is exact.
+        let dx = gap(r.0, r.0 + r.2, a.0.min(b.0), a.0.max(b.0));
+        let dy = gap(r.1, r.1 + r.3, a.1.min(b.1), a.1.max(b.1));
+        return (dx * dx + dy * dy).sqrt();
+    }
+    (0..=8)
+        .map(|k| {
+            let t = k as f64 / 8.0;
+            let p = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+            let dx = gap(r.0, r.0 + r.2, p.0, p.0);
+            let dy = gap(r.1, r.1 + r.3, p.1, p.1);
+            (dx * dx + dy * dy).sqrt()
+        })
+        .fold(f64::MAX, f64::min)
+}
 
 impl Scene {
+    /// The ownership band: with the label `gap` px off its own line, every other line
+    /// must stay a full lane further away than that, or the label reads as the other
+    /// line's (ELK keeps 2 px to the own edge against 10 px to any other).
+    fn band(&self, gap: f64) -> f64 {
+        // A label on a leader is tied to its line by the leader itself: other lines
+        // need only keep a lane off the box.
+        if gap >= LEADER_FROM { self.lane } else { gap.max(0.0) + self.lane }
+    }
+
     /// `on_own_line`: the box deliberately sits on its own line (its background masks
     /// the stroke), so only other lines count against it.
     ///
-    /// `gap`: distance from the box to its own line. Another line within about that
-    /// distance makes the label ambiguous, so the "keep clear" band grows with it.
+    /// `gap`: distance from the box to its own line (see [`Scene::band`]).
     fn cost(&self, r: Rect, own: EdgeIndex, on_own_line: bool, gap: f64) -> f64 {
         let mut c = 0.0;
         let padded = inflate(r, 2.0);
@@ -225,17 +302,30 @@ impl Scene {
         for &(_, _, p) in &self.placed {
             c += W_AREA * overlap_area(inflate(r, 3.0), p);
         }
+        let band = self.band(gap);
+        let near = inflate(r, band);
         for (e, path) in &self.paths {
             if on_own_line && *e == own {
                 continue;
             }
-            // Own line only needs to stay out of the box itself; a foreign line must
-            // also keep a small gap so the label doesn't read as belonging to it.
-            let (hard, near) = if *e == own { (inflate(r, 1.0), None) } else { (inflate(r, 3.0), Some(inflate(r, (gap + 8.0).max(12.0)))) };
+            if *e == own {
+                // Own line only needs to stay out of the box itself.
+                let hard = inflate(r, 1.0);
+                for w in path.windows(2) {
+                    c += W_LINE * clip_len(w[0], w[1], hard);
+                }
+                continue;
+            }
+            // A foreign line must not touch the box, and inside the ownership band it
+            // costs by how far in it comes: of the two sides of a parallel pair, the
+            // outer one (further from the other line) is the cheaper.
+            let hard = inflate(r, 3.0);
             for w in path.windows(2) {
                 c += W_LINE * clip_len(w[0], w[1], hard);
-                if let Some(nr) = near {
-                    c += W_NEAR_LINE * clip_len(w[0], w[1], nr);
+                let inside = clip_len(w[0], w[1], near);
+                if inside > 0.0 {
+                    let d = seg_rect_dist(w[0], w[1], r);
+                    c += W_NEAR_LINE * inside * (1.0 - (d / band).min(1.0));
                 }
             }
         }
@@ -243,6 +333,22 @@ impl Scene {
             c += W_BORDER * clip_len(a, b, padded);
         }
         c
+    }
+
+    /// Nearest foreign line to `r`, and the distance to the edge's own line.
+    fn ownership(&self, r: Rect, own: EdgeIndex) -> (f64, f64) {
+        let (mut foreign, mut own_d) = (f64::MAX, f64::MAX);
+        for (e, path) in &self.paths {
+            for w in path.windows(2) {
+                let d = seg_rect_dist(w[0], w[1], r);
+                if *e == own {
+                    own_d = own_d.min(d);
+                } else {
+                    foreign = foreign.min(d);
+                }
+            }
+        }
+        (foreign, own_d)
     }
 }
 
@@ -316,11 +422,22 @@ pub fn place_edge_annotations(
         .map(|t| (t.min_x, t.min_y, t.max_x - t.min_x, t.max_y - t.min_y))
         .collect();
     let mut borders = Vec::new();
-    for (x, y, w, h) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().flatten() {
+    let mut groups = Vec::new();
+    for (g, (x, y, w, h)) in rdg_layout::groups::group_rects(compiled, layout, tokens).into_iter().enumerate().filter_map(|(g, r)| r.map(|r| (g, r))) {
         let (a, b, c, d) = ((x, y), (x + w, y), (x + w, y + h), (x, y + h));
         borders.extend([(a, b), (b, c), (c, d), (d, a)]);
+        groups.push(((x, y, w, h), group_bit(g)));
     }
-    let mut scene = Scene { nodes, titles, borders, paths, placed: Vec::new() };
+    // Every group a node is in, outermost included, as a bit mask.
+    let mut node_groups: HashMap<NodeIndex, u64> = HashMap::new();
+    for (g, members) in compiled.group_nodes.iter().enumerate() {
+        let mask = std::iter::successors(Some(g), |&p| compiled.group_tree.parent[p]).fold(0u64, |m, a| m | group_bit(a));
+        for &n in members {
+            *node_groups.entry(n).or_default() |= mask;
+        }
+    }
+    let sources: HashMap<EdgeIndex, NodeIndex> = paths.iter().filter_map(|(e, _)| resolve_edge_layout(compiled, layout, *e).map(|(s, ..)| (*e, s))).collect();
+    let mut scene = Scene { nodes, titles, borders, groups, paths, placed: Vec::new(), lane: tokens.channel_pitch().max(10.0) };
 
     // --- Badges ---------------------------------------------------------------
     let mut numbered: Vec<((u32, String), usize)> = scene
@@ -368,11 +485,45 @@ pub fn place_edge_annotations(
     }
 
     // --- Labels ---------------------------------------------------------------
+    // Repeated labels: the same text on three or more arrows leaving (or entering)
+    // one node is said once, on the arrow in the middle of the fan — or, in a bundle,
+    // on the trunk (the one that still reaches its target).
+    let lr = layout.layered == Some(rdg_layout::LayoutDirection::LeftToRight);
+    let mut fans: HashMap<(petgraph::stable_graph::NodeIndex, bool, String), Vec<usize>> = HashMap::new();
+    for (i, (e, _)) in scene.paths.iter().enumerate() {
+        let Some(text) = compiled.graph[*e].label.as_deref().map(str::trim).filter(|l| !l.is_empty()) else { continue };
+        let Some((s, t, ..)) = resolve_edge_layout(compiled, layout, *e) else { continue };
+        fans.entry((s, true, text.to_string())).or_default().push(i);
+        fans.entry((t, false, text.to_string())).or_default().push(i);
+    }
+    let mut fan_keys: Vec<_> = fans.keys().cloned().collect();
+    fan_keys.sort_by(|a, b| a.0.index().cmp(&b.0.index()).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
+    for key in fan_keys {
+        let members = &fans[&key];
+        if members.len() < 3 {
+            continue;
+        }
+        let far = |i: usize| -> Option<Pt> {
+            let (s, t, snl, dnl) = resolve_edge_layout(compiled, layout, scene.paths[i].0)?;
+            let nl = if key.1 { (t, dnl) } else { (s, snl) }.1;
+            Some((nl.x + nl.width / 2.0, nl.y + nl.height / 2.0))
+        };
+        let reaching: Vec<usize> = members.iter().copied().filter(|&i| edge_plans.get(&scene.paths[i].0).is_none_or(|p| p.junction.is_none() && p.start.is_none())).collect();
+        let pool = if reaching.is_empty() { members.clone() } else { reaching };
+        let mut ordered: Vec<(f64, usize)> = pool.iter().filter_map(|&i| far(i).map(|p| (if lr { p.1 } else { p.0 }, i))).collect();
+        ordered.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let Some(&(_, keep)) = ordered.get(ordered.len() / 2) else { continue };
+        for &i in members {
+            if i != keep {
+                out.folded.insert(scene.paths[i].0);
+            }
+        }
+    }
     let mut order: Vec<(f64, usize)> = scene
         .paths
         .iter()
         .enumerate()
-        .filter(|(_, (e, _))| compiled.graph[*e].label.as_deref().is_some_and(|l| !l.trim().is_empty()))
+        .filter(|(_, (e, _))| !out.folded.contains(e) && compiled.graph[*e].label.as_deref().is_some_and(|l| !l.trim().is_empty()))
         .map(|(i, (_, p))| (path_len(p), i))
         .collect();
     order.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
@@ -382,13 +533,31 @@ pub fn place_edge_annotations(
         let data = &compiled.graph[*edge_idx];
         let text = data.label.as_deref()?.trim();
         let total = path_len(path);
+        let (s_idx, d_idx, src_nl, dst_nl) = resolve_edge_layout(compiled, layout, *edge_idx)?;
         // A branch label ("yes", "declined") belongs next to the decision it leaves,
-        // not halfway down a long arrow: a drift cost per px from the start.
-        let from_decision = compiled.graph.edge_endpoints(*edge_idx).is_some_and(|(a, b)| {
-            let src = if data.reversed { b } else { a };
-            compiled.graph[src].shape.as_deref() == Some("diamond")
-        });
-        let drift = if from_decision { 0.35 } else { 0.0 };
+        // read together with the question: within reach of the corner, or it pays.
+        let from_decision = {
+            let n = &compiled.graph[s_idx];
+            n.shape.as_deref() == Some("diamond") || matches!(n.node_type.as_str(), "decision" | "choice")
+        };
+        // The span of the edge's own nodes: a leg outside it is a detour round the
+        // drawing, where nothing tells the reader whose arrow the label belongs to.
+        let span = {
+            let x0 = src_nl.x.min(dst_nl.x) - SPAN_PAD;
+            let y0 = src_nl.y.min(dst_nl.y) - SPAN_PAD;
+            let x1 = (src_nl.x + src_nl.width).max(dst_nl.x + dst_nl.width) + SPAN_PAD;
+            let y1 = (src_nl.y + src_nl.height).max(dst_nl.y + dst_nl.height) + SPAN_PAD;
+            (x0, y0, x1, y1)
+        };
+        let own_groups = node_groups.get(&s_idx).copied().unwrap_or(0) | node_groups.get(&d_idx).copied().unwrap_or(0);
+        // Branches of one decision may leave by one corner and part a little further on;
+        // the reach is measured from where this branch has a line of its own.
+        let branch_from = scene
+            .paths
+            .iter()
+            .filter(|(o, _)| *o != *edge_idx && sources.get(o) == Some(&s_idx))
+            .map(|(_, other)| shared_prefix_len(path, other))
+            .fold(0.0, f64::max);
         // Keep clear of the arrowhead and the badge/stub at the start.
         let end_clear = (total * 0.2).min(14.0);
         // Text variants, each with its own penalty: as written, then wrapped onto two
@@ -405,10 +574,10 @@ pub fn place_edge_annotations(
         }
         // Distance between the line and the near edge of the box: snug beside the
         // line, else centred on the line itself with the background masking the
-        // stroke. Never further out: a label a lane away reads as orphaned, or as
-        // belonging to whichever other arrow runs there.
+        // stroke. Further out only with a leader line (see `LabelSpot::leader`), and
+        // at a price: a label a lane away reads as orphaned without one.
         const ON_LINE: f64 = -1.0;
-        let gaps = [(4.0, 0.0), (ON_LINE, 45.0)];
+        let gaps = [(4.0, 0.0), (ON_LINE, 45.0), (LEADER_FROM, 90.0), (LEADER_FROM + 12.0, 110.0), (LEADER_FROM + 24.0, 130.0)];
         let mut best: Option<(f64, LabelSpot)> = None;
         let spans = segment_spans(path);
         let longest = spans.iter().map(|(a, b)| b - a).fold(0.0, f64::max);
@@ -417,11 +586,10 @@ pub fn place_edge_annotations(
             if len < 1.0 {
                 continue;
             }
-            // mxGraph attaches a label sitting exactly on a bend to the *next* segment,
-            // which would swing the perpendicular offset onto the wrong axis — so stay a
-            // couple of px inside the segment.
-            let lo = s0.max(end_clear) + 2.0_f64.min(len / 2.0);
-            let hi = s1.min(total - end_clear) - 2.0_f64.min(len / 2.0);
+            // Clear of the bends: a label at a corner reads as belonging to either leg
+            // (and mxGraph would attach it to the next segment, swinging the offset).
+            let lo = s0.max(end_clear) + BEND_CLEAR.min(len / 2.0);
+            let hi = s1.min(total - end_clear) - BEND_CLEAR.min(len / 2.0);
             if lo > hi {
                 continue;
             }
@@ -432,6 +600,9 @@ pub fn place_edge_annotations(
             for s in samples {
                 let (p, dir, _) = point_at(path, s);
                 let horizontal = dir.0.abs() >= dir.1.abs();
+                let perimeter = p.0 < span.0 || p.0 > span.2 || p.1 < span.1 || p.1 > span.3;
+                let reach = branch_from + BRANCH_REACH;
+                let branch_pen = if from_decision && s > reach { W_BRANCH_AWAY + 2.0 * (s - reach) } else { 0.0 };
                 for (variant, wrap_pen) in &variants {
                     let (w, h) = edge_label_size(variant, tokens);
                     for &(gap, gap_pen) in &gaps {
@@ -444,16 +615,21 @@ pub fn place_edge_annotations(
                             }
                             // Above a horizontal leg / right of a vertical leg first.
                             let (cx, cy) = if horizontal { (p.0, p.1 - off * sign) } else { (p.0 + off * sign, p.1) };
-                            let spot = LabelSpot { text: variant.clone(), cx, cy, w, h, anchor: p, dir, along: s, total };
-                            // The longest straight stretch reads as the arrow's body;
-                            // a label there is unmistakably its own. Nearer the source
-                            // when otherwise equal, where a reader starts following it.
+                            let spot = LabelSpot { text: variant.clone(), cx, cy, w, h, anchor: p, dir, along: s, total, leader: gap >= LEADER_FROM };
+                            // Where a reader looks for the label: near the source, where
+                            // they start following the arrow (a branch label right at
+                            // the decision); on a long straight stretch of it; inside
+                            // the span of its own two nodes and its own containers.
+                            let foreign_box = scene.groups.iter().any(|&((gx, gy, gw, gh), bit)| {
+                                own_groups & bit == 0 && cx > gx && cx < gx + gw && cy > gy && cy < gy + gh
+                            });
                             let soft = if horizontal { 0.0 } else { 30.0 }
                                 + 0.1 * (s - seg_mid).abs()
-                                + 0.02 * (s - total / 2.0).abs()
-                                + 0.25 * (longest - len)
-                                + 0.03 * s
-                                + drift * s
+                                + 0.1 * (longest - len)
+                                + 0.15 * s
+                                + branch_pen
+                                + if perimeter { W_PERIMETER } else { 0.0 }
+                                + if foreign_box { W_FOREIGN_BOX } else { 0.0 }
                                 + wrap_pen
                                 + gap_pen
                                 + k;
@@ -499,6 +675,26 @@ pub fn place_edge_annotations(
             None => scene.placed.push(removed),
         }
     }
+    // Report what still floats: a label whose nearest foreign line is inside its
+    // ownership band (rule A1). Deterministic order: by edge index.
+    let mut labelled: Vec<(&EdgeIndex, &LabelSpot)> = out.labels.iter().collect();
+    labelled.sort_by_key(|(e, _)| e.index());
+    for (e, spot) in labelled {
+        if spot.leader {
+            continue;
+        }
+        let (foreign, own_d) = scene.ownership(spot.rect(), *e);
+        let band = scene.band(own_d);
+        if foreign < band {
+            let name = compiled.graph.edge_endpoints(*e).map_or(String::from("?"), |(s, t)| format!("{} -> {}", compiled.graph[s].id, compiled.graph[t].id));
+            out.floating.push(format!("{:?} on {name}: another arrow {foreign:.0}px away (own {own_d:.0}px, needs {band:.0}px)", spot.text));
+        }
+    }
+    if std::env::var_os("RDG_DEBUG_ANNOTATE").is_some() {
+        for f in &out.floating {
+            eprintln!("floating label {f}");
+        }
+    }
     out
 }
 
@@ -515,12 +711,49 @@ mod tests {
     }
 
     #[test]
+    fn seg_rect_dist_is_zero_on_touch_and_exact_off_axis_aligned_legs() {
+        let r = (10.0, 10.0, 20.0, 10.0);
+        assert_eq!(seg_rect_dist((0.0, 15.0), (40.0, 15.0), r), 0.0);
+        // Horizontal leg 6px under the box, overlapping it in x.
+        assert!((seg_rect_dist((0.0, 26.0), (40.0, 26.0), r) - 6.0).abs() < 1e-9);
+        // Vertical leg 5px right of the box.
+        assert!((seg_rect_dist((35.0, 0.0), (35.0, 40.0), r) - 5.0).abs() < 1e-9);
+        // Diagonal leg ending 3px above the box's top-left corner.
+        assert!((seg_rect_dist((0.0, 0.0), (10.0, 7.0), r) - 3.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn a_label_between_two_parallel_arrows_moves_to_the_outer_side() {
+        // Two horizontal arrows one lane (18px) apart; the lower one is labelled. The
+        // label must sit under it (away from the upper arrow), not between the two.
+        let e0 = EdgeIndex::new(0);
+        let e1 = EdgeIndex::new(1);
+        let scene = Scene {
+            nodes: vec![],
+            titles: vec![],
+            borders: vec![],
+            groups: vec![],
+            paths: vec![(e0, vec![(0.0, 100.0), (300.0, 100.0)]), (e1, vec![(0.0, 118.0), (300.0, 118.0)])],
+            placed: vec![],
+            lane: 18.0,
+        };
+        let (w, h) = (40.0, 12.0);
+        let above = (130.0, 118.0 - 4.0 - h, w, h);
+        let below = (130.0, 118.0 + 4.0, w, h);
+        assert!(scene.cost(below, e1, false, 4.0) < scene.cost(above, e1, false, 4.0));
+        // And the upper arrow's label goes above it.
+        let up_above = (130.0, 100.0 - 4.0 - h, w, h);
+        let up_below = (130.0, 100.0 + 4.0, w, h);
+        assert!(scene.cost(up_above, e0, false, 4.0) < scene.cost(up_below, e0, false, 4.0));
+    }
+
+    #[test]
     fn drawio_geometry_round_trips_perpendicular_offset() {
         // Horizontal rightward leg, label 12px above: mxGraph moves up for positive gy.
-        let s = LabelSpot { text: String::new(), cx: 50.0, cy: -12.0, w: 20.0, h: 10.0, anchor: (50.0, 0.0), dir: (1.0, 0.0), along: 50.0, total: 100.0 };
+        let s = LabelSpot { text: String::new(), cx: 50.0, cy: -12.0, w: 20.0, h: 10.0, anchor: (50.0, 0.0), dir: (1.0, 0.0), along: 50.0, total: 100.0, leader: false };
         assert_eq!(s.drawio_geometry(), (0.0, 12.0));
         // Downward leg, label 20px to the right: positive gy moves right.
-        let s = LabelSpot { text: String::new(), cx: 20.0, cy: 75.0, w: 20.0, h: 10.0, anchor: (0.0, 75.0), dir: (0.0, 1.0), along: 75.0, total: 100.0 };
+        let s = LabelSpot { text: String::new(), cx: 20.0, cy: 75.0, w: 20.0, h: 10.0, anchor: (0.0, 75.0), dir: (0.0, 1.0), along: 75.0, total: 100.0, leader: false };
         assert_eq!(s.drawio_geometry(), (0.5, 20.0));
     }
 
@@ -549,6 +782,36 @@ mod tests {
             &cfg.tokens,
         );
         (compiled, layout, plans, cfg.tokens)
+    }
+
+    #[test]
+    fn a_branch_label_stays_within_reach_of_its_decision() {
+        use rdg_schema::{DiagramPayload, EdgeDef, NodeDef};
+        let node = |id: &str, ty: &str| NodeDef { id: id.into(), label: id.to_uppercase(), node_type: ty.into(), ..Default::default() };
+        let edge = |from: &str, to: &str, label: &str| EdgeDef { from: from.into(), to: to.into(), label: Some(label.into()), ..Default::default() };
+        let compiled = rdg_graph::build_graph(&DiagramPayload {
+            diagram_type: "flowchart".into(),
+            nodes: vec![node("q", "decision"), node("a", "function"), node("b", "function"), node("c", "function")],
+            edges: vec![edge("q", "a", "yes"), edge("q", "b", "no"), edge("b", "c", "then")],
+            ..Default::default()
+        })
+        .unwrap();
+        let cfg = rdg_layout::LayoutConfig::default();
+        let layout = rdg_layout::compute_layout(&compiled, &cfg).unwrap();
+        let plans = crate::routing::plan_all_edge_routes(&compiled, &layout, crate::routing::RoutingAlgorithm::CornerHeuristic, &cfg.tokens);
+        let ann = place_edge_annotations(&compiled, &layout, &plans, &cfg.tokens);
+        let path_of = |e| edge_polyline(&compiled, &layout, e, plans.get(&e), &cfg.tokens).unwrap();
+        for e in compiled.graph.edge_indices() {
+            let data = &compiled.graph[e];
+            let spot = &ann.labels[&e];
+            if data.label.as_deref() != Some("then") {
+                // The two branches may share a stub out of the diamond's corner.
+                let shared = compiled.graph.edge_indices().filter(|&o| o != e && data.label.as_deref() != compiled.graph[o].label.as_deref() && compiled.graph[o].label.as_deref() != Some("then")).map(|o| shared_prefix_len(&path_of(e), &path_of(o))).fold(0.0, f64::max);
+                assert!(spot.along <= shared + BRANCH_REACH + 1e-6, "{:?} sits {:.0}px down its arrow (shared stub {shared:.0}px)", data.label, spot.along);
+            }
+            assert!(spot.along >= BEND_CLEAR - 1e-6);
+        }
+        assert!(ann.floating.is_empty(), "{:?}", ann.floating);
     }
 
     #[test]

@@ -99,6 +99,14 @@ pub struct LayoutConfig {
     /// pipeline derives from. See [`DesignTokens`]'s own docs for what's in here and
     /// why it isn't just more fields on this struct.
     pub tokens: DesignTokens,
+    /// Let a sink wired to many tiers (a stores group every tier writes) stand beside
+    /// those tiers as a side column instead of in a tier of its own below them; the
+    /// review compares both layouts and keeps the one that routes better.
+    pub side_columns: bool,
+    /// Let an edge that passes a group it does not belong to claim a lane straight
+    /// through it (the group opens a band for it) instead of going round; the review
+    /// compares both layouts and keeps the one that routes better.
+    pub pass_through: bool,
 }
 
 impl Default for LayoutConfig {
@@ -115,6 +123,8 @@ impl Default for LayoutConfig {
             group_gap_x: tokens.group_gap(),
             group_gap_y: tokens.group_gap(),
             tokens,
+            side_columns: true,
+            pass_through: true,
         }
     }
 }
@@ -141,6 +151,18 @@ pub struct LayoutResult {
     /// `"bottom"`, `"left"`, `"right"`): the arrows that continue a folded strip in
     /// the next column enter its first node from above, like text.
     pub entry_hints: HashMap<petgraph::stable_graph::EdgeIndex, String>,
+    /// How many top-level units stand beside the tiers as side columns (see
+    /// `LayoutConfig::side_columns`).
+    pub side_columns: usize,
+    /// Lanes the layout reserved straight through a group for edges that pass it
+    /// (`(x0, y0, x1, y1)` segments, real coordinates): nothing of the group sits on
+    /// them, so a router may run a foreign edge along one.
+    pub corridors: Vec<(f64, f64, f64, f64)>,
+    /// The cross-flow coordinate (x, top-to-bottom) an edge's long leg should run at:
+    /// the gutter between two columns of a folded strip, for the arrows that continue
+    /// the strip in the next column. A router charges such an edge for running
+    /// elsewhere.
+    pub lane_hints: HashMap<petgraph::stable_graph::EdgeIndex, f64>,
 }
 
 // ---------------------------------------------------------------------------

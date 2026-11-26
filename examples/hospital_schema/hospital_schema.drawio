@@ -57,7 +57,7 @@
           <mxGeometry x="839" y="599" width="160" height="108" as="geometry"/>
         </mxCell>
         <mxCell id="e_insurers_patients" value="covers" style="exitX=0.47500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.52500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="insurers" target="patients" parent="1">
-          <mxGeometry x="0.0000" y="25.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4783" y="25.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_departments_staff" value="" style="exitX=0.12500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.87500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="departments" target="staff" parent="1">
           <mxGeometry relative="1" as="geometry"/>
@@ -80,7 +80,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_staff_admissions" value="attends" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.58235;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="staff" target="admissions" parent="1">
-          <mxGeometry x="0.3122" y="28.0" relative="1" as="geometry"/>
+          <mxGeometry x="0.4492" y="28.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_admissions_diagnoses" value="" style="exitX=0.63529;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="admissions" target="diagnoses" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -115,7 +115,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_staff_procedures" value="performs" style="exitX=0.36875;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.00000;entryY=0.50000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="staff" target="procedures" parent="1">
-          <mxGeometry x="0.2859" y="31.0" relative="1" as="geometry">
+          <mxGeometry x="-0.6497" y="-11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="562.0" y="490.0"/>
               <mxPoint x="440.0" y="490.0"/>
@@ -124,10 +124,10 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_staff_diagnoses" value="records" style="exitX=0.62500;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.75625;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="staff" target="diagnoses" parent="1">
-          <mxGeometry x="-0.5102" y="11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.7305" y="11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="603.0" y="486.0"/>
-              <mxPoint x="1041.0" y="486.0"/>
+              <mxPoint x="603.0" y="490.0"/>
+              <mxPoint x="1041.0" y="490.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -152,7 +152,7 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_procedures_invoice_lines" value="billed as" style="exitX=0.15000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.85000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=ERmany;endFill=0;endSize=7;startArrow=ERone;startFill=0;startSize=7;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="procedures" target="invoice_lines" parent="1">
-          <mxGeometry x="0.0000" y="34.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.5248" y="34.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="diagram_header_rule" value="" style="line;strokeWidth=1;strokeColor=#d0d5de;html=1;connectable=0;" vertex="1" parent="1">
           <mxGeometry x="24.0" y="66.0" width="1087.0" height="2.0" as="geometry"/>

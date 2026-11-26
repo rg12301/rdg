@@ -44,9 +44,17 @@ const SIBLING_LINK_MAX: usize = 2;
 const GRID_FROM: usize = 5;
 /// Placement sweeps (units, then items within groups) — enough for positions to settle.
 const SWEEPS: usize = 4;
-use crate::fold::{FOLD_ASPECT, FOLD_MIN_TIERS};
+use crate::fold::{FOLD_ASPECT, FOLD_MAX_CONTINUATIONS, FOLD_MIN_TIERS};
 /// A gap widened for crossing edge labels grows to at most this many group gaps.
 const MAX_LABEL_GAP_FACTOR: f64 = 5.0;
+/// A unit wired to units on at least this many tiers, that only answers its feeders
+/// (a stores group every tier writes, an observability box every tier traces to), is
+/// a *side column* beside those tiers rather than a tier of its own below them all —
+/// else every arrow into it runs the height of the drawing round the outside.
+const SIDE_MIN_RANKS: usize = 3;
+/// …as long as it is not most of the drawing (a side column of the main body is not a
+/// side column).
+const SIDE_MAX_AREA: f64 = 0.35;
 
 /// The author's layout hints for one set of items (see `DiagramPayload::same_rank`,
 /// `NodeDef::rank`, `GroupDef::rank`).
@@ -84,6 +92,79 @@ impl Frame {
     }
 }
 
+/// A long edge's reserved place in one layer it passes through: a zero-width dummy
+/// that takes part in the ordering, so the layer's items are arranged around the edge
+/// instead of across it, and the gutter it lands in is widened for it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Corridor {
+    /// The edge's two items in this group (any rank order).
+    a: Item,
+    b: Item,
+    /// The dummy sits before this many of the layer's items (0 = before the first,
+    /// `len` = after the last).
+    before: usize,
+}
+
+/// The slot an ordering pass works on: an item, or a long edge's dummy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum Slot {
+    Real(Item),
+    Dummy(usize),
+}
+
+/// Threads every edge spanning two or more layers through the layers between as a
+/// chain of dummies, orders the slots by the median rule, and returns the real items
+/// per layer with the dummies' positions among them.
+fn order_with_corridors(layers: &[Vec<Item>], edges: &[(Item, Item)], rank_of: impl Fn(&Item) -> usize) -> (Vec<Vec<Item>>, Vec<Vec<Corridor>>) {
+    let mut slots: Vec<Vec<Slot>> = layers.iter().map(|l| l.iter().map(|&it| Slot::Real(it)).collect()).collect();
+    let mut slot_edges: Vec<(Slot, Slot)> = Vec::new();
+    let mut dummies: Vec<(Item, Item)> = Vec::new();
+    for &(a, b) in edges {
+        let (ra, rb) = (rank_of(&a), rank_of(&b));
+        if ra.abs_diff(rb) < 2 {
+            slot_edges.push((Slot::Real(a), Slot::Real(b)));
+            continue;
+        }
+        let (first, last) = if ra < rb { (a, b) } else { (b, a) };
+        let mut prev = Slot::Real(first);
+        for layer in slots.iter_mut().take(ra.max(rb)).skip(ra.min(rb) + 1) {
+            let d = Slot::Dummy(dummies.len());
+            dummies.push((a, b));
+            layer.push(d);
+            slot_edges.push((prev, d));
+            prev = d;
+        }
+        slot_edges.push((prev, Slot::Real(last)));
+    }
+    order_layers(&mut slots, &slot_edges);
+    let mut out_layers = Vec::with_capacity(slots.len());
+    let mut corridors = Vec::with_capacity(slots.len());
+    for layer in &slots {
+        let mut items = Vec::new();
+        let mut cs = Vec::new();
+        for &sl in layer {
+            match sl {
+                Slot::Real(it) => items.push(it),
+                Slot::Dummy(k) => cs.push(Corridor { a: dummies[k].0, b: dummies[k].1, before: items.len() }),
+            }
+        }
+        out_layers.push(items);
+        corridors.push(cs);
+    }
+    (out_layers, corridors)
+}
+
+/// Where a corridor's gutter lies across the flow, given the layer's boxes in order
+/// (`spans`): the middle of the gap it sits in, or just outside the row's ends.
+fn corridor_x(spans: &[(f64, f64)], before: usize) -> f64 {
+    match (before, spans.len()) {
+        (_, 0) => 0.0,
+        (0, _) => spans[0].0 - 1.0,
+        (b, n) if b >= n => spans[n - 1].1 + 1.0,
+        (b, _) => (spans[b - 1].1 + spans[b].0) / 2.0,
+    }
+}
+
 /// A group's laid-out content and the box around it, in frame coordinates.
 #[derive(Debug, Clone)]
 struct Block {
@@ -100,6 +181,8 @@ struct Block {
     /// Extra left padding (part of `inset.0`) that keeps nodes fed from above clear
     /// of the title — reported to the renderer as `LayoutResult::group_title_shift`.
     title_shift: f64,
+    /// Per layer, the long edges reserved a place through it (see [`Corridor`]).
+    corridors: Vec<Vec<Corridor>>,
 }
 
 /// The layout under construction; every coordinate is in the flow frame.
@@ -114,8 +197,16 @@ struct Compound<'a> {
     node_group: HashMap<NodeIndex, usize>,
     /// Corner of each top-level unit.
     top_pos: HashMap<Item, (f64, f64)>,
-    /// Tier of each top-level unit, once the tiers are known.
+    /// Tier of each top-level unit, once the tiers are known (side columns have none).
     unit_row: HashMap<Item, usize>,
+    /// Groups laid out as a portrait grid (side columns): a stack rather than a row.
+    portrait: HashSet<usize>,
+    /// Per group, the edges that want a lane straight through it this sweep, with the
+    /// cross coordinate each wants (see `pass_through` in [`layout_compound_with`]).
+    pass_requests: HashMap<usize, Vec<(NodeIndex, NodeIndex, f64)>>,
+    /// Per group, the lanes opened for those edges: `(cross, main0, main1)` in frame
+    /// coordinates (see [`Compound::open_pass_through`]).
+    corridor_lines: HashMap<usize, Vec<(f64, f64, f64)>>,
 }
 
 impl Compound<'_> {
@@ -259,7 +350,7 @@ impl Compound<'_> {
         if items.is_empty() {
             return;
         }
-        let (layers, pos, content) = self.arrange(g, &items);
+        let (layers, pos, content, corridors) = self.arrange(g, &items);
         let (w, h) = self.frame.swap(content);
         let group = &self.compiled.groups[g];
         let pad = self.frame.pad(group_padding(&self.config.tokens, group, w, h));
@@ -296,7 +387,7 @@ impl Compound<'_> {
             *start += (min_w - *width) / 2.0;
             *width = min_w;
         }
-        self.blocks[g] = Some(Block { size, inset, content, layers, pos, title_shift });
+        self.blocks[g] = Some(Block { size, inset, content, layers, pos, title_shift, corridors });
     }
 
     /// The `top` items of group `g` an edge enters from upstream: from outside the
@@ -334,7 +425,7 @@ impl Compound<'_> {
     /// median ordering, each layer centred across the flow, gaps sized for the edges
     /// (and, left-to-right, their labels) crossing them.
     #[allow(clippy::type_complexity)]
-    fn arrange(&self, g: usize, items: &[Item]) -> (Vec<Vec<Item>>, HashMap<Item, (f64, f64)>, (f64, f64)) {
+    fn arrange(&self, g: usize, items: &[Item]) -> (Vec<Vec<Item>>, HashMap<Item, (f64, f64)>, (f64, f64), Vec<Vec<Corridor>>) {
         let index: HashMap<Item, usize> = items.iter().enumerate().map(|(i, &it)| (it, i)).collect();
         let mut edges: Vec<(Item, Item)> = Vec::new();
         let mut rank_edges: Vec<(Item, Item)> = Vec::new();
@@ -357,11 +448,13 @@ impl Compound<'_> {
         let hints = self.hints(Some(g), items, &index);
         let mut rank = unit_ranks(items.len(), &rank_edges.iter().map(|(a, b)| (index[a], index[b])).collect::<Vec<_>>(), &is_group, &hints);
         let mut n_ranks = rank.iter().copied().max().map_or(0, |m| m + 1);
-        // Unwired items (a tier of stores, a box of replicas): a landscape grid.
-        if n_ranks == 1 && edges.is_empty() && items.len() >= GRID_FROM {
+        // Unwired items (a tier of stores, a box of replicas): a landscape grid — or,
+        // for a side column, a portrait one (a stack of one or two columns).
+        let portrait = self.portrait.contains(&g);
+        if n_ranks == 1 && edges.is_empty() && (items.len() >= GRID_FROM || (portrait && items.len() >= 2)) {
             let n = items.len();
-            let rows = n.div_ceil(((n as f64 * 2.0).sqrt()).ceil() as usize);
-            let cols = n.div_ceil(rows);
+            let cols = if portrait { ((n as f64 / 2.0).sqrt().floor() as usize).max(1) } else { n.div_ceil(n.div_ceil(((n as f64 * 2.0).sqrt()).ceil() as usize)) };
+            let rows = n.div_ceil(cols);
             rank = (0..n).map(|i| i / cols).collect();
             n_ranks = rows;
         }
@@ -369,7 +462,10 @@ impl Compound<'_> {
         for (i, &it) in items.iter().enumerate() {
             layers[rank[i]].push(it);
         }
-        order_layers(&mut layers, &edges);
+        // Long edges thread through the layers between their ends as dummies, so the
+        // items are ordered around them and each gets a gutter of its own.
+        let (ordered, mut corridors) = order_with_corridors(&layers, &edges, |it| rank[index[it]]);
+        let mut layers = ordered;
         // Top-to-bottom the slot under the group's title is best taken by a top-layer
         // item nothing enters from above: a fed item there forces the whole content
         // right of the title (see `layout_group`), leaving an empty band under it.
@@ -380,6 +476,13 @@ impl Compound<'_> {
                     if let Some(i) = top.iter().position(|it| !fed.contains(it)) {
                         let it = top.remove(i);
                         top.insert(0, it);
+                        // The corridors keep their neighbours: one that sat before the
+                        // moved item (or anything up to it) now has one more item ahead.
+                        for c in corridors.first_mut().into_iter().flatten() {
+                            if c.before > 0 && c.before <= i {
+                                c.before += 1;
+                            }
+                        }
                     }
                 }
             }
@@ -403,24 +506,20 @@ impl Compound<'_> {
             }
         }
 
-        // Gutters within each layer: the configured spacing, widened where edges from
-        // a layer above to one below drop through.
+        // Gutters within each layer: the configured spacing, widened where the
+        // corridors of the edges dropping through the layer landed.
         let cross_gaps: Vec<Vec<f64>> = layers
             .iter()
             .enumerate()
             .map(|(r, layer)| {
                 let base = vec![spacing; layer.len().saturating_sub(1)];
-                let through: Vec<f64> = edges
-                    .iter()
-                    .filter(|(a, b)| rank_of(a).min(rank_of(b)) < r && rank_of(a).max(rank_of(b)) > r)
-                    .map(|(a, b)| (centre(a) + centre(b)) / 2.0)
-                    .collect();
                 let mut spans = Vec::with_capacity(layer.len());
                 let mut x = 0.0;
                 for &it in layer {
                     spans.push((x, x + self.size(it).0));
                     x += self.size(it).0 + spacing;
                 }
+                let through: Vec<f64> = corridors[r].iter().map(|c| corridor_x(&spans, c.before)).collect();
                 let bordered: Vec<bool> = layer.iter().map(|it| matches!(it, Item::Group(_))).collect();
                 gutters_for_through(&spans, &bordered, &through, &base, &self.config.tokens)
             })
@@ -444,7 +543,7 @@ impl Compound<'_> {
             }
             main += depth + if r + 1 < n_ranks { gaps[r] } else { 0.0 };
         }
-        (layers, pos, (widest, main))
+        (layers, pos, (widest, main), corridors)
     }
 
     /// How far along the flow each item of a layer starts. Top-to-bottom the marks of
@@ -535,12 +634,53 @@ impl Compound<'_> {
 
     /// Slides the items of every layer of group `g` across the flow toward their
     /// neighbours outside that layer, reordering them by where they want to be.
+    /// Where a corridor of layer `li` of group `g` runs now, across the flow, on the
+    /// canvas: the middle of its gutter between the layer's items as placed.
+    fn corridor_at(&self, g: usize, li: usize, c: &Corridor) -> f64 {
+        let block = self.block(g);
+        let spans: Vec<(f64, f64)> = block.layers[li].iter().map(|&it| { let x = self.corner(it).0; (x, x + self.size(it).0) }).collect();
+        corridor_x(&spans, c.before)
+    }
+
+    /// What a corridor in layer `li` wants to line up with: its edge's ends where they
+    /// are adjacent layers, else the same edge's corridor in the neighbouring layer.
+    fn corridor_target(&self, g: usize, li: usize, c: &Corridor) -> f64 {
+        let block = self.block(g);
+        let layer_of = |it: &Item| block.layers.iter().position(|l| l.contains(it));
+        let mut sum = 0.0;
+        let mut n = 0.0;
+        for other in [li.checked_sub(1), Some(li + 1)].into_iter().flatten().filter(|&o| o < block.layers.len()) {
+            let end = [c.a, c.b].into_iter().find(|it| layer_of(it) == Some(other));
+            let x = match end {
+                Some(Item::Node(nd)) => Some(self.center(nd).0),
+                Some(it @ Item::Group(_)) => Some(self.corner(it).0 + self.size(it).0 / 2.0),
+                None => block.corridors.get(other).and_then(|cs| cs.iter().find(|d| d.a == c.a && d.b == c.b)).map(|d| self.corridor_at(g, other, d)),
+            };
+            if let Some(x) = x {
+                sum += x;
+                n += 1.0;
+            }
+        }
+        if n > 0.0 { sum / n } else { self.corridor_at(g, li, c) }
+    }
+
     fn settle_group(&mut self, g: usize) {
         let origin = self.origin(g).0;
         let (content_cross, layer_count) = (self.block(g).content.0, self.block(g).layers.len());
         let gap = self.config.node_spacing as f64;
+        let requests = self.pass_requests.get(&g).cloned().unwrap_or_default();
         for li in 0..layer_count {
             let layer = self.block(g).layers[li].clone();
+            let own = self.block(g).corridors.get(li).cloned().unwrap_or_default();
+            // An edge passing straight through the group wants the same place in
+            // every layer: a corridor with that coordinate as its target, kept apart
+            // from the group's own corridors (which are stored with the block).
+            let n_own = own.len();
+            let mut corridors = own;
+            for &(a, b, x) in &requests {
+                corridors.push(Corridor { a: Item::Node(a), b: Item::Node(b), before: 0 });
+                let _ = x;
+            }
             let mut desired: HashMap<Item, (f64, f64)> = HashMap::new();
             let mut order_key: HashMap<Item, f64> = HashMap::new();
             for &it in &layer {
@@ -569,22 +709,39 @@ impl Compound<'_> {
             }
             let mut sorted = layer;
             sorted.sort_by(|a, b| order_key[a].total_cmp(&order_key[b]).then(a.cmp(b)));
+            // The corridors slot in by what they line up with, among the items as
+            // sorted (an item's key is where its neighbours are, a corridor's where its
+            // edge runs).
+            let corridors: Vec<Corridor> = corridors
+                .iter()
+                .enumerate()
+                .map(|(k, c)| {
+                    let key = if k < n_own { self.corridor_target(g, li, c) } else { requests[k - n_own].2 };
+                    Corridor { before: sorted.iter().take_while(|it| order_key[*it] <= key).count(), ..*c }
+                })
+                .collect();
             let widths: Vec<f64> = sorted.iter().map(|&it| self.size(it).0).collect();
             let want: Vec<f64> = sorted.iter().map(|it| desired[it].0).collect();
             let wts: Vec<f64> = sorted.iter().map(|it| desired[it].1).collect();
             // Edges dropping through this layer — from a layer above to one below, or
             // from outside the group past it — keep a lane each in the gutter they use.
             let layer_of = |it: &Item| self.block(g).layers.iter().position(|l| l.contains(it));
-            let my_row = self.unit_row.get(&self.item_in(None, match self.compiled.group_nodes[g].first() {
-                Some(&n) => n,
-                None => return,
-            }).expect("group node has a unit")).copied();
+            // The group's tier, found through any node inside it (a group of groups has
+            // no node of its own).
+            let my_row = self
+                .compiled
+                .graph
+                .node_indices()
+                .find(|&n| self.item_in(Some(g), n).is_some())
+                .and_then(|n| self.item_in(None, n))
+                .and_then(|it| self.unit_row.get(&it).copied());
             let mut through: Vec<f64> = Vec::new();
             for e in self.compiled.graph.edge_references() {
                 let (a, b) = (e.source(), e.target());
                 let (ia, ib) = (self.item_in(Some(g), a), self.item_in(Some(g), b));
                 let passes = match (ia.and_then(|it| layer_of(&it)), ib.and_then(|it| layer_of(&it))) {
-                    (Some(la), Some(lb)) => la.min(lb) < li && la.max(lb) > li,
+                    // Both inside: the layer's corridors cover it (see below).
+                    (Some(_), Some(_)) => false,
                     (Some(l), None) | (None, Some(l)) => {
                         let outside = if ia.is_some() { b } else { a };
                         let their_row = self.item_in(None, outside).and_then(|it| self.unit_row.get(&it).copied());
@@ -608,6 +765,8 @@ impl Compound<'_> {
             }
             let start = sorted.first().map_or(0.0, |it| self.block(g).pos[it].0);
             let spans: Vec<(f64, f64)> = spans.iter().map(|&(a, b)| (a + start, b + start)).collect();
+            // The group's own long edges take the gutter their corridor sits in.
+            through.extend(corridors.iter().map(|c| corridor_x(&spans, c.before)));
             let bordered: Vec<bool> = sorted.iter().map(|it| matches!(it, Item::Group(_))).collect();
             let gaps = gutters_for_through(&spans, &bordered, &through, &vec![gap; widths.len().saturating_sub(1)], &self.config.tokens);
             let used = widths.iter().sum::<f64>() + gaps.iter().sum::<f64>();
@@ -617,7 +776,60 @@ impl Compound<'_> {
                 block.pos.get_mut(it).expect("layer item has a position").0 = x;
             }
             block.layers[li] = sorted;
+            if li < block.corridors.len() {
+                block.corridors[li] = corridors.into_iter().take(n_own).collect();
+            }
         }
+        if !requests.is_empty() {
+            self.open_pass_through(g, &requests);
+        }
+    }
+
+    /// Opens one straight band through every layer of group `g` for each edge that
+    /// passes through it: wide enough for a lane with a stub's clearance on each side,
+    /// at one cross coordinate for all layers (the rightmost left bound of the gutters
+    /// the corridors sit in, past the title), moving the items beyond it outward where
+    /// a layer's gutter is too narrow. The band is recorded for the router.
+    fn open_pass_through(&mut self, g: usize, requests: &[(NodeIndex, NodeIndex, f64)]) {
+        let clearance = self.config.tokens.stub_clearance();
+        let lane = self.config.tokens.channel_pitch().max(10.0);
+        let group_gap = self.config.tokens.group_gap();
+        let width = 2.0 * clearance + 2.0 * lane;
+        let origin = self.origin(g);
+        let title_end = if self.frame.lr { f64::NEG_INFINITY } else { self.corner(Item::Group(g)).0 + title_clear_x(&self.compiled.groups[g], &self.config.tokens) };
+        let mut lines = Vec::new();
+        for &(_, _, x) in requests {
+            let layer_count = self.block(g).layers.len();
+            // Per layer: the gutter the band goes in (items before it / from it on)
+            // and that gutter's clear bounds.
+            let mut cuts: Vec<(usize, f64, f64)> = Vec::with_capacity(layer_count);
+            for li in 0..layer_count {
+                let layer = &self.block(g).layers[li];
+                let before = layer.iter().filter(|&&it| self.corner(it).0 + self.size(it).0 / 2.0 < x).count();
+                let pad = |it: Item| if matches!(it, Item::Group(_)) { lane * 1.25 } else { clearance };
+                let left = before.checked_sub(1).map_or(f64::NEG_INFINITY, |i| { let it = layer[i]; self.corner(it).0 + self.size(it).0 + pad(it) });
+                let right = layer.get(before).map_or(f64::INFINITY, |&it| self.corner(it).0 - pad(it));
+                cuts.push((before, left, right));
+            }
+            let start = cuts.iter().map(|c| c.1).fold(title_end, f64::max).max(x - width / 2.0);
+            let shifts: Vec<f64> = cuts.iter().map(|&(_, _, right)| (start + width - right).max(0.0)).collect();
+            for li in 0..layer_count {
+                if shifts[li] <= 0.0 {
+                    continue;
+                }
+                let moved: Vec<Item> = self.block(g).layers[li][cuts[li].0..].to_vec();
+                let block = self.blocks[g].as_mut().expect("group with a pass-through has a block");
+                for it in moved {
+                    block.pos.get_mut(&it).expect("layer item has a position").0 += shifts[li];
+                }
+            }
+            let (y0, y1) = (origin.1, origin.1 + self.block(g).content.1);
+            lines.push((start + width / 2.0, y0 - group_gap, y1 + group_gap));
+            if std::env::var_os("RDG_DEBUG_CORRIDORS").is_some() {
+                eprintln!("pass-through {}: wanted {x:.0}, band {:.0}..{:.0}, shifts {:?}", self.compiled.groups[g].id, start, start + width, shifts.iter().map(|s| s.round()).collect::<Vec<_>>());
+            }
+        }
+        self.corridor_lines.insert(g, lines);
     }
 }
 
@@ -883,7 +1095,7 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
     let frame = Frame { lr: config.direction == LayoutDirection::LeftToRight };
     let node_size = compiled.graph.node_indices().map(|n| (n, frame.swap(crate::layout_node_size(compiled, n, config)))).collect();
     let node_group = (0..compiled.groups.len()).flat_map(|g| compiled.group_nodes[g].iter().map(move |&n| (n, g))).collect();
-    let mut c = Compound { compiled, config, frame, node_size, blocks: vec![None; compiled.groups.len()], node_group, top_pos: HashMap::new(), unit_row: HashMap::new() };
+    let mut c = Compound { compiled, config, frame, node_size, blocks: vec![None; compiled.groups.len()], node_group, top_pos: HashMap::new(), unit_row: HashMap::new(), portrait: HashSet::new(), pass_requests: HashMap::new(), corridor_lines: HashMap::new() };
     let outer_first = compiled.group_tree.outer_first();
     for &g in outer_first.iter().rev() {
         c.layout_group(g);
@@ -902,14 +1114,12 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
     let unit_index: HashMap<Item, usize> = units.iter().enumerate().map(|(i, &u)| (u, i)).collect();
     let unit_of: HashMap<NodeIndex, usize> =
         compiled.graph.node_indices().map(|n| (n, unit_index[&c.item_in(None, n).expect("every node is in a top-level unit")])).collect();
-    let unit_size: Vec<(f64, f64)> = units.iter().map(|&u| c.size(u)).collect();
-    let usize_of = |u: usize| unit_size[u];
     let bordered = |u: usize| matches!(units[u], Item::Group(_));
     let (gap_cross, gap_main) = frame.swap((config.group_gap_x, config.group_gap_y));
 
     // Cross-unit edges, node level (for positions) and unit level (for ranks), and the
     // room each labelled one needs across / along the flow.
-    let mut cross: Vec<(NodeIndex, NodeIndex)> = Vec::new();
+    let mut cross_all: Vec<(NodeIndex, NodeIndex)> = Vec::new();
     let mut unit_edges: Vec<(usize, usize)> = Vec::new();
     let mut labelled: Vec<(usize, usize, f64, f64)> = Vec::new();
     for e in compiled.graph.edge_references() {
@@ -918,7 +1128,7 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
         if ua == ub {
             continue;
         }
-        cross.push((a, b));
+        cross_all.push((a, b));
         if e.weight().constraint {
             unit_edges.push((ua, ub));
         }
@@ -930,15 +1140,48 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
     let hints = c.hints(None, &units, &unit_index);
     let rank = unit_ranks(nu, &unit_edges, &is_group, &hints);
 
+    // --- Side columns: sinks wired to many tiers hang beside them ------------------
+    let landscape: Vec<(f64, f64)> = units.iter().map(|&u| c.size(u)).collect();
+    let total_area: f64 = landscape.iter().map(|s| s.0 * s.1).sum();
+    let hinted = |u: usize| hints.pinned.get(u).is_some_and(Option::is_some) || hints.same.iter().any(|s| s.contains(&u));
+    let is_side: Vec<bool> = (0..nu)
+        .map(|u| {
+            if hinted(u) || landscape[u].0 * landscape[u].1 > SIDE_MAX_AREA * total_area {
+                return false;
+            }
+            let ins: HashSet<usize> = cross_all.iter().map(|(a, b)| (unit_of[a], unit_of[b])).filter(|&(a, b)| b == u && a != u).map(|(a, _)| a).collect();
+            let outs: HashSet<usize> = cross_all.iter().map(|(a, b)| (unit_of[a], unit_of[b])).filter(|&(a, b)| a == u && b != u).map(|(_, b)| b).collect();
+            let ranks: HashSet<usize> = ins.iter().chain(&outs).map(|&v| rank[v]).collect();
+            // Only answers its feeders (a store read back, a dashboard queried), and
+            // for a lone node, a hub of at least three.
+            ranks.len() >= SIDE_MIN_RANKS && outs.is_subset(&ins) && (is_group[u] || ins.len() >= SIDE_MIN_RANKS)
+        })
+        .collect();
+    let is_side: Vec<bool> = if !config.side_columns || is_side.iter().filter(|&&s| !s).count() < 2 { vec![false; nu] } else { is_side };
+    for u in (0..nu).filter(|&u| is_side[u]) {
+        if let Item::Group(g) = units[u] {
+            c.portrait.insert(g);
+            c.layout_group(g);
+        }
+        if std::env::var_os("RDG_DEBUG_SIDE").is_some() {
+            eprintln!("side column: {}", match units[u] { Item::Node(n) => compiled.graph[n].id.clone(), Item::Group(g) => format!("[{}]", compiled.groups[g].id) });
+        }
+    }
+    let unit_size: Vec<(f64, f64)> = units.iter().map(|&u| c.size(u)).collect();
+    let usize_of = |u: usize| unit_size[u];
+    // The tiers are built from the main units alone; the edges into side columns are
+    // routed across to them afterwards.
+    let cross: Vec<(NodeIndex, NodeIndex)> = cross_all.iter().copied().filter(|(a, b)| !is_side[unit_of[a]] && !is_side[unit_of[b]]).collect();
+
     // --- Tiers: one per rank, wrapped when too wide ------------------------------
-    let max_w = (0..nu).map(|u| usize_of(u).0).fold(0.0, f64::max);
-    let area: f64 = (0..nu).map(|u| usize_of(u).0 * usize_of(u).1).sum();
+    let max_w = (0..nu).filter(|&u| !is_side[u]).map(|u| usize_of(u).0).fold(0.0, f64::max);
+    let area: f64 = (0..nu).filter(|&u| !is_side[u]).map(|u| usize_of(u).0 * usize_of(u).1).sum();
     // Always room for two of the widest units side by side.
     let row_budget = (max_w * ROW_WIDTH_SLACK + gap_cross).max((area * ROW_AREA_FACTOR).sqrt()) * budget_scale;
     let max_rank = rank.iter().copied().max().unwrap_or(0);
     let mut rows: Vec<Vec<usize>> = Vec::new();
     for r in 0..=max_rank {
-        let mut members: Vec<usize> = (0..nu).filter(|&u| rank[u] == r).collect();
+        let mut members: Vec<usize> = (0..nu).filter(|&u| rank[u] == r && !is_side[u]).collect();
         if members.is_empty() {
             continue;
         }
@@ -961,7 +1204,7 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
         row.sort_unstable();
         rows.push(row);
     }
-    let mut row_of = vec![0usize; nu];
+    let mut row_of = vec![usize::MAX; nu];
     for (ri, row) in rows.iter().enumerate() {
         for &u in row {
             row_of[u] = ri;
@@ -977,9 +1220,39 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
             x += usize_of(u).0 + gap_cross;
         }
     }
+    for u in (0..nu).filter(|&u| is_side[u]) {
+        c.top_pos.insert(units[u], (0.0, 0.0));
+    }
+    // Long edges between tiers thread through the tiers between as corridors (see
+    // [`Corridor`]): a zero-width slot in each, ordered with the units and given a
+    // gutter of its own, so the arrow drops straight through instead of round.
+    #[derive(Clone)]
+    struct TopCorridor {
+        a: NodeIndex,
+        b: NodeIndex,
+        before: usize,
+        /// The group of this tier the edge runs straight through instead of a gutter.
+        through: Option<usize>,
+    }
+    let row_spans = |c: &Compound, rows: &[Vec<usize>], ri: usize| -> Vec<(f64, f64)> {
+        rows[ri].iter().map(|&u| { let x = c.top_pos[&units[u]].0; (x, x + usize_of(u).0) }).collect()
+    };
+    let mut top_corridors: Vec<Vec<TopCorridor>> = vec![Vec::new(); rows.len()];
+    for &(a, b) in &cross {
+        let (ra, rb) = (row_of[unit_of[&a]], row_of[unit_of[&b]]);
+        if ra.abs_diff(rb) < 2 {
+            continue;
+        }
+        let mid = (c.center(a).0 + c.center(b).0) / 2.0;
+        for r in ra.min(rb) + 1..ra.max(rb) {
+            let before = rows[r].iter().filter(|&&u| c.top_pos[&units[u]].0 + usize_of(u).0 / 2.0 < mid).count();
+            top_corridors[r].push(TopCorridor { a, b, before, through: None });
+        }
+    }
     for sweep in 0..SWEEPS {
         // Units: forward, then back; the first pass only looks at tiers already settled.
         let order: Vec<usize> = if sweep % 2 == 0 { (0..rows.len()).collect() } else { (0..rows.len()).rev().collect() };
+        c.pass_requests.clear();
         for &ri in &order {
             let settled = |other: usize| {
                 if sweep == 0 { row_of[other] < ri } else if sweep == 1 { row_of[other] > ri } else { true }
@@ -1091,7 +1364,7 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
                 })
                 .collect();
             // Edges with an end above this tier and one below drop through it: a lane
-            // each in the gutter nearest the line between their ends.
+            // each in the gutter their corridor sits in (below, once the spans are known).
             // So do edges that start or end in a group of this tier at a node the box
             // won't let out straight along the flow: they leave it sideways and run down
             // a gutter beside it.
@@ -1099,7 +1372,6 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
             for &(a, b) in &cross {
                 let (ra, rb) = (row_of[unit_of[&a]], row_of[unit_of[&b]]);
                 if ra.min(rb) < ri && ra.max(rb) > ri {
-                    through.push((c.center(a).0 + c.center(b).0) / 2.0);
                     continue;
                 }
                 for (mine, theirs, onward) in [(a, b, rb > ra), (b, a, ra > rb)] {
@@ -1127,6 +1399,53 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
             // Spans in the row's current frame, so the through points compare to them.
             let shift = c.top_pos[&units[row[0]]].0;
             let spans: Vec<(f64, f64)> = spans.iter().map(|&(a, b)| (a + shift, b + shift)).collect();
+            // Each corridor slots in by what it lines up with: its edge's end in the
+            // neighbouring tier, or the same edge's corridor there; it then takes the
+            // gutter at that place in the row as sorted.
+            let centres: Vec<f64> = row.iter().map(|&u| c.top_pos[&units[u]].0 + usize_of(u).0 / 2.0).collect();
+            for k in 0..top_corridors[ri].len() {
+                let (a, b) = (top_corridors[ri][k].a, top_corridors[ri][k].b);
+                let mut sum = 0.0;
+                let mut n = 0.0;
+                for other in [ri.checked_sub(1), Some(ri + 1)].into_iter().flatten().filter(|&o| o < rows.len()) {
+                    let x = if row_of[unit_of[&a]] == other {
+                        Some(c.center(a).0)
+                    } else if row_of[unit_of[&b]] == other {
+                        Some(c.center(b).0)
+                    } else {
+                        top_corridors[other].iter().find(|d| d.a == a && d.b == b).map(|d| corridor_x(&row_spans(&c, &rows, other), d.before))
+                    };
+                    if let Some(x) = x {
+                        sum += x;
+                        n += 1.0;
+                    }
+                }
+                let mut via: Option<usize> = None;
+                if n > 0.0 {
+                    let key = sum / n;
+                    top_corridors[ri][k].before = centres.iter().filter(|&&x| x < key).count();
+                    // Straight through a group of this tier when the edge's line falls
+                    // well inside it: the group opens a lane (see `open_pass_through`).
+                    let lane = config.tokens.channel_pitch().max(10.0);
+                    for (&u, &(x0, x1)) in row.iter().zip(&spans) {
+                        if let Item::Group(g) = units[u] {
+                            if config.pass_through && key > x0 + 2.0 * lane && key < x1 - 2.0 * lane {
+                                c.pass_requests.entry(g).or_default().push((a, b, key));
+                                via = Some(g);
+                            }
+                        }
+                    }
+                }
+                top_corridors[ri][k].through = via;
+                if std::env::var_os("RDG_DEBUG_CORRIDORS").is_some() {
+                    let name = |n: NodeIndex| compiled.graph[n].id.clone();
+                    let row_desc: Vec<String> = row.iter().zip(&spans).map(|(&u, &(x0, x1))| format!("{}:{x0:.0}..{x1:.0}", match units[u] { Item::Node(n) => name(n), Item::Group(g) => format!("[{}]", compiled.groups[g].id) })).collect();
+                    eprintln!("corridor sweep {sweep} row {ri}: {} -> {} key {} via {:?} before {} | {}", name(a), name(b), if n > 0.0 { format!("{:.0}", sum / n) } else { "-".into() }, via.map(|g| compiled.groups[g].id.clone()), top_corridors[ri][k].before, row_desc.join(" "));
+                }
+                if via.is_none() {
+                    through.push(corridor_x(&spans, top_corridors[ri][k].before));
+                }
+            }
             let row_bordered: Vec<bool> = row.iter().map(|&u| bordered(u)).collect();
             let gaps = gutters_for_through(&spans, &row_bordered, &through, &gaps, &config.tokens);
             let xs = place_in_order(&widths, &want, &wts, &gaps, None);
@@ -1147,6 +1466,20 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
             }
         }
     }
+
+    // A group that opened a lane through itself grew: units beside it move over.
+    for row in &rows {
+        let widths: Vec<f64> = row.iter().map(|&u| c.size(units[u]).0).collect();
+        let xs: Vec<f64> = row.iter().map(|&u| c.top_pos[&units[u]].0).collect();
+        let wts = vec![1.0; row.len()];
+        let gaps = vec![gap_cross; row.len().saturating_sub(1)];
+        let placed = place_in_order(&widths, &xs, &wts, &gaps, None);
+        for (&u, x) in row.iter().zip(placed) {
+            c.top_pos.get_mut(&units[u]).expect("unit placed").0 = x;
+        }
+    }
+    let unit_size: Vec<(f64, f64)> = units.iter().map(|&u| c.size(u)).collect();
+    let usize_of = |u: usize| unit_size[u];
 
     // --- Along the flow: tiers stacked, gaps sized for the edges crossing them ------
     let row_h: Vec<f64> = rows.iter().map(|r| r.iter().map(|&u| usize_of(u).1).fold(0.0, f64::max)).collect();
@@ -1217,11 +1550,6 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
         }
     }
 
-    // --- Folding: a long strip of narrow tiers reads as columns on a page ----------
-    // A chain of steps (a flowchart, a state machine, a stack of small groups) is
-    // many times taller than wide; like a long procedure in print it continues in
-    // the next column, the arrow from the bottom of one column to the top of the
-    // next looping round. Only strips fold: anything already near square is left.
     let main_len = row_y.last().copied().unwrap_or(0.0) + row_h.last().copied().unwrap_or(0.0);
     let row_span = |c: &Compound, ri: usize| -> (f64, f64) {
         rows[ri].iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &u| {
@@ -1230,20 +1558,94 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
         })
     };
     let cross_w = (0..rows.len()).map(|ri| row_span(&c, ri)).fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), (l, h)| (a.min(l), b.max(h)));
+    let body = cross_w;
     let cross_w = cross_w.1 - cross_w.0;
+
+    // --- Side columns: beside the tiers they are wired to --------------------------
+    // Each hangs on the side its partners lean to, level with their middle, a gutter
+    // wide enough for its arrows off the widest tier it spans; a second column on the
+    // same side further out.
+    let lane = config.tokens.channel_pitch().max(10.0);
+    let mut sides: Vec<usize> = (0..nu).filter(|&u| is_side[u]).collect();
+    // The centres of every main-body node each side unit is wired to.
+    let mut partners: HashMap<usize, Vec<(f64, f64)>> = sides.iter().map(|&u| (u, Vec::new())).collect();
+    for (a, b) in &cross_all {
+        for (mine, theirs) in [(a, b), (b, a)] {
+            if let Some(ps) = partners.get_mut(&unit_of[mine]) {
+                if !is_side[unit_of[theirs]] {
+                    ps.push(c.center(*theirs));
+                }
+            }
+        }
+    }
+    sides.sort_by(|&a, &b| {
+        let top = |u: usize| partners[&u].iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
+        top(a).total_cmp(&top(b)).then(a.cmp(&b))
+    });
+    let mut placed_sides: Vec<(bool, f64, f64, f64, f64)> = Vec::new(); // (right, x0, x1, y0, y1)
+    for u in sides {
+        let ps = &partners[&u];
+        let (w, h) = usize_of(u);
+        let (y, right) = if ps.is_empty() {
+            (0.0, true)
+        } else {
+            let cy = ps.iter().map(|p| p.1).sum::<f64>() / ps.len() as f64;
+            let cx = ps.iter().map(|p| p.0).sum::<f64>() / ps.len() as f64;
+            ((cy - h / 2.0).clamp(0.0, (main_len - h).max(0.0)), cx >= (body.0 + body.1) / 2.0)
+        };
+        let (y0, y1) = (y, y + h);
+        // The body's extent over the tiers this column runs beside.
+        let (lo, hi) = (0..rows.len())
+            .filter(|&ri| row_y[ri] < y1 && row_y[ri] + row_h[ri] > y0)
+            .map(|ri| row_span(&c, ri))
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), (l, h)| (a.min(l), b.max(h)));
+        let (lo, hi) = if lo.is_finite() { (lo, hi) } else { body };
+        let gutter = gap_cross + (ps.len().min(crate::gaps::MAX_CHANNELS) as f64) * lane;
+        let mut x = if right { hi + gutter } else { lo - gutter - w };
+        for &(r, px0, px1, py0, py1) in &placed_sides {
+            if r == right && py0 < y1 && py1 > y0 {
+                x = if right { x.max(px1 + gap_cross) } else { x.min(px0 - gap_cross - w) };
+            }
+        }
+        placed_sides.push((right, x, x + w, y0, y1));
+        c.top_pos.insert(units[u], (x, y));
+        if std::env::var_os("RDG_DEBUG_SIDE").is_some() {
+            eprintln!("side column {} at ({x:.0},{y:.0}) {}", u, if right { "right" } else { "left" });
+        }
+    }
+
+    // --- Folding: a long strip of narrow tiers reads as columns on a page ----------
+    // A chain of steps (a flowchart, a state machine, a stack of small groups) is
+    // many times taller than wide; like a long procedure in print it continues in
+    // the next column, the arrow from the bottom of one column to the top of the
+    // next looping round. Only strips fold: anything already near square is left,
+    // and so is a drawing with side columns (they already square it).
     let mut entry_hints: HashMap<petgraph::stable_graph::EdgeIndex, String> = HashMap::new();
-    if !frame.lr && rows.len() >= FOLD_MIN_TIERS && main_len > FOLD_ASPECT * cross_w {
+    let mut lane_hints: HashMap<petgraph::stable_graph::EdgeIndex, f64> = HashMap::new();
+    if !frame.lr && placed_sides.is_empty() && rows.len() >= FOLD_MIN_TIERS && main_len > FOLD_ASPECT * cross_w {
         let cols = ((main_len / cross_w).sqrt().round() as usize).clamp(2, 3);
         let per = rows.len().div_ceil(cols);
+        // The arrows continuing across each column boundary; too many and the strip
+        // stays a strip (see `fold::FOLD_MAX_CONTINUATIONS`).
+        let mut continuations: Vec<Vec<petgraph::stable_graph::EdgeIndex>> = vec![Vec::new(); cols];
         for e in compiled.graph.edge_references() {
             let (ra, rb) = (row_of[unit_of[&e.source()]], row_of[unit_of[&e.target()]]);
+            if ra == usize::MAX || rb == usize::MAX {
+                continue;
+            }
             if rb > ra && rb % per == 0 && rb / per == ra / per + 1 {
-                entry_hints.insert(e.id(), "top".to_string());
+                continuations[ra / per].push(e.id());
+            }
+        }
+        let foldable = continuations.iter().all(|c| c.len() <= FOLD_MAX_CONTINUATIONS);
+        for c in continuations.iter().filter(|_| foldable) {
+            for &e in c {
+                entry_hints.insert(e, "top".to_string());
             }
         }
         let fold_gap = gap_cross * 2.0 + 4.0 * config.tokens.channel_pitch();
         let mut x_start = 0.0;
-        for col in 0..cols {
+        for col in (0..cols).filter(|_| foldable) {
             let span = col * per..((col + 1) * per).min(rows.len());
             if span.is_empty() {
                 break;
@@ -1262,6 +1664,9 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
                     p.1 = if mirror { main_len - (p.1 - y0) - main } else { p.1 - y0 };
                 }
             }
+            for &e in &continuations[col] {
+                lane_hints.insert(e, x_start + (hi - lo) + fold_gap / 2.0);
+            }
             x_start += (hi - lo) + fold_gap;
         }
     }
@@ -1276,9 +1681,19 @@ fn layout_compound_with(compiled: &CompiledGraph, config: &LayoutConfig, budget_
             (n, NodeLayout { x, y, width, height })
         })
         .collect();
+    let mut corridor_segments: Vec<(f64, f64, f64, f64)> = Vec::new();
+    let mut corridor_groups: Vec<&usize> = c.corridor_lines.keys().collect();
+    corridor_groups.sort();
+    for g in corridor_groups {
+        for &(x, y0, y1) in &c.corridor_lines[g] {
+            let (ax, ay) = frame.swap((x, y0));
+            let (bx, by) = frame.swap((x, y1));
+            corridor_segments.push((ax, ay, bx, by));
+        }
+    }
     let group_widths = c.blocks.iter().enumerate().filter_map(|(g, b)| Some((g, frame.swap(b.as_ref()?.size).0))).collect();
     let group_title_shift = c.blocks.iter().enumerate().filter_map(|(g, b)| b.as_ref().filter(|b| b.title_shift > 0.0).map(|b| (g, b.title_shift))).collect();
-    Ok(LayoutResult { positions, group_widths, group_title_shift, layered: Some(config.direction), entry_hints, ..Default::default() })
+    Ok(LayoutResult { positions, group_widths, group_title_shift, layered: Some(config.direction), entry_hints, lane_hints, side_columns: placed_sides.len(), corridors: corridor_segments, ..Default::default() })
 }
 
 #[cfg(test)]

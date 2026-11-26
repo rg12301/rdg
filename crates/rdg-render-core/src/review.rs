@@ -42,6 +42,21 @@ pub enum AnomalyKind {
     /// An edge's path doesn't leave/enter its own endpoint from outside the face it is
     /// attached to — e.g. it arrives at a face from the far side, crossing the node's body.
     EdgeThroughOwnNode,
+    /// An edge's route is far longer than the distance between its ports: it loops round
+    /// the drawing instead of going through it, which the layout, not the router, must fix.
+    Detour,
+    /// A searched route with more than [`MAX_ROUTE_BENDS`] bends: the obstacles between
+    /// its ends leave no straighter way, which the layout, not the router, must fix.
+    TangledRoute,
+}
+
+impl AnomalyKind {
+    /// Advisory kinds name a layout problem (a container in the way, no corridor through
+    /// the tiers) that wider spacing does not fix: they are reported, but they neither
+    /// drive the retry loop nor fail `--strict`.
+    pub fn is_advisory(self) -> bool {
+        matches!(self, AnomalyKind::Detour | AnomalyKind::TangledRoute)
+    }
 }
 
 /// A routing bottleneck a layout retry can act on directly — unlike [`Anomaly`] (a
@@ -92,8 +107,49 @@ pub fn detect_anomalies(
     detect_overlapping_edge_paths(compiled, layout, edge_plans, &mut anomalies);
     detect_excessive_bend(compiled, layout, edge_plans, &mut anomalies, tokens);
     detect_edges_through_own_nodes(compiled, layout, edge_plans, &mut anomalies);
+    detect_detours(compiled, layout, edge_plans, &mut anomalies);
 
     anomalies
+}
+
+/// A route counts as a detour when it is longer than [`DETOUR_RATIO`] times the Manhattan
+/// distance between its ports and the excess is more than [`DETOUR_MIN_EXCESS`] px: a
+/// short U round a neighbour is not one, a lap of the canvas is.
+pub const DETOUR_RATIO: f64 = 2.5;
+pub const DETOUR_MIN_EXCESS: f64 = 160.0;
+/// A searched route with more bends than this is wrong as a layout, not as a route.
+pub const MAX_ROUTE_BENDS: usize = 5;
+
+/// `(length, Manhattan distance of the ends)` of a path.
+fn path_len_and_span(p: &[(f64, f64)]) -> (f64, f64) {
+    let len: f64 = p.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum();
+    let (a, b) = (p[0], p[p.len() - 1]);
+    (len, (b.0 - a.0).abs() + (b.1 - a.1).abs())
+}
+
+fn is_detour(len: f64, span: f64) -> bool {
+    len > DETOUR_RATIO * span && len - span > DETOUR_MIN_EXCESS
+}
+
+fn detect_detours(
+    compiled: &CompiledGraph,
+    layout: &LayoutResult,
+    edge_plans: &HashMap<EdgeIndex, EdgeRoutingPlan>,
+    out: &mut Vec<Anomaly>,
+) {
+    let mut ids: Vec<&EdgeIndex> = edge_plans.keys().collect();
+    ids.sort_by_key(|e| e.index());
+    for &e in ids {
+        let Some(p) = edge_full_path(compiled, layout, e, &edge_plans[&e]) else { continue };
+        if p.len() < 2 {
+            continue;
+        }
+        let (len, span) = path_len_and_span(&p);
+        if is_detour(len, span) {
+            let (s, d) = edge_endpoint_ids(compiled, e).map_or((String::from("?"), String::from("?")), |(s, d)| (compiled.graph[s].id.clone(), compiled.graph[d].id.clone()));
+            out.push(Anomaly { kind: AnomalyKind::Detour, description: format!("edge '{s}' -> '{d}' runs {len:.0}px for ports {span:.0}px apart") });
+        }
+    }
 }
 
 /// Resolves an edge to its (possibly cycle-reversed) endpoint node ids, for anomaly
@@ -290,15 +346,22 @@ fn detect_excessive_bend(
 ) {
     let title_zones = crate::routing::compute_group_title_zones(compiled, layout, tokens);
     for (&edge_idx, plan) in edge_plans {
-        // The search router already takes the fewest bends the obstacles allow; a bend
-        // count above this naive face-pair estimate there means a node is in the way,
-        // which wider spacing doesn't remove.
-        if plan.searched {
-            continue;
-        }
         let Some((s_idx, d_idx)) = edge_endpoint_ids(compiled, edge_idx) else {
             continue;
         };
+        // The search router already takes the fewest bends the obstacles allow; past
+        // [`MAX_ROUTE_BENDS`] the obstacles themselves are the problem (a container in
+        // the way, no corridor through the tiers), which the layout must fix.
+        if plan.searched {
+            if let Some(p) = edge_full_path(compiled, layout, edge_idx, plan) {
+                let bends = crate::polish::bend_count(&p);
+                if bends > MAX_ROUTE_BENDS {
+                    let (src_id, dst_id) = (&compiled.graph[s_idx].id, &compiled.graph[d_idx].id);
+                    out.push(Anomaly { kind: AnomalyKind::TangledRoute, description: format!("edge '{src_id}' -> '{dst_id}' has {bends} bends (at most {MAX_ROUTE_BENDS})") });
+                }
+            }
+            continue;
+        }
         let (Some(src_nl), Some(dst_nl)) =
             (layout.positions.get(&s_idx), layout.positions.get(&d_idx))
         else {
@@ -346,7 +409,8 @@ fn detect_edges_through_own_nodes(
     for &edge_idx in ids {
         let plan = &edge_plans[&edge_idx];
         let Some((s_idx, d_idx)) = edge_endpoint_ids(compiled, edge_idx) else { continue };
-        if s_idx == d_idx {
+        // A bundled arrow ends at (or starts from) its trunk, not at a face.
+        if s_idx == d_idx || plan.junction.is_some() || plan.start.is_some() {
             continue;
         }
         let (Some(src_nl), Some(dst_nl)) = (layout.positions.get(&s_idx), layout.positions.get(&d_idx)) else {
@@ -609,6 +673,36 @@ pub struct SpacingMetrics {
     pub close_list: Vec<String>,
     /// Routes with four or more bends — the W and M shapes a reader has to trace.
     pub zigzags: usize,
+    /// Routes that loop round the drawing (see [`DETOUR_RATIO`]).
+    pub detours: usize,
+    /// One line per detour (`a -> b: Npx for Mpx`), for diagnostics.
+    pub detour_list: Vec<String>,
+    /// Most bends on any one route.
+    pub max_bends: usize,
+    /// Pairs of sibling arrows on one face turning opposite ways, and how many of them
+    /// turn at different depths (see `siblings`).
+    pub sibling_pairs: usize,
+    pub unaligned_siblings: usize,
+}
+
+/// How badly a routed diagram reads, as one number: crossings first (worse at a
+/// bend or port), then detours, bends, border hugs, jogs, off-centre ports, foreign
+/// container crossings, close parallels and length; a plan with ports crushed
+/// together or arrows shorter than a stub is marked down outright. Used to choose
+/// between the two routers' plans and between candidate layouts.
+pub fn plan_score(m: &SpacingMetrics, tokens: &DesignTokens) -> f64 {
+    let cramped = m.min_port_pitch.is_some_and(|p| p < 8.0) || m.min_arrow_len.is_some_and(|a| a < tokens.stub_clearance() * 0.6);
+    100.0 * m.crossings as f64
+        + 70.0 * m.crossings_near_bend as f64
+        + 55.0 * m.bends as f64
+        + 40.0 * m.border_hugs as f64
+        + 30.0 * m.micro_jogs as f64
+        + 20.0 * m.off_centre_faces as f64
+        + 160.0 * m.foreign_crossings as f64
+        + 45.0 * m.close_parallels as f64
+        + 200.0 * m.detours as f64
+        + 0.1 * m.total_len
+        + if cramped { 1000.0 } else { 0.0 }
 }
 
 fn min_opt(cur: Option<f64>, v: f64) -> Option<f64> {
@@ -650,6 +744,9 @@ pub fn spacing_metrics(
         .filter_map(|&&e| edge_full_path(compiled, layout, e, &edge_plans[&e]).map(|p| (e, p)))
         .unzip();
     let min_jog = tokens.polish_min_jog();
+    let (pairs, unaligned) = crate::siblings::sibling_turns(compiled, layout, edge_plans);
+    m.sibling_pairs = pairs;
+    m.unaligned_siblings = unaligned;
     let close = crate::spread::close_pairs(&paths, tokens.channel_pitch().max(10.0));
     m.close_parallels = close.len();
     for (a, b, d, len) in &close {
@@ -658,8 +755,15 @@ pub fn spacing_metrics(
     }
     for (i, pa) in paths.iter().enumerate() {
         m.bends += pa.len().saturating_sub(2);
+        m.max_bends = m.max_bends.max(pa.len().saturating_sub(2));
         if pa.len() >= 6 {
             m.zigzags += 1;
+        }
+        let (len, span) = path_len_and_span(pa);
+        if is_detour(len, span) {
+            m.detours += 1;
+            let name = compiled.graph.edge_endpoints(path_edges[i]).map_or(String::from("?"), |(s, t)| format!("{} -> {}", compiled.graph[s].id, compiled.graph[t].id));
+            m.detour_list.push(format!("{name}: {len:.0}px for {span:.0}px"));
         }
         m.total_len += pa.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum::<f64>();
         m.micro_jogs += crate::polish::micro_jog_segments(pa, min_jog).len();
@@ -850,25 +954,83 @@ pub fn compute_reviewed_layout(
     let mut passes = Vec::new();
     let mut best: Option<(LayoutResult, HashMap<EdgeIndex, EdgeRoutingPlan>, usize)> = None;
 
-    for attempt in 1..=max_passes.max(1) {
+    // What a wider retry can fix: a lopsided canvas only gets more lopsided, and an
+    // advisory names a layout problem spacing does not touch.
+    let retryable = |a: &Anomaly| !matches!(a.kind, AnomalyKind::ExtremeAspectRatio) && !a.kind.is_advisory();
+    let lay = |cfg: &LayoutConfig| -> Result<(LayoutResult, HashMap<EdgeIndex, EdgeRoutingPlan>)> {
         let layout = if compiled.diagram_type == "sequence" {
-            compute_sequence_layout(compiled, &config)?
+            compute_sequence_layout(compiled, cfg)?
         } else {
             match decision.framework {
-                LayoutFramework::Sugiyama => compute_layout(compiled, &config)?,
-                LayoutFramework::ForceDirected => compute_force_layout(compiled, &config)?,
-                LayoutFramework::FCose => compute_fcose_layout(compiled, &config)?,
+                LayoutFramework::Sugiyama => compute_layout(compiled, cfg)?,
+                LayoutFramework::ForceDirected => compute_force_layout(compiled, cfg)?,
+                LayoutFramework::FCose => compute_fcose_layout(compiled, cfg)?,
             }
         };
         let edge_plans = if layout.sequence_info.is_none() {
-            plan_all_edge_routes(compiled, &layout, decision.routing.algorithm, &config.tokens)
+            plan_all_edge_routes(compiled, &layout, decision.routing.algorithm, &cfg.tokens)
         } else {
             HashMap::new()
         };
+        Ok((layout, edge_plans))
+    };
+    // A routed layout's badness: its plan score plus a steep charge per anomaly.
+    let judge = |layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens| -> f64 {
+        let (w, h) = estimate_canvas_bounds(layout);
+        let anomalies = detect_anomalies(compiled, layout, plans, w, h, tokens).iter().filter(|a| retryable(a)).count();
+        plan_score(&spacing_metrics(compiled, layout, plans, tokens), tokens) + 500.0 * anomalies as f64
+    };
+
+    for attempt in 1..=max_passes.max(1) {
+        // Side columns and pass-through lanes are bets (short arrows against crossings
+        // through what they run across): each is settled on the routed result, the
+        // layout without it tried whenever the layout used it. `RDG_SIDE=on|off` and
+        // `RDG_PASS=on|off` force either way.
+        let forced = |name: &str| std::env::var(name).ok();
+        if attempt == 1 {
+            if forced("RDG_SIDE").as_deref() == Some("off") {
+                config.side_columns = false;
+            }
+            if forced("RDG_PASS").as_deref() == Some("off") {
+                config.pass_through = false;
+            }
+        }
+        let (layout, edge_plans) = lay(&config)?;
+        // The bets are settled on the first pass; the wider retries keep the choice.
+        let used_side = attempt == 1 && layout.side_columns > 0 && forced("RDG_SIDE").as_deref() != Some("on");
+        let used_pass = attempt == 1 && !layout.corridors.is_empty() && forced("RDG_PASS").as_deref() != Some("on");
+        let mut pick = (judge(&layout, &edge_plans, &config.tokens), layout, edge_plans, "as laid out", (false, false));
+        let variants: Vec<(bool, bool, &str)> = [(true, false, "no side columns"), (false, true, "no pass-through"), (true, true, "neither")]
+            .into_iter()
+            .filter(|&(s, p, _)| (!s || used_side) && (!p || used_pass))
+            .collect();
+        for (no_side, no_pass, name) in variants {
+            let mut cfg = config.clone();
+            if no_side {
+                cfg.side_columns = false;
+            }
+            if no_pass {
+                cfg.pass_through = false;
+            }
+            let (l, p) = lay(&cfg)?;
+            let s = judge(&l, &p, &cfg.tokens);
+            if std::env::var_os("RDG_DEBUG_SIDE").is_some() || std::env::var_os("RDG_DEBUG_CORRIDORS").is_some() {
+                eprintln!("layout variant {name}: {s:.0} against {:.0} ({})", pick.0, pick.3);
+            }
+            if s < pick.0 {
+                pick = (s, l, p, name, (no_side, no_pass));
+            }
+        }
+        let (_, layout, edge_plans, _, (no_side, no_pass)) = pick;
+        if no_side {
+            config.side_columns = false;
+        }
+        if no_pass {
+            config.pass_through = false;
+        }
         let (canvas_w, canvas_h) = estimate_canvas_bounds(&layout);
         let anomalies = detect_anomalies(compiled, &layout, &edge_plans, canvas_w, canvas_h, &config.tokens);
-        // What a wider retry can fix: a lopsided canvas only gets more lopsided.
-        let count = anomalies.iter().filter(|a| !matches!(a.kind, AnomalyKind::ExtremeAspectRatio)).count();
+        let count = anomalies.iter().filter(|a| retryable(a)).count();
         if std::env::var("RDG_DEBUG_ANOMALIES").is_ok() {
             for a in &anomalies {
                 eprintln!("  pass {attempt}: [{:?}] {}", a.kind, a.description);
@@ -903,7 +1065,7 @@ pub fn compute_reviewed_layout(
                     plan_all_edge_routes(compiled, &nudged_layout, decision.routing.algorithm, &config.tokens);
                 let (nw, nh) = estimate_canvas_bounds(&nudged_layout);
                 let nudged_count =
-                    detect_anomalies(compiled, &nudged_layout, &nudged_edge_plans, nw, nh, &config.tokens).len();
+                    detect_anomalies(compiled, &nudged_layout, &nudged_edge_plans, nw, nh, &config.tokens).iter().filter(|a| retryable(a)).count();
                 if nudged_count < count {
                     (nudged_layout, nudged_edge_plans, nudged_count)
                 } else {
@@ -1167,6 +1329,8 @@ mod tests {
                 waypoints: vec![],
                 corridor_bucket_size: 1,
                 searched: false,
+                junction: None,
+                start: None,
             },
         );
         let anomalies = detect_anomalies(&compiled, &layout, &edge_plans, 60.0, 160.0, &DesignTokens::default());

@@ -6,7 +6,7 @@
   <text x="24.0" y="49.1" text-anchor="start" font-size="20" font-weight="bold" fill="#111827">Library schema</text>
   <path d="M 590.0 181.0 L 590.0 255.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 352.0 181.0 L 352.0 255.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
-  <path d="M 407.0 363.0 L 407.0 431.0 Q 407.0 445.0 421.0 445.0 L 653.0 445.0 Q 667.0 445.0 667.0 459.0 L 667.0 545.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
+  <path d="M 407.0 363.0 L 407.0 431.0 Q 407.0 445.0 421.0 445.0 L 453.0 445.0 A 5.0 5.0 0 0 1 463.0 445.0 L 549.0 445.0 A 5.0 5.0 0 0 1 559.0 445.0 L 653.0 445.0 Q 667.0 445.0 667.0 459.0 L 667.0 545.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 719.0 309.0 L 696.0 309.0 Q 687.0 309.0 687.0 318.0 L 687.0 545.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 268.0 363.0 L 268.0 527.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
   <path d="M 145.0 354.0 L 145.0 527.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-er-many-0)" marker-start="url(#marker-er-one-1)"/>
@@ -124,21 +124,21 @@
   <text x="510.0" y="603.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">UUID [FK]</text>
   <text x="364.0" y="621.5" text-anchor="start" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#111827">expires_at</text>
   <text x="510.0" y="621.5" text-anchor="end" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="10" fill="#5b6474">TIMESTAMP</text>
-  <rect x="594.0" y="210.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="606.0" y="221.5" text-anchor="middle" font-size="10" fill="#8b95a5">has</text>
-  <rect x="356.0" y="210.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="386.0" y="221.5" text-anchor="middle" font-size="10" fill="#8b95a5">publishes</text>
-  <rect x="272.0" y="437.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="305.0" y="448.5" text-anchor="middle" font-size="10" fill="#8b95a5">printed as</text>
-  <rect x="149.0" y="432.8" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="167.0" y="444.0" text-anchor="middle" font-size="10" fill="#8b95a5">holds</text>
-  <rect x="238.0" y="752.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="262.0" y="763.8" text-anchor="middle" font-size="10" fill="#8b95a5">lent in</text>
-  <rect x="558.0" y="517.9" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="582.0" y="529.1" text-anchor="middle" font-size="10" fill="#8b95a5">borrows</text>
-  <rect x="401.0" y="861.8" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="431.0" y="873.0" text-anchor="middle" font-size="10" fill="#8b95a5">may incur</text>
-  <rect x="462.0" y="413.8" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="489.0" y="425.1" text-anchor="middle" font-size="10" fill="#8b95a5">reserves</text>
+  <rect x="594.0" y="197.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="606.0" y="208.5" text-anchor="middle" font-size="10" fill="#8b95a5">has</text>
+  <rect x="356.0" y="197.2" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="386.0" y="208.5" text-anchor="middle" font-size="10" fill="#8b95a5">publishes</text>
+  <rect x="272.0" y="379.2" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="305.0" y="390.5" text-anchor="middle" font-size="10" fill="#8b95a5">printed as</text>
+  <rect x="149.0" y="370.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="167.0" y="381.5" text-anchor="middle" font-size="10" fill="#8b95a5">holds</text>
+  <rect x="212.0" y="752.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="236.0" y="763.8" text-anchor="middle" font-size="10" fill="#8b95a5">lent in</text>
+  <rect x="558.0" y="379.2" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="582.0" y="390.5" text-anchor="middle" font-size="10" fill="#8b95a5">borrows</text>
+  <rect x="401.0" y="851.0" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="431.0" y="862.3" text-anchor="middle" font-size="10" fill="#8b95a5">may incur</text>
+  <rect x="462.0" y="371.3" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="489.0" y="382.6" text-anchor="middle" font-size="10" fill="#8b95a5">reserves</text>
   <line x1="24.0" y1="67.0" x2="879.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

@@ -25,7 +25,7 @@ use rdg_render_core::routing::EdgeRoutingPlan;
 use rdg_render_core::theme::{ResolvedEdge, Theme};
 use rdg_render_core::typography::{latex_to_unicode, parse_inline_spans, to_subscript, to_superscript};
 
-use path::build_orthogonal_svg_path;
+
 use sequence::render_sequence_svg;
 
 pub(crate) type W<'a> = Writer<Cursor<&'a mut Vec<u8>>>;
@@ -210,8 +210,9 @@ pub fn render_svg(
             continue;
         };
         let look = edge_look(theme, edge_data);
-        let head = markers.id(&look.head, &look.color, look.head_fill);
-        let tail = look.tail.as_deref().and_then(|t| markers.id(t, &look.color, look.tail_fill));
+        // An arrow that joins a bundle's trunk ends at a junction dot, not an arrowhead.
+        let head = if plan.junction.is_some() { None } else { markers.id(&look.head, &look.color, look.head_fill) };
+        let tail = if plan.start.is_some() { None } else { look.tail.as_deref().and_then(|t| markers.id(t, &look.color, look.tail_fill)) };
         edges.push((edge_idx, EdgeDraw { pts, look, head, tail }));
     }
 
@@ -316,8 +317,19 @@ pub fn render_svg(
     }
 
     // --- Edges (under nodes) -----------------------------------------------------------
-    for (_, e) in &edges {
-        let d = build_orthogonal_svg_path(e.pts[0], e.pts[e.pts.len() - 1], &e.pts[1..e.pts.len() - 1]);
+    // Line jumps: when the diagram has crossings to spare (or the theme asks), a
+    // horizontal leg hops over every vertical one it crosses, so no crossing can be read
+    // as a junction.
+    let crossing_count: usize = (0..edges.len()).map(|a| (a + 1..edges.len()).map(|b| rdg_render_core::polish::crossing_points(&edges[a].1.pts, &edges[b].1.pts).len()).sum::<usize>()).sum();
+    let jumps_on = theme.edge.line_jumps || crossing_count >= rdg_render_core::routing::JUMPS_FROM_CROSSINGS;
+    for (k, (e_idx, e)) in edges.iter().enumerate() {
+        let e_idx = *e_idx;
+        let jumps: Vec<(f64, f64)> = if jumps_on {
+            edges.iter().enumerate().filter(|(o, _)| *o != k).flat_map(|(_, (_, other))| rdg_render_core::polish::crossing_points(&e.pts, &other.pts)).collect()
+        } else {
+            Vec::new()
+        };
+        let d = path::build_orthogonal_svg_path_with_jumps(e.pts[0], e.pts[e.pts.len() - 1], &e.pts[1..e.pts.len() - 1], &jumps);
         let mut attrs = vec![
             ("d", d),
             ("fill", "none".into()),
@@ -332,6 +344,14 @@ pub fn render_svg(
             attrs.push(("marker-start", format!("url(#{m})")));
         }
         el(&mut w, "path", &attrs)?;
+        if edge_plans.get(&e_idx).is_some_and(|p| p.junction.is_some()) {
+            let j = e.pts[e.pts.len() - 1];
+            el(&mut w, "circle", &[("cx", f1(j.0)), ("cy", f1(j.1)), ("r", f1(e.look.width + 2.0)), ("fill", e.look.color.clone())])?;
+        }
+        if edge_plans.get(&e_idx).is_some_and(|p| p.start.is_some()) {
+            let j = e.pts[0];
+            el(&mut w, "circle", &[("cx", f1(j.0)), ("cy", f1(j.1)), ("r", f1(e.look.width + 2.0)), ("fill", e.look.color.clone())])?;
+        }
     }
 
     // --- Nodes ---------------------------------------------------------------------------
@@ -348,13 +368,23 @@ pub fn render_svg(
     let annotations = rdg_render_core::annotate::place_edge_annotations(compiled, layout, edge_plans, tokens);
     for (edge_idx, e) in &edges {
         let Some(spot) = annotations.labels.get(edge_idx) else { continue };
+        if annotations.folded.contains(edge_idx) {
+            continue;
+        }
         let (x, y, pw, ph) = spot.rect();
+        let color = e.look.label_color.clone().unwrap_or_else(|| if theme.edge_label.use_edge_color { e.look.color.clone() } else { theme.edge_label.color.clone() });
+        // A label standing off its line is tied to it by a thin leader, from the point
+        // on the line to the nearest point of the box.
+        if spot.leader {
+            let (ax, ay) = spot.anchor;
+            let (bx, by) = (ax.clamp(x, x + pw), ay.clamp(y, y + ph));
+            el(&mut w, "line", &[("x1", f1(ax)), ("y1", f1(ay)), ("x2", f1(bx)), ("y2", f1(by)), ("stroke", color.clone()), ("stroke-width", "0.8".into()), ("stroke-opacity", "0.8".into())])?;
+        }
         el(
             &mut w,
             "rect",
             &[("x", f1(x)), ("y", f1(y)), ("width", f1(pw)), ("height", f1(ph)), ("rx", "2".into()), ("fill", theme.edge_label.background.clone())],
         )?;
-        let color = e.look.label_color.clone().unwrap_or_else(|| if theme.edge_label.use_edge_color { e.look.color.clone() } else { theme.edge_label.color.clone() });
         let lines: Vec<&str> = spot.text.lines().collect();
         let line_h = ph / lines.len().max(1) as f64;
         for (i, line) in lines.iter().enumerate() {

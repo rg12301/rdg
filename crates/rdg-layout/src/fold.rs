@@ -12,6 +12,18 @@ use crate::{LayoutConfig, LayoutDirection, NodeLayout};
 /// longer along the flow than across it.
 pub(crate) const FOLD_MIN_TIERS: usize = 4;
 pub(crate) const FOLD_ASPECT: f64 = 2.2;
+/// At most this many arrows may continue the strip across one column boundary (a
+/// lane each in the gutter between the columns); more, and the strip stays a strip.
+pub(crate) const FOLD_MAX_CONTINUATIONS: usize = 3;
+
+/// What a fold tells the router: the arrows continuing the strip enter the next
+/// column's first node from above (`entry`) and run up the gutter between the
+/// columns (`lanes`: the gutter's centre, across the flow).
+#[derive(Debug, Default)]
+pub(crate) struct FoldHints {
+    pub entry: HashMap<petgraph::stable_graph::EdgeIndex, String>,
+    pub lanes: HashMap<petgraph::stable_graph::EdgeIndex, f64>,
+}
 
 /// Folds `tiers` (each a rank's nodes, in flow order) into two or three columns when
 /// the layout is a strip. Columns stand a gap apart that leaves room for the arrow
@@ -21,9 +33,9 @@ pub(crate) fn fold_strip(
     tiers: &[Vec<NodeIndex>],
     compiled: &rdg_graph::CompiledGraph,
     config: &LayoutConfig,
-) -> HashMap<petgraph::stable_graph::EdgeIndex, String> {
+) -> FoldHints {
     use petgraph::visit::{EdgeRef, IntoEdgeReferences};
-    let mut hints = HashMap::new();
+    let mut hints = FoldHints::default();
     let lr = config.direction == LayoutDirection::LeftToRight;
     // Only top-to-bottom strips fold: columns of a downward flow read like text,
     // while a left-to-right strip folded into bands either drags a ribbon of arrows
@@ -48,16 +60,27 @@ pub(crate) fn fold_strip(
     // The arrows that continue the strip in the next column enter its first node
     // from above.
     let tier_of: HashMap<NodeIndex, usize> = tiers.iter().enumerate().flat_map(|(t, ns)| ns.iter().map(move |&n| (n, t))).collect();
+    // The arrows continuing across each column boundary; too many and the fold would
+    // loop a ribbon round the page instead of a few lines up the gutter.
+    let mut continuations: Vec<Vec<petgraph::stable_graph::EdgeIndex>> = vec![Vec::new(); cols];
     for e in compiled.graph.edge_references() {
         if let (Some(&ta), Some(&tb)) = (tier_of.get(&e.source()), tier_of.get(&e.target())) {
             if tb > ta && tb % per == 0 && tb / per == ta / per + 1 {
-                hints.insert(e.id(), "top".to_string());
+                continuations[ta / per].push(e.id());
             }
+        }
+    }
+    if continuations.iter().any(|c| c.len() > FOLD_MAX_CONTINUATIONS) {
+        return hints;
+    }
+    for c in &continuations {
+        for &e in c {
+            hints.entry.insert(e, "top".to_string());
         }
     }
     let gap = (config.node_spacing as f64) * 2.0 + 4.0 * config.tokens.channel_pitch();
     let mut cross_start = c0;
-    for col in 0..cols {
+    for (col, conts) in continuations.iter().enumerate() {
         let span = col * per..((col + 1) * per).min(tiers.len());
         if span.is_empty() {
             break;
@@ -86,6 +109,11 @@ pub(crate) fn fold_strip(
                 }
             }
         }
+        // The gutter after this column: where its continuations run up.
+        let gutter = cross_start + (cc1 - cc0) + gap / 2.0;
+        for &e in conts {
+            hints.lanes.insert(e, gutter);
+        }
         cross_start += (cc1 - cc0) + gap;
     }
     hints
@@ -110,7 +138,8 @@ mod tests {
                 vec![n]
             })
             .collect();
-        fold_strip(&mut positions, &tiers, &empty_graph(), &config);
+        let hints = fold_strip(&mut positions, &tiers, &empty_graph(), &config);
+        assert!(hints.lanes.is_empty() && hints.entry.is_empty());
         let max_y = positions.values().map(|p| p.y + p.height).fold(0.0, f64::max);
         let max_x = positions.values().map(|p| p.x + p.width).fold(0.0, f64::max);
         assert!(max_y < 700.0, "folded: {max_y}");
