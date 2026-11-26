@@ -337,6 +337,14 @@ pub fn render_drawio(
     // Label and flow-badge spots come from the shared scorer so draw.io and SVG agree
     // (see `rdg_render_core::annotate`).
     let annotations = rdg_render_core::annotate::place_edge_annotations(compiled, layout, edge_plans, tokens);
+    // Line jumps when the diagram has crossings to spare, the same rule the SVG uses.
+    let drawn: Vec<Vec<(f64, f64)>> = compiled
+        .graph
+        .edge_indices()
+        .filter_map(|e| rdg_render_core::annotate::edge_polyline(compiled, layout, e, edge_plans.get(&e), tokens))
+        .collect();
+    let crossing_count: usize = (0..drawn.len()).map(|a| (a + 1..drawn.len()).map(|b| rdg_render_core::polish::crossing_points(&drawn[a], &drawn[b]).len()).sum::<usize>()).sum();
+    let jumps_on = theme.edge.line_jumps || crossing_count >= rdg_render_core::routing::JUMPS_FROM_CROSSINGS;
 
     for edge_idx in compiled.graph.edge_indices() {
         let (src, dst) = compiled.graph.edge_endpoints(edge_idx).unwrap();
@@ -393,20 +401,36 @@ pub fn render_drawio(
         let look = edge_look(theme, edge_data);
         let edge_style = format!(
             "{exit_attr}{entry_attr}{}{}",
-            style::edge_style(theme, &look),
+            style::edge_style_with(theme, &look, jumps_on),
             edge_data.style_extra.as_deref().unwrap_or("")
         );
 
         let mut cell = BytesStart::new("mxCell");
         cell.push_attribute(("id", edge_id.as_str()));
         let spot = if label.is_empty() { None } else { annotations.labels.get(&edge_idx) };
-        // The placer may have wrapped the label onto two lines to fit a gap (html=1 label).
-        let label_value = spot.map_or_else(|| label.to_string(), |s| s.text.replace('\n', "<br>"));
+        // The placer may have wrapped the label onto two lines to fit a gap (html=1 label);
+        // a folded label (one of a fan saying the same thing) is not drawn at all.
+        let label_value = if annotations.folded.contains(&edge_idx) { String::new() } else { spot.map_or_else(|| label.to_string(), |s| s.text.replace('\n', "<br>")) };
+        // An arrow joining a bundle's trunk ends at a free point with a dot for a head;
+        // one branching off a trunk starts at a free point with a dot for a tail.
+        let junction = plan.and_then(|p| p.junction);
+        let start = plan.and_then(|p| p.start);
+        let mut edge_style = edge_style;
+        if junction.is_some() {
+            edge_style.push_str("endArrow=oval;endFill=1;endSize=4;");
+        }
+        if start.is_some() {
+            edge_style.push_str("startArrow=oval;startFill=1;startSize=4;");
+        }
         cell.push_attribute(("value", label_value.as_str()));
         cell.push_attribute(("style", edge_style.as_str()));
         cell.push_attribute(("edge", "1"));
-        cell.push_attribute(("source", render_src));
-        cell.push_attribute(("target", render_dst));
+        if start.is_none() {
+            cell.push_attribute(("source", render_src));
+        }
+        if junction.is_none() {
+            cell.push_attribute(("target", render_dst));
+        }
         cell.push_attribute(("parent", "1"));
         w.write_event(Event::Start(cell))?;
 
@@ -421,10 +445,19 @@ pub fn render_drawio(
         }
         geo.push_attribute(("relative", "1"));
         geo.push_attribute(("as", "geometry"));
-        if waypoints.is_empty() {
+        if waypoints.is_empty() && junction.is_none() && start.is_none() {
             w.write_event(Event::Empty(geo))?;
         } else {
             w.write_event(Event::Start(geo))?;
+            for (p, which) in [(start, "sourcePoint"), (junction, "targetPoint")] {
+                if let Some((jx, jy)) = p {
+                    let mut pt = BytesStart::new("mxPoint");
+                    pt.push_attribute(("x", format!("{jx:.1}").as_str()));
+                    pt.push_attribute(("y", format!("{jy:.1}").as_str()));
+                    pt.push_attribute(("as", which));
+                    w.write_event(Event::Empty(pt))?;
+                }
+            }
             let mut arr = BytesStart::new("Array");
             arr.push_attribute(("as", "points"));
             w.write_event(Event::Start(arr))?;
@@ -439,6 +472,36 @@ pub fn render_drawio(
         }
 
         w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+
+        // A label standing off its line gets a thin leader from the line to its box.
+        if let Some(spot) = spot.filter(|s| s.leader && !annotations.folded.contains(&edge_idx)) {
+            let (x, y, pw, ph) = spot.rect();
+            let (ax, ay) = spot.anchor;
+            let (bx, by) = (ax.clamp(x, x + pw), ay.clamp(y, y + ph));
+            let label_color = look.label_color.as_deref().unwrap_or(if theme.edge_label.use_edge_color { look.color.as_str() } else { theme.edge_label.color.as_str() });
+            let mut cell = BytesStart::new("mxCell");
+            let leader_id = format!("{edge_id}_leader");
+            cell.push_attribute(("id", leader_id.as_str()));
+            cell.push_attribute(("value", ""));
+            let style = format!("edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor={label_color};strokeWidth=0.6;opacity=80;");
+            cell.push_attribute(("style", style.as_str()));
+            cell.push_attribute(("edge", "1"));
+            cell.push_attribute(("parent", "1"));
+            w.write_event(Event::Start(cell))?;
+            let mut geo = BytesStart::new("mxGeometry");
+            geo.push_attribute(("relative", "1"));
+            geo.push_attribute(("as", "geometry"));
+            w.write_event(Event::Start(geo))?;
+            for (px, py, which) in [(ax, ay, "sourcePoint"), (bx, by, "targetPoint")] {
+                let mut pt = BytesStart::new("mxPoint");
+                pt.push_attribute(("x", format!("{px:.1}").as_str()));
+                pt.push_attribute(("y", format!("{py:.1}").as_str()));
+                pt.push_attribute(("as", which));
+                w.write_event(Event::Empty(pt))?;
+            }
+            w.write_event(Event::End(BytesEnd::new("mxGeometry")))?;
+            w.write_event(Event::End(BytesEnd::new("mxCell")))?;
+        }
     }
 
     // --- Legend: categories and edge styles used, in a white patch ---------------

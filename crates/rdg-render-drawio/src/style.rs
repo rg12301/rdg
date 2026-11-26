@@ -92,6 +92,11 @@ pub fn group_style(theme: &Theme, g: &GroupLook) -> String {
 
 /// An edge's line and arrowhead style (without its geometry anchors).
 pub fn edge_style(theme: &Theme, e: &ResolvedEdge) -> String {
+    edge_style_with(theme, e, theme.edge.line_jumps)
+}
+
+/// [`edge_style`] with line jumps on or off (see `routing::JUMPS_FROM_CROSSINGS`).
+pub fn edge_style_with(theme: &Theme, e: &ResolvedEdge, jumps: bool) -> String {
     let dash = e.dash.as_deref().map_or("dashed=0;".to_string(), |d| format!("dashed=1;dashPattern={d};"));
     let tail = match &e.tail {
         Some(t) => format!("startArrow={t};startFill={};startSize={};", u8::from(e.tail_fill), theme.edge.head_size),
@@ -104,7 +109,7 @@ pub fn edge_style(theme: &Theme, e: &ResolvedEdge) -> String {
          labelBackgroundColor={};labelBorderColor=none;\
          fontFamily={};fontSize={};fontColor={label_color};",
         u8::from(theme.edge.rounded),
-        if theme.edge.line_jumps { "arc" } else { "none" },
+        if jumps { "arc" } else { "none" },
         e.color,
         e.width,
         e.head,

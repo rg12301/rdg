@@ -85,22 +85,22 @@
   <text x="374.0" y="1307.5" text-anchor="middle" font-size="10" font-weight="normal" fill="#5b6474">
     <tspan>(SVG Graphics)</tspan>
   </text>
-  <rect x="290.0" y="310.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="308.0" y="321.5" text-anchor="middle" font-size="10" fill="#ea580c">emits</text>
-  <rect x="290.0" y="470.2" width="96.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="338.0" y="481.5" text-anchor="middle" font-size="10" fill="#8b95a5">stdin / --input</text>
-  <rect x="290.0" y="640.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="308.0" y="651.5" text-anchor="middle" font-size="10" fill="#8b95a5">parse</text>
-  <rect x="290.0" y="756.2" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="335.0" y="767.5" text-anchor="middle" font-size="10" fill="#7c3aed">DiagramPayload</text>
-  <rect x="290.0" y="872.2" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="332.0" y="883.5" text-anchor="middle" font-size="10" fill="#7c3aed">CompiledGraph</text>
-  <rect x="290.0" y="998.2" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="329.0" y="1009.5" text-anchor="middle" font-size="10" fill="#7c3aed">LayoutResult</text>
-  <rect x="257.0" y="1169.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="281.0" y="1180.8" text-anchor="middle" font-size="10" fill="#8b95a5">.drawio</text>
-  <rect x="335.0" y="1169.3" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="350.0" y="1180.5" text-anchor="middle" font-size="10" fill="#8b95a5">.svg</text>
+  <rect x="290.0" y="303.4" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="308.0" y="314.7" text-anchor="middle" font-size="10" fill="#ea580c">emits</text>
+  <rect x="290.0" y="441.4" width="96.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="338.0" y="452.7" text-anchor="middle" font-size="10" fill="#8b95a5">stdin / --input</text>
+  <rect x="290.0" y="633.5" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="308.0" y="644.7" text-anchor="middle" font-size="10" fill="#8b95a5">parse</text>
+  <rect x="290.0" y="749.5" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="335.0" y="760.7" text-anchor="middle" font-size="10" fill="#7c3aed">DiagramPayload</text>
+  <rect x="290.0" y="865.5" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="332.0" y="876.7" text-anchor="middle" font-size="10" fill="#7c3aed">CompiledGraph</text>
+  <rect x="290.0" y="991.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="329.0" y="1002.7" text-anchor="middle" font-size="10" fill="#7c3aed">LayoutResult</text>
+  <rect x="257.0" y="1140.0" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="281.0" y="1151.2" text-anchor="middle" font-size="10" fill="#8b95a5">.drawio</text>
+  <rect x="335.0" y="1139.9" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="350.0" y="1151.1" text-anchor="middle" font-size="10" fill="#8b95a5">.svg</text>
   <text x="24.0" y="99.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
   <rect x="24.0" y="113.6" width="22" height="14" rx="3" fill="#2563eb" fill-opacity="0.122" stroke="#2563eb" stroke-width="1.25"/>
   <text x="54.0" y="124.1" font-size="10" fill="#5b6474">Frontend</text>

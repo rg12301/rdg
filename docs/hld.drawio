@@ -48,28 +48,28 @@
           <mxGeometry x="264" y="48" width="130" height="80" as="geometry"/>
         </mxCell>
         <mxCell id="e_llm_yaml" value="emits" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="llm" target="yaml" parent="1">
-          <mxGeometry x="0.0000" y="22.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2429" y="22.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_yaml_rdg" value="stdin / --input" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="yaml" target="rdg" parent="1">
-          <mxGeometry x="0.0000" y="52.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4000" y="52.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_rdg_schema" value="parse" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="rdg" target="schema" parent="1">
-          <mxGeometry x="0.0000" y="22.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2429" y="22.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_schema_graph" value="DiagramPayload" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="schema" target="graph" parent="1">
-          <mxGeometry x="0.0000" y="49.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2429" y="49.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_graph_layout" value="CompiledGraph" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="graph" target="layout" parent="1">
-          <mxGeometry x="0.0000" y="46.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2429" y="46.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_layout_renderer" value="LayoutResult" style="exitX=0.50000;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="layout" target="renderer" parent="1">
-          <mxGeometry x="0.0000" y="43.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.2429" y="43.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_renderer_drawio" value=".drawio" style="exitX=0.24615;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.86667;entryY=0.03201;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="renderer" target="drawio" parent="1">
-          <mxGeometry x="0.0000" y="28.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4035" y="28.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_renderer_svg" value=".svg" style="exitX=0.84615;exitY=1.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.16923;entryY=0.02501;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="renderer" target="svg" parent="1">
-          <mxGeometry x="0.0000" y="19.0" relative="1" as="geometry"/>
+          <mxGeometry x="-0.4027" y="19.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="legend_title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=nowrap;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="24.0" y="88.0" width="43.6" height="14.9" as="geometry"/>

@@ -62,7 +62,7 @@ pub fn content_bounds(
         b.add_rect(x, y, w, h);
     }
     for plan in edge_plans.values() {
-        for &(x, y) in &plan.waypoints {
+        for &(x, y) in plan.waypoints.iter().chain(plan.junction.iter()).chain(plan.start.iter()) {
             b.add_rect(x, y, 0.0, 0.0);
         }
     }
@@ -118,7 +118,7 @@ pub fn finalize_canvas(
         nl.y += dy;
     }
     for plan in edge_plans.values_mut() {
-        for p in &mut plan.waypoints {
+        for p in plan.waypoints.iter_mut().chain(plan.junction.iter_mut()).chain(plan.start.iter_mut()) {
             p.0 += dx;
             p.1 += dy;
         }
@@ -187,6 +187,8 @@ mod tests {
                 waypoints: vec![(-8.0, 44.0), (-8.0, 220.0)],
                 corridor_bucket_size: 1,
                 searched: false,
+                junction: None,
+                start: None,
             },
         );
         finalize_canvas(&compiled, &mut layout, &mut plans, 24.0, 24.0, &tokens);

@@ -240,7 +240,7 @@ pub fn place_frame(
         nl.y += dy;
     }
     for plan in plans.values_mut() {
-        for p in &mut plan.waypoints {
+        for p in plan.waypoints.iter_mut().chain(plan.junction.iter_mut()).chain(plan.start.iter_mut()) {
             p.0 += dx;
             p.1 += dy;
         }

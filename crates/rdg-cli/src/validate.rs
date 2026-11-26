@@ -73,6 +73,61 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
     let node_ids: Vec<&str> = payload.nodes.iter().map(|n| n.id.as_str()).collect();
     let node_set: HashSet<&str> = node_ids.iter().copied().collect();
 
+    // --- scale ---------------------------------------------------------------
+    // Above about 25 nodes or 1.5 edges per node the arrows get long and tangled
+    // whatever the layout does; the things to cut or split are the hubs (nodes with
+    // many arrows) and the collectors (one node every group reports to).
+    if payload.resolved_diagram_type() != "sequence" && !payload.nodes.is_empty() {
+        let n = payload.nodes.len();
+        let e = payload.edges.len();
+        let density = e as f64 / n as f64;
+        let mut degree: HashMap<&str, usize> = HashMap::new();
+        for ed in &payload.edges {
+            *degree.entry(ed.from.as_str()).or_default() += 1;
+            *degree.entry(ed.to.as_str()).or_default() += 1;
+        }
+        let mut hubs: Vec<(usize, &str)> = degree.iter().filter(|&(_, &d)| d >= 5).map(|(&id, &d)| (d, id)).collect();
+        hubs.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(b.1)));
+        let group_of: HashMap<&str, &str> = payload.groups.iter().flat_map(|g| g.nodes.iter().map(move |n| (n.as_str(), g.id.as_str()))).collect();
+        let mut feeders: HashMap<&str, HashSet<&str>> = HashMap::new();
+        for ed in &payload.edges {
+            if let Some(g) = group_of.get(ed.from.as_str()) {
+                feeders.entry(ed.to.as_str()).or_default().insert(g);
+            }
+        }
+        let mut collectors: Vec<&str> = feeders.iter().filter(|(_, gs)| gs.len() >= 3).map(|(&id, _)| id).collect();
+        collectors.sort_unstable();
+        let mut who = Vec::new();
+        if !hubs.is_empty() {
+            who.push(format!("hubs: {}", hubs.iter().take(4).map(|(d, id)| format!("{id} ({d} arrows)")).collect::<Vec<_>>().join(", ")));
+        }
+        if !collectors.is_empty() {
+            who.push(format!("collectors (fed from ≥ 3 groups): {}", collectors.iter().take(4).copied().collect::<Vec<_>>().join(", ")));
+        }
+        let who = if who.is_empty() { None } else { Some(who.join("; ")) };
+        if n > 40 || density > 2.0 {
+            push(
+                Level::Warning,
+                "nodes".into(),
+                format!("{n} nodes and {e} edges ({density:.1} per node): a diagram this size does not read as a design"),
+                Some(match &who {
+                    Some(w) => format!("split it into an overview (groups as nodes) and one diagram per group; {w}"),
+                    None => "split it into an overview (groups as nodes) and one diagram per group".into(),
+                }),
+            );
+        } else if n > 25 || density > 1.5 {
+            push(
+                Level::Warning,
+                "nodes".into(),
+                format!("{n} nodes and {e} edges ({density:.1} per node): above the 25-node, 1.5-per-node budget, expect long arrows"),
+                Some(match &who {
+                    Some(w) => format!("cut the arrows that do not tell the story, or split the diagram; {w}"),
+                    None => "cut the arrows that do not tell the story, or split the diagram".into(),
+                }),
+            );
+        }
+    }
+
     // --- edge endpoints ---------------------------------------------------------
     for (i, e) in payload.edges.iter().enumerate() {
         for (field, id) in [("from", &e.from), ("to", &e.to)] {
@@ -289,6 +344,22 @@ pub fn validate_against_theme(payload: &DiagramPayload, theme: &rdg_render_core:
             });
         }
     }
+    // A label on most of the arrows says nothing: the legend or the node should say it
+    // once, and only the exceptions need a label.
+    if !is_sequence {
+        let mut counts: HashMap<&str, usize> = HashMap::new();
+        let labelled = payload.edges.iter().filter_map(|e| e.label.as_deref().map(str::trim).filter(|l| !l.is_empty())).inspect(|l| *counts.entry(l).or_default() += 1).count();
+        let mut repeated: Vec<(&str, usize)> = counts.into_iter().filter(|&(_, n)| n >= 5 && n * 2 >= labelled).collect();
+        repeated.sort();
+        for (text, n) in repeated {
+            out.push(Diagnostic {
+                level: Level::Warning,
+                path: "edges".into(),
+                message: format!("the label \"{text}\" is on {n} of {labelled} labelled edges"),
+                hint: Some("say it once (in the legend, a node's technology, or the diagram description) and label only the arrows that differ".into()),
+            });
+        }
+    }
     // Node types: the renderers' own, plus any the theme gives a category, shape or
     // actor figure.
     let mut known: Vec<&str> = rdg_render_core::style::NODE_TYPES.to_vec();
@@ -406,6 +477,25 @@ mod tests {
         assert!(d.iter().any(|m| m.contains("groups[0].nodes[1]") && m.contains("did you mean `redis`?")));
         assert!(d.iter().any(|m| m.contains("edges[0].from") && m.contains("did you mean `auth_api`?")));
         assert!(d.iter().any(|m| m.starts_with("error: edges[1].to: unknown node id `postgres`")));
+    }
+
+    #[test]
+    fn warns_on_scale_and_names_the_hubs() {
+        use rdg_schema::{EdgeDef, NodeDef};
+        let mut nodes = Vec::new();
+        let mut edges = Vec::new();
+        for i in 0..30 {
+            nodes.push(NodeDef { id: format!("n{i}"), label: format!("N{i}"), ..Default::default() });
+            if i > 0 {
+                edges.push(EdgeDef { from: "n0".into(), to: format!("n{i}"), ..Default::default() });
+            }
+        }
+        let payload = DiagramPayload { nodes, edges, ..Default::default() };
+        let d: Vec<String> = validate(&payload).iter().map(ToString::to_string).collect();
+        let scale = d.iter().find(|m| m.contains("30 nodes")).expect("a scale warning");
+        assert!(scale.contains("n0 (29 arrows)"), "{scale}");
+        let small = DiagramPayload { nodes: vec![NodeDef { id: "a".into(), label: "A".into(), ..Default::default() }], ..Default::default() };
+        assert!(validate(&small).iter().all(|d| !d.message.contains("nodes and")));
     }
 
     #[test]

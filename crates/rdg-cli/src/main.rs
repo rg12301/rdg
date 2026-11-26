@@ -379,7 +379,13 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
         margin_x,
         margin_y,
     );
-    let remaining_anomalies = reviewed.remaining_anomalies(&compiled, &layout_config.tokens);
+    // Advisories (a route looping round the drawing, a tangled route) name layout
+    // problems wider spacing cannot fix: told, not failed on.
+    let (advisories, remaining_anomalies): (Vec<_>, Vec<_>) =
+        reviewed.remaining_anomalies(&compiled, &layout_config.tokens).into_iter().partition(|a| a.kind.is_advisory());
+    for a in &advisories {
+        report.note(&format!("ℹ  layout advisory [{:?}]: {}", a.kind, a.description));
+    }
     report_review(report, &reviewed, remaining_anomalies.len());
     for a in &remaining_anomalies {
         report.anomaly(&format!("{:?}", a.kind), &a.description);
@@ -391,11 +397,25 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
     }
     let layout_result = &reviewed.layout;
     let edge_plans = &reviewed.edge_plans;
+    let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
+    let ann = rdg_render_core::annotate::place_edge_annotations(&compiled, layout_result, edge_plans, &layout_config.tokens);
+    if layout_result.sequence_info.is_none() {
+        report.quality(report::Quality {
+            edges: compiled.graph.edge_count(),
+            crossings: m.crossings,
+            bends: m.bends,
+            max_bends: m.max_bends,
+            close_parallels: m.close_parallels,
+            foreign_crossings: m.foreign_crossings,
+            crossings_near_bend: m.crossings_near_bend,
+            detours: m.detours,
+            floating_labels: ann.floating.len(),
+        });
+    }
     if std::env::var("RDG_DEBUG_SPACING").is_ok() {
-        let m = rdg_render_core::review::spacing_metrics(&compiled, layout_result, edge_plans, &layout_config.tokens);
         let fmt = |v: Option<f64>| v.map_or("-".to_string(), |v| format!("{v:.1}"));
         eprintln!(
-            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={} bends={} len={:.0} off_centre={} foreign={} close={} zigzags={}  [arrow: {}; pitch: {}]",
+            "spacing: arrow={} node_gap={} port_pitch={} jogs={} crossings={} near_bend={} border_hugs={} bends={} len={:.0} off_centre={} foreign={} close={} zigzags={} detours={} max_bends={} siblings={}/{}  [arrow: {}; pitch: {}]",
             fmt(m.min_arrow_len),
             fmt(m.min_node_gap),
             fmt(m.min_port_pitch),
@@ -409,9 +429,20 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
             m.foreign_crossings,
             m.close_parallels,
             m.zigzags,
+            m.detours,
+            m.max_bends,
+            m.unaligned_siblings,
+            m.sibling_pairs,
             m.min_arrow_edge.as_deref().unwrap_or("-"),
             m.min_pitch_face.as_deref().unwrap_or("-")
         );
+        eprintln!("labels: floating={}", ann.floating.len());
+        for f in &ann.floating {
+            eprintln!("floating: {f}");
+        }
+        for d in &m.detour_list {
+            eprintln!("detour: {d}");
+        }
         for c in &m.close_list {
             eprintln!("close: {c}");
         }
