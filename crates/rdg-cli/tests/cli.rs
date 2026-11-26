@@ -420,3 +420,24 @@ fn test_json_report_lists_anomalies_and_advisories_separately() {
     // Nothing is printed on stderr in json mode (advisories go into the object).
     assert!(!String::from_utf8_lossy(&output.stderr).contains("advisory"));
 }
+
+#[test]
+fn test_an_arrow_with_a_listed_end_is_one_trunk_with_its_label_once() {
+    let yaml = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/fan_arrows/fan_arrows.yaml")).unwrap();
+    // The extension picks the format, so the SVG goes to a file (stdout has none).
+    let out_path = std::env::temp_dir().join("rdg_cli_test_fan_arrows.svg");
+    let out = run_with_stdin(&["-o", out_path.to_str().unwrap(), "--svg-engine", "native"], &yaml);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let svg = std::fs::read_to_string(&out_path).unwrap();
+    let _ = std::fs::remove_file(&out_path);
+    // One label per arrow, whatever the number of nodes at its listed end.
+    for text in ["gRPC", "publish", "scrape"] {
+        assert_eq!(svg.matches(&format!(">{text}<")).count(), 1, "label {text}");
+    }
+    let dio = run_with_stdin(&["-o", "/dev/stdout"], &yaml);
+    let xml = String::from_utf8(dio.stdout).unwrap();
+    // Two fan-ins of three: two members each join a trunk; one fan-out of three: two
+    // members branch off a trunk.
+    assert_eq!(xml.matches("endArrow=oval").count(), 4, "{xml}");
+    assert_eq!(xml.matches("startArrow=oval").count(), 2, "{xml}");
+}

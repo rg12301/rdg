@@ -1406,17 +1406,132 @@ impl NodeDef {
 // Edge definition
 // ---------------------------------------------------------------------------
 
+/// One end of an edge: a node id, or several (`from: [a, b]`) — then the arrow fans
+/// out from (or in to) every listed node, drawn as one trunk with a branch per node,
+/// the listed nodes laid out side by side with no box round them. Only one end of an
+/// arrow may list several nodes.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct EdgeEnd(Vec<String>);
+
+impl EdgeEnd {
+    /// The listed node ids, in order.
+    pub fn iter(&self) -> impl Iterator<Item = &str> + '_ {
+        self.0.iter().map(String::as_str)
+    }
+    /// How many nodes the end names.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    /// The one node id when the end names exactly one.
+    pub fn single(&self) -> Option<&str> {
+        match self.0.as_slice() {
+            [one] => Some(one),
+            _ => None,
+        }
+    }
+    /// The ids as a slice.
+    pub fn ids(&self) -> &[String] {
+        &self.0
+    }
+}
+
+impl From<&str> for EdgeEnd {
+    fn from(id: &str) -> Self {
+        EdgeEnd(vec![id.to_string()])
+    }
+}
+
+impl From<String> for EdgeEnd {
+    fn from(id: String) -> Self {
+        EdgeEnd(vec![id])
+    }
+}
+
+impl From<Vec<String>> for EdgeEnd {
+    fn from(ids: Vec<String>) -> Self {
+        EdgeEnd(ids)
+    }
+}
+
+impl PartialEq<str> for EdgeEnd {
+    fn eq(&self, other: &str) -> bool {
+        self.single() == Some(other)
+    }
+}
+
+impl PartialEq<&str> for EdgeEnd {
+    fn eq(&self, other: &&str) -> bool {
+        self.single() == Some(*other)
+    }
+}
+
+impl std::fmt::Display for EdgeEnd {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0.as_slice() {
+            [one] => f.write_str(one),
+            many => write!(f, "[{}]", many.join(", ")),
+        }
+    }
+}
+
+impl Serialize for EdgeEnd {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        match self.0.as_slice() {
+            [one] => s.serialize_str(one),
+            many => many.serialize(s),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for EdgeEnd {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            One(String),
+            Many(Vec<String>),
+        }
+        match Raw::deserialize(d)? {
+            Raw::One(id) => Ok(EdgeEnd(vec![id])),
+            Raw::Many(ids) if ids.is_empty() => Err(serde::de::Error::custom("an edge end lists at least one node id")),
+            Raw::Many(ids) => Ok(EdgeEnd(ids)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod edge_end_tests {
+    use super::*;
+
+    #[test]
+    fn an_edge_end_is_a_node_id_or_a_list_of_them() {
+        let p = DiagramPayload::from_yaml("nodes: [{id: a}, {id: b}, {id: c}]\nedges: [{from: a, to: [b, c]}, {from: [b, c], to: a}]\n").unwrap();
+        assert_eq!(p.edges[0].from.single(), Some("a"));
+        assert_eq!(p.edges[0].to.iter().collect::<Vec<_>>(), ["b", "c"]);
+        assert_eq!(p.edges[1].from.len(), 2);
+        assert_eq!(p.edges[1].to.to_string(), "a");
+        assert_eq!(p.edges[0].to.to_string(), "[b, c]");
+        // Written back: a single id as a string, several as a list.
+        let yaml = serde_yaml::to_string(&p.edges[0]).unwrap();
+        assert!(yaml.contains("from: a") && yaml.contains("- b"), "{yaml}");
+        assert!(DiagramPayload::from_yaml("nodes: [{id: a}]\nedges: [{from: [], to: a}]\n").is_err());
+    }
+}
+
 /// A directed edge between two nodes.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EdgeDef {
-    /// Source node ID.
+    /// Source node ID — or several, for an arrow fanning in (see [`EdgeEnd`]).
     #[serde(alias = "source", alias = "src")]
-    pub from: String,
+    pub from: EdgeEnd,
 
-    /// Target node ID.
+    /// Target node ID — or several, for an arrow fanning out (see [`EdgeEnd`]).
     #[serde(alias = "target", alias = "dst")]
-    pub to: String,
+    pub to: EdgeEnd,
 
     /// Optional label rendered along the connector.
     #[serde(default, alias = "name", alias = "text")]
@@ -1860,8 +1975,8 @@ const JSON_SCHEMA: &str = r##"{
         "type": "object",
         "required": ["from", "to"],
         "properties": {
-          "from": { "type": "string", "description": "Source node ID (alias: source, src)" },
-          "to": { "type": "string", "description": "Target node ID (alias: target, dst)" },
+          "from": { "type": ["string", "array"], "items": { "type": "string" }, "description": "Source node ID (alias: source, src), or a list of ids: one arrow fanning in from all of them, drawn as a trunk with a branch per node" },
+          "to": { "type": ["string", "array"], "items": { "type": "string" }, "description": "Target node ID (alias: target, dst), or a list of ids: one arrow fanning out to all of them (only one end may be a list)" },
           "label": { "type": "string", "description": "Text rendered along connector" },
           "edge_style": {
             "type": "string",
@@ -1904,7 +2019,7 @@ const JSON_SCHEMA: &str = r##"{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "from": { "type": "string" }, "to": { "type": "string" },
+        "from": { "type": ["string", "array"], "items": { "type": "string" } }, "to": { "type": ["string", "array"], "items": { "type": "string" } },
         "label": { "type": "string" },
         "style": { "type": "string", "enum": ["flow", "reply", "return", "async"] },
         "activate": { "type": "boolean" }, "deactivate": { "type": "boolean" },

@@ -84,16 +84,16 @@
   <text x="508.5" y="180.8" text-anchor="middle" font-size="10" fill="#ea580c">produce</text>
   <rect x="760.0" y="182.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="784.0" y="193.8" text-anchor="middle" font-size="10" fill="#ea580c">consume</text>
-  <rect x="1107.7" y="169.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1128.7" y="180.8" text-anchor="middle" font-size="10" fill="#8b95a5">lookup</text>
+  <rect x="1117.2" y="169.5" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1138.2" y="180.8" text-anchor="middle" font-size="10" fill="#8b95a5">lookup</text>
   <rect x="1109.4" y="213.0" width="42.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1130.4" y="224.2" text-anchor="middle" font-size="10" fill="#7c3aed">insert</text>
-  <rect x="1047.4" y="141.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1062.4" y="152.2" text-anchor="middle" font-size="10" fill="#7c3aed">sink</text>
+  <rect x="1017.9" y="141.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1032.9" y="152.2" text-anchor="middle" font-size="10" fill="#7c3aed">sink</text>
   <rect x="1501.9" y="186.0" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1516.9" y="197.2" text-anchor="middle" font-size="10" fill="#7c3aed">read</text>
-  <rect x="1097.0" y="356.0" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1142.0" y="367.2" text-anchor="middle" font-size="10" fill="#7c3aed">write features</text>
+  <rect x="1107.0" y="356.0" width="90.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1152.0" y="367.2" text-anchor="middle" font-size="10" fill="#7c3aed">write features</text>
   <rect x="1394.7" y="312.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1427.7" y="323.8" text-anchor="middle" font-size="10" fill="#7c3aed">aggregates</text>
   <rect x="1721.5" y="268.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
@@ -102,30 +102,38 @@
   <text x="1733.5" y="323.2" text-anchor="middle" font-size="10" fill="#8b95a5">SQL</text>
   <rect x="1717.2" y="429.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1744.2" y="440.8" text-anchor="middle" font-size="10" fill="#7c3aed">features</text>
-  <rect x="190.0" y="207.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="199.0" y="219.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
-  <rect x="479.0" y="194.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="488.0" y="206.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
-  <rect x="729.0" y="207.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="738.0" y="219.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3</text>
-  <rect x="1081.0" y="166.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1090.0" y="178.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
-  <rect x="1081.0" y="214.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1090.0" y="226.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
-  <rect x="1018.0" y="139.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1027.0" y="151.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
-  <rect x="1563.0" y="187.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1572.0" y="199.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
-  <rect x="1075.0" y="357.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1084.0" y="369.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
-  <rect x="1075.0" y="309.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1084.0" y="321.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">9</text>
-  <rect x="1674.0" y="265.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1684.0" y="277.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
-  <rect x="1674.0" y="313.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1684.0" y="325.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
-  <rect x="1686.7" y="454.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
-  <text x="1696.7" y="466.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">12</text>
+  <rect x="196.0" y="207.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="205.0" y="219.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">1</text>
+  <rect x="485.0" y="194.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="494.0" y="206.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">2</text>
+  <rect x="759.0" y="207.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="768.0" y="219.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">3</text>
+  <rect x="1087.0" y="166.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1096.0" y="178.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">4</text>
+  <rect x="1087.0" y="214.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1096.0" y="226.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">5</text>
+  <rect x="1558.5" y="293.0" width="15.0" height="15.0" rx="7.5" fill="#111827"/>
+  <text x="1566.0" y="303.0" text-anchor="middle" font-size="7.2" font-weight="bold" fill="#ffffff">5</text>
+  <rect x="1089.0" y="142.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1098.0" y="154.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">6</text>
+  <rect x="1516.5" y="141.0" width="15.0" height="15.0" rx="7.5" fill="#111827"/>
+  <text x="1524.0" y="151.0" text-anchor="middle" font-size="7.2" font-weight="bold" fill="#ffffff">6</text>
+  <rect x="1557.0" y="187.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1566.0" y="199.2" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">7</text>
+  <rect x="1046.5" y="280.0" width="15.0" height="15.0" rx="7.5" fill="#111827"/>
+  <text x="1054.0" y="290.0" text-anchor="middle" font-size="7.2" font-weight="bold" fill="#ffffff">7</text>
+  <rect x="1081.0" y="357.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1090.0" y="369.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">8</text>
+  <rect x="1545.5" y="435.0" width="15.0" height="15.0" rx="7.5" fill="#111827"/>
+  <text x="1553.0" y="445.0" text-anchor="middle" font-size="7.2" font-weight="bold" fill="#ffffff">8</text>
+  <rect x="1075.0" y="323.0" width="18.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1084.0" y="335.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">9</text>
+  <rect x="1680.0" y="265.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1690.0" y="277.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">10</text>
+  <rect x="1680.0" y="313.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1690.0" y="325.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">11</text>
+  <rect x="1716.7" y="454.0" width="20.0" height="18.0" rx="9.0" fill="#111827"/>
+  <text x="1726.7" y="466.1" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">12</text>
   <text x="2010.4" y="39.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
   <rect x="1542.0" y="53.6" width="14" height="14" rx="4" fill="#2563eb"/>
   <text x="1568.0" y="64.1" font-size="10" fill="#5b6474">Frontend</text>

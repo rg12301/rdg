@@ -519,8 +519,8 @@ mod tests {
             edges: ids
                 .windows(2)
                 .map(|w| EdgeDef {
-                    from: w[0].to_string(),
-                    to: w[1].to_string(),
+                    from: w[0].to_string().into(),
+                    to: w[1].to_string().into(),
                     ..Default::default()
                 })
                 .collect(),
@@ -568,8 +568,8 @@ mod tests {
             edges: ["n2", "n3", "n4"]
                 .iter()
                 .map(|to| EdgeDef {
-                    from: "n1".to_string(),
-                    to: to.to_string(),
+                    from: "n1".to_string().into(),
+                    to: to.to_string().into(),
                     ..Default::default()
                 })
                 .collect(),

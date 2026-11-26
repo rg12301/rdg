@@ -117,6 +117,11 @@ pub fn detect_anomalies(
 /// short U round a neighbour is not one, a lap of the canvas is.
 pub const DETOUR_RATIO: f64 = 2.5;
 pub const DETOUR_MIN_EXCESS: f64 = 160.0;
+/// Per px of room left of a group's content under its title, in the choice between
+/// tight and wide titles: a crossing (100) buys 50 px. Measured on the fixtures: at 1
+/// the wide layout kept 3256 px of room for 242 crossings, at 2 it is 2619 px for 246,
+/// at 3 1599 px for 252 with seven more close pairs.
+const W_TITLE_ROOM: f64 = 2.0;
 /// A searched route with more bends than this is wrong as a layout, not as a route.
 pub const MAX_ROUTE_BENDS: usize = 5;
 
@@ -747,11 +752,11 @@ pub fn spacing_metrics(
     let (pairs, unaligned) = crate::siblings::sibling_turns(compiled, layout, edge_plans);
     m.sibling_pairs = pairs;
     m.unaligned_siblings = unaligned;
-    let close = crate::spread::close_pairs(&paths, tokens.channel_pitch().max(10.0));
+    let close = crate::spread::close_pairs_of(compiled, layout, edge_plans, tokens);
     m.close_parallels = close.len();
-    for (a, b, d, len) in &close {
+    for (ea, eb, c) in &close {
         let name = |e: EdgeIndex| compiled.graph.edge_endpoints(e).map_or(String::from("?"), |(s, t)| format!("{} -> {}", compiled.graph[s].id, compiled.graph[t].id));
-        m.close_list.push(format!("{} | {} at {d:.0}px for {len:.0}px", name(path_edges[*a]), name(path_edges[*b])));
+        m.close_list.push(format!("{} | {} at {:.0}px for {:.0}px near ({:.0},{:.0})", name(*ea), name(*eb), c.dist, c.overlap, c.at.0, c.at.1));
     }
     for (i, pa) in paths.iter().enumerate() {
         m.bends += pa.len().saturating_sub(2);
@@ -945,6 +950,35 @@ impl ReviewedLayout {
 ///
 /// Returns an error only if the underlying layout computation itself fails.
 pub fn compute_reviewed_layout(
+    compiled: &CompiledGraph,
+    base_config: &LayoutConfig,
+    max_passes: u32,
+    decision: &AlgorithmDecision,
+) -> Result<ReviewedLayout> {
+    let tight = compute_reviewed_layout_with(compiled, base_config, max_passes, decision)?;
+    // Tight group titles are a bet settled on the *final* result (the retries after
+    // the first pass can turn a tighter layout into more crossings): the same run
+    // with wide titles, and the one that reads better wins — its plan score plus the
+    // anomalies left, plus a charge per px of room left under titles.
+    let forced = std::env::var("RDG_TITLES").ok();
+    let try_wide = base_config.tight_titles && !compiled.groups.is_empty() && compiled.diagram_type != "sequence" && forced.as_deref() != Some("tight");
+    if !try_wide {
+        return Ok(tight);
+    }
+    let wide = compute_reviewed_layout_with(compiled, &LayoutConfig { tight_titles: false, ..base_config.clone() }, max_passes, decision)?;
+    let badness = |r: &ReviewedLayout| {
+        let anomalies = r.remaining_anomalies(compiled, &base_config.tokens).iter().filter(|a| !a.kind.is_advisory()).count();
+        let room: f64 = r.layout.group_title_shift.values().sum();
+        plan_score(&spacing_metrics(compiled, &r.layout, &r.edge_plans, &base_config.tokens), &base_config.tokens) + 500.0 * anomalies as f64 + W_TITLE_ROOM * room
+    };
+    let (bt, bw) = (badness(&tight), badness(&wide));
+    if std::env::var_os("RDG_DEBUG_GROUPS").is_some() {
+        eprintln!("titles: tight {bt:.0} against wide {bw:.0}");
+    }
+    Ok(if forced.as_deref() == Some("wide") || bw < bt { wide } else { tight })
+}
+
+fn compute_reviewed_layout_with(
     compiled: &CompiledGraph,
     base_config: &LayoutConfig,
     max_passes: u32,

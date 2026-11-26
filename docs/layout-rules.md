@@ -110,10 +110,20 @@ hyperedge junctions, yFiles bus routing, Bach 2017 (bundle only by connectivity,
 proximity). Status: capacity/usage penalties ✅, ordering ⚠, trunks ✅ for both directions when the
 other ends share a group (`trunk.rs`: a fan-in bundles into a trunk that keeps the
 arrowhead, a fan-out branches off a trunk at the group's border, every branch starting
-at a junction dot via `EdgeRoutingPlan::start`). Measured on the fan-outs the user
+at a junction dot via `EdgeRoutingPlan::start`). A rung is laid on the first ladder line
+clear of every other arrow's parallel leg (within a lane, overlapping ≥ 12 px);
+before that, rungs lay on arrows that passed the border at the same depth (healthcare
+and video-conferencing had rungs 2 px from other legs; fixing it took the fixtures
+from 24 to 16 close pairs and 243 to 236 crossings). Measured on the fan-outs the user
 pointed at: ride-hailing's gateway (four `gRPC` arrows into Core platform services) and
 fintech's channel BFF now run as one trunk each; ride-hailing crossings 52 → 46, totals
-249 → 243. Still a ribbon: same-meaning arrows to targets that share *no* group (then
+249 → 243. An arrow written with several nodes at one end (`to: [a, b, c]`, `EdgeEnd` in the
+schema) is an explicit set: its member edges bundle whatever their number, style,
+ports or numbering, from the box round the listed nodes (their obstacle boxes do not
+block the ladder), the listed nodes are levelled (`same_rank`) and laid out side by
+side with no container, and the label and badge are said once on the trunk
+(`EdgeData::set`, `CompiledGraph::sets`; example `fan_arrows`).
+Still a ribbon: same-meaning arrows to targets that share *no* group (then
 nothing marks where the trunk should split), and a hub's different-meaning arrows,
 which rightly stay separate and are only spread a lane apart.
 
@@ -311,7 +321,16 @@ game-backend three lines ride the Platform-services bottom).
 ≥ 18 px apart (one lane); for ≥ 160 px, ≥ 27 px. `close_parallels` must be 0 after spread;
 if not, the gutter or channel they share is widened by one lane and the layout retried.
 Source: ELK conflict threshold 0.5 × edge spacing; libavoid separation constraints.
-Status ⚠ (spread ✅, 1–5 close pairs remain on the big fixtures, no retry).
+Status ⚠ (spread ✅, 1–5 close pairs remain on the big fixtures, no retry). Measured (2026-11-26, 45 fixtures): 16 pairs
+of legs of different arrows stand under a lane apart, four of them under 10 px; all
+are leftovers of the spreading pass, each refused by a box, a border band, a crossing
+it would add, or a neighbour pinned at its port. Five changes to the pass were tried
+and measured worse or neutral (packing a cluster by the ranges' middles so pinned
+stubs can trade places, judging a pending neighbour by its target, applying moves
+outward first, a second try at refused moves, counting a leg laid on another as a
+crossing): the pass is at a local optimum, and the way past it is the layout (wider
+gutters where more legs drop) rather than the pass. A port pitch equal to the lane
+(18 px instead of 16) cost 13 crossings and was kept out.
 
 **R5 Stubs and arrowheads** (MUST). First and last legs are straight and ≥ 24 px; no
 crossing within 20 px of any port, bend or arrowhead of either route (`crossings_near_bend`
@@ -473,9 +492,22 @@ labels across the fixtures take a leader; floating labels went from 12 to 11.
 
 **A8 Repeated labels**: see G9 ❌.
 
-**A9 Badges.** Beside the line, never on it, within 96 px of the source (any point past the
-arrowhead on an arrow under 140 px), ≥ 10 px from any crossing ✅. On a continuation or back
-edge longer than 600 px a second, smaller badge sits before the arrowhead ❌.
+**A9 Badges.** A flow number sits beside its arrow's first stretch, as near the source
+as the scene allows (drift 0.6/px, up to 600 px down a crowded arrow), on the right hand
+of travel so the label takes the other side; never on a node (8 px of air, so it never
+touches a corner), a title, a line, a label or another badge; nearer its own line than
+any other by 6 px, and clear of every other arrow's head and tail (a number beside an
+arrowhead reads as that arrow's); badges of arrows leaving one face of one node line up
+at one distance on one side; when both sides of the arrow are taken for its whole reach
+(three arrows a port pitch apart off a logo) the badge sits on its own line, on a
+straight stretch, its plate hiding the line. An arrow of 600 px or more carries a
+second badge at 0.8 size before its arrowhead, so the number can be read at the far
+end too. Source: BPMN tooling (numbers on the line), Bertin (a mark belongs to the
+nearest line). Status ✅ (`annotate.rs`: `BADGE_NODE_AIR`, `BADGE_OWN_MARGIN`,
+`END_ZONE`, `W_BADGE_FAN`, `BADGE_REACH`, `BADGE_ON_LINE`, `END_BADGE_FROM`,
+`EdgeAnnotations::end_badges`; both renderers draw the end badge). Before: within
+96 px of the source whatever stood there, 2 px from boxes (badges touched corners in
+loan and swiggy), and adtech's 15 sat on the arrowhead of 25 beside events.
 
 **A10 Labels are reserved in layout.** A labelled edge widens the gutter/channel it uses by
 its label's extent ✅ partial (L6); a dummy that takes part in ordering ❌ (L2).
@@ -491,6 +523,24 @@ still subject to A1 ✅ (A1 applies to all).
 ---
 
 ## 9. Containers (C)
+
+**C0 Room under the title.** A group's content sits a flat padding from its box on
+every side. A node in the top layer that an arrow enters from above must offer that
+arrow an entry past the title text (a stub beyond its end): the content is shifted
+right by no more than that — the far port of a card (ports span the middle 84 % of a
+face), the far edge of a tile's or logo's mark — and the routers keep off the title.
+Before, the node's *whole* face had to clear the title, which left 100–240 px of
+empty room left of the content under every long title (k8s: 239 px of padding on the
+left of a 221 px content, 32 on the right). The old rule stays as a bet settled on the
+*final* result (`LayoutConfig::tight_titles = false`, `RDG_TITLES=wide|tight`): the
+whole review runs tight and wide, and the result with the lower plan score plus
+anomalies plus 2 points per px of room under titles wins (judging on the first pass
+alone was blind to the retries, which turned tighter boxes into crossings). Measured
+on the fixtures: room under titles 3981 → 2619 px for crossings 241 → 246; at 3
+points per px it would be 1599 px for 252 crossings and seven more close pairs. The
+worst shift left, 157 px, is a tile under a long title, which cannot do better without
+routing round the title. Status ✅ (`compound.rs` `title_reach`, `review.rs`
+`W_TITLE_ROOM`).
 
 **C1 Padding and title**: 32 px sides, title band is an obstacle and no arrow passes through
 it ✅. **C2 Border crossings**: once per level, perpendicular (R2/R3) ⚠. **C3 Group-level
@@ -618,6 +668,17 @@ Order of work, by reader impact per change:
 7. **Per-edge router composition (R16)**, **line jumps (R14)** and **leader lines (A7)** —
    done; all three are measured as modest (the composite wins 3 of 54 choices, jumps and
    leaders change no metric but what a reader can tell apart).
+12. **Room under group titles (C0)** — done: a fed node needs one entry past the
+   title, not its whole face; the old rule is a judged variant.
+11. **Fan arrows (G6, schema)** — done: `from`/`to` lists on one end make an explicit
+   set, bundled unconditionally, levelled, label and badge once.
+10. **Flow-number badges (A9)** — done: ownership, node air, foreign arrow ends,
+   fan alignment, on-line fallback, far-end badge on long arrows.
+9. **Close parallels after v1.4.0 (R4, G6)** — the user saw arrows of different
+   types running a few px apart in the released version; measured, the new trunk
+   rungs were the cause (laid at a fixed depth over whatever arrow passed there), and
+   rungs now keep a lane from other legs. The spreading pass's own leftovers (16 pairs
+   on 45 fixtures) resisted five measured changes; see R4.
 8. **Hub feedback round (G6 fan-out trunks, R17 sibling forks)** — done; fan-out
    trunks measured 249 → 243, sibling-fork alignment metric-neutral. Z-jogs: the
    off-centre port on the nearest face already exists (overlap ports in `routing.rs`);

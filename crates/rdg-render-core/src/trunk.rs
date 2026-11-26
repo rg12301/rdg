@@ -89,15 +89,28 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
         let in_t = chains.get(&t).cloned().unwrap_or_default();
         chains.get(&s)?.iter().rev().find(|g| !in_t.contains(g)).copied()
     };
-    // Collector sets: (the shared node, boundary group of the members, meaning) ->
-    // member edges. Fan-in: members are sources; fan-out: members are targets.
-    let mut sets: HashMap<(NodeIndex, usize, String), Vec<EdgeIndex>> = HashMap::new();
+    // Collector sets: (the shared node, what bounds the members, meaning) -> member
+    // edges. Fan-in: members are sources; fan-out: members are targets. The bound is a
+    // group the members share — or, for an arrow written with several nodes at one
+    // end, the set itself (`(true, set)`): those bundle whatever their size, style,
+    // ports or numbering, from the box round their members.
+    let mut sets: HashMap<(NodeIndex, (bool, usize), String), Vec<EdgeIndex>> = HashMap::new();
     let mut edge_ids: Vec<EdgeIndex> = plans.keys().copied().collect();
     edge_ids.sort_by_key(|e| e.index());
     for &e in &edge_ids {
         let Some((s, t, _, _)) = resolve_edge_layout(compiled, layout, e) else { continue };
         let d = &compiled.graph[e];
-        if s == t || d.step.is_some() || d.source_port.is_some() || d.target_port.is_some() || plans[&e].junction.is_some() || plans[&e].start.is_some() {
+        if s == t || plans[&e].junction.is_some() || plans[&e].start.is_some() {
+            continue;
+        }
+        if let Some(k) = d.set {
+            let info = &compiled.sets[k];
+            if (fan == Fan::In) == info.fan_in {
+                sets.entry((info.shared, (true, k), String::new())).or_default().push(e);
+            }
+            continue;
+        }
+        if d.step.is_some() || d.source_port.is_some() || d.target_port.is_some() {
             continue;
         }
         let (member, shared) = match fan {
@@ -114,23 +127,57 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
             d.color.as_deref().unwrap_or(""),
             d.head.as_deref().unwrap_or("")
         );
-        sets.entry((t, g, meaning)).or_default().push(e);
+        sets.entry((t, (false, g), meaning)).or_default().push(e);
     }
-    let mut keys: Vec<&(NodeIndex, usize, String)> = sets.keys().collect();
+    let mut keys: Vec<&(NodeIndex, (bool, usize), String)> = sets.keys().collect();
     keys.sort_by(|a, b| a.0.index().cmp(&b.0.index()).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
     let obstacles = node_obstacles(layout);
     let clearance = tokens.stub_clearance();
     let lane = tokens.channel_pitch().max(10.0);
     for key in keys {
         let members = &sets[key];
-        if members.len() < MIN_BUNDLE {
+        let explicit = key.1.0;
+        if members.len() < if explicit { 2 } else { MIN_BUNDLE } {
             continue;
         }
-        let Some((gx, gy, gw, gh)) = group_rects[key.1] else { continue };
-        let rect = (gx, gy, gx + gw, gy + gh);
+        let rect = if explicit {
+            // The box round the listed nodes, a hair past their faces so each member's
+            // port lies inside it.
+            let mut r: Option<(f64, f64, f64, f64)> = None;
+            for n in &compiled.sets[key.1.1].members {
+                let Some(nl) = layout.positions.get(n) else { continue };
+                let e = r.get_or_insert((nl.x, nl.y, nl.x + nl.width, nl.y + nl.height));
+                *e = (e.0.min(nl.x), e.1.min(nl.y), e.2.max(nl.x + nl.width), e.3.max(nl.y + nl.height));
+            }
+            let Some((x0, y0, x1, y1)) = r else { continue };
+            (x0 - 1.0, y0 - 1.0, x1 + 1.0, y1 + 1.0)
+        } else {
+            let Some((gx, gy, gw, gh)) = group_rects[key.1.1] else { continue };
+            (gx, gy, gx + gw, gy + gh)
+        };
         // Each member's route and where it leaves the group — for a fan-out, where it
         // enters, which is where the reversed route leaves; everything below works on
         // the route in that direction and is turned back at the end.
+        // Every other arrow's route, as it stands: a rung keeps a lane from their legs.
+        let mut others: Vec<Vec<Pt>> = Vec::new();
+        let mut other_ids: Vec<EdgeIndex> = plans.keys().copied().filter(|e| !members.contains(e)).collect();
+        other_ids.sort_by_key(|e| e.index());
+        for e in other_ids {
+            if let Some(p) = edge_full_path(compiled, layout, e, &plans[&e]) {
+                others.push(p);
+            }
+        }
+        let crowded = |a: Pt, b: Pt| -> bool {
+            let vertical = (a.0 - b.0).abs() < 0.5;
+            let (at, lo, hi) = if vertical { (a.0, a.1.min(b.1), a.1.max(b.1)) } else { (a.1, a.0.min(b.0), a.0.max(b.0)) };
+            others.iter().any(|p| {
+                p.windows(2).any(|w| {
+                    let same_way = if vertical { (w[0].0 - w[1].0).abs() < 0.5 } else { (w[0].1 - w[1].1).abs() < 0.5 };
+                    let (wat, wlo, whi) = if vertical { (w[0].0, w[0].1.min(w[1].1), w[0].1.max(w[1].1)) } else { (w[0].1, w[0].0.min(w[1].0), w[0].0.max(w[1].0)) };
+                    same_way && (wat - at).abs() < lane && hi.min(whi) - lo.max(wlo) > crate::spread::MIN_PARALLEL
+                })
+            })
+        };
         let mut exits: Vec<(EdgeIndex, Vec<Pt>, usize, Pt, Side)> = Vec::new();
         for &e in members {
             let Some(mut path) = edge_full_path(compiled, layout, e, &plans[&e]) else { continue };
@@ -141,7 +188,12 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
                 exits.push((e, path, k, cross, side));
             }
         }
-        if exits.len() < MIN_BUNDLE {
+        let debug = std::env::var_os("RDG_DEBUG_BUNDLE").is_some();
+        let name = |n: NodeIndex| compiled.graph[n].id.clone();
+        if exits.len() < if explicit { 2 } else { MIN_BUNDLE } {
+            if debug {
+                eprintln!("bundle at {}: only {} of {} members leave the box ({:.0},{:.0})-({:.0},{:.0})", name(key.0), exits.len(), members.len(), rect.0, rect.1, rect.2, rect.3);
+            }
             continue;
         }
         // The majority face, then the trunk: the shortest route leaving by it.
@@ -151,7 +203,10 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
         }
         let face = *by_side.iter().max_by_key(|(s, n)| (**n, std::cmp::Reverse(**s))).map(|(s, _)| s).expect("at least one exit");
         let same: Vec<&(EdgeIndex, Vec<Pt>, usize, Pt, Side)> = exits.iter().filter(|ex| ex.4 as u8 == face).collect();
-        if same.len() < MIN_BUNDLE {
+        if same.len() < if explicit { 2 } else { MIN_BUNDLE } {
+            if debug {
+                eprintln!("bundle at {}: members leave by different faces ({} on the majority face)", name(key.0), same.len());
+            }
             continue;
         }
         let len = |p: &[Pt]| p.windows(2).map(|w| (w[1].0 - w[0].0).abs() + (w[1].1 - w[0].1).abs()).sum::<f64>();
@@ -167,6 +222,9 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
             Side::Left => (trunk_cross.0 - out_leg_end.0, out_leg_end.1 == trunk_cross.1),
         };
         if !outward.1 || outward.0 < clearance + lane {
+            if debug {
+                eprintln!("bundle at {}: trunk {}'s leg past the border is not straight or too short ({:.0})", name(key.0), name(compiled.graph.edge_endpoints(trunk_e).expect("edge").0), outward.0);
+            }
             continue;
         }
         // Along the border: the coordinate that varies between members; across it: the
@@ -183,21 +241,43 @@ fn bundle(compiled: &CompiledGraph, layout: &LayoutResult, plans: &mut HashMap<E
             // The member must leave straight across the border too.
             let prev = path[k - 1];
             if (vertical && (prev.0 - cross.0).abs() > 0.5) || (!vertical && (prev.1 - cross.1).abs() > 0.5) {
+                if debug {
+                    eprintln!("bundle at {}: member {:?} does not cross the border straight", name(key.0), compiled.graph.edge_endpoints(e).map(|(a, b)| (name(a), name(b))));
+                }
                 continue;
             }
-            let depth = clearance + (rung as f64) * lane;
-            if depth + lane > outward.0 {
-                break;
-            }
-            let (drop, junction) = match side {
-                Side::Bottom => ((cross.0, cross.1 + depth), (trunk_cross.0, cross.1 + depth)),
-                Side::Top => ((cross.0, cross.1 - depth), (trunk_cross.0, cross.1 - depth)),
-                Side::Right => ((cross.0 + depth, cross.1), (cross.0 + depth, trunk_cross.1)),
-                Side::Left => ((cross.0 - depth, cross.1), (cross.0 - depth, trunk_cross.1)),
+            // The first rung line clear of other arrows' legs; the ladder stops where
+            // the trunk's leg ends.
+            let rung_line = loop {
+                let depth = clearance + (rung as f64) * lane;
+                if depth + lane > outward.0 {
+                    if debug {
+                        eprintln!("bundle at {}: no rung line left at depth {depth:.0} (trunk leg {:.0})", name(key.0), outward.0);
+                    }
+                    break None;
+                }
+                let (drop, junction) = match side {
+                    Side::Bottom => ((cross.0, cross.1 + depth), (trunk_cross.0, cross.1 + depth)),
+                    Side::Top => ((cross.0, cross.1 - depth), (trunk_cross.0, cross.1 - depth)),
+                    Side::Right => ((cross.0 + depth, cross.1), (cross.0 + depth, trunk_cross.1)),
+                    Side::Left => ((cross.0 - depth, cross.1), (cross.0 - depth, trunk_cross.1)),
+                };
+                if crowded(drop, junction) {
+                    rung += 1;
+                    continue;
+                }
+                break Some((drop, junction));
             };
-            // The rung must clip no node.
+            let Some((drop, junction)) = rung_line else { break };
+            // The rung must clip no node — other than the set's own members, which it
+            // runs a clearance from by design (their obstacle boxes carry that clearance).
             let m = tokens.px(0.5);
-            if obstacles.iter().any(|(_, o)| o.clips_segment(drop.0, drop.1, junction.0, junction.1, m) || o.clips_segment(cross.0, cross.1, drop.0, drop.1, m)) {
+            let own = |n: &NodeIndex| explicit && compiled.sets[key.1.1].members.contains(n);
+            if let Some((n, _)) = obstacles.iter().filter(|(n, _)| !own(n)).find(|(_, o)| o.clips_segment(drop.0, drop.1, junction.0, junction.1, m) || o.clips_segment(cross.0, cross.1, drop.0, drop.1, m)) {
+                if debug {
+                    let nl = &layout.positions[n];
+                    eprintln!("bundle at {}: rung for {:?} at ({:.0},{:.0})-({:.0},{:.0}) clips {} at ({:.0},{:.0}) {:.0}x{:.0}; box ({:.0},{:.0})-({:.0},{:.0})", name(key.0), compiled.graph.edge_endpoints(e).map(|(a, b)| (name(a), name(b))), drop.0, drop.1, junction.0, junction.1, name(*n), nl.x, nl.y, nl.width, nl.height, rect.0, rect.1, rect.2, rect.3);
+                }
                 continue;
             }
             let plan = plans.get_mut(&e).expect("member has a plan");

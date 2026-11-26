@@ -83,16 +83,18 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
         let density = e as f64 / n as f64;
         let mut degree: HashMap<&str, usize> = HashMap::new();
         for ed in &payload.edges {
-            *degree.entry(ed.from.as_str()).or_default() += 1;
-            *degree.entry(ed.to.as_str()).or_default() += 1;
+            for id in ed.from.iter().chain(ed.to.iter()) {
+                *degree.entry(id).or_default() += 1;
+            }
         }
         let mut hubs: Vec<(usize, &str)> = degree.iter().filter(|&(_, &d)| d >= 5).map(|(&id, &d)| (d, id)).collect();
         hubs.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(b.1)));
         let group_of: HashMap<&str, &str> = payload.groups.iter().flat_map(|g| g.nodes.iter().map(move |n| (n.as_str(), g.id.as_str()))).collect();
         let mut feeders: HashMap<&str, HashSet<&str>> = HashMap::new();
         for ed in &payload.edges {
-            if let Some(g) = group_of.get(ed.from.as_str()) {
-                feeders.entry(ed.to.as_str()).or_default().insert(g);
+            for (f, t) in ed.from.iter().flat_map(|f| ed.to.iter().map(move |t| (f, t))) {
+                let Some(g) = group_of.get(f) else { continue };
+                feeders.entry(t).or_default().insert(g);
             }
         }
         let mut collectors: Vec<&str> = feeders.iter().filter(|(_, gs)| gs.len() >= 3).map(|(&id, _)| id).collect();
@@ -130,14 +132,30 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
 
     // --- edge endpoints ---------------------------------------------------------
     for (i, e) in payload.edges.iter().enumerate() {
-        for (field, id) in [("from", &e.from), ("to", &e.to)] {
-            if !node_set.contains(id.as_str()) {
-                push(
-                    Level::Error,
-                    format!("edges[{i}].{field}"),
-                    format!("unknown node id `{id}`"),
-                    did_you_mean(id, node_ids.iter().copied()),
-                );
+        for (field, end) in [("from", &e.from), ("to", &e.to)] {
+            for id in end.iter() {
+                if !node_set.contains(id) {
+                    push(
+                        Level::Error,
+                        format!("edges[{i}].{field}"),
+                        format!("unknown node id `{id}`"),
+                        did_you_mean(id, node_ids.iter().copied()),
+                    );
+                }
+            }
+        }
+        if e.from.len() > 1 && e.to.len() > 1 {
+            push(
+                Level::Error,
+                format!("edges[{i}]"),
+                "both ends list several nodes".into(),
+                Some("only one end of an arrow may be a list: write one arrow per node on the other side".into()),
+            );
+        }
+        for (field, end) in [("from", &e.from), ("to", &e.to)] {
+            let mut seen = std::collections::HashSet::new();
+            if let Some(dup) = end.iter().find(|id| !seen.insert(*id)) {
+                push(Level::Warning, format!("edges[{i}].{field}"), format!("node id `{dup}` is listed twice"), None);
             }
         }
     }
@@ -487,7 +505,7 @@ mod tests {
         for i in 0..30 {
             nodes.push(NodeDef { id: format!("n{i}"), label: format!("N{i}"), ..Default::default() });
             if i > 0 {
-                edges.push(EdgeDef { from: "n0".into(), to: format!("n{i}"), ..Default::default() });
+                edges.push(EdgeDef { from: "n0".into(), to: format!("n{i}").into(), ..Default::default() });
             }
         }
         let payload = DiagramPayload { nodes, edges, ..Default::default() };
