@@ -24,6 +24,9 @@ pub struct Report {
     errors: Vec<Item>,
     warnings: Vec<Item>,
     anomalies: Vec<(String, String)>,
+    /// Layout problems wider spacing cannot fix (a detour, a tangled route): told,
+    /// never failed on, so they are not anomalies.
+    advisories: Vec<(String, String)>,
     layout: Option<String>,
     output: Option<String>,
     quality: Option<Quality>,
@@ -99,7 +102,7 @@ impl Quality {
 
 impl Report {
     pub fn new(format: Format) -> Self {
-        Report { format, errors: Vec::new(), warnings: Vec::new(), anomalies: Vec::new(), layout: None, output: None, quality: None }
+        Report { format, errors: Vec::new(), warnings: Vec::new(), anomalies: Vec::new(), advisories: Vec::new(), layout: None, output: None, quality: None }
     }
 
     /// The routed diagram's measure (see [`Quality`]); in text mode one line names what
@@ -158,6 +161,12 @@ impl Report {
         self.anomalies.push((kind.into(), message.into()));
     }
 
+    /// A layout advisory: one `ℹ` line in text mode, an entry in `advisories` in JSON.
+    pub fn advisory(&mut self, kind: &str, message: &str) {
+        self.note(&format!("ℹ  layout advisory [{kind}]: {message}"));
+        self.advisories.push((kind.into(), message.into()));
+    }
+
     pub fn layout(&mut self, name: &str) {
         self.layout = Some(name.into());
     }
@@ -201,14 +210,16 @@ impl Report {
             }
             s.push(']');
         }
-        s.push_str(",\"anomalies\":[");
-        for (k, (kind, m)) in self.anomalies.iter().enumerate() {
-            if k > 0 {
-                s.push(',');
+        for (name, items) in [("anomalies", &self.anomalies), ("advisories", &self.advisories)] {
+            let _ = write!(s, ",\"{name}\":[");
+            for (k, (kind, m)) in items.iter().enumerate() {
+                if k > 0 {
+                    s.push(',');
+                }
+                let _ = write!(s, "{{\"kind\":{},\"message\":{}}}", esc(kind), esc(m));
             }
-            let _ = write!(s, "{{\"kind\":{},\"message\":{}}}", esc(kind), esc(m));
+            s.push(']');
         }
-        s.push(']');
         if let Some(q) = &self.quality {
             let _ = write!(s, ",\"quality\":{}", q.json());
         }

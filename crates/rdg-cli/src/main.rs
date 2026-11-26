@@ -384,7 +384,7 @@ fn run(cli: &Cli, report: &mut Report) -> Result<i32> {
     let (advisories, remaining_anomalies): (Vec<_>, Vec<_>) =
         reviewed.remaining_anomalies(&compiled, &layout_config.tokens).into_iter().partition(|a| a.kind.is_advisory());
     for a in &advisories {
-        report.note(&format!("ℹ  layout advisory [{:?}]: {}", a.kind, a.description));
+        report.advisory(&format!("{:?}", a.kind), &a.description);
     }
     report_review(report, &reviewed, remaining_anomalies.len());
     for a in &remaining_anomalies {
