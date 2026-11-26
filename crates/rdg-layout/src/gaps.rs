@@ -53,12 +53,19 @@ pub(crate) fn gaps_for_spans(n_ranks: usize, spans: impl IntoIterator<Item = (us
 /// up drops straight through a gap and needs no track there; the others turn in it,
 /// and those whose turns overlap across the flow need a track each — so a gap holds
 /// as many tracks as the deepest pile of overlapping turns, not one per edge.
+#[cfg(test)]
 pub(crate) fn gaps_for_tracks(n_ranks: usize, edges: impl IntoIterator<Item = ((usize, usize), (f64, f64))>, config: &LayoutConfig) -> Vec<f64> {
+    gaps_for_tracks_with(n_ranks, edges.into_iter().map(|(r, x)| (r, x, false)), config)
+}
+
+/// [`gaps_for_tracks`] where an edge flagged `true` turns whatever its ends: a member
+/// of a fan arrow drops onto a ladder rung in the first gap it crosses.
+pub(crate) fn gaps_for_tracks_with(n_ranks: usize, edges: impl IntoIterator<Item = ((usize, usize), (f64, f64), bool)>, config: &LayoutConfig) -> Vec<f64> {
     let straight = config.tokens.min_port_pitch();
     let mut turns: Vec<Vec<(f64, f64)>> = vec![Vec::new(); n_ranks.saturating_sub(1)];
-    for ((a, b), (xa, xb)) in edges {
+    for ((a, b), (xa, xb), turns_anyway) in edges {
         let (lo, hi) = (a.min(b), a.max(b));
-        if lo == hi || (xa - xb).abs() <= straight {
+        if lo == hi || (!turns_anyway && (xa - xb).abs() <= straight) {
             continue;
         }
         // The turn happens once, in the first gap it crosses (the routers turn as early

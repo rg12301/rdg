@@ -839,6 +839,16 @@ edges:
     }
 
     #[test]
+    fn a_same_rank_list_whose_members_feed_one_another_is_ignored() {
+        // a -> b -> c with a and c "levelled": levelling would chase itself to the
+        // cap (nineteen empty layers); the list is ignored and c sits two ranks down.
+        let (c, l) = layout_of("same_rank: [[a, c]]\ngroups: [{id: g, label: G, nodes: [a, b, c]}]\nnodes: [{id: a}, {id: b}, {id: c}]\nedges: [{from: a, to: b}, {from: b, to: c}]\n");
+        let y = |id: &str| l.positions[&c.node_map[id]].y;
+        assert!(y("a") < y("b") && y("b") < y("c"));
+        assert!(y("c") - y("a") < 300.0, "c {} a {}", y("c"), y("a"));
+    }
+
+    #[test]
     fn tight_titles_shift_a_fed_node_less_than_wide_ones() {
         let yaml = "groups: [{id: g, label: 'A container with a long title', nodes: [t]}]\nnodes: [{id: s, label: S}, {id: t, label: T, type: service}]\nedges: [{from: s, to: t}]\n";
         let compiled = rdg_graph::build_graph(&rdg_schema::DiagramPayload::from_yaml(yaml).unwrap()).unwrap();

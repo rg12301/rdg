@@ -27,7 +27,7 @@
   <path d="M 387.0 933.0 L 387.0 975.3" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 734.0 740.0 L 734.0 782.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 752.0 872.0 L 752.0 914.3" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
-  <path d="M 439.0 1014.0 L 556.0 1014.0 Q 570.0 1014.0 570.0 1000.0 L 570.0 966.2 Q 570.0 953.0 583.2 953.0 L 700.0 953.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 439.0 1014.0 L 546.0 1014.0 Q 560.0 1014.0 560.0 1000.0 L 560.0 966.2 Q 560.0 953.0 573.2 953.0 L 700.0 953.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <rect x="532.0" y="108.0" width="44.0" height="44.0" rx="10.0" fill="#2563eb"/><svg class="node-tech-icon" x="541.7" y="117.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></g></svg><text x="554.0" y="174.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Users</tspan>
   </text>
@@ -68,9 +68,9 @@
   </text>
   <rect x="567.0" y="202.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="579.0" y="213.5" text-anchor="middle" font-size="10" fill="#8b95a5">DNS</text>
-  <rect x="620.8" y="920.0" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
-  <text x="656.8" y="930.8" text-anchor="middle" font-size="10" fill="#7c3aed">async</text>
-  <text x="656.8" y="945.2" text-anchor="middle" font-size="10" fill="#7c3aed">replication</text>
+  <rect x="620.7" y="920.0" width="72.0" height="29.0" rx="2" fill="#f7f8fa"/>
+  <text x="656.7" y="930.8" text-anchor="middle" font-size="10" fill="#7c3aed">async</text>
+  <text x="656.7" y="945.2" text-anchor="middle" font-size="10" fill="#7c3aed">replication</text>
   <text x="922.4" y="39.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>
   <rect x="460.0" y="53.6" width="14" height="14" rx="4" fill="#2563eb"/>
   <text x="486.0" y="64.1" font-size="10" fill="#5b6474">Frontend</text>

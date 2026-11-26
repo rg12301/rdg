@@ -32,7 +32,7 @@
   <path d="M 609.0 1145.0 L 609.0 1400.2" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 445.0 1080.0 L 327.4 1080.0 Q 313.4 1080.0 313.4 1094.0 L 313.0 1397.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <path d="M 281.0 1429.0 L 213.0 1429.0 Q 199.0 1429.0 199.0 1415.0 L 199.0 889.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
-  <path d="M 174.0 844.0 L 146.6 844.0 Q 136.0 844.0 136.0 854.6 L 136.0 1231.0 Q 136.0 1245.0 150.0 1245.0 L 194.0 1245.0 A 5.0 5.0 0 0 1 204.0 1245.0 L 308.4 1245.0 A 5.0 5.0 0 0 1 318.4 1245.0 L 470.0 1245.0" fill="none" stroke="#7c3aed" stroke-width="1.8"/>
+  <path d="M 174.0 844.0 L 147.4 844.0 Q 137.0 844.0 137.0 854.4 L 137.0 1231.0 Q 137.0 1245.0 151.0 1245.0 L 194.0 1245.0 A 5.0 5.0 0 0 1 204.0 1245.0 L 308.4 1245.0 A 5.0 5.0 0 0 1 318.4 1245.0 L 470.0 1245.0" fill="none" stroke="#7c3aed" stroke-width="1.8"/>
   <circle cx="470.0" cy="1245.0" r="3.8" fill="#7c3aed"/>
   <path d="M 491.0 394.0 L 324.0 394.0 Q 310.0 394.0 310.0 408.0 L 310.0 955.0 Q 310.0 969.0 324.0 969.0 L 485.0 969.0 A 5.0 5.0 0 0 1 495.0 969.0 L 575.0 969.0 Q 589.0 969.0 589.0 983.0 L 589.0 1055.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="2 3" marker-end="url(#marker-arrow-0)"/>
   <path d="M 516.0 447.0 L 516.0 489.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>

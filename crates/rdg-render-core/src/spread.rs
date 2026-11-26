@@ -35,6 +35,10 @@ struct Leg {
     path: usize,
     /// Segment index: from `pts[k]` to `pts[k + 1]`.
     k: usize,
+    /// Last segment of the run this leg stands for: `k` for one segment; `k + 2` when
+    /// two legs on this axis joined by a jog shorter than a readable one move as one
+    /// (moving only half of such a pair leaves the other half where it was).
+    k2: usize,
     /// The coordinate across the leg (x for a vertical leg).
     at: f64,
     /// Extent along the leg.
@@ -157,24 +161,50 @@ fn legs(paths: &[Vec<Pt>], ends: Option<&Ends>, vertical: bool, min_len: f64, st
                 neighbour_bound(at, axis(pts[k + 2]), real_stub, min_len, stub, &mut lo_r, &mut hi_r);
             }
             let range = if fixed || lo_r > hi_r { (at, at) } else { (lo_r.min(at), hi_r.max(at)) };
-            out.push(Leg { path: pi, k, at, lo, hi, range });
+            out.push(Leg { path: pi, k, k2: k, at, lo, hi, range });
         }
+    }
+    // Two legs of one path on this axis joined by a jog shorter than a readable one are
+    // one leg to the pass: the span of both, moved together within both ranges.
+    if min_len > 0.0 {
+        let mut merged: Vec<Leg> = Vec::with_capacity(out.len());
+        let mut i = 0;
+        while i < out.len() {
+            let a = out[i];
+            if let Some(b) = out.get(i + 1).copied() {
+                let jog = (a.at - b.at).abs();
+                if b.path == a.path && b.k == a.k + 2 && jog < min_len && jog > 0.5 && a.movable() && b.movable() {
+                    let at = if a.hi - a.lo >= b.hi - b.lo { a.at } else { b.at };
+                    let (lo_r, hi_r) = (a.range.0.max(b.range.0), a.range.1.min(b.range.1));
+                    let range = if lo_r > hi_r { (at, at) } else { (lo_r.min(at), hi_r.max(at)) };
+                    merged.push(Leg { path: a.path, k: a.k, k2: b.k, at, lo: a.lo.min(b.lo), hi: a.hi.max(b.hi), range });
+                    i += 2;
+                    continue;
+                }
+            }
+            merged.push(a);
+            i += 1;
+        }
+        out = merged;
     }
     out
 }
 
 /// Whether two legs of different paths run side by side (overlap along their length
-/// by [`MIN_PARALLEL`]) without sharing an end — two arrows forking from one port, or
-/// joining at one, share a leg on purpose.
+/// by [`MIN_PARALLEL`]) without sharing a *port* — two arrows forking from one port,
+/// or joining at one, share a leg on purpose. Legs meeting at a bend are not excused:
+/// two arrows that cross, turn at one point and run on as one line are the worst
+/// kind of close pair.
 fn alongside(paths: &[Vec<Pt>], a: &Leg, b: &Leg) -> bool {
     if a.path == b.path || overlap(a, b) < MIN_PARALLEL {
         return false;
     }
     let (pa, pb) = (&paths[a.path], &paths[b.path]);
     let same = |p: Pt, q: Pt| (p.0 - q.0).abs() < 1.5 && (p.1 - q.1).abs() < 1.5;
+    let shared_port = |p: Pt| same(p, pa[0]) || same(p, pa[pa.len() - 1]) || same(p, pb[0]) || same(p, pb[pb.len() - 1]);
     let ends_a = [pa[a.k], pa[a.k + 1]];
     let ends_b = [pb[b.k], pb[b.k + 1]];
-    !ends_a.iter().any(|&p| ends_b.iter().any(|&q| same(p, q)))
+    !ends_a.iter().any(|&p| ends_b.iter().any(|&q| same(p, q) && shared_port(p)))
 }
 
 /// One pair of legs of different arrows running side by side closer than a lane.
@@ -454,7 +484,27 @@ pub fn spread_parallels(
                 }
             }
         }
-        if !any_close {
+        // A leg running along a group border within the border lane (and not on it)
+        // moves off to the band's edge on its own side: a line that close to a border
+        // reads as part of the box.
+        let mut any_hug = false;
+        let mut hug_target: Vec<Option<f64>> = vec![None; ls.len()];
+        for (i, l) in ls.iter().enumerate() {
+            if !l.movable() {
+                continue;
+            }
+            for b in &borders {
+                let d = l.at - b.1;
+                if b.0 == vertical && l.hi.min(b.3) - l.lo.max(b.2) > MIN_PARALLEL && d.abs() < border_lane && d.abs() > 0.5 {
+                    let want = (b.1 + d.signum() * border_lane).clamp(l.range.0, l.range.1);
+                    if (want - l.at).abs() > 0.5 {
+                        hug_target[i] = Some(want);
+                        any_hug = true;
+                    }
+                }
+            }
+        }
+        if !any_close && !any_hug {
             continue;
         }
         let mut clusters: HashMap<usize, Vec<usize>> = HashMap::new();
@@ -505,6 +555,13 @@ pub fn spread_parallels(
                 target[i] = x[k];
             }
         }
+        for (i, t) in hug_target.into_iter().enumerate() {
+            if let Some(want) = t {
+                if (target[i] - ls[i].at).abs() <= 0.5 {
+                    target[i] = want;
+                }
+            }
+        }
         // Apply each move that stays clear of nodes and borders and adds no crossing.
         // Moves are checked against where the other legs are *now* (an earlier move
         // may have been refused), so a leg never lands on one that stayed behind.
@@ -528,7 +585,7 @@ pub fn spread_parallels(
             let n = pts.len();
             let axis_of = |p: Pt| if vertical { p.0 } else { p.1 };
             let before_n = (l.k > 0).then(|| axis_of(pts[l.k - 1]));
-            let after_n = (l.k + 2 < n).then(|| axis_of(pts[l.k + 2]));
+            let after_n = (l.k2 + 2 < n).then(|| axis_of(pts[l.k2 + 2]));
             // Boxes and borders the leg (and its grown neighbours) already touch don't
             // count; new ones do.
             let touches = |at: f64| -> (Vec<usize>, Vec<usize>) {
@@ -538,7 +595,7 @@ pub fn spread_parallels(
                     .filter(|(_, b)| {
                         b.crossed_by(vertical, at, l.lo, l.hi)
                             || before_n.is_some_and(|p0| neighbour_crosses(b, vertical, pts[l.k], p0, at))
-                            || after_n.is_some_and(|p3| neighbour_crosses(b, vertical, pts[l.k + 1], p3, at))
+                            || after_n.is_some_and(|p3| neighbour_crosses(b, vertical, pts[l.k2 + 1], p3, at))
                     })
                     .map(|(i, _)| i)
                     .collect();
@@ -583,17 +640,20 @@ pub fn spread_parallels(
             }
             let Some(at) = found else { continue };
             let mut new_pts = pts.clone();
-            for p in &mut new_pts[l.k..=l.k + 1] {
+            for p in &mut new_pts[l.k..=l.k2 + 1] {
                 if vertical {
                     p.0 = at;
                 } else {
                     p.1 = at;
                 }
             }
-            // (Counting a leg lying on another's as a crossing it already has, so lifting
-            // it off may cost one, was measured worse: 15 more crossings, no pair fewer.)
-            let before: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&pts, q)).sum();
-            let after: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&new_pts, q)).sum();
+            // A leg lying on another arrow's leg (drawn as one line) counts as a crossing
+            // it already has, so lifting it off may cost one.
+            let laid_on = |at: f64| -> usize {
+                ls.iter().enumerate().filter(|(j, m)| *j != i && alongside(&paths, &l, m) && (at - cur[*j]).abs() < 1.5).count()
+            };
+            let before: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&pts, q)).sum::<usize>() + laid_on(l.at);
+            let after: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&new_pts, q)).sum::<usize>() + laid_on(at);
             if after > before {
                 if debug {
                     let (s, d) = compiled.graph.edge_endpoints(path_edge[l.path]).map_or(("?", "?"), |(a, b)| (compiled.graph[a].id.as_str(), compiled.graph[b].id.as_str()));
@@ -608,7 +668,7 @@ pub fn spread_parallels(
             if l.k == 0 {
                 ends.ports[l.path][0].at = at;
             }
-            if l.k + 2 == n {
+            if l.k2 + 2 == n {
                 ends.ports[l.path][1].at = at;
             }
             cur[i] = at;
@@ -674,7 +734,7 @@ pub fn spread_parallels(
             let pts = paths[l.path].clone();
             let n = pts.len();
             let mut new_pts = pts.clone();
-            for p in &mut new_pts[l.k..=l.k + 1] {
+            for p in &mut new_pts[l.k..=l.k2 + 1] {
                 if vertical {
                     p.0 = want;
                 } else {
@@ -690,7 +750,7 @@ pub fn spread_parallels(
                     .filter(|(_, b)| {
                         b.crossed_by(vertical, at, l.lo, l.hi)
                             || (l.k > 0 && neighbour_crosses(b, vertical, pts[l.k], axis_of(pts[l.k - 1]), at))
-                            || (l.k + 2 < n && neighbour_crosses(b, vertical, pts[l.k + 1], axis_of(pts[l.k + 2]), at))
+                            || (l.k2 + 2 < n && neighbour_crosses(b, vertical, pts[l.k2 + 1], axis_of(pts[l.k2 + 2]), at))
                     })
                     .map(|(i, _)| i)
                     .collect()

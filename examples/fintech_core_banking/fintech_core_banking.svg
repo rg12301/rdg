@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="2553" height="2138" viewBox="0 0 2553 2138" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="2553" height="2146" viewBox="0 0 2553 2146" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
   <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e3e7ed"/></pattern><marker id="marker-arrow-1" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-arrow-0" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8b95a5" stroke="#8b95a5" stroke-width="1" stroke-linejoin="round"/></marker><marker id="marker-open-2" viewBox="-1 -1 9 9" refX="7" refY="3.5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#ea580c" stroke-width="1.3" stroke-linejoin="round"/></marker></defs>
   <rect width="100%" height="100%" fill="#f7f8fa"/>
   <rect width="100%" height="100%" fill="url(#canvas-grid)"/>
@@ -57,7 +57,7 @@
   <path d="M 1410.0 1014.0 L 1467.0 1014.0 Q 1481.0 1014.0 1481.0 1028.0 L 1481.0 1460.0 Q 1481.0 1474.0 1495.0 1474.0 L 1556.0 1474.0 A 5.0 5.0 0 0 1 1566.0 1474.0 L 1625.0 1474.0 A 5.0 5.0 0 0 1 1635.0 1474.0 L 1726.0 1474.0 A 5.0 5.0 0 0 1 1736.0 1474.0 L 1961.3 1474.0 Q 1968.0 1474.0 1968.0 1480.7 L 1968.0 1498.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1501.0 1974.0 L 1501.0 1956.7 Q 1501.0 1950.0 1507.7 1950.0 L 1547.0 1950.0 Q 1561.0 1950.0 1561.0 1936.0 L 1561.0 1079.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <path d="M 1469.0 2006.0 L 516.0 2006.0 Q 502.0 2006.0 502.0 1992.0 L 502.0 1889.0 Q 502.0 1875.0 488.0 1875.0 L 366.0 1875.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
-  <path d="M 361.0 1940.0 L 361.0 2036.0 Q 361.0 2050.0 375.0 2050.0 L 920.0 2050.0 Q 934.0 2050.0 934.0 2064.0 L 934.0 2097.1 Q 934.0 2110.0 946.9 2110.0 L 1571.0 2110.0 Q 1585.0 2110.0 1585.0 2096.0 L 1585.0 1899.7 Q 1585.0 1889.0 1595.7 1889.0 L 1623.3 1889.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 361.0 1940.0 L 361.0 2036.0 Q 361.0 2050.0 375.0 2050.0 L 920.0 2050.0 Q 934.0 2050.0 934.0 2064.0 L 934.0 2104.0 Q 934.0 2118.0 948.0 2118.0 L 1571.0 2118.0 Q 1585.0 2118.0 1585.0 2104.0 L 1585.0 1899.7 Q 1585.0 1889.0 1595.7 1889.0 L 1623.3 1889.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 341.0 1940.0 L 341.0 2001.0 Q 341.0 2015.0 327.0 2015.0 L 264.0 2015.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 136.0 1940.0 L 136.0 2001.0 Q 136.0 2015.0 150.0 2015.0 L 214.0 2015.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 1451.0 685.0 L 1717.0 685.0 Q 1731.0 685.0 1731.0 699.0 L 1731.0 1856.0 Q 1731.0 1870.0 1745.0 1870.0 L 1783.0 1870.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
@@ -239,9 +239,9 @@
   <text x="1512.0" y="1087.5" text-anchor="middle" font-size="10" fill="#8b95a5">disburse</text>
   <rect x="1469.0" y="1930.5" width="84.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1511.0" y="1941.8" text-anchor="middle" font-size="10" fill="#ea580c">PaymentMissed</text>
-  <line x1="1585.0" y1="1994.7" x2="1601.0" y2="1994.7" stroke="#7c3aed" stroke-width="0.8" stroke-opacity="0.8"/>
-  <rect x="1601.0" y="1987.0" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1637.0" y="1998.2" text-anchor="middle" font-size="10" fill="#7c3aed">close books</text>
+  <line x1="1585.0" y1="1988.6" x2="1601.0" y2="1988.6" stroke="#7c3aed" stroke-width="0.8" stroke-opacity="0.8"/>
+  <rect x="1601.0" y="1980.8" width="72.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1637.0" y="1992.1" text-anchor="middle" font-size="10" fill="#7c3aed">close books</text>
   <rect x="307.0" y="1956.2" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="322.0" y="1967.5" text-anchor="middle" font-size="10" fill="#7c3aed">load</text>
   <rect x="128.0" y="2019.0" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
