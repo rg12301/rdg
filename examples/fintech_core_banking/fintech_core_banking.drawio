@@ -6,7 +6,7 @@
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <mxCell id="canvas_frame" value="" style="rounded=0;fillColor=none;strokeColor=none;locked=1;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;connectable=0;selectable=0;" vertex="1" parent="1">
-          <mxGeometry x="0.0" y="0.0" width="2553.0" height="2138.0" as="geometry"/>
+          <mxGeometry x="0.0" y="0.0" width="2553.0" height="2146.0" as="geometry"/>
         </mxCell>
         <mxCell id="diagram_title_header" value="&lt;b&gt;&lt;font style=&quot;font-size:20px;color:#111827;line-height:27px;&quot;&gt;Core banking platform&lt;/font&gt;&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:11px;color:#5b6474;line-height:15px;&quot;&gt;Channels, edge, accounts and payments domains, risk, batch and rails&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;whiteSpace=nowrap;spacing=0;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;" vertex="1" parent="1">
           <mxGeometry x="24.0" y="28.0" width="452.8" height="43.9" as="geometry"/>
@@ -654,20 +654,20 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_eod_ledger_db" value="close books" style="exitX=0.65152;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.17814;entryY=0.57955;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="eod" target="ledger_db" parent="1">
-          <mxGeometry x="0.8258" y="-52.0" relative="1" as="geometry">
+          <mxGeometry x="0.8349" y="-52.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="361.0" y="2050.0"/>
               <mxPoint x="934.0" y="2050.0"/>
-              <mxPoint x="934.0" y="2110.0"/>
-              <mxPoint x="1585.0" y="2110.0"/>
+              <mxPoint x="934.0" y="2118.0"/>
+              <mxPoint x="1585.0" y="2118.0"/>
               <mxPoint x="1585.0" y="1889.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_eod_ledger_db_leader" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#7c3aed;strokeWidth=0.6;opacity=80;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1585.0" y="1994.7" as="sourcePoint"/>
-            <mxPoint x="1601.0" y="1994.7" as="targetPoint"/>
+            <mxPoint x="1585.0" y="1988.6" as="sourcePoint"/>
+            <mxPoint x="1601.0" y="1988.6" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_eod_warehouse" value="load" style="exitX=0.50000;exitY=1.07143;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.67857;entryY=0.34722;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="eod" target="warehouse" parent="1">

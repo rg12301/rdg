@@ -28,6 +28,21 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
+- **v1.5.1 — spacing round from user feedback**:
+  - *Arrows keep off borders and off each other*: a leg running along a group border
+    within a lane is moved off the band; two arrows that meet at a bend and run on as
+    one line are pulled apart (only a shared port excuses a shared leg).
+  - *Jogged arrows move as one*: the pass that parts arrows running too close moves
+    a short-jogged arrow as a whole, so one half can no longer be left beside another
+    arrow; a fan arrow's branch leaves its trunk where it crosses the fewest arrows.
+  - *Fan-arrow ladders*: branches leave their trunk from the box of the group the
+    listed nodes share, or from the shared node's own face when the listed nodes
+    stand apart; rungs keep a lane from other arrows and from borders, and a trunk
+    that turned too early is pushed out to make room.
+  - *Levelling*: a `same_rank` list (or a fan arrow's listed nodes) whose members
+  feed one another is ignored, with a `--check` warning naming the pair; before, the
+  levelling chased itself and stretched the group by empty layers (a data layer 700 px
+  below everything else).
 - **v1.5.0 — close arrows, badges, fan arrows, tight titles**:
   - *Trunk rungs keep a lane from other arrows*: the arrows of a bundle join their
     trunk on the first ladder line clear of every other arrow (they lay 2 px from

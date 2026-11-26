@@ -439,12 +439,17 @@ impl Compound<'_> {
         let mut edges: Vec<(Item, Item)> = Vec::new();
         let mut rank_edges: Vec<(Item, Item)> = Vec::new();
         let mut labels: Vec<(Item, Item, &str)> = Vec::new();
+        // Members of a fan arrow turn onto a ladder rung whatever their ends line up.
+        let mut ladders: std::collections::HashSet<(Item, Item)> = std::collections::HashSet::new();
         for e in self.compiled.graph.edge_references() {
             let (Some(a), Some(b)) = (self.item_in(Some(g), e.source()), self.item_in(Some(g), e.target())) else {
                 continue;
             };
             if a != b {
                 edges.push((a, b));
+                if e.weight().set.is_some() {
+                    ladders.insert((a, b));
+                }
                 if e.weight().constraint {
                     rank_edges.push((a, b));
                 }
@@ -506,7 +511,7 @@ impl Compound<'_> {
             let before: f64 = li.iter().take_while(|x| *x != it).map(|&x| self.size(x).0 + spacing).sum();
             before + self.size(*it).0 / 2.0
         };
-        let mut gaps = crate::gaps::gaps_for_tracks(n_ranks, edges.iter().map(|(a, b)| ((rank_of(a), rank_of(b)), (centre(a), centre(b)))), self.config);
+        let mut gaps = crate::gaps::gaps_for_tracks_with(n_ranks, edges.iter().map(|(a, b)| ((rank_of(a), rank_of(b)), (centre(a), centre(b)), ladders.contains(&(*a, *b)))), self.config);
         for &(a, b, l) in &labels {
             let (ra, rb) = (rank_of(&a), rank_of(&b));
             if ra.abs_diff(rb) == 1 {
@@ -1010,16 +1015,34 @@ fn unit_ranks(n: usize, edges: &[(usize, usize)], is_group: &[bool], hints: &Ran
         }
     }
     let mut rank: Vec<usize> = (0..n).map(|u| rank[comp[u]]).collect();
+    // A `same_rank` list whose members feed one another (a path from one to another)
+    // cannot be levelled: levelling pushes the fed member to the feeder's rank, the
+    // edge pushes it down again, and so on to the cap — a group once came out with
+    // nineteen empty layers. Such a list is ignored (--check warns).
+    let reaches = |from: usize, to: usize| -> bool {
+        let mut seen = vec![false; n];
+        let mut stack = vec![from];
+        while let Some(u) = stack.pop() {
+            if u == to {
+                return true;
+            }
+            if u < n && !std::mem::replace(&mut seen[u], true) {
+                stack.extend(edges.iter().filter(|&&(a, _)| a == u).map(|&(_, b)| b));
+            }
+        }
+        false
+    };
+    let same: Vec<&Vec<usize>> = hints.same.iter().filter(|set| !set.iter().any(|&u| set.iter().any(|&v| u != v && reaches(u, v)))).collect();
     // Author's hints: pinned ranks hold, `same_rank` lists level to their deepest
     // member, and whatever either feeds is pushed down again until nothing moves.
     let pinned: Vec<Option<usize>> = (0..n).map(|u| hints.pinned.get(u).copied().flatten()).collect();
-    if pinned.iter().any(Option::is_some) || !hints.same.is_empty() {
+    if pinned.iter().any(Option::is_some) || !same.is_empty() {
         for (u, p) in pinned.iter().enumerate() {
             if let Some(r) = p {
                 rank[u] = *r;
             }
         }
-        for _ in 0..(n + hints.same.len() + 2) {
+        for _ in 0..(n + same.len() + 2) {
             let mut changed = false;
             for &(a, b) in edges {
                 if comp[a] != comp[b] && pinned[b].is_none() && rank[b] < rank[a] + 1 {
@@ -1027,9 +1050,9 @@ fn unit_ranks(n: usize, edges: &[(usize, usize)], is_group: &[bool], hints: &Ran
                     changed = true;
                 }
             }
-            for set in &hints.same {
+            for set in &same {
                 let m = set.iter().filter_map(|&u| rank.get(u)).copied().max().unwrap_or(0);
-                for &u in set {
+                for &u in set.iter() {
                     if u < n && rank[u] != m {
                         rank[u] = m;
                         changed = true;
@@ -1736,10 +1759,15 @@ mod tests {
 
     #[test]
     fn hints_pin_and_level_units() {
-        let hints = RankHints { pinned: vec![None, None, Some(0)], same: vec![vec![0, 1]] };
-        let r = unit_ranks(3, &[(0, 1), (1, 2)], &[false; 3], &hints);
-        assert_eq!(r[0], r[1], "same_rank levels 0 and 1");
+        // 0 feeds 1 and 3; 1 feeds 2. Units 1 and 3 level; 2 is pinned at the top.
+        let hints = RankHints { pinned: vec![None, None, Some(0), None], same: vec![vec![1, 3]] };
+        let r = unit_ranks(4, &[(0, 1), (1, 2), (0, 3)], &[false; 4], &hints);
+        assert_eq!(r[1], r[3], "same_rank levels 1 and 3");
         assert_eq!(r[2], 0, "pinned despite being fed");
+        // A list whose members feed one another is ignored: 1 stays below 0.
+        let hints = RankHints { pinned: vec![None, None, None], same: vec![vec![0, 1]] };
+        let r = unit_ranks(3, &[(0, 1), (1, 2)], &[false; 3], &hints);
+        assert_eq!(r[1], r[0] + 1, "a contradictory list changes nothing");
     }
 
     #[test]

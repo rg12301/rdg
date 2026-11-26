@@ -269,11 +269,12 @@ fn find_overlapping_edge_pairs(
             let (edge_b, path_b) = &paths[j];
             let mut worst = 0.0_f64;
             let same = |p: (f64, f64), q: (f64, f64)| (p.0 - q.0).abs() < tol && (p.1 - q.1).abs() < tol;
+            let port = |p: (f64, f64)| same(p, path_a[0]) || same(p, path_a[path_a.len() - 1]) || same(p, path_b[0]) || same(p, path_b[path_b.len() - 1]);
             for wa in path_a.windows(2) {
                 for wb in path_b.windows(2) {
                     // Two arrows forking from, or joining at, one port share their
-                    // first or last leg on purpose.
-                    if same(wa[0], wb[0]) || same(wa[1], wb[1]) {
+                    // first or last leg on purpose; two meeting at a bend do not.
+                    if (same(wa[0], wb[0]) && port(wa[0])) || (same(wa[1], wb[1]) && port(wa[1])) {
                         continue;
                     }
                     worst = worst.max(collinear_overlap_len(wa[0], wa[1], wb[0], wb[1], tol));

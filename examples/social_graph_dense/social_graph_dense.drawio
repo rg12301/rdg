@@ -53,8 +53,8 @@
         <mxCell id="e_alice_bob" value="" style="exitX=0.71667;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.11667;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="bob" target="alice" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="124.0" y="148.0"/>
-              <mxPoint x="388.0" y="148.0"/>
+              <mxPoint x="124.0" y="129.0"/>
+              <mxPoint x="388.0" y="129.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -77,8 +77,8 @@
         <mxCell id="e_carol_dave" value="" style="exitX=0.11667;exitY=0.00000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.87500;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="carol" target="dave" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="556.0" y="148.0"/>
-              <mxPoint x="311.0" y="148.0"/>
+              <mxPoint x="556.0" y="110.0"/>
+              <mxPoint x="311.0" y="110.0"/>
             </Array>
           </mxGeometry>
         </mxCell>

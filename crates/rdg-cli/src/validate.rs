@@ -162,7 +162,33 @@ pub fn validate(payload: &DiagramPayload) -> Vec<Diagnostic> {
 
     // --- groups: members (nodes or nested groups), nesting --------------------------
     let group_ids: Vec<&str> = payload.groups.iter().map(|g| g.id.as_str()).collect();
+    // A node reaches another when a chain of arrows leads from it to the other.
+    let reaches = |from: &str, to: &str| -> bool {
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![from];
+        while let Some(u) = stack.pop() {
+            if u == to {
+                return true;
+            }
+            if seen.insert(u) {
+                for e in &payload.edges {
+                    if e.from.iter().any(|f| f == u) {
+                        stack.extend(e.to.iter());
+                    }
+                }
+            }
+        }
+        false
+    };
     for (i, set) in payload.same_rank.iter().enumerate() {
+        if let Some((a, b)) = set.iter().flat_map(|a| set.iter().map(move |b| (a, b))).find(|(a, b)| a != b && reaches(a, b)) {
+            push(
+                Level::Warning,
+                format!("same_rank[{i}]"),
+                format!("`{a}` leads to `{b}` by a chain of arrows, so they cannot share a rank; the list is ignored"),
+                Some("level only nodes that do not feed one another".into()),
+            );
+        }
         for (j, id) in set.iter().enumerate() {
             if !node_set.contains(id.as_str()) && !group_ids.contains(&id.as_str()) {
                 push(

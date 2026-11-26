@@ -27,8 +27,8 @@
   <path d="M 1358.0 379.0 L 1358.0 456.0 Q 1358.0 470.0 1372.0 470.0 L 1567.0 470.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1358.0 289.0 L 1358.0 151.0 Q 1358.0 137.0 1372.0 137.0 L 2192.0 137.0 Q 2206.0 137.0 2206.0 151.0 L 2206.0 201.0 Q 2206.0 215.0 2220.0 215.0 L 2314.0 215.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1617.0 284.0 L 1711.1 284.0 Q 1722.0 284.0 1722.0 294.9 L 1722.0 315.1 Q 1722.0 323.0 1729.9 323.0 L 1836.0 323.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
-  <path d="M 1586.0 535.0 L 1586.0 684.0 Q 1586.0 698.0 1600.0 698.0 L 2489.0 698.0 Q 2503.0 698.0 2503.0 684.0 L 2503.0 406.0 Q 2503.0 392.0 2517.0 392.0 L 2602.3 392.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
-  <path d="M 1605.0 535.0 L 1605.0 713.0 Q 1605.0 727.0 1619.0 727.0 L 2514.0 727.0 Q 2528.0 727.0 2528.0 713.0 L 2528.0 631.0 Q 2528.0 617.0 2542.0 617.0 L 2601.5 617.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1586.0 535.0 L 1586.0 685.0 Q 1586.0 699.0 1600.0 699.0 L 2489.0 699.0 Q 2503.0 699.0 2503.0 685.0 L 2503.0 406.0 Q 2503.0 392.0 2517.0 392.0 L 2602.3 392.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1605.0 535.0 L 1605.0 713.0 Q 1605.0 727.0 1619.0 727.0 L 2513.0 727.0 Q 2527.0 727.0 2527.0 713.0 L 2527.0 631.0 Q 2527.0 617.0 2541.0 617.0 L 2601.5 617.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 2364.0 576.0 L 2479.0 576.0 A 5.0 5.0 0 0 1 2489.0 576.0 L 2498.0 576.0 A 5.0 5.0 0 0 1 2508.0 576.0 L 2605.8 576.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 2364.0 542.0 L 2450.4 542.0 Q 2461.0 542.0 2461.0 531.4 L 2461.0 511.7 Q 2461.0 504.0 2468.7 504.0 L 2479.0 504.0 A 5.0 5.0 0 0 1 2489.0 504.0 L 2498.0 504.0 A 5.0 5.0 0 0 1 2508.0 504.0 L 2601.5 504.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 2364.0 447.0 L 2455.1 447.0 Q 2461.0 447.0 2461.0 452.9 L 2461.0 463.8 Q 2461.0 468.0 2465.2 468.0 L 2479.0 468.0 A 5.0 5.0 0 0 1 2489.0 468.0 L 2498.0 468.0 A 5.0 5.0 0 0 1 2508.0 468.0 L 2601.5 468.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
@@ -39,7 +39,7 @@
   <path d="M 2081.0 433.0 L 2314.0 433.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 2217.0 433.0 L 2217.0 366.0 Q 2217.0 352.0 2231.0 352.0 L 2314.0 352.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <circle cx="2217.0" cy="433.0" r="3.2" fill="#8b95a5"/>
-  <path d="M 1861.0 497.0 L 1861.0 656.0 Q 1861.0 670.0 1875.0 670.0 L 2470.0 670.0 Q 2484.0 670.0 2484.0 656.0 L 2484.0 387.0 Q 2484.0 373.0 2498.0 373.0 L 2596.0 373.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
+  <path d="M 1861.0 497.0 L 1861.0 657.0 Q 1861.0 671.0 1875.0 671.0 L 2470.0 671.0 Q 2484.0 671.0 2484.0 657.0 L 2484.0 387.0 Q 2484.0 373.0 2498.0 373.0 L 2596.0 373.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-2)"/>
   <path d="M 1886.0 323.0 L 2028.0 323.0 Q 2042.0 323.0 2042.0 337.0 L 2042.0 391.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-1)"/>
   <rect x="100.0" y="296.0" width="44.0" height="44.0" rx="10.0" fill="#2563eb"/><svg class="node-tech-icon" x="109.7" y="305.7" width="24.6" height="24.6" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#f7f8fa"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></g></svg><text x="122.0" y="362.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Telematics units</tspan>
@@ -138,8 +138,8 @@
   <text x="2157.1" y="168.5" text-anchor="middle" font-size="10" fill="#ea580c">command</text>
   <rect x="2148.4" y="413.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="2163.4" y="424.8" text-anchor="middle" font-size="10" fill="#8b95a5">REST</text>
-  <rect x="1865.0" y="533.1" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="1877.0" y="544.4" text-anchor="middle" font-size="10" fill="#7c3aed">SQL</text>
+  <rect x="1865.0" y="533.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="1877.0" y="544.5" text-anchor="middle" font-size="10" fill="#7c3aed">SQL</text>
   <rect x="1904.4" y="303.5" width="30.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="1919.4" y="314.8" text-anchor="middle" font-size="10" fill="#ea580c">push</text>
   <text x="2682.4" y="39.9" font-size="11" font-weight="bold" fill="#111827">Legend</text>

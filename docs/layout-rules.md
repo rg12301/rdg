@@ -255,6 +255,15 @@ up and read as members. Status ❌ (ride-hailing "Core platform services" left h
 
 ---
 
+**L9 A levelling hint cannot contradict the flow.** A `same_rank` list (written, or
+made by a fan arrow for its listed nodes) whose members feed one another by a chain
+of arrows is ignored, and `--check` says which pair. Before, the levelling chased
+itself: the fed member rose to the feeder's rank, the edge pushed it down again, and
+so on to the iteration cap, which put a user's data layer in a group of twenty-one
+layers, nineteen of them empty, 700 px below everything else (the fan arrow
+`app → [affiliate_db, clickhouse]` with `affiliate_db → debezium → clickhouse`
+inside). Status ✅ (`compound.rs` `unit_ranks`, `validate.rs`).
+
 ## 5. Ordering (O)
 
 **O1 Crossing minimisation** over real nodes *and* long-edge dummies (L2): weighted median
@@ -400,6 +409,44 @@ line). Measured: 26 of 49 same-channel sibling pairs aligned, every fixture's cr
 bends and length unchanged (totals 243 → 243); the 23 left are blocked by one of the
 guards. An unbounded version that moved to any partner's depth moved turns hundreds of
 px and cost 7 crossings, hence the two-lane bound.
+
+**R3a Off the border band.** A leg that runs along a group border within a border
+lane (1.25 lanes) and is not on it is moved off, to the band's edge on its own side,
+by the spread pass — the other passes only ever moved legs to part a close pair, so a
+hugging leg stayed. Measured on the fixtures: hugs 35 → 27 (the rest are end legs or
+legs pinned by their own bends), close pairs 20 → 18, crossings 254 → 251. Status ✅
+(`spread.rs`, `hug_target`).
+
+**R4a A jog moves as one leg.** Two legs of one arrow on the same axis joined by a jog
+shorter than a readable one (under `polish_min_jog`, 24 px) are one leg to the spread
+pass: it moves both together within both ranges, so parting a close pair cannot leave
+half of a jogged arrow behind (the Slack/ClickHouse pair at 4 px for 322 px was one
+leg of a 19 px jog whose other half was pinned by its own bend). Measured on the
+fixtures: crossings 251 → 241, hugs 27 → 24, close pairs 18 → 20 (two new pairs at a
+lane less a pixel). Status ✅ (`spread.rs` `Leg::k2`).
+
+**R18 Two arrows never run as one line past a bend.** Two legs that meet at a *port*
+(a fork out of one port, a join into one) share a line on purpose; two that meet at a
+*bend* do not, however they got there (two arrows that cross, turn at the same point
+and run on together are the worst close pair there is). The spread pass and the review
+excuse a shared point only when it is a port, and a leg lying on another's counts as a
+crossing it already has, so lifting it off may cost one. Measured: the shared-bend
+overlaps on ride-hailing and the social graph are gone; close pairs 19 → 20 under the
+wider definition, crossings flat. Status ✅ (`spread.rs` `alongside`, `review.rs`).
+
+**R19 Ladders.** A fan arrow's branches leave its trunk on rungs one lane apart,
+starting one clearance past the face they leave: the box of the group the listed
+nodes share (and the other end does not), else the box round the listed nodes, else
+— when those stand apart or leave their box by different faces — the shared node's
+own face, so the arrow leaves (or reaches) that node as one line and branches a
+clearance out. A rung takes, of the lines within the ladder's room, the first not
+crowded that crosses the fewest other arrows with its drop and rung (not merely the
+first free one); it keeps a lane from other arrows' legs and a border lane from
+group borders; a trunk or member that turns before the ladder has its bend pushed
+out when the leg beyond stays clear; the rank gap reserves a track per member. Before,
+rungs lay 5 px from the border of the group round the listed nodes (6 hugs on one
+diagram), and a set whose targets stood apart was drawn as separate arrows. Status ✅
+(`trunk.rs` `fan_at_shared`, `extend_trunk`, `crowded_by`; `gaps.rs`).
 
 **R13 Crossings are 90°** by construction ✅; **crossings per route ≤ 3**, else the route is
 an anomaly ❌ (not measured per route).
@@ -668,6 +715,16 @@ Order of work, by reader impact per change:
 7. **Per-edge router composition (R16)**, **line jumps (R14)** and **leader lines (A7)** —
    done; all three are measured as modest (the composite wins 3 of 54 choices, jumps and
    leaders change no metric but what a reader can tell apart).
+15. **User feedback round three (R4a, R19, R9)** — done: a jogged arrow moves as one
+   leg; a rung is placed by fewest crossings. Not done: arrow 4 of the user's diagram
+   entering the app from the left as an L costs a crossing with arrow 3, which the
+   search weighs above the Z's two bends (measured: 3 → 5 crossings with the left
+   face pinned); the face weights stay until a wider measure says otherwise.
+14. **User feedback round two (R3, R18, R19)** — done: ladders clear of borders and
+   with a source-side fallback and pushed-out trunks; shared-bend overlaps counted
+   and lifted; legs hugging a group border moved off the band by the spread pass.
+13. **Contradictory levelling (L9)** — done: a `same_rank` list with a path inside
+   is ignored and reported, instead of stretching a group by nineteen empty layers.
 12. **Room under group titles (C0)** — done: a fed node needs one entry past the
    title, not its whole face; the old rule is a judged variant.
 11. **Fan arrows (G6, schema)** — done: `from`/`to` lists on one end make an explicit
@@ -691,6 +748,102 @@ detour ratio and per-label ownership margin, and look at ride_hailing, fintech, 
 game_backend, healthcare and loan_approval before and after.
 
 ---
+
+## 13. Where the approach itself has gaps
+
+Written after three rounds of the user's feedback on a 20-node, 6-group diagram. Every
+defect they pointed at was real, and each fix was local: a rule added to one pass.
+The defects keep coming because of how the passes relate, not because a rule is
+missing. The gaps, with the evidence from this session, then what would close them.
+
+**Gap 1: a chain of passes, each blind to the next.** Layout → per-edge search →
+spread → sibling turns → bundling → annotation → review → polish, each fixing what it
+can see and freezing it for the next. Evidence: bundling runs after spreading, so a
+rung lands on a stub the spread left there (the app's fan could not form because the
+Slack arrow turns 22 px past the face, exactly where the rungs go); the spread cannot
+part two legs because the search pinned their ports and bends (the 4 px pair);
+polish removes jogs the spread would have moved as one; the review judged side
+columns and pass-through on the first pass while the retries changed the result (the
+title bet now judges the final result; the other two still judge pass one). Five
+measured attempts to improve the spread pass were worse because the pass is at a
+local optimum of a problem it should not own.
+
+**Gap 2: no track model in the search router.** The channel router shares tracks out
+by the classic rule (a leg gets the track that keeps the order its arrows carry on);
+the search has grid lines wherever ports and lanes happen to fall and a soft charge
+for sharing one. Lanes are emergent, which is why a spreading pass exists at all, and
+why the layout's reserved tracks (`gaps_for_tracks`) are reserved by the layout and
+never consumed by the search. The search wins the scoring on every big fixture (46
+of 54 choices), so the diagrams the user cares about are the ones without tracks.
+
+**Gap 3: faces and ports are chosen per edge, by cost, at search time.** Each arrow
+picks its faces alone, with crossings at 100, a bend at 75 and a side face at 5 to 8.
+That is why arrow 4 takes a Z into a crowded top face instead of an L into the free
+left face: the L crosses arrow 3 once, and one crossing outweighs the two bends —
+but arrow 3 would not be there if the node's ports had been assigned together.
+ELK, yFiles and libavoid assign a node's ports as one step before routing: faces by
+the direction to the other end and the flow, capacity per face, order along a face
+by the other end's cross-flow position (no crossing at the face by construction),
+and only then route between fixed ports.
+
+**Gap 4: nothing owns the space round a node.** A node's clearance band is an
+obstacle inflation and nothing more; any arrow may turn inside it. The user's
+"cleaner node surroundings" is this: stubs, hooks and branches of other arrows
+inside the band where a node's own arrows need to leave and join. A port zone (the
+clearance band belongs to the node's own arrows; a foreign leg may cross it only
+straight through) is a rule, not a weight.
+
+**Gap 5: bundles are assembled after routing, not routed.** A trunk and its branches
+are independent routes merged by cutting and re-joining, so the ladder depends on
+what every member's route happened to do past the face, and on what else got there
+first. Fan arrows are a first-class element in the schema now; they should be
+routed as one: route the trunk, then route each branch from its junction.
+
+**Gap 6: what is not measured is not optimised.** The quality report counts
+crossings, bends, close pairs, foreign crossings, detours and floating labels; the
+things the user sees are also hooks (a Z whose offset is under a lane), stubs
+shorter than a clearance, foreign legs in a node's band, ladders that failed, a
+branch point within a bend's reach of a crossing, and arrows entering a face from
+the side the flow does not expect. Border hugs were 34 on the fixtures for weeks
+because no one looked at the number.
+
+**What would close them, in order of leverage.**
+
+1. *Port assignment as a stage* (Gap 3, Gap 4): one pass over nodes, before any
+   routing, giving every edge its faces and port order, and reserving each node's
+   band for its own stubs. Both routers then route between fixed ports. This is the
+   single change that decides cases like arrow 4 by rule.
+2. *Tracks in the search* (Gap 2): after the search finds each route's corridor
+   sequence, assign tracks per channel globally, the way the channel router does;
+   retire the spread pass to a check. The layout's reserved tracks become the
+   search's lines.
+3. *Route bundles as bundles* (Gap 5): trunk first, branches from junctions, with
+   the ladder's room reserved in the rank gap (already) and in the port zone.
+4. *Judge every bet on the final result* (Gap 1): side columns and pass-through
+   the way titles are judged now, as whole pipelines compared at the end.
+5. *Measure the rest* (Gap 6): hooks, short stubs, band intrusions, failed ladders,
+   branch points near crossings, in `quality` and in the spacing line, with the
+   per-fixture before/after table this document already uses.
+
+Each step is a few days, each measurable on the 46 fixtures, and the first two
+remove more code than they add.
+
+**Step 1, first attempt, measured (2026-11-26).** A port plan as a pass in front of
+the search: forward edges' faces by rule (an L into the side facing the source when
+the target lies beyond the source's side, else the flow faces), capacity per face
+with spill to the sides, ports ordered along each face by the other end's position
+and spaced a pitch apart, the search then restricted to the planned pins. On the 46
+fixtures (crossings / close pairs / hugs / bends): without the plan 241 / 20 / 24 /
+1000; with it 301 / 38 / 28 / 1259; faces only, positions free, 337 / 49 / 27 /
+1155; flow faces only with capacity spill, 321 / 42 / 33 / 1231. The search's
+freedom to take an off-centre port, and a side face when its cost says so, does real
+work against obstacles and crossings that a rule laid down beforehand cannot see.
+Removed. A pass untangling ports after routing (two arrows whose routes cross right
+outside their face trading ports) was tried next and never fired: the fixtures carry
+7 near-port crossings in all, because the search already charges 180 for one within
+a bend's reach of a port. Removed too. Step 1 proper needs the router built around
+fixed ports with a track model (step 2 first), not a plan bolted on in front of this
+search; until then the search's face choice stands, arrow 4 included.
 
 ## Sources
 
