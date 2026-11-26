@@ -28,7 +28,7 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
-- **Unreleased — layout rules pass** (research-backed rules in
+- **v1.4.0 — layout rules pass** (research-backed rules in
   [`docs/layout-rules.md`](docs/layout-rules.md); measured on 45 fixtures, total
   crossings 284 → 243, fintech's arrows through foreign containers 8 → 0, game
   backend 41 → 19):
