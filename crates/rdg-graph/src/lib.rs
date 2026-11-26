@@ -115,6 +115,21 @@ pub struct EdgeData {
     pub label_color: Option<String>,
     pub font: Option<String>,
     pub font_size: Option<f64>,
+    /// The set this edge is a member of (an index into [`CompiledGraph::sets`]) when it
+    /// came from an arrow whose `from` or `to` listed several nodes.
+    pub set: Option<usize>,
+}
+
+/// An arrow written with several nodes at one end: its member edges are drawn as one
+/// trunk with a branch per listed node, its label and badge once.
+#[derive(Debug, Clone)]
+pub struct EdgeSet {
+    /// The listed nodes, in order.
+    pub members: Vec<NodeIndex>,
+    /// The node at the other end.
+    pub shared: NodeIndex,
+    /// `true` when the listed nodes are the sources (`from: [..]`).
+    pub fan_in: bool,
 }
 
 /// The fully-validated, cycle-free compiled graph.
@@ -142,9 +157,11 @@ pub struct CompiledGraph {
     pub edge_order: Vec<petgraph::stable_graph::EdgeIndex>,
     /// Draw a legend (`None`: the theme decides).
     pub legend: Option<bool>,
-    /// Layout hint: lists of node/group ids that share a rank (`same_rank:` as written;
-    /// the layout resolves ids to nodes or tiers).
+    /// Layout hint: lists of node/group ids that share a rank (`same_rank:` as written,
+    /// plus the members of every [`EdgeSet`]; the layout resolves ids to nodes or tiers).
     pub same_rank: Vec<Vec<String>>,
+    /// Arrows written with several nodes at one end, in declaration order.
+    pub sets: Vec<EdgeSet>,
     /// Sequence diagrams: the script in order (messages refer to graph edges). Built
     /// from `sequence:`, or from `edges` as a plain list of messages.
     pub sequence: Vec<SeqItem>,
@@ -327,43 +344,62 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
     // --- 2. Add edges -----------------------------------------------------------
     let numbered = payload.is_numbered();
     let steps = rdg_schema::resolve_steps(&payload.edges, numbered);
-    for (edge_def, step) in payload.edges.iter().zip(steps) {
+    let mut sets: Vec<EdgeSet> = Vec::new();
+    let mut same_rank = payload.same_rank.clone();
+    for (i, (edge_def, step)) in payload.edges.iter().zip(steps).enumerate() {
         let edge_def = payload.effective_edge(edge_def);
-        let src = node_map.get(&edge_def.from).copied().ok_or_else(|| {
-            anyhow::anyhow!("edge references unknown source node id '{}'", edge_def.from)
-        })?;
-        let dst = node_map.get(&edge_def.to).copied().ok_or_else(|| {
-            anyhow::anyhow!("edge references unknown target node id '{}'", edge_def.to)
-        })?;
+        let resolve = |id: &str, what: &str| node_map.get(id).copied().ok_or_else(|| anyhow::anyhow!("edge references unknown {what} node id '{id}'"));
+        let froms: Vec<NodeIndex> = edge_def.from.iter().map(|id| resolve(id, "source")).collect::<Result<_>>()?;
+        let tos: Vec<NodeIndex> = edge_def.to.iter().map(|id| resolve(id, "target")).collect::<Result<_>>()?;
+        // An end that lists several nodes makes a set: one member edge per listed node,
+        // drawn as a trunk with branches, the label said once.
+        if froms.len() > 1 && tos.len() > 1 {
+            anyhow::bail!("edges[{i}]: both ends list several nodes; only one end of an arrow may fan out");
+        }
+        if is_sequence && (froms.len() > 1 || tos.len() > 1) {
+            anyhow::bail!("edges[{i}]: a sequence message has one sender and one receiver");
+        }
+        let set = (froms.len() > 1 || tos.len() > 1).then(|| {
+            let fan_in = froms.len() > 1;
+            let (members, shared, ids) = if fan_in { (froms.clone(), tos[0], &edge_def.from) } else { (tos.clone(), froms[0], &edge_def.to) };
+            same_rank.push(ids.ids().to_vec());
+            sets.push(EdgeSet { members, shared, fan_in });
+            sets.len() - 1
+        });
         // UML draws the generalisation arrow from the child up to its parent: the edge
         // is stored parent -> child (so the layout ranks the parent above) and flagged
         // `reversed`, which the renderers undo when they draw it.
         let style = edge_def.resolved_style();
         let points_up = !is_sequence && style.as_deref().is_some_and(|s| matches!(s.to_ascii_lowercase().as_str(), "inheritance" | "realization" | "generalization" | "extends" | "implements"));
-        let (src, dst) = if points_up { (dst, src) } else { (src, dst) };
-        let e_idx = graph.add_edge(
-            src,
-            dst,
-            EdgeData {
-                label: edge_def.label.clone(),
-                edge_style: style,
-                reversed: points_up,
-                color: edge_def.color.clone(),
-                width: edge_def.width,
-                line_style: edge_def.line_style.clone(),
-                head: edge_def.head.clone(),
-                tail: edge_def.tail.clone(),
-                source_port: edge_def.source_port.clone(),
-                target_port: edge_def.target_port.clone(),
-                style_extra: edge_def.style_extra.clone(),
-                step,
-                constraint: edge_def.constraint.unwrap_or(true),
-                label_color: edge_def.label_color.clone(),
-                font: edge_def.font.clone(),
-                font_size: edge_def.font_size,
-            },
-        );
-        edge_order.push(e_idx);
+        for &src in &froms {
+            for &dst in &tos {
+                let (src, dst) = if points_up { (dst, src) } else { (src, dst) };
+                let e_idx = graph.add_edge(
+                    src,
+                    dst,
+                    EdgeData {
+                        label: edge_def.label.clone(),
+                        edge_style: style.clone(),
+                        reversed: points_up,
+                        color: edge_def.color.clone(),
+                        width: edge_def.width,
+                        line_style: edge_def.line_style.clone(),
+                        head: edge_def.head.clone(),
+                        tail: edge_def.tail.clone(),
+                        source_port: edge_def.source_port.clone(),
+                        target_port: edge_def.target_port.clone(),
+                        style_extra: edge_def.style_extra.clone(),
+                        step: step.clone(),
+                        constraint: edge_def.constraint.unwrap_or(true),
+                        label_color: edge_def.label_color.clone(),
+                        font: edge_def.font.clone(),
+                        font_size: edge_def.font_size,
+                        set,
+                    },
+                );
+                edge_order.push(e_idx);
+            }
+        }
     }
 
     // --- 2b. Sequence script -----------------------------------------------------
@@ -409,7 +445,8 @@ pub fn build_graph(payload: &DiagramPayload) -> Result<CompiledGraph> {
         diagram_type,
         edge_order,
         legend: payload.legend,
-        same_rank: payload.same_rank.clone(),
+        same_rank,
+        sets,
         sequence,
     })
 }
@@ -451,6 +488,7 @@ fn compile_steps(
                         label_color: None,
                         font: None,
                         font_size: None,
+                        set: None,
                     },
                 );
                 edge_order.push(edge);
@@ -568,6 +606,7 @@ fn break_cycles(graph: &mut StableDiGraph<NodeData, EdgeData>) {
                     label_color: data.label_color,
                     font: data.font,
                     font_size: data.font_size,
+                    set: None,
                 },
             );
         }
@@ -598,8 +637,8 @@ mod tests {
             edges: edges
                 .iter()
                 .map(|(from, to)| EdgeDef {
-                    from: from.to_string(),
-                    to: to.to_string(),
+                    from: from.to_string().into(),
+                    to: to.to_string().into(),
                     ..Default::default()
                 })
                 .collect(),
@@ -654,6 +693,25 @@ mod tests {
         assert_eq!(compiled.graph[e.source()].id, "base");
         assert_eq!(compiled.graph[e.target()].id, "child");
         assert!(e.weight().reversed, "drawn from the child up to its parent");
+    }
+
+    #[test]
+    fn a_listed_end_expands_into_a_set_of_member_edges() {
+        let yaml = "numbered: true\nnodes: [{id: g}, {id: a}, {id: b}, {id: c}, {id: m}]\nedges: [{from: g, to: [a, b, c], label: gRPC}, {from: [a, b], to: m}]\n";
+        let compiled = build_graph(&DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        assert_eq!(compiled.graph.edge_count(), 5);
+        assert_eq!(compiled.sets.len(), 2);
+        assert!(!compiled.sets[0].fan_in && compiled.sets[0].members.len() == 3 && compiled.sets[0].shared == compiled.node_map["g"]);
+        assert!(compiled.sets[1].fan_in && compiled.sets[1].shared == compiled.node_map["m"]);
+        // Every member carries the set, the label and the one step of its arrow.
+        let members: Vec<_> = compiled.graph.edge_indices().filter(|&e| compiled.graph[e].set == Some(0)).collect();
+        assert_eq!(members.len(), 3);
+        assert!(members.iter().all(|&e| compiled.graph[e].label.as_deref() == Some("gRPC") && compiled.graph[e].step.as_deref() == Some("1")));
+        // The listed nodes are levelled.
+        assert!(compiled.same_rank.contains(&vec!["a".to_string(), "b".to_string(), "c".to_string()]));
+        // A list on both ends is refused.
+        let both = "nodes: [{id: a}, {id: b}, {id: c}, {id: d}]\nedges: [{from: [a, b], to: [c, d]}]\n";
+        assert!(build_graph(&DiagramPayload::from_yaml(both).unwrap()).is_err());
     }
 
     #[test]

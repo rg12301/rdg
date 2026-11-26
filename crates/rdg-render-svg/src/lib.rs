@@ -403,28 +403,33 @@ pub fn render_svg(
         }
     }
     for edge_idx in compiled.graph.edge_indices() {
-        let (Some(step), Some(&(bx, by))) = (compiled.graph[edge_idx].step.as_deref(), annotations.badges.get(&edge_idx)) else {
-            continue;
-        };
+        let Some(step) = compiled.graph[edge_idx].step.as_deref() else { continue };
+        // The badge at the source and, on a long arrow, a smaller one before the head.
         // A circle, or a pill for a longer step (`16a`): same height, rounded ends.
-        let (bw, bh) = rdg_render_core::annotate::badge_size(step, tokens);
-        el(
-            &mut w,
-            "rect",
-            &[("x", f1(bx - bw / 2.0)), ("y", f1(by - bh / 2.0)), ("width", f1(bw)), ("height", f1(bh)), ("rx", f1(bh / 2.0)), ("fill", theme.badge.fill.clone())],
-        )?;
-        text_el(
-            &mut w,
-            &[
-                ("x", f1(bx)),
-                ("y", f1(by + f.badge_size * 0.35)),
-                ("text-anchor", "middle".into()),
-                ("font-size", format!("{}", f.badge_size)),
-                ("font-weight", "bold".into()),
-                ("fill", theme.badge.text.clone()),
-            ],
-            step,
-        )?;
+        let spots = [
+            (annotations.badges.get(&edge_idx), rdg_render_core::annotate::badge_size(step, tokens), f.badge_size),
+            (annotations.end_badges.get(&edge_idx), rdg_render_core::annotate::end_badge_size(step, tokens), f.badge_size * rdg_render_core::annotate::END_BADGE_SCALE),
+        ];
+        for (spot, (bw, bh), font) in spots {
+            let Some(&(bx, by)) = spot else { continue };
+            el(
+                &mut w,
+                "rect",
+                &[("x", f1(bx - bw / 2.0)), ("y", f1(by - bh / 2.0)), ("width", f1(bw)), ("height", f1(bh)), ("rx", f1(bh / 2.0)), ("fill", theme.badge.fill.clone())],
+            )?;
+            text_el(
+                &mut w,
+                &[
+                    ("x", f1(bx)),
+                    ("y", f1(by + font * 0.35)),
+                    ("text-anchor", "middle".into()),
+                    ("font-size", format!("{font}")),
+                    ("font-weight", "bold".into()),
+                    ("fill", theme.badge.text.clone()),
+                ],
+                step,
+            )?;
+        }
     }
 
     // --- Legend ------------------------------------------------------------------------
@@ -824,8 +829,8 @@ mod tests {
                 .collect(),
             edges: (0..types.len().saturating_sub(1))
                 .map(|i| EdgeDef {
-                    from: types[i].0.to_string(),
-                    to: types[i + 1].0.to_string(),
+                    from: types[i].0.to_string().into(),
+                    to: types[i + 1].0.to_string().into(),
                     ..Default::default()
                 })
                 .collect(),
@@ -940,8 +945,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "users".to_owned(),
-                to: "orders".to_owned(),
+                from: "users".to_owned().into(),
+                to: "orders".to_owned().into(),
                 edge_style: Some("one_to_many".to_owned()),
                 ..Default::default()
             }],
@@ -971,8 +976,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "b".to_owned(),
-                to: "a".to_owned(),
+                from: "b".to_owned().into(),
+                to: "a".to_owned().into(),
                 edge_style: Some("inheritance".to_owned()),
                 ..Default::default()
             }],
@@ -1011,8 +1016,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 label: Some("é & ü".to_owned()),
                 ..Default::default()
             }],

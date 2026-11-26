@@ -74,7 +74,10 @@ NODE FIELDS   id, title, subtitle, description (or the `label` shorthand), type,
               link, class (a node_styles preset), style_extra (raw draw.io style),
               rank (layout hint: pin to a tier),
               appearance: fill, text_color, font, font_size, stroke_width, shape
-EDGE FIELDS   from, to, label, edge_style, color, width, line_style (solid|dashed|dotted),
+EDGE FIELDS   from, to (a node id, or on ONE end a list: `to: [a, b, c]` is one arrow
+              fanning out to all three, drawn as a trunk with a branch per node, the
+              nodes side by side with no box; `from: [a, b]` fans in), label,
+              edge_style, color, width, line_style (solid|dashed|dotted),
               label_color, font, font_size, head, tail,
               source_port / target_port (top|bottom|left|right),
               step (3, or a branch: 3a, 3b, 3.1), constraint (false: the edge is drawn
@@ -132,8 +135,9 @@ OUTPUT        A header band holds the title (bold), description and legend above
               never through a container neither end is in; three or more arrows of
               one meaning between a group and a node share a trunk (junction dots);
               two arrows forking off one face turn on one line; a label sits by its
-              own arrow or hangs off a thin leader; past ten crossings lines hop
-              over each other.
+              own arrow or hangs off a thin leader; a step badge sits by its arrow's
+              start, with a second before the head of a long arrow; past ten
+              crossings lines hop over each other.
 EXIT CODES    0 written (warnings may be printed)   1 invalid input or failure
               With --strict, also 1 when layout anomalies remain.
 
@@ -498,9 +502,22 @@ Placement (automatic)
   faces, with few bends and crossings; parallel arrows get separate lanes. Labels are
   placed beside a clear straight stretch of their arrow, wrapped onto two lines when
   that fits better. `numbered: true` puts a step badge beside each arrow near its
-  start. Numbering follows declaration order; `step:` sets a badge explicitly — a
-  number, or a branch of one (`3a`, `3b`, `3.1`) for parallel or alternative paths
-  — and the edges after it continue from its number (after 3a, 3b comes 4).
+  start, on the other side from the label, clear of boxes and of other arrows'
+  heads and tails (on its own line when both sides are taken); an arrow of 600 px or
+  more carries a smaller second badge before its arrowhead. Numbering follows
+  declaration order; `step:` sets a badge explicitly — a number, or a branch of one
+  (`3a`, `3b`, `3.1`) for parallel or alternative paths — and the edges after it
+  continue from its number (after 3a, 3b comes 4).
+
+Fans (one arrow, several nodes at one end)
+  - {from: gateway, to: [orders, users, billing], label: gRPC}
+  - {from: [orders, users, billing], to: metrics, label: scrape, edge_style: async}
+  A list on one end draws one arrow that branches to (or gathers from) every listed
+  node: a trunk with junction dots, one arrowhead per node on a fan-out, one on the
+  shared node on a fan-in, the label and step badge said once on the trunk. The
+  listed nodes are levelled on one tier and laid out side by side, with no
+  container drawn — the way to say these belong together without a box. Only
+  one end may be a list; a list on both ends is an error.
 
 Overrides
   source_port / target_port: top | bottom | left | right — pin an end to one face.
@@ -524,7 +541,12 @@ its `parent:`. A group whose nodes are all listed by a bigger group too is taken
 be nested in it. Each node belongs to one group (the innermost that lists it); a
 node listed by two groups that don't nest stays in the first (--check warns).
 Every container is sized around everything inside it — its nodes, its inner
-groups and their titles — and is never narrower than its own title.
+groups and their titles — with the same padding on every side, and is never
+narrower than its own title. A node in the top row that an arrow enters from above
+is moved right only as far as gives that arrow one entry past the title text (the
+far port of a card, the far edge of a tile), so a long title does not leave a band
+of empty room left of the content; where that costs crossings the review keeps the
+roomier layout (`RDG_TITLES=tight|wide` forces either).
 Groups are arranged in tiers by the flow between them: a group sits below (or,
 with `direction: lr`, right of) the groups that feed it, groups that call each
 other both ways share a tier, and a tier that gets too wide wraps. Within a tier,
@@ -641,9 +663,11 @@ Routing
   collector that only gathers arrows may stand in a side column, and an arrow that
   spans several tiers gets a corridor between units, or a reserved lane through a
   group it must pass.
-  RDG_ROUTER=channels|composite|ortho forces a router; RDG_SIDE=off and RDG_PASS=off
-  drop a layout variant; RDG_NO_BUNDLE=1 and RDG_NO_SPREAD=1 skip trunks and
-  spreading. RDG_DEBUG_SPACING=1 prints the bends, length, crossings (and those near
+  RDG_ROUTER=channels|composite|ortho forces a router; RDG_SIDE=off, RDG_PASS=off
+  and RDG_TITLES=tight|wide settle a layout bet; RDG_NO_BUNDLE=1 and RDG_NO_SPREAD=1
+  skip trunks and spreading; RDG_DEBUG_GROUPS=1 prints each group's padding and the
+  tight-against-wide title scores, RDG_DEBUG_BADGES=1 every badge spot tried,
+  RDG_DEBUG_BUNDLE=1 each trunk join and why one was skipped. RDG_DEBUG_SPACING=1 prints the bends, length, crossings (and those near
   a bend), hugs, off-centre faces, foreign crossings, close pairs, detours, worst
   route and sibling turns to judge a plan by; RDG_DEBUG_CHANNELS=1 prints the channel
   router's bands, lanes and routes and why it left an arrow to the search;

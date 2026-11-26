@@ -1,0 +1,21 @@
+# One arrow with several nodes at one end: `to: [a, b, c]` fans out, `from: [a, b, c]`
+# fans in. The listed nodes sit side by side with no container drawn, the arrow is one
+# trunk with a branch per node, and its label is said once.
+title: "Fan arrows"
+description: "Grouping related services under one arrow, without a container"
+numbered: true
+nodes:
+  - {id: web, label: "Web app", type: client}
+  - {id: gateway, title: "api-gateway", subtitle: "REST · 443", type: gateway, language: go}
+  - {id: orders, title: "orders-service", type: service, language: java}
+  - {id: users, title: "users-service", type: service, language: kotlin}
+  - {id: billing, title: "billing-service", type: service, language: python}
+  - {id: metrics, title: "metrics-collector", subtitle: "Prometheus", type: service, language: go}
+  - {id: db, label: "orders", type: database, db_type: postgres}
+  - {id: bus, label: "events", type: queue, db_type: kafka}
+edges:
+  - {from: web, to: gateway, label: "HTTPS"}
+  - {from: gateway, to: [orders, users, billing], label: "gRPC"}
+  - {from: orders, to: db, label: "SQL", edge_style: data}
+  - {from: [orders, users, billing], to: bus, label: "publish", edge_style: async}
+  - {from: [orders, users, billing], to: metrics, label: "scrape", edge_style: data}

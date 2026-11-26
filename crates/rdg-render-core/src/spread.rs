@@ -63,7 +63,7 @@ struct Port {
 }
 
 /// What the pass knows about every path besides its points.
-struct Ends {
+pub(crate) struct Ends {
     /// Start and end port of each path.
     ports: Vec<[Port; 2]>,
     /// Allowed span of each path's start / end port along its face, absolute.
@@ -177,9 +177,24 @@ fn alongside(paths: &[Vec<Pt>], a: &Leg, b: &Leg) -> bool {
     !ends_a.iter().any(|&p| ends_b.iter().any(|&q| same(p, q)))
 }
 
-/// Pairs of legs of different arrows running side by side closer than `pitch`:
-/// `(path a, path b, distance, overlap)`, for the metrics.
-pub(crate) fn close_pairs(paths: &[Vec<Pt>], pitch: f64) -> Vec<(usize, usize, f64, f64)> {
+/// One pair of legs of different arrows running side by side closer than a lane.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct ClosePair {
+    pub a: usize,
+    pub b: usize,
+    /// The legs (segment indices) of `a` and `b`.
+    pub ka: usize,
+    pub kb: usize,
+    /// Distance across and overlap along the legs.
+    pub dist: f64,
+    pub overlap: f64,
+    /// The middle of the shared run.
+    pub at: Pt,
+}
+
+/// Pairs of legs of different arrows running side by side closer than `pitch`, for
+/// the metrics.
+pub(crate) fn close_pairs(paths: &[Vec<Pt>], pitch: f64) -> Vec<ClosePair> {
     let mut out = Vec::new();
     for vertical in [true, false] {
         let ls = legs(paths, None, vertical, 0.0, 0.0);
@@ -187,7 +202,11 @@ pub(crate) fn close_pairs(paths: &[Vec<Pt>], pitch: f64) -> Vec<(usize, usize, f
             for b in &ls[i + 1..] {
                 let d = (a.at - b.at).abs();
                 if d < pitch - 1.0 && alongside(paths, a, b) {
-                    out.push((a.path.min(b.path), a.path.max(b.path), d, overlap(a, b)));
+                    let across = (a.at + b.at) / 2.0;
+                    let along = (a.lo.max(b.lo) + a.hi.min(b.hi)) / 2.0;
+                    let at = if vertical { (across, along) } else { (along, across) };
+                    let (a, b) = if a.path <= b.path { (a, b) } else { (b, a) };
+                    out.push(ClosePair { a: a.path, b: b.path, ka: a.k, kb: b.k, dist: d, overlap: overlap(a, b), at });
                 }
             }
         }
@@ -228,12 +247,77 @@ fn crossings(a: &[Pt], b: &[Pt]) -> usize {
 }
 
 /// Port pitch on a face: a lane, or on a small mark (a tile, a logo) what the mark
-/// allows — the rule the channel router assigns ports by.
+/// allows — the rule the channel router assigns ports by. (A pitch from the count of
+/// ports on the face, a full lane when it fits, was measured worse.)
 fn face_pitch(outline: &crate::style::Outline, lane: f64) -> f64 {
     match outline {
         crate::style::Outline::Captioned { mark, .. } => lane.min(mark / 3.5).max(8.0),
         _ => lane,
     }
+}
+
+/// Every plan with a path: the paths, their edges, and their ends (ports, spans and
+/// pitches). Plans without a path (self-loops, missing ends) are left out.
+pub(crate) fn collect_paths(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens) -> (Vec<Vec<Pt>>, Vec<EdgeIndex>, Ends) {
+    let lane = tokens.channel_pitch().max(10.0);
+    let mut ids: Vec<EdgeIndex> = plans.keys().copied().collect();
+    ids.sort_by_key(|e| e.index());
+    let mut paths: Vec<Vec<Pt>> = Vec::new();
+    let mut path_edge: Vec<EdgeIndex> = Vec::new();
+    let mut ends = Ends { ports: Vec::new(), spans: Vec::new(), pitch: Vec::new() };
+    for e in ids {
+        let plan = &plans[&e];
+        let (Some(p), Some((s, d, snl, dnl))) = (edge_full_path(compiled, layout, e, plan), resolve_edge_layout(compiled, layout, e)) else {
+            continue;
+        };
+        let along = |side: Side, q: Pt| if matches!(side, Side::Top | Side::Bottom) { q.0 } else { q.1 };
+        let span = |n: NodeIndex, nl: &rdg_layout::NodeLayout, side: Side| {
+            let outline = crate::style::outline_of(&compiled.graph[n], tokens);
+            let (lo, hi) = crate::ortho::port_range(&outline, side, nl);
+            let (lo, hi) = if lo > hi { ((lo + hi) / 2.0, (lo + hi) / 2.0) } else { (lo, hi) };
+            let (start, len) = if matches!(side, Side::Top | Side::Bottom) { (nl.x, nl.width) } else { (nl.y, nl.height) };
+            ((start + lo * len, start + hi * len), face_pitch(&outline, lane))
+        };
+        let (ss, sp) = span(s, snl, plan.src_side);
+        let (ds, dp) = span(d, dnl, plan.dst_side);
+        ends.ports.push([
+            Port { node: s, side: plan.src_side, at: along(plan.src_side, p[0]) },
+            Port { node: d, side: plan.dst_side, at: along(plan.dst_side, p[p.len() - 1]) },
+        ]);
+        ends.spans.push([ss, ds]);
+        ends.pitch.push([sp, dp]);
+        paths.push(p);
+        path_edge.push(e);
+    }
+    (paths, path_edge, ends)
+}
+
+/// [`close_pairs`] over the plans, less the pairs that are so by design: two end legs
+/// off one face of one node, standing the pitch apart that face allows. Each pair
+/// names its edges.
+pub(crate) fn close_pairs_of(compiled: &CompiledGraph, layout: &LayoutResult, plans: &HashMap<EdgeIndex, EdgeRoutingPlan>, tokens: &DesignTokens) -> Vec<(EdgeIndex, EdgeIndex, ClosePair)> {
+    let (paths, path_edge, ends) = collect_paths(compiled, layout, plans, tokens);
+    let pitch = tokens.channel_pitch().max(10.0);
+    close_pairs(&paths, pitch)
+        .into_iter()
+        .filter(|c| {
+            let end = |pi: usize, k: usize| -> Option<(Port, f64)> {
+                let n = paths[pi].len();
+                if k == 0 {
+                    Some((ends.ports[pi][0], ends.pitch[pi][0]))
+                } else if k + 2 == n {
+                    Some((ends.ports[pi][1], ends.pitch[pi][1]))
+                } else {
+                    None
+                }
+            };
+            match (end(c.a, c.ka), end(c.b, c.kb)) {
+                (Some((pa, pitch_a)), Some((pb, _))) if pa.node == pb.node && pa.side == pb.side => c.dist < pitch_a - 1.0,
+                _ => true,
+            }
+        })
+        .map(|c| (path_edge[c.a], path_edge[c.b], c))
+        .collect()
 }
 
 /// Spreads the plans' parallel legs apart (see the module doc). Plans without a path
@@ -252,35 +336,7 @@ pub fn spread_parallels(
     let lane_margin = pitch;
     let border_lane = pitch * 1.25;
 
-    let mut ids: Vec<EdgeIndex> = plans.keys().copied().collect();
-    ids.sort_by_key(|e| e.index());
-    let mut paths: Vec<Vec<Pt>> = Vec::new();
-    let mut path_edge: Vec<EdgeIndex> = Vec::new();
-    let mut ends = Ends { ports: Vec::new(), spans: Vec::new(), pitch: Vec::new() };
-    for e in ids {
-        let plan = &plans[&e];
-        let (Some(p), Some((s, d, snl, dnl))) = (edge_full_path(compiled, layout, e, plan), resolve_edge_layout(compiled, layout, e)) else {
-            continue;
-        };
-        let along = |side: Side, q: Pt| if matches!(side, Side::Top | Side::Bottom) { q.0 } else { q.1 };
-        let span = |n: NodeIndex, nl: &rdg_layout::NodeLayout, side: Side| {
-            let outline = crate::style::outline_of(&compiled.graph[n], tokens);
-            let (lo, hi) = crate::ortho::port_range(&outline, side, nl);
-            let (lo, hi) = if lo > hi { ((lo + hi) / 2.0, (lo + hi) / 2.0) } else { (lo, hi) };
-            let (start, len) = if matches!(side, Side::Top | Side::Bottom) { (nl.x, nl.width) } else { (nl.y, nl.height) };
-            ((start + lo * len, start + hi * len), face_pitch(&outline, pitch))
-        };
-        let (ss, sp) = span(s, snl, plan.src_side);
-        let (ds, dp) = span(d, dnl, plan.dst_side);
-        ends.ports.push([
-            Port { node: s, side: plan.src_side, at: along(plan.src_side, p[0]) },
-            Port { node: d, side: plan.dst_side, at: along(plan.dst_side, p[p.len() - 1]) },
-        ]);
-        ends.spans.push([ss, ds]);
-        ends.pitch.push([sp, dp]);
-        paths.push(p);
-        path_edge.push(e);
-    }
+    let (mut paths, path_edge, mut ends) = collect_paths(compiled, layout, plans, tokens);
     if paths.len() < 2 {
         return;
     }
@@ -413,30 +469,38 @@ pub fn spread_parallels(
             if members.len() < 2 {
                 continue;
             }
-            members.sort_by(|&a, &b| ls[a].at.total_cmp(&ls[b].at).then(a.cmp(&b)));
             let gap_to = |i: usize, j: usize| if alongside(&paths, &ls[i], &ls[j]) { need(&ls[i], &ls[j]) } else { 0.0 };
-            let mut x: Vec<f64> = members.iter().map(|&i| ls[i].at).collect();
-            for k in 0..members.len() {
-                let i = members[k];
-                let mut v = ls[i].range.0.max(ls[i].at.min(ls[i].range.1));
-                if k > 0 {
-                    // Past every earlier leg it runs alongside, not just the previous.
-                    for q in 0..k {
-                        v = v.max(x[q] + gap_to(members[q], i));
+            let pack = |members: &[usize]| -> Vec<f64> {
+                let mut x: Vec<f64> = members.iter().map(|&i| ls[i].at).collect();
+                for k in 0..members.len() {
+                    let i = members[k];
+                    let mut v = ls[i].range.0.max(ls[i].at.min(ls[i].range.1));
+                    if k > 0 {
+                        // Past every earlier leg it runs alongside, not just the previous.
+                        for q in 0..k {
+                            v = v.max(x[q] + gap_to(members[q], i));
+                        }
                     }
+                    x[k] = hop(&ls[i], v, true).clamp(ls[i].range.0, ls[i].range.1);
                 }
-                x[k] = hop(&ls[i], v, true).clamp(ls[i].range.0, ls[i].range.1);
-            }
-            for k in (0..members.len()).rev() {
-                let i = members[k];
-                if k + 1 < members.len() {
-                    for q in k + 1..members.len() {
-                        let limit = x[q] - gap_to(i, members[q]);
-                        x[k] = x[k].min(limit);
+                for k in (0..members.len()).rev() {
+                    let i = members[k];
+                    if k + 1 < members.len() {
+                        for q in k + 1..members.len() {
+                            let limit = x[q] - gap_to(i, members[q]);
+                            x[k] = x[k].min(limit);
+                        }
                     }
+                    x[k] = hop(&ls[i], x[k], false).clamp(ls[i].range.0, ls[i].range.1);
                 }
-                x[k] = hop(&ls[i], x[k], false).clamp(ls[i].range.0, ls[i].range.1);
-            }
+                x
+            };
+            // Packed in the order they stand today. (Packing them in the order of their
+            // ranges' middles, so two pinned stubs could pass each other, was measured
+            // worse, with or without judging a pending move by its target: the pair's
+            // moves are applied one by one and the second is refused.)
+            members.sort_by(|&a, &b| ls[a].at.total_cmp(&ls[b].at).then(a.cmp(&b)));
+            let x = pack(&members);
             for (k, &i) in members.iter().enumerate() {
                 target[i] = x[k];
             }
@@ -447,6 +511,7 @@ pub fn spread_parallels(
         let mut cur: Vec<f64> = ls.iter().map(|l| l.at).collect();
         let mut order: Vec<usize> = (0..ls.len()).filter(|&i| ls[i].movable() && (target[i] - ls[i].at).abs() > 0.5).collect();
         order.sort_by(|&i, &j| ls[i].path.cmp(&ls[j].path).then(ls[i].k.cmp(&ls[j].k)));
+        // (A second try at the refused moves once the others have moved changed nothing.)
         for i in order {
             let l = ls[i];
             let want = target[i].round();
@@ -507,7 +572,14 @@ pub fn spread_parallels(
                 let (b, r) = touches(probe);
                 let new_b: Vec<String> = b.iter().filter(|x| !boxes_now.contains(x)).map(|&i| format!("box{i}=({:.0},{:.0})-({:.0},{:.0})", boxes[i].x0, boxes[i].y0, boxes[i].x1, boxes[i].y1)).collect();
                 let new_r: Vec<String> = r.iter().filter(|x| !borders_now.contains(x)).map(|&i| format!("border{i}@{:.0}", borders[i].1)).collect();
-                eprintln!("spread: path {} leg {} blocked at {probe:.0}: {} {}", l.path, l.k, new_b.join(" "), new_r.join(" "));
+                let near: Vec<String> = ls
+                    .iter()
+                    .enumerate()
+                    .filter(|(j, m)| *j != i && alongside(&paths, &l, m) && (probe - cur[*j]).abs() < (pitch - 1.0).min((l.at - cur[*j]).abs()) - 0.5)
+                    .map(|(j, m)| format!("leg(path {} k {} at {:.0})", m.path, m.k, cur[j]))
+                    .collect();
+                let (s, d) = compiled.graph.edge_endpoints(path_edge[l.path]).map_or(("?", "?"), |(a, b)| (compiled.graph[a].id.as_str(), compiled.graph[b].id.as_str()));
+                eprintln!("spread: {s} -> {d} (path {}) leg {} at {:.0} blocked at {probe:.0}: {} {} too-close:{}", l.path, l.k, l.at, new_b.join(" "), new_r.join(" "), near.join(","));
             }
             let Some(at) = found else { continue };
             let mut new_pts = pts.clone();
@@ -518,9 +590,15 @@ pub fn spread_parallels(
                     p.1 = at;
                 }
             }
+            // (Counting a leg lying on another's as a crossing it already has, so lifting
+            // it off may cost one, was measured worse: 15 more crossings, no pair fewer.)
             let before: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&pts, q)).sum();
             let after: usize = paths.iter().enumerate().filter(|(j, _)| *j != l.path).map(|(_, q)| crossings(&new_pts, q)).sum();
             if after > before {
+                if debug {
+                    let (s, d) = compiled.graph.edge_endpoints(path_edge[l.path]).map_or(("?", "?"), |(a, b)| (compiled.graph[a].id.as_str(), compiled.graph[b].id.as_str()));
+                    eprintln!("spread: {s} -> {d} (path {}) leg {} {:.0} -> {at:.0} refused: crossings {before} -> {after}", l.path, l.k, l.at);
+                }
                 continue;
             }
             if debug {

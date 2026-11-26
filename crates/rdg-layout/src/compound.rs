@@ -358,23 +358,14 @@ impl Compound<'_> {
         let mut size = (content.0 + pad[0] + pad[1], content.1 + pad[2] + pad[3]);
         // Top-to-bottom, an arrow dropping in from above onto a node in the top layer
         // must not cross the title: the content is shifted right until every such
-        // node's centre is past the title's end (real width is the cross axis
+        // node has an entry port past the title's end (real width is the cross axis
         // top-to-bottom; left-to-right arrows arrive from the side, under the title).
         let mut title_shift = 0.0_f64;
         if !self.frame.lr {
             let clear = title_clear_x(group, &self.config.tokens);
             let fed = layers.first().map_or(Vec::new(), |top| self.fed_items(g, top));
             for it in fed {
-                // The whole face an arrow may enter by must be past the title: a tile's
-                // or logo's mark, the ports' span of a card, an inner group's middle.
-                let entry_half = match it {
-                    Item::Node(n) => match crate::caption_mark(&self.compiled.graph[n], &self.config.tokens) {
-                        Some(mark) => mark / 2.0 + self.config.tokens.px(1.0),
-                        None => self.size(it).0 * 0.38,
-                    },
-                    Item::Group(_) => 0.0,
-                };
-                title_shift = title_shift.max(clear - (inset.0 + pos[&it].0 + self.size(it).0 / 2.0 - entry_half));
+                title_shift = title_shift.max(clear - (inset.0 + pos[&it].0 + self.size(it).0 / 2.0 + self.title_reach(it)));
             }
             title_shift = title_shift.max(0.0).round();
             inset.0 += title_shift;
@@ -393,6 +384,24 @@ impl Compound<'_> {
     /// The `top` items of group `g` an edge enters from upstream: from outside the
     /// group, with nothing in the group sending back to where it came from (a group
     /// called both ways shares its tier and is entered from the side).
+    /// How far right of an item's centre an arrow from above may still enter it: the
+    /// far end of a tile's or logo's mark, the far port of a card (ports span the
+    /// middle 84 % of a face), an inner group's middle. An arrow need only find one
+    /// port past the title, not the whole face: the routers keep off the title text.
+    /// (Demanding the whole face put 100-240 px of empty space left of the content
+    /// under every long title.)
+    fn title_reach(&self, it: Item) -> f64 {
+        let reach = match it {
+            Item::Node(n) => match crate::caption_mark(&self.compiled.graph[n], &self.config.tokens) {
+                Some(mark) => mark / 2.0 - self.config.tokens.px(1.0),
+                None => self.size(it).0 * 0.38,
+            },
+            Item::Group(_) => 0.0,
+        };
+        // Wide titles: the whole face past the title (the reach turns into a demand).
+        if self.config.tight_titles { reach } else { -reach - 2.0 * self.config.tokens.px(1.0) }
+    }
+
     fn fed_items(&self, g: usize, top: &[Item]) -> Vec<Item> {
         let within = |n: NodeIndex| self.item_in(Some(g), n).is_some();
         // The smallest scope holding both the group and `n`, and `n`'s item there.
@@ -592,14 +601,7 @@ impl Compound<'_> {
             let clear = title_clear_x(group, tokens);
             let fed = block.layers.first().map_or(Vec::new(), |top| self.fed_items(g, top));
             for it in fed {
-                let entry_half = match it {
-                    Item::Node(n) => match crate::caption_mark(&self.compiled.graph[n], tokens) {
-                        Some(mark) => mark / 2.0 + tokens.px(1.0),
-                        None => self.size(it).0 * 0.38,
-                    },
-                    Item::Group(_) => 0.0,
-                };
-                title_shift = title_shift.max(clear - (inset0 + block.pos[&it].0 - lo + self.size(it).0 / 2.0 - entry_half));
+                title_shift = title_shift.max(clear - (inset0 + block.pos[&it].0 - lo + self.size(it).0 / 2.0 + self.title_reach(it)));
             }
             title_shift = title_shift.max(0.0).round();
             inset0 += title_shift;

@@ -28,6 +28,27 @@ Large Language Models are excellent at semantic reasoning but fail at 2D spatial
 
 ### What's new
 
+- **v1.5.0 — close arrows, badges, fan arrows, tight titles**:
+  - *Trunk rungs keep a lane from other arrows*: the arrows of a bundle join their
+    trunk on the first ladder line clear of every other arrow (they lay 2 px from
+    others in 1.4.0): 24 → 16 close parallel pairs and 243 → 236 crossings on the
+    bundled examples.
+  - *Flow-number badges*: a badge keeps 8 px from every box, sits nearer its own
+    arrow than any other and clear of other arrows' heads and tails, lines up with
+    its siblings off one face, may drift down a crowded arrow or sit on its own line
+    as a last resort, and an arrow of 600 px or more carries a smaller second badge
+    before its arrowhead.
+  - *Tight containers*: a node an arrow enters from above needs only one port past
+    the group's title, not its whole face, so the empty room left of a group's
+    content under a long title is gone or much smaller (the old rule stays as a
+    judged layout variant).
+  - *Fan arrows*: `from` or `to` may list several nodes (`to: [orders, users,
+    billing]`): one arrow fanning out to (or in from) all of them, drawn as a trunk
+    with junction dots and a branch per node, its label and step badge said once; the
+    listed nodes are levelled and laid out side by side with no container — the way
+    to group related nodes without a box. Only one end may be a list.
+  - *Rules doc*: [`docs/layout-rules.md`](docs/layout-rules.md) records every rule
+    with its measured status, and the `--guide` texts describe the new behaviour.
 - **v1.4.0 — layout rules pass** (research-backed rules in
   [`docs/layout-rules.md`](docs/layout-rules.md); measured on 45 fixtures, total
   crossings 284 → 243, fintech's arrows through foreign containers 8 → 0, game

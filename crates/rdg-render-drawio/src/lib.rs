@@ -393,7 +393,11 @@ pub fn render_drawio(
         // Flow-numbering badge: a small floating circle beside the line near its source,
         // when this edge has a resolved `step` (i.e. the diagram opted into `numbered: true`).
         if let (Some(step), Some(&(bx, by))) = (edge_data.step.as_deref(), annotations.badges.get(&edge_idx)) {
-            write_step_badge(&mut w, &edge_id, step, bx, by, theme, tokens)?;
+            write_step_badge(&mut w, &edge_id, step, bx, by, 1.0, theme, tokens)?;
+        }
+        // On a long arrow, a smaller one before the arrowhead.
+        if let (Some(step), Some(&(bx, by))) = (edge_data.step.as_deref(), annotations.end_badges.get(&edge_idx)) {
+            write_step_badge(&mut w, &format!("{edge_id}_end"), step, bx, by, rdg_render_core::annotate::END_BADGE_SCALE, theme, tokens)?;
         }
 
         // Line, arrowheads and label type from the theme's look for this edge style,
@@ -655,21 +659,23 @@ pub(crate) fn write_legend<W: std::io::Write>(
 /// Writes a small floating filled-circle vertex carrying a flow-sequence number, centered
 /// at `(x, y)`. Independent of any edge cell — draw.io has no "detached badge on this edge"
 /// primitive, so this is just its own tiny vertex placed where the badge belongs.
+#[expect(clippy::too_many_arguments, reason = "a drawing call with its geometry, scale and styles spelled out")]
 fn write_step_badge<W: std::io::Write>(
     w: &mut Writer<W>,
     edge_id: &str,
     step: &str,
     x: f64,
     y: f64,
+    scale: f64,
     theme: &Theme,
     tokens: &DesignTokens,
 ) -> Result<()> {
-    // A circle, or a pill for a longer step (`16a`).
-    let (bw, bh) = rdg_render_core::annotate::badge_size(step, tokens);
+    // A circle, or a pill for a longer step (`16a`); `scale` < 1 for the far-end badge.
+    let (bw, bh) = if scale < 1.0 { rdg_render_core::annotate::end_badge_size(step, tokens) } else { rdg_render_core::annotate::badge_size(step, tokens) };
     let b = &theme.badge;
     let style = format!(
         "rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor={};strokeColor=none;fontColor={};fontSize={};fontStyle=1;fontFamily={};spacing=0;",
-        b.fill, b.text, theme.font.badge_size, theme.font.family
+        b.fill, b.text, theme.font.badge_size * scale, theme.font.family
     );
 
     let mut cell = BytesStart::new("mxCell");
@@ -727,8 +733,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 label: Some("connects".to_owned()),
                 ..Default::default()
             }],
@@ -815,8 +821,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 edge_style: Some("async".to_owned()),
                 ..Default::default()
             }],
@@ -849,8 +855,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 edge_style: Some("composition".to_owned()),
                 ..Default::default()
             }],
@@ -888,8 +894,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 label: Some("é & ü".to_owned()),
                 ..Default::default()
             }],
@@ -920,8 +926,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 style_extra: Some("curved=1;".to_owned()),
                 ..Default::default()
             }],

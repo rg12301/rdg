@@ -120,6 +120,9 @@ pub fn group_rects(compiled: &CompiledGraph, layout: &LayoutResult, tokens: &Des
         let w = cw + pad.left + pad.right + shift;
         let min_w = group_min_width(&compiled.groups[g], tokens).max(layout.group_widths.get(&g).copied().unwrap_or(0.0));
         let extra = (min_w - w).max(0.0);
+        if std::env::var_os("RDG_DEBUG_GROUPS").is_some() {
+            eprintln!("group {}: content {cw:.0}x{ch:.0} pad l={:.0} r={:.0} shift={shift:.0} extra={extra:.0} -> left {:.0} right {:.0}", compiled.groups[g].id, pad.left, pad.right, pad.left + shift + extra / 2.0, pad.right + extra / 2.0);
+        }
         rects[g] = Some((x0 - pad.left - shift - extra / 2.0, y0 - pad.top, w + extra, ch + pad.top + pad.bottom));
     }
     rects

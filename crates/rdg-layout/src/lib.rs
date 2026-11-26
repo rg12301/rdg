@@ -107,6 +107,12 @@ pub struct LayoutConfig {
     /// through it (the group opens a band for it) instead of going round; the review
     /// compares both layouts and keeps the one that routes better.
     pub pass_through: bool,
+    /// Tight group titles: a node fed from above needs only one entry port past the
+    /// title, so the content is shifted right no more than that (the routers keep off
+    /// the title text). `false` keeps the node's whole face past the title, which
+    /// leaves more room left of the content under a long title but never costs the
+    /// routers anything; the review judges both.
+    pub tight_titles: bool,
 }
 
 impl Default for LayoutConfig {
@@ -125,6 +131,7 @@ impl Default for LayoutConfig {
             tokens,
             side_columns: true,
             pass_through: true,
+            tight_titles: true,
         }
     }
 }
@@ -433,8 +440,8 @@ mod tests {
                 },
             ],
             edges: vec![EdgeDef {
-                from: "n1".to_owned(),
-                to: "n2".to_owned(),
+                from: "n1".to_owned().into(),
+                to: "n2".to_owned().into(),
                 label: Some("connects".to_owned()),
                 ..Default::default()
             }],
@@ -568,18 +575,18 @@ mod tests {
             ],
             edges: vec![
                 EdgeDef {
-                    from: "n1".to_owned(),
-                    to: "n2".to_owned(),
+                    from: "n1".to_owned().into(),
+                    to: "n2".to_owned().into(),
                     ..Default::default()
                 },
                 EdgeDef {
-                    from: "n2".to_owned(),
-                    to: "n3".to_owned(),
+                    from: "n2".to_owned().into(),
+                    to: "n3".to_owned().into(),
                     ..Default::default()
                 },
                 EdgeDef {
-                    from: "n3".to_owned(),
-                    to: "n4".to_owned(),
+                    from: "n3".to_owned().into(),
+                    to: "n4".to_owned().into(),
                     ..Default::default()
                 },
             ],
@@ -832,6 +839,18 @@ edges:
     }
 
     #[test]
+    fn tight_titles_shift_a_fed_node_less_than_wide_ones() {
+        let yaml = "groups: [{id: g, label: 'A container with a long title', nodes: [t]}]\nnodes: [{id: s, label: S}, {id: t, label: T, type: service}]\nedges: [{from: s, to: t}]\n";
+        let compiled = rdg_graph::build_graph(&rdg_schema::DiagramPayload::from_yaml(yaml).unwrap()).unwrap();
+        let tight = compute_layout(&compiled, &LayoutConfig::default()).unwrap();
+        let wide = compute_layout(&compiled, &LayoutConfig { tight_titles: false, ..Default::default() }).unwrap();
+        let room = |l: &LayoutResult| l.group_title_shift.values().sum::<f64>();
+        assert!(room(&tight) < room(&wide), "tight {} wide {}", room(&tight), room(&wide));
+        // Tight still keeps the tile's far edge past the title.
+        assert!(room(&tight) > 0.0);
+    }
+
+    #[test]
     fn test_pinned_rank_holds_and_pushes_what_it_feeds() {
         let (c, l) = layout_of("nodes: [{id: a}, {id: b}, {id: m, rank: 0}]\nedges: [{from: a, to: b}, {from: b, to: m}]\n");
         let y = |id: &str| l.positions[&c.node_map[id]].y;
@@ -887,14 +906,15 @@ edges:
         };
         let group = "groups: [{id: g, label: A very long group title indeed, nodes: [a]}]\n";
         // Fed from above: the content is shifted right so an arrow dropping onto the
-        // node clears the title — no wider than that needs (not widened evenly).
+        // node has an entry port past the title (the far port of a card, 0.38 of its
+        // width right of the centre) — no wider than that needs (not widened evenly).
         let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: up, label: Up}}, {{id: a, label: A}}]\n{group}edges: [{{from: up, to: a}}]\n"));
         let t = &config.tokens;
         let title_end = r.0 + groups::group_title_inset(t).0 + 31.0 * t.char_width(t.group_title_font_size);
-        let centre = a.x + a.width / 2.0;
-        assert!(centre > title_end, "the arrow onto the node clears the title");
+        let far_port = a.x + a.width / 2.0 + a.width * 0.38;
+        assert!(far_port > title_end, "an entry past the title: port {far_port}, title ends {title_end}");
         let clear = r.0 + groups::title_clear_x(&compiled.groups[0], t);
-        assert!(centre >= clear - 1.0 && centre <= clear + a.width, "shifted just past the title: node {centre}, clear {clear}");
+        assert!(far_port >= clear - 1.0 && far_port <= clear + a.width, "shifted just past the title: port {far_port}, clear {clear}");
         assert!(r.2 < 2.0 * groups::title_clear_x(&compiled.groups[0], t), "not widened evenly: {r:?}");
         // Not fed from above: just wide enough for its title, still centred.
         let (r, a, compiled, config) = rect_and_node(&format!("nodes: [{{id: a, label: A}}]\n{group}"));

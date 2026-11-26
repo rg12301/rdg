@@ -72,6 +72,10 @@ pub struct EdgeAnnotations {
     pub labels: HashMap<EdgeIndex, LabelSpot>,
     /// Badge centre per numbered edge (its size: [`badge_size`] of the edge's `step`).
     pub badges: HashMap<EdgeIndex, Pt>,
+    /// A second, smaller badge before the arrowhead of a numbered edge longer than
+    /// [`END_BADGE_FROM`] (its size: [`end_badge_size`]), so the number can be read at
+    /// the far end of a long arrow too.
+    pub end_badges: HashMap<EdgeIndex, Pt>,
     /// Labels that still break the ownership rule (another arrow less than a lane
     /// further away than the label's own line), one line each, for `RDG_DEBUG_SPACING`.
     pub floating: Vec<String>,
@@ -137,6 +141,18 @@ pub fn badge_size(step: &str, tokens: &DesignTokens) -> (f64, f64) {
     let text_w = step.chars().count() as f64 * tokens.char_width(tokens.badge_font_size) + tokens.badge_radius;
     (d.max(text_w.ceil()), d)
 }
+
+/// Size of the second badge at the far end of a long arrow: [`badge_size`] scaled by
+/// [`END_BADGE_SCALE`].
+pub fn end_badge_size(step: &str, tokens: &DesignTokens) -> (f64, f64) {
+    let (w, h) = badge_size(step, tokens);
+    ((w * END_BADGE_SCALE).ceil(), (h * END_BADGE_SCALE).ceil())
+}
+
+/// An arrow at least this long carries a second badge before its arrowhead.
+pub const END_BADGE_FROM: f64 = 600.0;
+/// The far-end badge's size, relative to the one at the source.
+pub const END_BADGE_SCALE: f64 = 0.8;
 
 /// Sort key putting steps in reading order: by number, then branch (`3` < `3a` < `3b` < `4`).
 fn step_order(step: &str) -> (u32, String) {
@@ -239,6 +255,24 @@ const SPAN_PAD: f64 = 64.0;
 const BEND_CLEAR: f64 = 10.0;
 /// A label this far or further from its line gets a leader line to it.
 const LEADER_FROM: f64 = 16.0;
+/// A badge nearer another arrow's line than its own, by less than this margin, reads
+/// as that arrow's number.
+const BADGE_OWN_MARGIN: f64 = 6.0;
+const W_BADGE_OWN: f64 = 150.0;
+/// Half-side of the zone round another arrow's head or tail a badge keeps out of: a
+/// number beside an arrowhead is read as that arrow's.
+const END_ZONE: f64 = 10.0;
+/// How far down its arrow a badge may go when the source is crowded (it costs 0.6/px).
+const BADGE_REACH: f64 = 600.0;
+/// A badge on its own line (the plate hides the line under it) costs this: the spot
+/// of last resort when both sides of the arrow are taken for its whole reach.
+const BADGE_ON_LINE: f64 = 45.0;
+/// Air a badge keeps from every node box (beyond the 2 px of any annotation).
+const BADGE_NODE_AIR: f64 = 8.0;
+/// Badges of arrows leaving one face of one node line up: per px their distances
+/// from the face differ, and per side they disagree on.
+const W_BADGE_FAN: f64 = 0.5;
+const W_BADGE_FAN_SIDE: f64 = 6.0;
 
 /// Bit of group `g` in a membership mask (groups past 63 share the last bit).
 fn group_bit(g: usize) -> u64 {
@@ -331,6 +365,14 @@ impl Scene {
         }
         for &(a, b) in &self.borders {
             c += W_BORDER * clip_len(a, b, padded);
+        }
+        if std::env::var_os("RDG_DEBUG_COST").is_some() && c > 0.0 {
+            let nodes: f64 = self.nodes.iter().map(|&n| W_AREA * overlap_area(padded, n)).sum();
+            let titles: f64 = self.titles.iter().map(|&t| W_AREA * overlap_area(padded, t)).sum();
+            let placed: f64 = self.placed.iter().map(|&(_, _, p)| W_AREA * overlap_area(inflate(r, 3.0), p)).sum();
+            let borders: f64 = self.borders.iter().map(|&(a, b)| W_BORDER * clip_len(a, b, padded)).sum();
+            let own: f64 = self.paths.iter().filter(|(e, _)| *e == own && !on_own_line).map(|(_, p)| p.windows(2).map(|w| W_LINE * clip_len(w[0], w[1], inflate(r, 1.0))).sum::<f64>()).sum();
+            eprintln!("cost r=({:.0},{:.0},{:.0},{:.0}) total={c:.0} nodes={nodes:.0} titles={titles:.0} placed={placed:.0} borders={borders:.0} own={own:.0} lines={:.0}", r.0, r.1, r.2, r.3, c - nodes - titles - placed - borders - own);
         }
         c
     }
@@ -440,21 +482,68 @@ pub fn place_edge_annotations(
     let mut scene = Scene { nodes, titles, borders, groups, paths, placed: Vec::new(), lane: tokens.channel_pitch().max(10.0) };
 
     // --- Badges ---------------------------------------------------------------
+    // A badge sits beside its arrow's first stretch, as near the source as the scene
+    // allows, on the right hand of travel (the label takes the other side); never on a
+    // node, a title, a line, a label or another badge; nearer its own line than any
+    // other and clear of every other arrow's head and tail, where it would read as that
+    // arrow's number; badges of arrows leaving one face of one node line up; a long
+    // arrow gets a second, smaller badge before its arrowhead.
+    let src_faces: HashMap<EdgeIndex, (NodeIndex, Side)> = scene
+        .paths
+        .iter()
+        .filter_map(|(e, _)| Some((*e, (*sources.get(e)?, edge_plans.get(e).map_or(Side::Bottom, |p| p.src_side)))))
+        .collect();
+    let mut fan_badges: Vec<((NodeIndex, Side), f64, f64)> = Vec::new();
+    // A set's members share one step: the badge goes on the trunk only.
+    let on_trunk = |e: EdgeIndex| compiled.graph[e].set.is_none() || edge_plans.get(&e).is_none_or(|p| p.junction.is_none() && p.start.is_none());
     let mut numbered: Vec<((u32, String), usize)> = scene
         .paths
         .iter()
         .enumerate()
+        .filter(|(_, (e, _))| on_trunk(*e))
         .filter_map(|(i, (e, _))| compiled.graph[*e].step.as_deref().map(|s| (step_order(s), i)))
         .collect();
     numbered.sort();
+    let debug = std::env::var_os("RDG_DEBUG_BADGES").is_some();
     for ((_, step), i) in numbered {
         let (edge_idx, path) = scene.paths[i].clone();
         let total = path_len(&path);
+        let face = src_faces.get(&edge_idx).copied();
+        // What a badge costs at `r`, `d` from the face on side `sign`, beyond the scene.
+        let badge_cost = |scene: &Scene, fan_badges: &[((NodeIndex, Side), f64, f64)], r: Rect, d: f64, sign: f64, at_start: bool| -> f64 {
+            let mut c = scene.cost(r, edge_idx, false, 0.0);
+            let (foreign, own_d) = scene.ownership(r, edge_idx);
+            if foreign < own_d + BADGE_OWN_MARGIN {
+                c += W_BADGE_OWN;
+            }
+            let zone = |p: Pt| (p.0 - END_ZONE, p.1 - END_ZONE, 2.0 * END_ZONE, 2.0 * END_ZONE);
+            for (e, other) in &scene.paths {
+                if *e == edge_idx || other.len() < 2 {
+                    continue;
+                }
+                c += W_AREA * (overlap_area(inflate(r, 3.0), zone(other[0])) + overlap_area(inflate(r, 3.0), zone(other[other.len() - 1])));
+            }
+            for &n in &scene.nodes {
+                c += W_AREA * overlap_area(inflate(r, BADGE_NODE_AIR), n);
+            }
+            if at_start {
+                if let Some(f) = face {
+                    for &(of, od, os) in fan_badges {
+                        if of == f {
+                            c += W_BADGE_FAN * (d - od).abs() + if os != sign { W_BADGE_FAN_SIDE } else { 0.0 };
+                        }
+                    }
+                }
+            }
+            c
+        };
+        // The badge at the source: anywhere along a short arrow (past the arrowhead),
+        // the first half of a long one, up to [`BADGE_REACH`] — the drift cost keeps it
+        // near the source unless the source is crowded.
         let (bw, bh) = badge_size(&step, tokens);
         let badge = |c: Pt| (c.0 - bw / 2.0, c.1 - bh / 2.0, bw, bh);
-        // Anywhere along a short arrow (past the arrowhead), the first half of a long one.
-        let d_max = if total < 140.0 { (total - 16.0).max(16.0) } else { (total * 0.5).clamp(16.0, 96.0) };
-        let mut best: Option<(f64, Pt)> = None;
+        let d_max = if total < 140.0 { (total - 16.0).max(16.0) } else { (total * 0.5).clamp(16.0, BADGE_REACH) };
+        let mut best: Option<(f64, Pt, f64, f64)> = None;
         let mut d = 16.0;
         while d <= d_max + 1e-9 {
             let (p, dir, _) = point_at(&path, d.min(total));
@@ -467,20 +556,63 @@ pub fn place_edge_annotations(
                 for extra in [0.0, 12.0] {
                     let o = off + extra;
                     let c = (p.0 - dir.1 * o * sign, p.1 + dir.0 * o * sign);
-                    let cost = scene.cost(badge(c), edge_idx, false, 0.0) + d * 0.6 + k + extra * 1.5;
-                    if std::env::var_os("RDG_DEBUG_BADGES").is_some() {
+                    let cost = badge_cost(&scene, &fan_badges, badge(c), d, sign, true) + d * 0.6 + k + extra * 1.5;
+                    if debug {
                         eprintln!("badge {step}: d={d:.0} sign={sign} extra={extra} at=({:.0},{:.0}) cost={cost:.0} scene={:.0}", c.0, c.1, scene.cost(badge(c), edge_idx, false, 0.0));
                     }
-                    if best.is_none_or(|(b, _)| cost < b - 1e-9) {
-                        best = Some((cost, c));
+                    if best.is_none_or(|(b, ..)| cost < b - 1e-9) {
+                        best = Some((cost, c, d, sign));
                     }
+                }
+            }
+            // On the line itself, when both sides are taken: on a straight stretch only,
+            // never over a bend.
+            let (_, _, seg) = point_at(&path, d.min(total));
+            let half = bw.max(bh) / 2.0 + BEND_CLEAR;
+            let straight = point_at(&path, (d - half).max(0.0)).2 == seg && point_at(&path, (d + half).min(total)).2 == seg;
+            if straight {
+                let on = scene.cost(badge(p), edge_idx, true, 0.0) + BADGE_ON_LINE + d * 0.6;
+                if debug {
+                    eprintln!("badge {step}: d={d:.0} on-line at=({:.0},{:.0}) cost={on:.0}", p.0, p.1);
+                }
+                if best.is_none_or(|(b, ..)| on < b - 1e-9) {
+                    best = Some((on, p, d, 0.0));
                 }
             }
             d += 6.0;
         }
-        if let Some((_, c)) = best {
+        if let Some((_, c, d, sign)) = best {
             scene.placed.push((edge_idx, false, badge(c)));
             out.badges.insert(edge_idx, c);
+            if let Some(f) = face {
+                fan_badges.push((f, d, sign));
+            }
+        }
+        // The far-end badge of a long arrow: before the arrowhead, same side rule.
+        if total >= END_BADGE_FROM {
+            let (ew, eh) = end_badge_size(&step, tokens);
+            let ebadge = |c: Pt| (c.0 - ew / 2.0, c.1 - eh / 2.0, ew, eh);
+            let mut best: Option<(f64, Pt)> = None;
+            let mut d = 16.0;
+            while d <= 96.0 + 1e-9 {
+                let (p, dir, _) = point_at(&path, total - d);
+                let off = if dir.0.abs() >= dir.1.abs() { eh / 2.0 } else { ew / 2.0 } + 5.0;
+                for (k, sign) in [(0.0, 1.0), (3.0, -1.0)] {
+                    for extra in [0.0, 12.0] {
+                        let o = off + extra;
+                        let c = (p.0 - dir.1 * o * sign, p.1 + dir.0 * o * sign);
+                        let cost = badge_cost(&scene, &fan_badges, ebadge(c), d, sign, false) + d * 0.6 + k + extra * 1.5;
+                        if best.is_none_or(|(b, _)| cost < b - 1e-9) {
+                            best = Some((cost, c));
+                        }
+                    }
+                }
+                d += 6.0;
+            }
+            if let Some((_, c)) = best {
+                scene.placed.push((edge_idx, false, ebadge(c)));
+                out.end_badges.insert(edge_idx, c);
+            }
         }
     }
 
@@ -489,8 +621,23 @@ pub fn place_edge_annotations(
     // one node is said once, on the arrow in the middle of the fan — or, in a bundle,
     // on the trunk (the one that still reaches its target).
     let lr = layout.layered == Some(rdg_layout::LayoutDirection::LeftToRight);
+    // An arrow written with several nodes at one end says its label once, on the
+    // trunk (the member that still reaches the other end), whatever the set's size;
+    // its members take no part in the fan fold below.
+    for k in 0..compiled.sets.len() {
+        let members: Vec<usize> = scene.paths.iter().enumerate().filter(|(_, (e, _))| compiled.graph[*e].set == Some(k)).map(|(i, _)| i).collect();
+        let keep = members.iter().copied().find(|&i| edge_plans.get(&scene.paths[i].0).is_none_or(|p| p.junction.is_none() && p.start.is_none())).or(members.first().copied());
+        for &i in &members {
+            if Some(i) != keep {
+                out.folded.insert(scene.paths[i].0);
+            }
+        }
+    }
     let mut fans: HashMap<(petgraph::stable_graph::NodeIndex, bool, String), Vec<usize>> = HashMap::new();
     for (i, (e, _)) in scene.paths.iter().enumerate() {
+        if compiled.graph[*e].set.is_some() {
+            continue;
+        }
         let Some(text) = compiled.graph[*e].label.as_deref().map(str::trim).filter(|l| !l.is_empty()) else { continue };
         let Some((s, t, ..)) = resolve_edge_layout(compiled, layout, *e) else { continue };
         fans.entry((s, true, text.to_string())).or_default().push(i);
@@ -812,6 +959,47 @@ mod tests {
             assert!(spot.along >= BEND_CLEAR - 1e-6);
         }
         assert!(ann.floating.is_empty(), "{:?}", ann.floating);
+    }
+
+    #[test]
+    fn a_badge_keeps_its_air_from_every_node_and_a_short_arrow_has_no_end_badge() {
+        let (c, l, p, t) = compile();
+        let ann = place_edge_annotations(&c, &l, &p, &t);
+        assert!(ann.end_badges.is_empty(), "{:?}", ann.end_badges);
+        for e in c.graph.edge_indices() {
+            let b = ann.badges[&e];
+            let (bw, bh) = badge_size(c.graph[e].step.as_deref().unwrap(), &t);
+            let br = (b.0 - bw / 2.0, b.1 - bh / 2.0, bw, bh);
+            for n in l.positions.values() {
+                assert_eq!(overlap_area(inflate(br, BADGE_NODE_AIR - 0.5), (n.x, n.y, n.width, n.height)), 0.0, "badge {b:?} within {BADGE_NODE_AIR}px of a node");
+            }
+        }
+    }
+
+    #[test]
+    fn a_long_arrow_carries_a_second_badge_before_its_head() {
+        use rdg_schema::{DiagramPayload, EdgeDef, NodeDef};
+        let node = |id: &str| NodeDef { id: id.into(), label: id.to_uppercase(), ..Default::default() };
+        let compiled = rdg_graph::build_graph(&DiagramPayload {
+            numbered: Some(true),
+            nodes: vec![node("a"), node("b")],
+            edges: vec![EdgeDef { from: "a".into(), to: "b".into(), ..Default::default() }],
+            ..Default::default()
+        })
+        .unwrap();
+        let cfg = rdg_layout::LayoutConfig { rank_spacing: END_BADGE_FROM as u32 + 100, ..Default::default() };
+        let layout = rdg_layout::compute_layout(&compiled, &cfg).unwrap();
+        let plans = crate::routing::plan_all_edge_routes(&compiled, &layout, crate::routing::RoutingAlgorithm::CornerHeuristic, &cfg.tokens);
+        let ann = place_edge_annotations(&compiled, &layout, &plans, &cfg.tokens);
+        let e = compiled.graph.edge_indices().next().unwrap();
+        let path = edge_polyline(&compiled, &layout, e, plans.get(&e), &cfg.tokens).unwrap();
+        assert!(path_len(&path) >= END_BADGE_FROM, "{}", path_len(&path));
+        let head = path[path.len() - 1];
+        let start = ann.badges[&e];
+        let end = ann.end_badges.get(&e).copied().expect("an end badge");
+        let dist = |p: Pt, q: Pt| (p.0 - q.0).hypot(p.1 - q.1);
+        assert!(dist(end, head) <= 96.0 + 20.0, "end badge {end:?} is {:.0}px from the head {head:?}", dist(end, head));
+        assert!(dist(start, path[0]) < dist(end, path[0]), "the start badge stays at the source");
     }
 
     #[test]
