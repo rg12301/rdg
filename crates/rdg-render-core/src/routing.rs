@@ -711,13 +711,22 @@ fn plan_all_edge_routes_unbundled(
     let mut with_search = plans.clone();
     with_search.extend(searched);
     // Either way, legs of different arrows end up a lane apart.
-    let spread = |mut p: HashMap<EdgeIndex, EdgeRoutingPlan>| {
-        if std::env::var_os("RDG_NO_SPREAD").is_none() {
+    let spread = |p: HashMap<EdgeIndex, EdgeRoutingPlan>| {
+        if std::env::var_os("RDG_NO_SPREAD").is_some() {
+            return p;
+        }
+        let finish = |mut p: HashMap<EdgeIndex, EdgeRoutingPlan>, tracks: bool| {
+            // Interior legs in the gaps between rows and columns take tracks first.
+            if tracks {
+                crate::tracks::assign_tracks(compiled, layout, &mut p, tokens);
+            }
             crate::spread::spread_parallels(compiled, layout, &mut p, tokens);
             // Then sibling forks turn on one line.
             crate::siblings::align_sibling_turns(compiled, layout, &mut p, tokens);
-        }
-        p
+            p
+        };
+        // `RDG_TRACKS=off` leaves the gaps to the spread pass alone.
+        finish(p, !std::env::var("RDG_TRACKS").is_ok_and(|v| v == "off"))
     };
     if forced.as_deref() == Some("ortho") {
         return spread(with_search);

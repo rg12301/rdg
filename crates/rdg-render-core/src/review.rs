@@ -1134,6 +1134,31 @@ fn compute_reviewed_layout_with(
     }
 
     let (mut layout, mut edge_plans, _) = best.expect("the loop always runs at least one pass");
+    // A pass that came back clean but over its crossing ceiling (more than half the
+    // edge count) gets one wider try, kept when it judges better: the retries above
+    // widen on anomalies only, and a wider spacing often routes with fewer crossings
+    // when the tight one merely managed to avoid an overlap.
+    let crossings = spacing_metrics(compiled, &layout, &edge_plans, &config.tokens).crossings;
+    if (passes.len() as u32) < max_passes.max(1) && crossings * 2 > compiled.graph.edge_count() && std::env::var_os("RDG_NO_QUALITY_RETRY").is_none() {
+        let factor = config.tokens.retry_spacing_factor;
+        let mut wider = config.clone();
+        wider.rank_spacing = ((wider.rank_spacing as f64) * factor).round() as u32;
+        wider.node_spacing = ((wider.node_spacing as f64) * factor).round() as u32;
+        if let Ok((l2, p2)) = lay(&wider) {
+            let (now, then) = (judge(&layout, &edge_plans, &config.tokens), judge(&l2, &p2, &wider.tokens));
+            if std::env::var_os("RDG_DEBUG_ANOMALIES").is_some() {
+                eprintln!("  quality retry: {then:.0} against {now:.0} (rank_spacing={}, node_spacing={})", wider.rank_spacing, wider.node_spacing);
+            }
+            if then < now {
+                let (w, h) = estimate_canvas_bounds(&l2);
+                let count = detect_anomalies(compiled, &l2, &p2, w, h, &wider.tokens).iter().filter(|a| retryable(a)).count();
+                passes.push(PassReport { attempt: passes.len() as u32 + 1, anomaly_count: count, rank_spacing: wider.rank_spacing, node_spacing: wider.node_spacing });
+                layout = l2;
+                edge_plans = p2;
+                config = wider;
+            }
+        }
+    }
     // Final polish: small guarded port/waypoint adjustments on the chosen attempt. Runs
     // before `finalize_canvas` (which shifts everything onto the margin) so any geometry it
     // touches is covered by that translation, and before anomalies are re-checked so

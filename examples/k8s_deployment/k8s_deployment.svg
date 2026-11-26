@@ -18,7 +18,7 @@
   <rect x="440.0" y="321.0" width="152.0" height="272.0" rx="10.0" fill="#94a3b8" fill-opacity="0.050" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
   <text x="452.0" y="340.9" font-size="11" font-weight="bold" fill="#94a3b8">ns: monitoring</text>
   <path d="M 762.0 186.0 L 762.0 429.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 740.0 507.0 L 740.0 603.0 Q 740.0 612.0 731.0 612.0 L 714.5 612.0 Q 708.0 612.0 708.0 618.5 L 708.0 799.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 740.0 507.0 L 740.0 616.0 Q 740.0 625.0 731.0 625.0 L 714.5 625.0 Q 708.0 625.0 708.0 631.5 L 708.0 799.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 708.0 661.0 L 839.0 661.0 Q 853.0 661.0 853.0 675.0 L 853.0 799.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <circle cx="708.0" cy="661.0" r="3.2" fill="#8b95a5"/>
   <path d="M 708.0 679.0 L 597.0 679.0 Q 583.0 679.0 583.0 693.0 L 583.0 799.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>

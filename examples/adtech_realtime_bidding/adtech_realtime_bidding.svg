@@ -27,16 +27,16 @@
   <path d="M 134.0 1062.0 L 134.0 1112.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 289.0 770.0 L 289.0 1236.0 Q 289.0 1250.0 303.0 1250.0 L 545.0 1250.0 Q 559.0 1250.0 559.0 1264.0 L 559.0 1389.1 Q 559.0 1400.0 569.9 1400.0 L 598.0 1400.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 244.0 685.0 L 140.0 685.0 Q 126.0 685.0 126.0 671.0 L 126.0 321.0 Q 126.0 307.0 140.0 307.0 L 404.0 307.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 454.0 327.0 L 534.0 327.0 Q 548.0 327.0 548.0 313.0 L 548.0 195.0 Q 548.0 181.0 534.0 181.0 L 480.0 181.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 454.0 327.0 L 536.0 327.0 Q 550.0 327.0 550.0 313.0 L 550.0 195.0 Q 550.0 181.0 536.0 181.0 L 480.0 181.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 480.0 161.0 L 608.0 161.0 Q 622.0 161.0 622.0 175.0 L 622.0 552.0 Q 622.0 566.0 636.0 566.0 L 770.0 566.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <path d="M 816.0 638.0 L 816.0 972.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 820.0 573.0 L 883.0 573.0 Q 897.0 573.0 897.0 587.0 L 897.0 851.6 Q 897.0 860.0 905.4 860.0 L 921.0 860.0 Q 927.0 860.0 927.0 866.0 L 927.0 1178.7 Q 927.0 1186.0 919.7 1186.0 L 906.2 1186.0 Q 901.0 1186.0 901.0 1191.2 L 901.0 1374.3" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
+  <path d="M 820.0 573.0 L 883.0 573.0 Q 897.0 573.0 897.0 587.0 L 897.0 850.6 Q 897.0 859.0 905.4 859.0 L 921.0 859.0 Q 927.0 859.0 927.0 865.0 L 927.0 1178.7 Q 927.0 1186.0 919.7 1186.0 L 906.2 1186.0 Q 901.0 1186.0 901.0 1191.2 L 901.0 1374.3" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <path d="M 1008.0 638.0 L 1008.0 873.0 Q 1008.0 887.0 1022.0 887.0 L 1275.0 887.0 Q 1289.0 887.0 1289.0 901.0 L 1289.0 1274.0 Q 1289.0 1288.0 1275.0 1288.0 L 953.0 1288.0 Q 939.0 1288.0 939.0 1302.0 L 939.0 1374.3" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
-  <path d="M 952.0 1400.0 L 1303.0 1400.0 Q 1317.0 1400.0 1317.0 1386.0 L 1317.0 865.0 Q 1317.0 851.0 1303.0 851.0 L 1130.0 851.0 Q 1116.0 851.0 1116.0 837.0 L 1116.0 587.0 Q 1116.0 573.0 1130.0 573.0 L 1170.0 573.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
+  <path d="M 952.0 1400.0 L 1303.0 1400.0 Q 1317.0 1400.0 1317.0 1386.0 L 1317.0 873.0 Q 1317.0 859.0 1303.0 859.0 L 1130.0 859.0 Q 1116.0 859.0 1116.0 845.0 L 1116.0 587.0 Q 1116.0 573.0 1130.0 573.0 L 1170.0 573.0" fill="none" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-2)"/>
   <path d="M 1195.0 638.0 L 1195.0 680.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 835.0 1062.0 L 835.0 1160.0 Q 835.0 1174.0 821.0 1174.0 L 749.0 1174.0 A 5.0 5.0 0 0 0 739.0 1174.0 L 707.0 1174.0 A 5.0 5.0 0 0 0 697.0 1174.0 L 653.0 1174.0 Q 639.0 1174.0 639.0 1188.0 L 639.0 1369.3" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 810.0 997.0 L 758.0 997.0 Q 744.0 997.0 744.0 983.0 L 744.0 873.0 Q 744.0 859.0 730.0 859.0 L 667.0 859.0 Q 653.0 859.0 653.0 845.0 L 653.0 599.0 Q 653.0 585.0 639.0 585.0 L 473.0 585.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 448.0 630.0 L 448.0 652.3 Q 448.0 661.0 439.3 661.0 L 381.0 661.0 Q 367.0 661.0 367.0 675.0 L 367.0 846.3 Q 367.0 860.0 353.3 860.0 L 327.9 860.0 Q 318.0 860.0 318.0 869.9 L 318.0 1198.0 Q 318.0 1212.0 332.0 1212.0 L 597.0 1212.0 Q 611.0 1212.0 611.0 1226.0 L 611.0 1374.3" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
+  <path d="M 448.0 630.0 L 448.0 652.3 Q 448.0 661.0 439.3 661.0 L 381.0 661.0 Q 367.0 661.0 367.0 675.0 L 367.0 845.3 Q 367.0 859.0 353.3 859.0 L 327.9 859.0 Q 318.0 859.0 318.0 868.9 L 318.0 1198.0 Q 318.0 1212.0 332.0 1212.0 L 597.0 1212.0 Q 611.0 1212.0 611.0 1226.0 L 611.0 1374.3" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 1024.0 1062.0 L 1024.0 1214.0 Q 1024.0 1228.0 1010.0 1228.0 L 906.0 1228.0 A 5.0 5.0 0 0 0 896.0 1228.0 L 809.0 1228.0 Q 795.0 1228.0 795.0 1242.0 L 795.0 1375.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 667.0 997.0 L 730.0 997.0 Q 744.0 997.0 744.0 1011.0 L 744.0 1219.3 Q 744.0 1228.0 752.7 1228.0 L 768.8 1228.0 Q 775.0 1228.0 775.0 1234.2 L 775.0 1368.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
   <path d="M 468.0 1017.0 L 527.0 1017.0 Q 541.0 1017.0 541.0 1031.0 L 541.0 1141.0 Q 541.0 1155.0 555.0 1155.0 L 688.0 1155.0 Q 702.0 1155.0 702.0 1169.0 L 702.0 1388.5 Q 702.0 1400.0 713.5 1400.0 L 743.0 1400.0" fill="none" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#marker-arrow-1)"/>
@@ -155,20 +155,20 @@
   <text x="95.0" y="718.5" text-anchor="middle" font-size="10" fill="#8b95a5">features</text>
   <rect x="138.0" y="1074.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="156.0" y="1085.5" text-anchor="middle" font-size="10" fill="#8b95a5">score</text>
-  <rect x="293.0" y="825.9" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="311.0" y="837.1" text-anchor="middle" font-size="10" fill="#7c3aed">check</text>
+  <rect x="291.0" y="1254.0" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="309.0" y="1265.2" text-anchor="middle" font-size="10" fill="#7c3aed">check</text>
   <rect x="106.8" y="287.5" width="78.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="145.8" y="298.8" text-anchor="middle" font-size="10" fill="#8b95a5">bid response</text>
-  <rect x="496.0" y="307.5" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="508.0" y="318.8" text-anchor="middle" font-size="10" fill="#8b95a5">bid</text>
+  <rect x="554.0" y="309.2" width="24.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="566.0" y="320.5" text-anchor="middle" font-size="10" fill="#8b95a5">bid</text>
   <rect x="529.9" y="141.5" width="66.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="562.9" y="152.8" text-anchor="middle" font-size="10" fill="#ea580c">win notice</text>
   <rect x="820.0" y="654.2" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="838.0" y="665.5" text-anchor="middle" font-size="10" fill="#8b95a5">spend</text>
   <rect x="710.0" y="839.5" width="48.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="734.0" y="850.8" text-anchor="middle" font-size="10" fill="#8b95a5">targets</text>
-  <rect x="339.0" y="864.0" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="357.0" y="875.2" text-anchor="middle" font-size="10" fill="#7c3aed">rates</text>
+  <rect x="329.3" y="839.5" width="36.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="347.3" y="850.8" text-anchor="middle" font-size="10" fill="#7c3aed">rates</text>
   <rect x="479.0" y="848.5" width="60.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="509.0" y="859.8" text-anchor="middle" font-size="10" fill="#8b95a5">creatives</text>
   <rect x="556.4" y="685.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>

@@ -7,12 +7,12 @@
   <path d="M 276.0 408.0 L 276.0 188.0 Q 276.0 174.0 290.0 174.0 L 422.0 174.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 462.0 1306.0 L 394.0 1306.0 A 5.0 5.0 0 0 0 384.0 1306.0 L 38.0 1306.0 Q 24.0 1306.0 24.0 1292.0 L 24.0 141.0 Q 24.0 127.0 38.0 127.0 L 422.0 127.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 545.0 401.0 L 545.0 310.2 Q 545.0 301.0 535.8 301.0 L 518.7 301.0 Q 512.0 301.0 512.0 294.3 L 512.0 201.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 595.0 1025.0 L 595.0 927.0 Q 595.0 913.0 581.0 913.0 L 504.0 913.0 A 5.0 5.0 0 0 0 494.0 913.0 L 367.0 913.0 A 5.0 5.0 0 0 0 357.0 913.0 L 145.0 913.0 A 5.0 5.0 0 0 0 135.0 913.0 L 67.0 913.0 Q 53.0 913.0 53.0 899.0 L 53.0 169.0 Q 53.0 155.0 67.0 155.0 L 422.0 155.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 595.0 1025.0 L 595.0 930.0 Q 595.0 916.0 581.0 916.0 L 504.0 916.0 A 5.0 5.0 0 0 0 494.0 916.0 L 367.0 916.0 A 5.0 5.0 0 0 0 357.0 916.0 L 145.0 916.0 A 5.0 5.0 0 0 0 135.0 916.0 L 67.0 916.0 Q 53.0 916.0 53.0 902.0 L 53.0 169.0 Q 53.0 155.0 67.0 155.0 L 422.0 155.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 625.0 456.0 L 642.3 456.0 Q 649.0 456.0 649.0 449.3 L 649.0 152.4 Q 649.0 146.0 655.4 146.0 L 672.0 146.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 649.0 1025.0 L 649.0 927.0 Q 649.0 913.0 663.0 913.0 L 825.0 913.0 A 5.0 5.0 0 0 1 835.0 913.0 L 923.0 913.0 A 5.0 5.0 0 0 1 933.0 913.0 L 1157.0 913.0 Q 1171.0 913.0 1171.0 899.0 L 1171.0 295.0 Q 1171.0 281.0 1157.0 281.0 L 1012.0 281.0 A 5.0 5.0 0 0 0 1002.0 281.0 L 993.0 281.0 A 5.0 5.0 0 0 0 983.0 281.0 L 766.0 281.0 Q 752.0 281.0 752.0 267.0 L 752.0 180.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 649.0 1025.0 L 649.0 930.0 Q 649.0 916.0 663.0 916.0 L 825.0 916.0 A 5.0 5.0 0 0 1 835.0 916.0 L 923.0 916.0 A 5.0 5.0 0 0 1 933.0 916.0 L 1157.0 916.0 Q 1171.0 916.0 1171.0 902.0 L 1171.0 314.0 Q 1171.0 300.0 1157.0 300.0 L 1012.0 300.0 A 5.0 5.0 0 0 0 1002.0 300.0 L 993.0 300.0 A 5.0 5.0 0 0 0 983.0 300.0 L 766.0 300.0 Q 752.0 300.0 752.0 286.0 L 752.0 180.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 1060.0 741.0 L 1060.0 640.0 Q 1060.0 626.0 1046.0 626.0 L 933.0 626.0 A 5.0 5.0 0 0 0 923.0 626.0 L 606.0 626.0 Q 592.0 626.0 592.0 612.0 L 592.0 511.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 554.0 741.0 L 554.0 511.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
-  <path d="M 370.0 741.0 L 370.0 640.0 Q 370.0 626.0 384.0 626.0 L 486.0 626.0 Q 500.0 626.0 500.0 612.0 L 500.0 511.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
+  <path d="M 370.0 741.0 L 370.0 621.0 Q 370.0 607.0 384.0 607.0 L 486.0 607.0 Q 500.0 607.0 500.0 593.0 L 500.0 511.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 830.0 741.0 L 830.0 659.0 Q 830.0 645.0 816.0 645.0 L 587.0 645.0 Q 573.0 645.0 573.0 631.0 L 573.0 511.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 1330.0 429.0 L 1330.0 160.0 Q 1330.0 146.0 1316.0 146.0 L 1112.0 146.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
   <path d="M 1007.0 429.0 L 1007.0 180.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-uml-triangle-0)"/>
@@ -30,7 +30,7 @@
   <path d="M 622.0 813.0 L 622.0 1025.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 988.0 180.0 L 988.0 305.0 Q 988.0 319.0 974.0 319.0 L 799.0 319.0 Q 785.0 319.0 785.0 333.0 L 785.0 420.0" fill="none" stroke="#8b95a5" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#marker-open-3)"/>
   <path d="M 785.0 492.0 L 785.0 584.0 Q 785.0 598.0 799.0 598.0 L 914.0 598.0 Q 928.0 598.0 928.0 612.0 L 928.0 1037.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
-  <path d="M 830.0 813.0 L 830.0 918.8 Q 830.0 932.0 843.2 932.0 L 867.5 932.0 Q 877.0 932.0 877.0 941.5 L 877.0 1037.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
+  <path d="M 830.0 813.0 L 830.0 930.8 Q 830.0 944.0 843.2 944.0 L 867.5 944.0 Q 877.0 944.0 877.0 953.5 L 877.0 1037.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-start="url(#marker-diamond-2)"/>
   <rect fill="#ffffff" fill-opacity="1.000" stroke="#94a3b8" stroke-width="1.5" x="422.0" y="91.0" width="180.0" height="110.0" rx="6.0"/>
   <text x="512.0" y="102.9" text-anchor="middle" font-size="10" font-style="italic" fill="#5b6474">«abstract»</text>
   <text x="512.0" y="123.2" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827" font-style="italic">Entity</text>
@@ -208,7 +208,7 @@
   <text x="958.7" y="334.2" text-anchor="middle" font-size="10" fill="#8b95a5">creates</text>
   <rect x="786.9" y="578.5" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
   <text x="813.9" y="589.8" text-anchor="middle" font-size="10" fill="#8b95a5">assignee</text>
-  <rect x="813.0" y="936.0" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
-  <text x="840.0" y="947.2" text-anchor="middle" font-size="10" fill="#8b95a5">approver</text>
+  <rect x="813.0" y="948.0" width="54.0" height="15.5" rx="2" fill="#f7f8fa"/>
+  <text x="840.0" y="959.2" text-anchor="middle" font-size="10" fill="#8b95a5">approver</text>
   <line x1="24.0" y1="67.0" x2="1435.0" y2="67.0" stroke="#d0d5de" stroke-width="1"/>
 </svg>

@@ -448,6 +448,22 @@ rungs lay 5 px from the border of the group round the listed nodes (6 hugs on on
 diagram), and a set whose targets stood apart was drawn as separate arrows. Status ✅
 (`trunk.rs` `fan_at_shared`, `extend_trunk`, `crowded_by`; `gaps.rs`).
 
+**R20 Tracks in the gaps.** Every interior leg of a search-routed arrow that lies in
+a gap between rows (horizontal legs) or between columns (vertical legs) takes a
+track: the legs of one gap are ordered so that the connectors rising and falling from
+them cross least (a leg goes above another when that crosses less, legs of one arrow
+keep their order), packed into as few tracks as their overlaps allow, and the tracks
+are spaced a pitch apart about the gap's middle, a clearance off the rows. A gap's
+moves stand only when they add no crossing over the drawing. Runs before the spread
+pass, which keeps the leftovers (end legs, border bands, jogs). Measured on the
+fixtures with the quality retry (V5): crossings 241 → 242, close pairs 20 → 18, hugs
+24 → 25, bends 1000 → 1003; alone it cost 8 crossings, all on video-conferencing,
+because it fixed the overlap that had been forcing a wider retry (see V5). What it
+buys is not in the numbers: the arrows crossing a gap run on shared lines instead of
+each at its own height (youtube's API layer). Status ✅ (`tracks.rs`,
+`RDG_TRACKS=off`, `RDG_DEBUG_TRACKS=1`). Section 13 step 2; step 1 (ports by rule)
+can follow once the channel router consumes the same tracks.
+
 **R13 Crossings are 90°** by construction ✅; **crossings per route ≤ 3**, else the route is
 an anomaly ❌ (not measured per route).
 
@@ -628,6 +644,13 @@ repeated-label warning; both on `--check` and on every render).
 
 ---
 
+**V5 Retries are quality-driven too.** The review widens the spacing and retries on
+anomalies only; a pass that comes back clean but over its crossing ceiling (more than
+half the edge count) gets one wider try, kept when it judges better (plan score plus
+anomalies). Found when the track pass removed an overlap on video-conferencing and the
+clean first pass kept 19 crossings where the forced wider retry had reached 12. Status
+✅ (`review.rs`, `RDG_NO_QUALITY_RETRY=1`).
+
 ## 11. Edge-case catalogue
 
 Each case names the symptom seen in a bundled fixture (rendered at 6ccd100), the rules that
@@ -715,6 +738,9 @@ Order of work, by reader impact per change:
 7. **Per-edge router composition (R16)**, **line jumps (R14)** and **leader lines (A7)** —
    done; all three are measured as modest (the composite wins 3 of 54 choices, jumps and
    leaders change no metric but what a reader can tell apart).
+16. **Tracks for the search router (R20) and quality retries (V5)** — done, section 13
+   step 2 in its first form: tracks assigned per gap after the search, before
+   spreading; a clean pass over its crossing ceiling gets a wider try.
 15. **User feedback round three (R4a, R19, R9)** — done: a jogged arrow moves as one
    leg; a rung is placed by fewest crossings. Not done: arrow 4 of the user's diagram
    entering the app from the left as an L costs a crossing with arrow 3, which the

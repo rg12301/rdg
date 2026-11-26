@@ -317,8 +317,8 @@
           <mxGeometry x="-0.9595" y="-28.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1358.0" y="137.0"/>
-              <mxPoint x="2206.0" y="137.0"/>
-              <mxPoint x="2206.0" y="215.0"/>
+              <mxPoint x="2213.0" y="137.0"/>
+              <mxPoint x="2213.0" y="215.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -343,8 +343,8 @@
           <mxGeometry x="-0.9326" y="25.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1605.0" y="727.0"/>
-              <mxPoint x="2527.0" y="727.0"/>
-              <mxPoint x="2527.0" y="617.0"/>
+              <mxPoint x="2525.0" y="727.0"/>
+              <mxPoint x="2525.0" y="617.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
@@ -354,33 +354,33 @@
         <mxCell id="e_twin_meta_db" value="" style="exitX=0.74038;exitY=0.13095;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.28663;entryY=0.56818;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="twin" target="meta_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="2461.0" y="542.0"/>
-              <mxPoint x="2461.0" y="504.0"/>
+              <mxPoint x="2459.0" y="542.0"/>
+              <mxPoint x="2459.0" y="504.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_registry_meta_db" value="" style="exitX=0.70161;exitY=0.29762;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.28663;entryY=0.15909;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#7c3aed;strokeWidth=1.75;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#7c3aed;" edge="1" source="registry" target="meta_db" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="2461.0" y="447.0"/>
-              <mxPoint x="2461.0" y="468.0"/>
+              <mxPoint x="2459.0" y="447.0"/>
+              <mxPoint x="2459.0" y="468.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_mqtt_ota" value="firmware" style="exitX=0.23958;exitY=0.13095;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="ota" target="mqtt" parent="1">
-          <mxGeometry x="-0.8685" y="-11.8" relative="1" as="geometry">
+          <mxGeometry x="-0.8661" y="-11.8" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="2168.0" y="324.0"/>
-              <mxPoint x="2168.0" y="193.0"/>
+              <mxPoint x="2175.0" y="324.0"/>
+              <mxPoint x="2175.0" y="193.0"/>
               <mxPoint x="876.0" y="193.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_mqtt_commands" value="command" style="exitX=0.31061;exitY=0.35714;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.69792;entryY=0.07104;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#ea580c;strokeWidth=1.25;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#ea580c;" edge="1" source="commands" target="mqtt" parent="1">
-          <mxGeometry x="-0.7168" y="0.0" relative="1" as="geometry">
+          <mxGeometry x="-0.7255" y="0.0" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="2187.0" y="234.0"/>
-              <mxPoint x="2187.0" y="165.0"/>
+              <mxPoint x="2194.0" y="234.0"/>
+              <mxPoint x="2194.0" y="165.0"/>
               <mxPoint x="895.0" y="165.0"/>
             </Array>
           </mxGeometry>

@@ -8,13 +8,13 @@
   <path d="M 390.0 321.0 L 390.0 369.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 530.0 419.0 L 550.2 419.0 Q 558.0 419.0 558.0 426.8 L 558.0 543.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 390.0 469.0 L 390.0 497.8 Q 390.0 509.0 378.8 509.0 L 311.9 509.0 Q 301.0 509.0 301.0 519.9 L 301.0 548.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 575.0 573.0 L 694.0 573.0 A 5.0 5.0 0 0 1 704.0 573.0 L 798.0 573.0 Q 812.0 573.0 812.0 587.0 L 812.0 1057.0 Q 812.0 1071.0 826.0 1071.0 L 1324.5 1071.0 Q 1334.0 1071.0 1334.0 1061.5 L 1334.0 1037.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 575.0 573.0 L 722.0 573.0 Q 736.0 573.0 736.0 587.0 L 736.0 1057.0 Q 736.0 1071.0 750.0 1071.0 L 1324.5 1071.0 Q 1334.0 1071.0 1334.0 1061.5 L 1334.0 1037.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 325.0 598.0 L 325.0 677.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 185.0 727.0 L 118.0 727.0 Q 104.0 727.0 104.0 741.0 L 104.0 887.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 325.0 777.0 L 325.0 887.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 465.0 727.0 L 528.0 727.0 Q 542.0 727.0 542.0 741.0 L 542.0 887.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 84.0 887.0 L 84.0 122.0 Q 84.0 108.0 98.0 108.0 L 898.0 108.0 Q 912.0 108.0 912.0 122.0 L 912.0 196.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 428.0 893.0 L 451.0 893.0 Q 460.0 893.0 460.0 884.0 L 460.0 846.0 Q 460.0 832.0 474.0 832.0 L 537.0 832.0 A 5.0 5.0 0 0 1 547.0 832.0 L 685.0 832.0 Q 699.0 832.0 699.0 818.0 L 699.0 151.0 Q 699.0 137.0 713.0 137.0 L 907.0 137.0 A 5.0 5.0 0 0 1 917.0 137.0 L 1200.2 137.0 Q 1207.0 137.0 1207.0 143.8 L 1207.0 161.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 428.0 893.0 L 451.0 893.0 Q 460.0 893.0 460.0 884.0 L 460.0 846.0 Q 460.0 832.0 474.0 832.0 L 537.0 832.0 A 5.0 5.0 0 0 1 547.0 832.0 L 704.0 832.0 Q 718.0 832.0 718.0 818.0 L 718.0 151.0 Q 718.0 137.0 732.0 137.0 L 907.0 137.0 A 5.0 5.0 0 0 1 917.0 137.0 L 1200.2 137.0 Q 1207.0 137.0 1207.0 143.8 L 1207.0 161.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1207.0 280.6 L 1207.0 427.0" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6 3" marker-end="url(#marker-uml-triangle-1)"/>
   <path d="M 1322.0 452.0 L 1356.6 452.0 Q 1370.0 452.0 1370.0 438.6 L 1370.0 227.7 Q 1370.0 221.0 1363.3 221.0 L 1346.0 221.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1066.0 221.0 L 1043.0 221.0 Q 1034.0 221.0 1034.0 230.0 L 1034.0 340.0 Q 1034.0 354.0 1048.0 354.0 L 1100.0 354.0 Q 1114.0 354.0 1114.0 368.0 L 1114.0 605.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
@@ -24,7 +24,7 @@
   <path d="M 1040.0 815.0 L 1009.8 815.0 Q 998.0 815.0 998.0 803.2 L 998.0 477.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1180.0 865.0 L 1180.0 925.6 Q 1180.0 939.0 1166.6 939.0 L 1141.7 939.0 Q 1132.0 939.0 1132.0 948.7 L 1132.0 975.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <path d="M 1320.0 815.0 L 1338.7 815.0 Q 1346.0 815.0 1346.0 822.3 L 1346.0 980.4" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
-  <path d="M 622.0 912.0 L 807.0 912.0 A 5.0 5.0 0 0 1 817.0 912.0 L 1175.0 912.0 A 5.0 5.0 0 0 1 1185.0 912.0 L 1228.0 912.0 Q 1242.0 912.0 1242.0 926.0 L 1242.0 977.0 Q 1242.0 991.0 1256.0 991.0 L 1318.0 991.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
+  <path d="M 622.0 912.0 L 731.0 912.0 A 5.0 5.0 0 0 1 741.0 912.0 L 1175.0 912.0 A 5.0 5.0 0 0 1 1185.0 912.0 L 1228.0 912.0 Q 1242.0 912.0 1242.0 926.0 L 1242.0 977.0 Q 1242.0 991.0 1256.0 991.0 L 1318.0 991.0" fill="none" stroke="#8b95a5" stroke-width="1.2" marker-end="url(#marker-arrow-0)"/>
   <circle cx="373.0" cy="175.0" r="12.0" fill="#111827"/>
   <text x="373.0" y="205.3" text-anchor="middle" font-size="12" font-weight="bold" fill="#111827">
     <tspan>Alert fires</tspan>

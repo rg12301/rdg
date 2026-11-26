@@ -15,6 +15,7 @@ pub mod review;
 pub mod routing;
 pub mod siblings;
 pub mod spread;
+pub mod tracks;
 pub mod trunk;
 pub mod style;
 pub mod theme;

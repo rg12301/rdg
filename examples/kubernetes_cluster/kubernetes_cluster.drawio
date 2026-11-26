@@ -147,18 +147,18 @@
           <mxGeometry x="-0.4054" y="19.0" relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_ingress_ctrl_api_pod" value="HTTP" style="exitX=0.66892;exitY=0.62500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.50000;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="ingress_ctrl" target="api_pod" parent="1">
-          <mxGeometry x="-0.2874" y="-31.0" relative="1" as="geometry">
+          <mxGeometry x="-0.2881" y="-31.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="310.0" y="372.0"/>
-              <mxPoint x="310.0" y="684.0"/>
-              <mxPoint x="362.0" y="684.0"/>
+              <mxPoint x="310.0" y="693.0"/>
+              <mxPoint x="362.0" y="693.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_ingress_ctrl_api_pod_leader" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#8b95a5;strokeWidth=0.6;opacity=80;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="310.0" y="450.1" as="sourcePoint"/>
-            <mxPoint x="294.0" y="450.1" as="targetPoint"/>
+            <mxPoint x="310.0" y="450.0" as="sourcePoint"/>
+            <mxPoint x="294.0" y="450.0" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_cert_manager_ingress_ctrl" value="TLS cert" style="exitX=0.49038;exitY=1.08333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.49324;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="cert_manager" target="ingress_ctrl" parent="1">
@@ -207,24 +207,18 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e_hpa_worker_pod" value="scale signal" style="exitX=0.50000;exitY=1.08333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.67857;entryY=0.29762;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="hpa" target="worker_pod" parent="1">
-          <mxGeometry x="0.8559" y="-35.8" relative="1" as="geometry">
+          <mxGeometry x="-0.8559" y="-43.0" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="469.0" y="894.0"/>
             </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e_hpa_worker_pod_leader" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#8b95a5;strokeWidth=0.6;opacity=80;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="423.0" y="894.0" as="sourcePoint"/>
-            <mxPoint x="423.0" y="866.0" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_coredns_api_pod" value="DNS resolve" style="exitX=0.13235;exitY=0.34722;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.66667;entryY=0.00000;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=none;html=1;rounded=1;jumpStyle=arc;jumpSize=6;strokeColor=#8b95a5;strokeWidth=1.25;dashed=0;endArrow=blockThin;endFill=1;endSize=7;startArrow=none;labelBackgroundColor=#f7f8fa;labelBorderColor=none;fontFamily=JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;fontSize=10;fontColor=#8b95a5;" edge="1" source="coredns" target="api_pod" parent="1">
           <mxGeometry x="-0.7572" y="-11.8" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="318.0" y="224.0"/>
-              <mxPoint x="318.0" y="658.0"/>
-              <mxPoint x="382.0" y="658.0"/>
+              <mxPoint x="318.0" y="674.0"/>
+              <mxPoint x="382.0" y="674.0"/>
             </Array>
           </mxGeometry>
         </mxCell>
